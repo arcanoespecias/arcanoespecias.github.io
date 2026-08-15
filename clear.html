@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcano - Actualizando...</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#1b0b07;color:#f0e8d0;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:20px}
+.box{max-width:340px}
+.spinner{width:48px;height:48px;border:4px solid #331e12;border-top-color:#c9963a;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+h2{margin-bottom:8px;font-size:1.2rem}
+p{color:#7a6a50;font-size:.9rem;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="spinner"></div>
+  <h2>Actualizando Arcano</h2>
+  <p id="status">Borrando cache y datos temporales...</p>
+</div>
+<script>
+(function(){
+  var status = document.getElementById('status');
+  function done(msg) { status.textContent = msg; }
+
+  function clearAll() {
+    var steps = [];
+
+    // 1. Borrar localStorage temporal
+    try {
+      localStorage.removeItem('arcano_app_version');
+      localStorage.removeItem('arcano_force_reload');
+    } catch(e){}
+
+    // 2. Borrar sessionStorage
+    try { sessionStorage.clear(); } catch(e){}
+
+    // 3. Borrar todos los caches
+    if ('caches' in window) {
+      steps.push(
+        caches.keys().then(function(ks) {
+          return Promise.all(ks.map(function(k) { return caches.delete(k); }));
+        })
+      );
+    }
+
+    // 4. Desregistrar todos los service workers
+    if ('serviceWorker' in navigator) {
+      steps.push(
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          return Promise.all(regs.map(function(r) { return r.unregister(); }));
+        })
+      );
+    }
+
+    Promise.all(steps).then(function() {
+      done('Cache limpiada. Redirigiendo a la app...');
+      // Esperar un momento y redirigir con parametro que fuerza recarga
+      setTimeout(function() {
+        window.location.replace('./?fresh=' + Date.now());
+      }, 800);
+    }).catch(function() {
+      // Si falla algo, redirigir de todas formas
+      window.location.replace('./?fresh=' + Date.now());
+    });
+  }
+
+  clearAll();
+})();
+</script>
+</body>
+</html>
