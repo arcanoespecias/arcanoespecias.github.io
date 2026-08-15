@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Arcano Especias - Especias y Blends artesanales del mundo. Ingredientes seleccionados para generar sabores de cada rincón.">
+  <meta name="theme-color" content="#1b0b07">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Arcano Especias — Tienda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="css/tienda.css" as="style">
+  <link rel="preload" href="icons/logo.png" as="image">
+  <link rel="stylesheet" href="css/tienda.css">
+</head>
+<body>
+  <div class="tienda-layout" id="tienda-layout">
+  <header class="store-header">
+    <button class="sidebar-btn" onclick="toggleSidebar()" aria-label="Menu recetas">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="store-logo"><img src="icons/logo.png" alt="Arcano Especias" width="160" height="50"></div>
+    <div class="store-header-text">
+      <h1>ARCANO</h1>
+      <div class="sub">Especias &amp; Blends</div>
+    </div>
+  </header>
+  <div class="tienda-body">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div class="sidebar-panel" id="sidebar-panel">
+    <div class="sidebar-header"><h3>Recetas</h3><button class="sidebar-close" onclick="closeSidebar()" aria-label="Cerrar recetas">&times;</button></div>
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" data-cat="Comida" onclick="selectRecetaCat('Comida')">Comida</button>
+      <button class="sidebar-tab" data-cat="Infusiones" onclick="selectRecetaCat('Infusiones')">Infusiones</button>
+      <button class="sidebar-tab" data-cat="Cocteleria" onclick="selectRecetaCat('Cocteleria')">Cocteleria</button>
+    </div>
+    <div class="sidebar-content" id="sidebar-content"><div class="sidebar-empty">Cargando...</div></div>
+    <div class="sidebar-brand" id="sidebar-brand"></div>
+    <div class="sidebar-social" id="sidebar-social"></div>
+  </div>
+
+  <main>
+    <section class="hero">
+      <h2>Especias del Mundo</h2>
+      <p>Mezclas artesanales con ingredientes seleccionados de cada rincon</p>
+    </section>
+
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-cat="Todos">Todos</button>
+      <button class="filter-btn" data-cat="Comidas">Comidas</button>
+      <button class="filter-btn" data-cat="Infusiones">Infusiones</button>
+      <button class="filter-btn" data-cat="Cocteleria">Coctelería</button>
+      <button class="filter-btn" data-cat="Packs">Packs</button>
+    </div>
+
+    <div class="products-grid" id="products-grid">
+      <div class="empty-state"><p>Cargando productos...</p></div>
+    </div>
+  </main>
+  </div><!-- /tienda-body -->
+  </div><!-- /tienda-layout -->
+
+  <button class="cart-fab" id="cart-fab" style="display:none" onclick="openCart()">
+    <span class="cart-count" id="cart-count">0</span> Ver Pedido
+  </button>
+
+  <footer class="store-footer">
+    Arcano Especias &amp; Blends &middot; Especias artesanales &middot; Envíos a toda Colombia 
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
+  <script src="js/tienda-data.js" defer></script>
+  <script src="js/tienda-ui.js" defer></script>
+</body>
+</html>
