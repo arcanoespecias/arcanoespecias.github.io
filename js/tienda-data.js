@@ -115,7 +115,7 @@ function getStoreProducts() {
       id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
       precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
       stockChico: 0, stockGrande: 0, stock: minStock,
-      region: '', uso: pk.descripcion || '', imagen: pk.imagen || '', tags: [],
+      region: '', uso: '', descripcion: pk.descripcion || '', imagen: pk.imagen || '', tags: [],
       blendItems: blendItems
     });
   }
