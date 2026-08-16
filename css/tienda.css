@@ -316,16 +316,7 @@ button { font-family: inherit; }
   z-index: 0;
 }
 .price-box-btn::after {
-  content: '+';
-  position: absolute;
-  top: 2px;
-  right: 6px;
-  font-size: .6rem;
-  font-weight: 800;
-  color: var(--text-muted);
-  opacity: .4;
-  transition: all var(--normal);
-  z-index: 1;
+  display: none;
 }
 .price-box-btn:hover {
   border-color: var(--border);
@@ -749,12 +740,8 @@ textarea.form-input { min-height: 76px; resize: vertical; }
   width: 280px;
   min-width: 240px;
   flex-shrink: 0;
-  object-fit: contain;
   background: linear-gradient(160deg, #1a0a06 0%, #2c1810 40%, #3a2218 100%);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 100%;
   position: relative;
   overflow: hidden;
@@ -770,11 +757,11 @@ textarea.form-input { min-height: 76px; resize: vertical; }
   pointer-events: none;
 }
 .detail-img img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  padding: 24px;
-  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
   z-index: 1;
 }
 .detail-img .detail-emoji { font-size: 3.5rem; color: var(--gold); }
@@ -848,78 +835,50 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 .detail-prices-row { display: flex; gap: 10px; margin-top: 20px; }
 .detail-price-card {
   flex: 1;
-  background: var(--gold-pale);
-  border-radius: var(--radius-md);
-  padding: 18px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 8px;
   text-align: center;
-  border: 2px solid rgba(196,148,58,0.2);
+  border: 1.5px solid var(--border);
   cursor: pointer;
   transition: all var(--normal);
   color: var(--text);
-  position: relative;
-  overflow: hidden;
-}
-.detail-price-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-  opacity: 0;
-  transition: opacity var(--normal);
-}
-.detail-price-btn::after {
-  content: 'Agregar';
-  position: absolute;
-  bottom: -32px;
-  left: 0;
-  right: 0;
-  padding: 8px;
-  font-size: .68rem;
-  font-weight: 700;
-  letter-spacing: .04em;
-  color: #fff;
-  background: rgba(154,116,40,0.5);
-  transition: bottom .35s var(--ease-out);
-  z-index: 1;
 }
 .detail-price-btn:hover {
-  border-color: transparent;
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-gold);
+  border-color: var(--text-muted);
+  background: var(--bg-warm);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
-.detail-price-btn:hover::before { opacity: 1; }
-.detail-price-btn:hover .detail-price-label,
-.detail-price-btn:hover .detail-price-val { color: #fff; position: relative; z-index: 1; }
-.detail-price-btn:hover::after { bottom: 0; }
-.detail-price-btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(196,148,58,0.25); }
+.detail-price-btn:active { transform: translateY(0); box-shadow: none; }
 .detail-price-label {
-  font-size: .75rem;
-  color: var(--text-secondary);
+  font-size: .6rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: .08em;
-  font-weight: 700;
-  margin-bottom: 4px;
+  letter-spacing: .06em;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 .detail-price-val {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #5A4210;
-  letter-spacing: -.02em;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.01em;
 }
 .detail-add-btn {
   width: 100%;
-  padding: 14px;
-  border: none;
+  padding: 8px;
+  border: 1.5px solid var(--text-muted);
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-  color: #fff;
-  font-weight: 700;
-  font-size: .95rem;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: .78rem;
   cursor: pointer;
   transition: all var(--normal);
-  letter-spacing: .03em;
+  letter-spacing: .02em;
 }
-.detail-add-btn:hover { box-shadow: var(--shadow-gold); transform: translateY(-1px); }
+.detail-add-btn:hover { background: var(--bg-warm); color: var(--text); border-color: var(--text-secondary); box-shadow: var(--shadow-sm); }
 .detail-add-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* === SUCCESS === */
@@ -1307,8 +1266,8 @@ textarea.form-input { min-height: 76px; resize: vertical; }
   .price-value { font-size: .9rem; }
   .form-row { flex-direction: column; gap: 0; }
   .detail-modal { max-height: 95vh; border-radius: var(--radius-md); flex-direction: column; max-width: 480px; }
-  .detail-img { width: 100%; min-width: unset; max-height: 220px; min-height: 140px; border-radius: var(--radius-md) var(--radius-md) 0 0; }
-  .detail-img img { max-height: 220px; padding: 16px; }
+  .detail-img { width: 100%; min-width: unset; max-height: 260px; min-height: 180px; border-radius: var(--radius-md) var(--radius-md) 0 0; }
+  .detail-img img { max-height: none; padding: 0; }
   .detail-content { padding: 20px; }
   .detail-content h2 { font-size: 1.4rem; }
   .cart-fab { bottom: 16px; right: 16px; padding: 12px 18px; font-size: .8rem; }
