@@ -82,6 +82,29 @@ function getStoreProducts() {
       ingredientes: b.ingredientes || []
     });
   }
+  // Packs
+  var pkKeys = Object.keys(_sDb.packs || {});
+  for (var i = 0; i < pkKeys.length; i++) {
+    var pk = _sDb.packs[pkKeys[i]];
+    if (!pk || !pk.enTienda) continue;
+    var blendItems = pk.blendItems || [];
+    var minStock = 999999;
+    for (var j = 0; j < blendItems.length; j++) {
+      var bi2 = blendItems[j];
+      var bl2 = (_sDb.blends || {})[bi2.blendId];
+      if (!bl2) { minStock = 0; break; }
+      var st = bi2.talla === 'grande' ? (bl2.stockGrande || 0) : (bl2.stockChico || 0);
+      if (st < minStock) minStock = st;
+    }
+    if (minStock <= 0) continue;
+    products.push({
+      id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
+      precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
+      stockChico: 0, stockGrande: 0, stock: minStock,
+      region: '', uso: pk.descripcion || '', imagen: pk.imagen || '', tags: [],
+      blendItems: blendItems
+    });
+  }
   return products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
 }
 
