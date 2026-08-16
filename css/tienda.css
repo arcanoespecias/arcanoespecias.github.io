@@ -229,6 +229,8 @@ button { font-family: inherit; }
   box-shadow: var(--shadow-xs);
   contain: layout style;
   will-change: transform;
+  display: flex;
+  flex-direction: column;
 }
 .product-card:hover {
   transform: translateY(-6px);
@@ -236,7 +238,8 @@ button { font-family: inherit; }
   border-color: rgba(196,148,58,0.15);
 }
 .card-img {
-  height: 220px;
+  aspect-ratio: 4 / 5;
+  flex-shrink: 0;
   background: linear-gradient(160deg, #1a0a06 0%, #2c1810 40%, #3a2218 100%);
   display: flex;
   align-items: center;
@@ -1296,7 +1299,7 @@ textarea.form-input { min-height: 76px; resize: vertical; }
     gap: 12px;
     padding: 0 14px 130px;
   }
-  .card-img { height: 155px; }
+  .card-img { aspect-ratio: 4 / 5; }
   .card-body { padding: 12px; }
   .card-name { font-size: .85rem; }
   .card-meta { font-size: .65rem; margin-bottom: 10px; }
