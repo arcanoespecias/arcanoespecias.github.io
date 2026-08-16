@@ -730,25 +730,28 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 .detail-modal {
   background: var(--card);
   border-radius: var(--radius-lg);
-  max-width: 480px;
+  max-width: 680px;
   width: 100%;
-  max-height: 92vh;
-  overflow-y: auto;
+  max-height: 90vh;
+  overflow: hidden;
   box-shadow: 0 32px 80px rgba(0,0,0,0.4);
   animation: detailSlideUp .35s var(--ease-out);
   border: 1px solid var(--border-light);
   position: relative;
+  display: flex;
+  flex-direction: row;
 }
 .detail-img {
-  width: 100%;
-  max-height: 300px;
+  width: 280px;
+  min-width: 240px;
+  flex-shrink: 0;
   object-fit: contain;
   background: linear-gradient(160deg, #1a0a06 0%, #2c1810 40%, #3a2218 100%);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 100%;
   position: relative;
   overflow: hidden;
 }
@@ -764,7 +767,7 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 }
 .detail-img img {
   max-width: 100%;
-  max-height: 300px;
+  max-height: 100%;
   object-fit: contain;
   padding: 24px;
   position: relative;
@@ -794,7 +797,7 @@ textarea.form-input { min-height: 76px; resize: vertical; }
   padding: 0;
 }
 .detail-close:hover { background: rgba(0,0,0,.65); transform: scale(1.08); }
-.detail-content { padding: 24px; position: relative; }
+.detail-content { padding: 24px; position: relative; overflow-y: auto; flex: 1; }
 .detail-content h2 {
   font-family: var(--font-display);
   font-size: 1.6rem;
@@ -1299,10 +1302,10 @@ textarea.form-input { min-height: 76px; resize: vertical; }
   .card-meta { font-size: .65rem; margin-bottom: 10px; }
   .price-value { font-size: .9rem; }
   .form-row { flex-direction: column; gap: 0; }
-  .detail-modal { max-height: 95vh; border-radius: var(--radius-md); }
-  .detail-img { max-height: 220px; min-height: 140px; }
+  .detail-modal { max-height: 95vh; border-radius: var(--radius-md); flex-direction: column; max-width: 480px; }
+  .detail-img { width: 100%; min-width: unset; max-height: 220px; min-height: 140px; border-radius: var(--radius-md) var(--radius-md) 0 0; }
   .detail-img img { max-height: 220px; padding: 16px; }
-  .detail-content { padding: 18px; }
+  .detail-content { padding: 20px; }
   .detail-content h2 { font-size: 1.4rem; }
   .cart-fab { bottom: 16px; right: 16px; padding: 12px 18px; font-size: .8rem; }
   .filters { gap: 5px; padding: 0 12px 24px; }
