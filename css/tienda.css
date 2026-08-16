@@ -294,12 +294,12 @@ button { font-family: inherit; }
   flex: 1;
   background: var(--bg);
   border-radius: var(--radius-sm);
-  padding: 10px 8px;
+  padding: 6px 6px;
   text-align: center;
   border: 1.5px solid transparent;
 }
 .price-box-btn {
-  border-color: rgba(196,148,58,0.2);
+  border-color: var(--border);
   cursor: pointer;
   transition: all var(--normal);
   color: var(--text);
@@ -310,7 +310,7 @@ button { font-family: inherit; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-pale) 100%);
   opacity: 0;
   transition: opacity var(--normal);
   z-index: 0;
@@ -318,44 +318,44 @@ button { font-family: inherit; }
 .price-box-btn::after {
   content: '+';
   position: absolute;
-  top: 4px;
-  right: 8px;
-  font-size: .7rem;
+  top: 2px;
+  right: 6px;
+  font-size: .6rem;
   font-weight: 800;
-  color: var(--gold);
-  opacity: .3;
+  color: var(--text-muted);
+  opacity: .4;
   transition: all var(--normal);
   z-index: 1;
 }
 .price-box-btn:hover {
-  border-color: transparent;
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: var(--shadow-gold);
+  border-color: var(--border);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 .price-box-btn:hover::before { opacity: 1; }
 .price-box-btn:hover .price-label,
 .price-box-btn:hover .price-value,
 .price-box-btn:hover::after {
-  color: #fff;
+  color: var(--text);
   position: relative;
   z-index: 1;
 }
 .price-box-btn:active {
-  transform: translateY(0) scale(.98);
-  box-shadow: 0 2px 8px rgba(196,148,58,0.25);
+  transform: translateY(0) scale(.99);
+  box-shadow: var(--shadow-xs);
 }
 .price-label {
-  font-size: .6rem;
-  color: var(--text-secondary);
+  font-size: .55rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: .08em;
-  font-weight: 700;
+  letter-spacing: .06em;
+  font-weight: 600;
 }
 .price-value {
-  font-weight: 800;
-  color: var(--dark);
-  font-size: 1rem;
-  letter-spacing: -.02em;
+  font-weight: 700;
+  color: var(--text);
+  font-size: .85rem;
+  letter-spacing: -.01em;
 }
 .price-na {
   color: var(--text-muted);
@@ -364,23 +364,24 @@ button { font-family: inherit; }
 }
 .add-btn {
   width: 100%;
-  padding: 10px;
-  border: 2px solid var(--gold);
+  padding: 7px;
+  border: 1.5px solid var(--text-muted);
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--gold);
-  font-weight: 700;
-  font-size: .82rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: .75rem;
   cursor: pointer;
   transition: all var(--normal);
 }
 .add-btn:hover {
-  background: var(--gold);
-  color: #fff;
-  box-shadow: var(--shadow-gold);
+  background: var(--bg-warm);
+  color: var(--text);
+  border-color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
 }
 .add-btn:disabled { opacity: .35; cursor: not-allowed; }
-.add-btn:disabled:hover { background: transparent; color: var(--gold); box-shadow: none; }
+.add-btn:disabled:hover { background: transparent; color: var(--text-secondary); box-shadow: none; }
 
 /* === CART FAB === */
 .cart-fab {
