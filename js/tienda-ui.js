@@ -358,7 +358,7 @@ function _getArcanoLinkData() {
   names.sort(function(a, b) { return b.length - a.length; });
   var escaped = [];
   for (var i = 0; i < names.length; i++) {
-    escaped.push(names[i].replace(/[.*+?^${}()|[\]\]/g, '\\$&'));
+    escaped.push(names[i].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   }
   _arcanoLinkData = {
     regex: new RegExp('(^|[\\s,.:;!?])(' + escaped.join('|') + ')(?=[\\s,.:;!?]|$)', 'gi'),
