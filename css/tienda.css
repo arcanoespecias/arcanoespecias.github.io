@@ -271,18 +271,18 @@ button { font-family: inherit; }
 .product-card:hover .card-img img {
   transform: scale(1.08);
 }
-.card-body { padding: 16px 16px 18px; }
+.card-body { padding: 16px 16px 18px; background: var(--dark-warm); flex: 1; display: flex; flex-direction: column; }
 .card-name {
   font-weight: 700;
   font-size: .95rem;
-  color: var(--text);
+  color: #e8dcc8;
   letter-spacing: -.01em;
   line-height: 1.3;
   margin-bottom: 3px;
 }
 .card-meta {
   font-size: .7rem;
-  color: var(--text-muted);
+  color: #a89888;
   margin-bottom: 14px;
   letter-spacing: .03em;
   font-weight: 500;
@@ -292,7 +292,7 @@ button { font-family: inherit; }
 .card-prices { display: flex; gap: 8px; }
 .price-box {
   flex: 1;
-  background: var(--gold-pale);
+  background: var(--bg);
   border-radius: var(--radius-sm);
   padding: 10px 8px;
   text-align: center;
@@ -346,14 +346,14 @@ button { font-family: inherit; }
 }
 .price-label {
   font-size: .6rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: .08em;
   font-weight: 700;
 }
 .price-value {
   font-weight: 800;
-  color: var(--gold-dark);
+  color: var(--dark);
   font-size: 1rem;
   letter-spacing: -.02em;
 }
