@@ -248,7 +248,7 @@ function renderCartModal() {
         var config = getTiendaConfig();
       var qrHtml = '';
       if (config && config.qrPagoImage) {
-        qrHtml = '<div style="margin-top:20px;padding:16px;background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.2);border-radius:10px"><p style="font-size:.85rem;font-weight:600;color:var(--gold);margin:0 0 10px">Forma de pago</p><img src="' + config.qrPagoImage + '" style="max-width:220px;border-radius:8px;display:block;margin:0 auto">' +
+        qrHtml = '<div style="margin-top:20px;padding:16px;background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.2);border-radius:10px"><p style="font-size:.85rem;font-weight:600;color:var(--gold);margin:0 0 10px">Forma de pago</p><img src="' + config.qrPagoImage + '" style="max-width:280px;border-radius:8px;display:block;margin:0 auto">' +
         '<p style="font-size:.75rem;color:#8a7a6a;margin:8px 0 0;text-align:center">Env\u00eda el comprobante por WhatsApp</p></div>';
       }
       overlay.innerHTML = h + qrHtml;
