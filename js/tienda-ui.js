@@ -34,19 +34,6 @@ function addToCart(product, talla) {
   saveCart(); updateCartFab(); _showCartToast(product.nombre);
 }
 
-
-
-function addToCartPack(pid) {
-  var products = getStoreProducts();
-  var product = null;
-  for (var i = 0; i < products.length; i++) { if (products[i].id === pid) { product = products[i]; break; } }
-  if (!product || !product.precio) return;
-  for (var i = 0; i < cart.length; i++) {
-    if (cart[i].productId === product.id && cart[i].tipo === 'pack') { cart[i].qty++; saveCart(); updateCartFab(); _showCartToast(product.nombre); return; }
-  }
-  cart.push({ productId: product.id, nombre: product.nombre, tipo: 'pack', talla: 'pack', precio: product.precio, qty: 1 });
-  saveCart(); updateCartFab(); _showCartToast(product.nombre);
-}
 function removeFromCart(idx) { cart.splice(idx, 1); saveCart(); updateCartFab(); if (document.getElementById('cart-list')) renderCartModal(); }
 
 function changeQty(idx, delta) {
@@ -81,20 +68,21 @@ function renderProducts(filter) {
     var hasChico = p.stockChico > 0 && p.precioChico > 0;
     var hasGrande = p.stockGrande > 0 && p.precioGrande > 0;
     var anyStock = hasChico || hasGrande;
-    var meta = (p.tipo === 'blend' ? 'Blend' : 'Especia');
+    var isPack = p.tipo === 'pack'; var meta = ''; if (p.categorias && p.categorias.length > 1) { meta = p.categorias.join(' / '); } else if (p.categoria) { meta = p.categoria; }
     if (p.categorias && p.categorias.length > 1) { meta += ' \u00b7 ' + p.categorias.join(' / '); } else if (p.categoria) { meta += ' \u00b7 ' + p.categoria; }
 
     h += '<div class="product-card">' +
       '<div class="card-img" style="position:relative" onclick="openDetail(' + p.id + ')">' +
-        (p.imagen ? '<img src="' + p.imagen + '" alt="' + p.nombre + '">' : '<span>' + (isPack ? '\ud83c\udf81' : (isPack ? '\ud83c\udf81' : (p.tipo === 'blend' ? '\ud83c\udf3f' : '\ud83c\udf31'))) + '</span>') +
+        (p.imagen ? '<img src="' + p.imagen + '" alt="' + p.nombre + '">' : '<span>' + (isPack ? '\ud83c\udf81' : (p.tipo === 'blend' ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>') +
       '</div>' +
       '<div class="card-body">' +
         '<div class="card-name">' + p.nombre + '</div>' +
-        (meta ? '<div class="card-meta">' + meta + '</div>' : '') +
+        '<div class="card-meta">' + meta + '</div>' +
         '<div class="card-prices">' +
           (hasChico ? '<button class="price-box price-box-btn" onclick="event.stopPropagation();addToCartByIdAndSize(' + p.id + ', &#39;chico&#39;)"><div class="price-label">Pequeño</div><div class="price-value">$' + p.precioChico.toLocaleString() + '</div></button>' : '') +
           (hasGrande ? '<button class="price-box price-box-btn" onclick="event.stopPropagation();addToCartByIdAndSize(' + p.id + ', &#39;grande&#39;)"><div class="price-label">Grande</div><div class="price-value">$' + p.precioGrande.toLocaleString() + '</div></button>' : '') +
-          (!hasChico && !hasGrande ? '<div class="price-na">Sin precio</div>' : '') +
+          (isPack && p.precio > 0 && (p.stock || 0) > 0 ? '<button class="price-box price-box-btn" onclick="event.stopPropagation();addToCartPack(' + p.id + ')"><div class="price-label">Pack</div><div class="price-value">$' + p.precio.toLocaleString() + '</div></button>' : '')
+          (!hasChico && !hasGrande && !(isPack && p.precio > 0) ? '<div class="price-na">Sin precio</div>' : '') +
         '</div>' +
         (!anyStock ? '<button class="add-btn" disabled>Sin stock</button>' : '') +
       '</div></div>';
@@ -110,6 +98,17 @@ function addToCartByIdAndSize(pid, talla) {
   addToCart(product, talla);
 }
 
+function addToCartPack(pid) {
+  var products = getStoreProducts();
+  var product = null;
+  for (var i = 0; i < products.length; i++) { if (products[i].id === pid) { product = products[i]; break; } }
+  if (!product || !product.precio) return;
+  for (var i = 0; i < cart.length; i++) {
+    if (cart[i].productId === product.id && cart[i].tipo === 'pack') { cart[i].qty++; saveCart(); updateCartFab(); _showCartToast(product.nombre); return; }
+  }
+  cart.push({ productId: product.id, nombre: product.nombre, tipo: 'pack', talla: 'pack', precio: product.precio, qty: 1 });
+  saveCart(); updateCartFab(); _showCartToast(product.nombre);
+}
 function doAddToCart(pid) {
   var products = getStoreProducts();
   var product = null;
@@ -162,7 +161,7 @@ function openDetail(pid) {
         if (allProds[pi].id === bItem.blendId) { bName = allProds[pi].nombre; break; }
       }
       if (!bName) bName = 'Blend';
-      var tallaLabel = bItem.talla === 'grande' ? 'Grande' : 'Peque\u00f1o';
+      var tallaLabel = bItem.talla === 'grande' ? 'Grande' : 'Pequeño';
       var qtyLabel = bItem.cantidad || 1;
       ingsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(196,148,58,0.15)"><span style="font-size:.9rem;color:#5A4210;min-width:18px;font-weight:700">' + qtyLabel + '</span><span style="font-size:.9rem;color:var(--text)">' + bName + '</span><span style="font-size:.8rem;color:var(--text-secondary);margin-left:auto">(' + tallaLabel + ')</span></div>';
     }
@@ -184,7 +183,7 @@ function openDetail(pid) {
   var html = '<div class="detail-modal">' +
     '<button class="detail-close" onclick="document.getElementById(\'detail-overlay\').remove()">&times;</button>' +
     '<div class="detail-img">' +
-      (p.imagen ? '<img src="' + p.imagen + '" alt="' + p.nombre + '">' : '<span class="detail-emoji">' + (isPack ? '\ud83c\udf81' : (isPack ? '\ud83c\udf81' : (p.tipo === 'blend' ? '\ud83c\udf3f' : '\ud83c\udf31'))) + '</span>') +
+      (p.imagen ? '<img src="' + p.imagen + '" alt="' + p.nombre + '">' : '<span class="detail-emoji">' + (isPack ? '\ud83c\udf81' : (p.tipo === 'blend' ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>') +
     '</div>' +
     '<div class="detail-content">' +
       '<span class="detail-type ' + typeClass + '">' + typeLabel + '</span>' +
@@ -247,7 +246,13 @@ function renderCartModal() {
     (cart.length > 0 ? '<button class="btn-secondary" onclick="closeCart()">Seguir comprando</button><button class="btn-primary" onclick="sendOrder()">Enviar Pedido</button>' :
     '<button class="btn-secondary" onclick="closeCart()">Volver</button>') +
     '</div></div>';
-  overlay.innerHTML = h;
+        var config = getTiendaConfig();
+      var qrHtml = '';
+      if (config && config.qrPagoImage) {
+        qrHtml = '<div style="margin-top:20px;padding:16px;background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.2);border-radius:10px"><p style="font-size:.85rem;font-weight:600;color:var(--gold);margin:0 0 10px">Forma de pago</p><img src="' + config.qrPagoImage + '" style="max-width:220px;border-radius:8px;display:block;margin:0 auto">' +
+        '<p style="font-size:.75rem;color:#8a7a6a;margin:8px 0 0;text-align:center">Env\u00eda el comprobante por WhatsApp</p></div>';
+      }
+      overlay.innerHTML = h + qrHtml;
 }
 
 function closeCart() {
@@ -282,18 +287,11 @@ function sendOrder() {
 
   submitOrder(orderData).then(function() {
     if (overlay) {
-      var config = getTiendaConfig();
-      var qrHtml = '';
-      if (config && config.qrPagoImage) {
-        qrHtml = '<div style="margin-top:20px;padding:16px;background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.2);border-radius:10px"><p style="font-size:.85rem;font-weight:600;color:var(--gold);margin:0 0 10px">Forma de pago</p><img src="' + config.qrPagoImage + '" style="max-width:220px;border-radius:8px;display:block;margin:0 auto">' +
-        '<p style="font-size:.75rem;color:#8a7a6a;margin:8px 0 0;text-align:center">Env\u00eda el comprobante por WhatsApp</p></div>';
-      }
       overlay.querySelector('.modal').innerHTML =
         '<div class="modal-body"><div class="success-msg">' +
         '<div class="success-icon">\u2705</div>' +
         '<h3>Pedido enviado</h3>' +
         '<p>Tu pedido fue recibido correctamente. Nos contactaremos pronto para confirmar.</p>' +
-        qrHtml +
         '<button class="btn-primary" style="margin-top:20px" onclick="finishOrder()">Entendido</button>' +
         '</div></div>';
     }
