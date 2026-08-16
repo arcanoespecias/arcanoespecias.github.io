@@ -57,7 +57,13 @@ function submitOrder(orderData) {
 function getStoreProducts() {
   if (!_sDb) return [];
   var products = [];
+  // Mapa de especias para resolver nombres en ingredientes de blends
+  var espMap = {};
   var ek = Object.keys(_sDb.especias || {});
+  for (var ei = 0; ei < ek.length; ei++) {
+    var esp = _sDb.especias[ek[ei]];
+    if (esp && esp.id) espMap[esp.id] = esp.nombre || '';
+  }
   for (var i = 0; i < ek.length; i++) {
     var e = _sDb.especias[ek[i]];
     if (!e || !e.enTienda) continue;
@@ -73,13 +79,21 @@ function getStoreProducts() {
   for (var i = 0; i < bk.length; i++) {
     var b = _sDb.blends[bk[i]];
     if (!b || !b.enTienda) continue;
+    // Resolver nombres de ingredientes faltantes
+    var ings = b.ingredientes || [];
+    var resolvedIngs = [];
+    for (var ii = 0; ii < ings.length; ii++) {
+      var ing = ings[ii];
+      var nombre = ing.especiaNombre || espMap[ing.especiaId] || '';
+      resolvedIngs.push({ especiaNombre: nombre, especiaId: ing.especiaId, gramosChico: ing.gramosChico, gramosGrande: ing.gramosGrande });
+    }
     products.push({
       id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
       stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
       region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: b.imagen || '', tags: b.tags || [],
-      ingredientes: b.ingredientes || []
+      ingredientes: resolvedIngs
     });
   }
   // Packs
