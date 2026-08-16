@@ -163,11 +163,20 @@ function openDetail(pid) {
   // Mostrar contenido del pack o ingredientes para blends
   var ingsHtml = '';
   if (isPack && p.blendItems && p.blendItems.length > 0) {
-    ingsHtml = '<div style="margin-top:12px"><div style="font-size:.8rem;font-weight:600;color:var(--gold);margin-bottom:6px">Incluye</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    ingsHtml = '<div style="margin-top:12px"><div style="font-size:.8rem;font-weight:600;color:var(--gold);margin-bottom:8px">Incluye</div>';
     for (var bi = 0; bi < p.blendItems.length; bi++) {
-      ingsHtml += '<span style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:.75rem;background:rgba(232,184,75,0.12);color:var(--gold);border:1px solid rgba(232,184,75,0.25)">Blend (Peque\u00f1o)</span>';
+      var bItem = p.blendItems[bi];
+      var bName = '';
+      var allProds = getStoreProducts();
+      for (var pi = 0; pi < allProds.length; pi++) {
+        if (allProds[pi].id === bItem.blendId) { bName = allProds[pi].nombre; break; }
+      }
+      if (!bName) bName = 'Blend';
+      var tallaLabel = bItem.talla === 'grande' ? 'Grande' : 'Peque\u00f1o';
+      var qtyLabel = bItem.cantidad || 1;
+      ingsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(232,184,75,0.1)"><span style="font-size:.8rem;color:var(--gold);min-width:18px">' + qtyLabel + '</span><span style="font-size:.8rem;color:#e8dcc8">' + bName + '</span><span style="font-size:.7rem;color:#8a7a6a;margin-left:auto">(' + tallaLabel + ')</span></div>';
     }
-    ingsHtml += '</div></div>';
+    ingsHtml += '</div>';
   } else if (p.tipo === 'blend' && p.ingredientes && p.ingredientes.length > 0) {
     ingsHtml = '<div style="margin-top:12px"><div style="font-size:.8rem;font-weight:600;color:var(--gold);margin-bottom:6px">Ingredientes</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     for (var ii = 0; ii < p.ingredientes.length; ii++) {
@@ -285,11 +294,18 @@ function sendOrder() {
 
   submitOrder(orderData).then(function() {
     if (overlay) {
+      var config = getTiendaConfig();
+      var qrHtml = '';
+      if (config && config.qrPagoImage) {
+        qrHtml = '<div style="margin-top:20px;padding:16px;background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.2);border-radius:10px"><p style="font-size:.85rem;font-weight:600;color:var(--gold);margin:0 0 10px">Forma de pago</p><img src="' + config.qrPagoImage + '" style="max-width:220px;border-radius:8px;display:block;margin:0 auto">' +
+        '<p style="font-size:.75rem;color:#8a7a6a;margin:8px 0 0;text-align:center">Env\u00eda el comprobante por WhatsApp</p></div>';
+      }
       overlay.querySelector('.modal').innerHTML =
         '<div class="modal-body"><div class="success-msg">' +
         '<div class="success-icon">\u2705</div>' +
         '<h3>Pedido enviado</h3>' +
         '<p>Tu pedido fue recibido correctamente. Nos contactaremos pronto para confirmar.</p>' +
+        qrHtml +
         '<button class="btn-primary" style="margin-top:20px" onclick="finishOrder()">Entendido</button>' +
         '</div></div>';
     }
