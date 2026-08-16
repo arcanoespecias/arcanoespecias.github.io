@@ -131,7 +131,7 @@ function openDetail(pid) {
   var hasGrande = !isPack && p.stockGrande > 0 && p.precioGrande > 0;
   var hasPackPrice = isPack && p.precio > 0 && (p.stock || 0) > 0;
   var anyStock = hasChico || hasGrande || hasPackPrice;
-  var typeClass = 'detail-type-blend';
+  var typeClass = isPack ? 'detail-type-pack' : (p.tipo === 'blend' ? 'detail-type-blend' : 'detail-type-especia');
   var typeLabel = isPack ? 'Pack' : (p.tipo === 'blend' ? 'Blend' : 'Especia');
 
   var tagsHtml = '';
@@ -153,7 +153,7 @@ function openDetail(pid) {
   // Mostrar contenido del pack o ingredientes para blends
   var ingsHtml = '';
   if (isPack && p.blendItems && p.blendItems.length > 0) {
-    ingsHtml = '<div style="margin-top:12px"><div style="font-size:.8rem;font-weight:600;color:var(--gold);margin-bottom:8px">Incluye</div>';
+    ingsHtml = '<div style="margin-top:14px"><div style="font-size:.9rem;font-weight:700;color:#5A4210;margin-bottom:8px">Incluye</div>';
     for (var bi = 0; bi < p.blendItems.length; bi++) {
       var bItem = p.blendItems[bi];
       var bName = '';
@@ -164,14 +164,14 @@ function openDetail(pid) {
       if (!bName) bName = 'Blend';
       var tallaLabel = bItem.talla === 'grande' ? 'Grande' : 'Peque\u00f1o';
       var qtyLabel = bItem.cantidad || 1;
-      ingsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(232,184,75,0.1)"><span style="font-size:.8rem;color:var(--gold);min-width:18px">' + qtyLabel + '</span><span style="font-size:.8rem;color:#e8dcc8">' + bName + '</span><span style="font-size:.7rem;color:#8a7a6a;margin-left:auto">(' + tallaLabel + ')</span></div>';
+      ingsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(196,148,58,0.15)"><span style="font-size:.9rem;color:#5A4210;min-width:18px;font-weight:700">' + qtyLabel + '</span><span style="font-size:.9rem;color:var(--text)">' + bName + '</span><span style="font-size:.8rem;color:var(--text-secondary);margin-left:auto">(' + tallaLabel + ')</span></div>';
     }
     ingsHtml += '</div>';
   } else if (p.tipo === 'blend' && p.ingredientes && p.ingredientes.length > 0) {
-    ingsHtml = '<div style="margin-top:12px"><div style="font-size:.8rem;font-weight:600;color:var(--gold);margin-bottom:6px">Ingredientes</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    ingsHtml = '<div style="margin-top:14px"><div style="font-size:.9rem;font-weight:700;color:#5A4210;margin-bottom:6px">Ingredientes</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     for (var ii = 0; ii < p.ingredientes.length; ii++) {
       var ing = p.ingredientes[ii];
-      ingsHtml += '<span style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:.75rem;background:rgba(232,184,75,0.12);color:var(--gold);border:1px solid rgba(232,184,75,0.25)">' + (ing.especiaNombre || 'Especia') + '</span>';
+      ingsHtml += '<span style="display:inline-block;padding:5px 12px;border-radius:20px;font-size:.82rem;background:rgba(196,148,58,0.14);color:#5A4210;border:1px solid rgba(196,148,58,0.25)">' + (ing.especiaNombre || 'Especia') + '</span>';
     }
     ingsHtml += '</div></div>';
   }
