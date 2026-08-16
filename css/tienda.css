@@ -737,6 +737,7 @@ textarea.form-input { min-height: 76px; resize: vertical; }
   box-shadow: 0 32px 80px rgba(0,0,0,0.4);
   animation: detailSlideUp .35s var(--ease-out);
   border: 1px solid var(--border-light);
+  position: relative;
 }
 .detail-img {
   width: 100%;
