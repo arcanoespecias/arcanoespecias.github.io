@@ -26,18 +26,82 @@ function initTienda() {
       var d = snap.val();
       if (d && d.especias && d.blends) {
         _sDb = d; _sReady = true;
+        _injectSEO();
         for (var i = 0; i < _sListeners.length; i++) { try { _sListeners[i](); } catch(e) {} }
       }
     });
   });
 }
 
-function getTiendaConfig() {
-  if (!_sDb) return {};
-  return _sDb.tiendaConfig || {};
-}
-
 function onTiendaChange(fn) { _sListeners.push(fn); }
+
+/* === SEO: JSON-LD + contenido para crawlers === */
+var _seoInjected = false;
+function _injectSEO() {
+  if (_seoInjected) return;
+  var products = getStoreProducts();
+  if (!products.length) return;
+  _seoInjected = true;
+
+  var SITE_URL = 'https://arcanoespecias.github.io/';
+
+  // 1) Product JSON-LD (un solo bloque ItemList)
+  var jsonLdProducts = [];
+  for (var i = 0; i < products.length; i++) {
+    var p = products[i];
+    var precio = p.precioChico > 0 ? p.precioChico : p.precioGrande;
+    var inStock = (p.stockChico > 0 || p.stockGrande > 0);
+    jsonLdProducts.push({
+      '@type': 'Product',
+      'name': p.nombre,
+      'description': p.descripcion || ('Blend artesanal ' + p.nombre + ' de Arcano Especias'),
+      'brand': { '@type': 'Brand', 'name': 'Arcano Especias' },
+      'category': p.categoria + (p.tipo === 'pack' ? ' - Pack' : p.tipo === 'blend' ? ' - Blend' : ' - Especia'),
+      'offers': {
+        '@type': 'Offer',
+        'price': String(precio),
+        'priceCurrency': 'COP',
+        'availability': inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        'seller': { '@type': 'Organization', 'name': 'Arcano Especias' }
+      }
+    });
+  }
+
+  var itemList = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': 'Catálogo Arcano Especias',
+    'description': 'Especias y Blends artesanales del mundo',
+    'numberOfItems': jsonLdProducts.length,
+    'itemListElement': jsonLdProducts
+  };
+
+  var scriptEl = document.createElement('script');
+  scriptEl.type = 'application/ld+json';
+  scriptEl.textContent = JSON.stringify(itemList);
+  document.head.appendChild(scriptEl);
+
+  // 2) Contenido textual en div oculto (para crawlers que no ejecutan JSON-LD)
+  var seoDiv = document.getElementById('seo-content');
+  if (seoDiv) {
+    var html = '<h2>Catálogo de Especias y Blends Artesanales</h2>';
+    html += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y coctelería, además de packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincón del mundo.</p>';
+    for (var j = 0; j < products.length; j++) {
+      var pr = products[j];
+      var pPrecio = pr.precioChico > 0 ? pr.precioChico : pr.precioGrande;
+      html += '<article>';
+      html += '<h3>' + pr.nombre + '</h3>';
+      if (pr.descripcion) html += '<p>' + pr.descripcion + '</p>';
+      html += '<p>Categoría: ' + pr.categoria;
+      if (pr.region) html += ' | Origen: ' + pr.region;
+      if (pr.tags && pr.tags.length) html += ' | Usos: ' + pr.tags.join(', ');
+      html += '</p>';
+      if (pPrecio > 0) html += '<p>Precio desde $' + pPrecio.toLocaleString('es-CO') + ' COP</p>';
+      html += '</article>';
+    }
+    seoDiv.innerHTML = html;
+  }
+}
 
 /* === PEDIDOS (write) === */
 var _pedidosRef = null;
@@ -57,13 +121,7 @@ function submitOrder(orderData) {
 function getStoreProducts() {
   if (!_sDb) return [];
   var products = [];
-  // Mapa de especias para resolver nombres en ingredientes de blends
-  var espMap = {};
   var ek = Object.keys(_sDb.especias || {});
-  for (var ei = 0; ei < ek.length; ei++) {
-    var esp = _sDb.especias[ek[ei]];
-    if (esp && esp.id) espMap[esp.id] = esp.nombre || '';
-  }
   for (var i = 0; i < ek.length; i++) {
     var e = _sDb.especias[ek[i]];
     if (!e || !e.enTienda) continue;
@@ -79,44 +137,13 @@ function getStoreProducts() {
   for (var i = 0; i < bk.length; i++) {
     var b = _sDb.blends[bk[i]];
     if (!b || !b.enTienda) continue;
-    // Resolver nombres de ingredientes faltantes
-    var ings = b.ingredientes || [];
-    var resolvedIngs = [];
-    for (var ii = 0; ii < ings.length; ii++) {
-      var ing = ings[ii];
-      var nombre = ing.especiaNombre || espMap[ing.especiaId] || '';
-      resolvedIngs.push({ especiaNombre: nombre, especiaId: ing.especiaId, gramosChico: ing.gramosChico, gramosGrande: ing.gramosGrande });
-    }
     products.push({
       id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
       stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
       region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: b.imagen || '', tags: b.tags || [],
-      ingredientes: resolvedIngs
-    });
-  }
-  // Packs
-  var pkKeys = Object.keys(_sDb.packs || {});
-  for (var i = 0; i < pkKeys.length; i++) {
-    var pk = _sDb.packs[pkKeys[i]];
-    if (!pk || !pk.enTienda) continue;
-    var blendItems = pk.blendItems || [];
-    var minStock = 999999;
-    for (var j = 0; j < blendItems.length; j++) {
-      var bi2 = blendItems[j];
-      var bl2 = (_sDb.blends || {})[bi2.blendId];
-      if (!bl2) { minStock = 0; break; }
-      var st = bi2.talla === 'grande' ? (bl2.stockGrande || 0) : (bl2.stockChico || 0);
-      if (st < minStock) minStock = st;
-    }
-    if (minStock <= 0) continue;
-    products.push({
-      id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
-      precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
-      stockChico: 0, stockGrande: 0, stock: minStock,
-      region: '', uso: '', descripcion: pk.descripcion || '', imagen: pk.imagen || '', tags: [],
-      blendItems: blendItems
+      ingredientes: b.ingredientes || []
     });
   }
   return products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
@@ -151,14 +178,4 @@ function getRecetas() { return _recetas; }
 function onRecetasReady(cb) {
   if (_recetasReady) { cb(_recetas); return; }
   _recetasListeners.push(cb);
-}
-
-function hasVisiblePacks() {
-  if (!_sDb || !_sDb.packs) return false;
-  var keys = Object.keys(_sDb.packs);
-  for (var i = 0; i < keys.length; i++) {
-    var p = _sDb.packs[keys[i]];
-    if (p && p.enTienda) return true;
-  }
-  return false;
 }
