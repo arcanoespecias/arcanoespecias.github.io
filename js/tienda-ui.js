@@ -169,7 +169,7 @@ function openDetail(pid) {
     ingsHtml = '<div style="margin-top:14px"><div style="font-size:.9rem;font-weight:700;color:#5A4210;margin-bottom:6px">Ingredientes</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     for (var ii = 0; ii < p.ingredientes.length; ii++) {
       var ing = p.ingredientes[ii];
-      ingsHtml += '<span style="display:inline-block;padding:5px 12px;border-radius:20px;font-size:.82rem;background:rgba(196,148,58,0.14);color:#5A4210;border:1px solid rgba(196,148,58,0.25)">' + (ing.especiaNombre || 'Especia') + '</span>';
+      ingsHtml += '<span style="display:inline-block;padding:5px 12px;border-radius:20px;font-size:.82rem;background:rgba(196,148,58,0.14);color:#5A4210;border:1px solid rgba(196,148,58,0.25)">' + (ing.nombre || ing.especiaNombre || 'Especia') + '</span>';
     }
     ingsHtml += '</div></div>';
   }
