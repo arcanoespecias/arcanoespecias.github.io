@@ -103,6 +103,51 @@ function _injectSEO() {
     document.head.appendChild(scriptEl);
   }
 
+  // 1b) BreadcrumbList JSON-LD (site-wide)
+  var hasBreadcrumb = false;
+  for (var _bi = 0; _bi < existingLd.length; _bi++) {
+    try { var _bp = JSON.parse(existingLd[_bi].textContent); if (_bp['@type'] === 'BreadcrumbList') { hasBreadcrumb = true; break; } } catch(_be) {}
+  }
+  if (!hasBreadcrumb) {
+    var _bLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        { '@type': 'ListItem', 'position': 1, 'name': 'Inicio', 'item': SITE_URL },
+        { '@type': 'ListItem', 'position': 2, 'name': 'Catalogo de Especias y Blends', 'item': SITE_URL }
+      ]
+    };
+    var _bsEl = document.createElement('script');
+    _bsEl.type = 'application/ld+json';
+    _bsEl.textContent = JSON.stringify(_bLd);
+    document.head.appendChild(_bsEl);
+  }
+
+  // 1c) FAQ JSON-LD (site-wide)
+  var hasFaq = false;
+  for (var _fi = 0; _fi < existingLd.length; _fi++) {
+    try { var _fp = JSON.parse(existingLd[_fi].textContent); if (_fp['@type'] === 'FAQPage') { hasFaq = true; break; } } catch(_fe) {}
+  }
+
+  if (!hasFaq) {
+    var _fLd = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'mainEntity': [
+        { '@type': 'Question', 'name': '¿Qué es Arcano Especias?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Arcano Especias es una marca colombiana especializada en blends y mezclas artesanales de especias selectas de cada rincón del mundo. Creamos combinaciones únicas para comidas, infusiones y coctelería, con ingredientes 100% naturales y de alta calidad.' }},
+        { '@type': 'Question', 'name': '¿Realizan envíos a toda Colombia?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sí, Arcano Especias realiza envíos a todas las ciudades y municipios de Colombia. Los pedidos se envían una vez confirmado el pago y el tiempo de entrega varía según la ubicación.' }},
+        { '@type': 'Question', 'name': '¿Cuáles son las formas de pago aceptadas?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Aceptamos pagos mediante Nequi, transferencia bancaria a Bancolombia y otros métodos de pago disponibles. Los datos de pago se proporcionan al confirmar el pedido.' }},
+        { '@type': 'Question', 'name': '¿Qué presentaciones de productos ofrecen?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Nuestros blends y especias se ofrecen en dos presentaciones: tamaño pequeño y tamaño grande. También contamos con packs exclusivos que combinan varios productos a un precio especial.' }},
+        { '@type': 'Question', 'name': '¿Son productos naturales?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sí, todos los productos de Arcano Especias son 100% naturales. Utilizamos especias y ingredientes de alta calidad, sin aditivos artificiales ni conservantes. Cada blend es mezclado de forma artesanal.' }},
+        { '@type': 'Question', 'name': '¿Para qué se pueden usar los blends de especias?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Nuestros blends están categorizados según su uso ideal: para comidas (carnes, sopas, arroces), para infusiones (tés y bebidas calientes) y para coctelería (bebidas y cócteles). Cada blend está diseñado para realzar el sabor de tus preparaciones.' }}
+      ]
+    };
+    var _fqEl = document.createElement('script');
+    _fqEl.type = 'application/ld+json';
+    _fqEl.textContent = JSON.stringify(_fLd);
+    document.head.appendChild(_fqEl);
+  }
+
   // 2) Actualizar contenido textual en div seo-content solo si esta vacio (sin pre-render estatico)
   var seoDiv = document.getElementById('seo-content');
   if (seoDiv && !seoDiv.innerHTML.trim()) {
