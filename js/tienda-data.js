@@ -224,20 +224,12 @@ function getStoreProducts() {
   for (var pi = 0; pi < pkKeys.length; pi++) {
     var pk = _sDb.packs[pkKeys[pi]];
     if (!pk || !pk.enTienda) continue;
-    var blendItems = pk.blendItems || [];
-    var minStock = 999999;
-    for (var pj = 0; pj < blendItems.length; pj++) {
-      var pbi = blendItems[pj];
-      var pbl = _sDb.blends && _sDb.blends[pbi.blendId];
-      if (!pbl) { minStock = 0; break; }
-      var pst = pbi.talla === 'grande' ? (pbl.stockGrande || 0) : (pbl.stockChico || 0);
-      if (pst < minStock) minStock = pst;
-    }
-    if (minStock <= 0) continue;
+    var packStock = pk.stock || 0;
+    if (packStock <= 0) continue;
     products.push({
       id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
       precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
-      stockChico: 0, stockGrande: 0, stock: minStock,
+      stockChico: 0, stockGrande: 0, stock: packStock,
       region: '', uso: '', descripcion: pk.descripcion || '', imagen: pk.imagen || '', tags: pk.tags || [],
       blendItems: pk.blendItems || []
     });
