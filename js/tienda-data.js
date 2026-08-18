@@ -185,6 +185,12 @@ function submitOrder(orderData) {
   });
 }
 
+/* === CONFIG === */
+function getTiendaConfig() {
+  if (!_sDb) return {};
+  return _sDb.tiendaConfig || {};
+}
+
 function getStoreProducts() {
   if (!_sDb) return [];
   var products = [];
