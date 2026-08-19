@@ -1607,6 +1607,80 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 .text-muted { color: var(--text-muted); }
 .mt-12 { margin-top: 12px; }
 
+/* === BLEND MODAL === */
+.blend-fab-btn {
+  display: none;
+}
+.bb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 9000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.bb-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.bb-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 92%;
+  max-width: 480px;
+  max-height: 88vh;
+  background: var(--dark);
+  border: 1px solid rgba(196,148,58,0.18);
+  border-radius: var(--radius-md, 14px);
+  z-index: 9001;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.bb-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+.bb-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(196,148,58,0.12);
+  flex-shrink: 0;
+}
+.bb-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+.bb-modal-close {
+  background: none;
+  border: none;
+  color: #6B5B4E;
+  font-size: 1.6rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color var(--fast);
+}
+.bb-modal-close:hover { color: var(--gold); }
+.bb-modal-body {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
   .sidebar-btn {
@@ -1627,7 +1701,25 @@ textarea.form-input { min-height: 76px; resize: vertical; }
     top: 50%;
     transform: translateY(-50%);
   }
-  .sidebar-btn:hover { background: rgba(196,148,58,0.1); }
+  .blend-fab-btn {
+    display: flex;
+    background: rgba(196,148,58,0.12);
+    border: 1px solid rgba(196,148,58,0.25);
+    color: var(--gold);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px 10px;
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background var(--fast), transform var(--fast);
+    position: absolute;
+    left: 52px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .blend-fab-btn:hover { background: rgba(196,148,58,0.22); transform: translateY(-50%) scale(1.08); }
   .sidebar-close {
     display: block;
     background: none;
