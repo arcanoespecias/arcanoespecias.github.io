@@ -390,30 +390,87 @@ function renderRecetas() {
   var h = '';
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
-    var ingredientes = '';
-    if (r.ingredientes && r.ingredientes.length) {
-      ingredientes = '<div class="recipe-sb-label">Ingredientes</div><ul class="recipe-sb-list">';
-      for (var j = 0; j < r.ingredientes.length; j++) ingredientes += '<li>' + _linkArcanoProducts(r.ingredientes[j]) + '</li>';
-      ingredientes += '</ul>';
-    }
-    var pasos = '';
-    if (r.pasos && r.pasos.length) {
-      pasos = '<div class="recipe-sb-label">Preparaci\u00f3n</div><ol class="recipe-sb-steps">';
-      for (var k = 0; k < r.pasos.length; k++) pasos += '<li>' + _linkArcanoProducts(r.pasos[k]) + '</li>';
-      pasos += '</ol>';
-    }
-    h += '<div class="recipe-card-sb" id="recipe-' + r._key + '">' +
-      '<div class="recipe-card-sb-header" onclick="toggleRecipe(\'' + r._key + '\')"><div>' +
+    var diffColor = r.dificultad === 'Facil' ? '#4a8a3e' : (r.dificultad === 'Dificil' ? '#a63d3d' : '#c4943a');
+    h += '<div class="recipe-card-sb" onclick="openRecipeModal(\'' + r._key + '\')">' +
+      '<div class="recipe-card-sb-header"><div>' +
       '<div class="recipe-card-sb-title">' + (r.titulo || 'Sin t\u00edtulo') + '</div>' +
-      '<div class="recipe-card-sb-meta">' + (r.tiempo || '') + (r.porciones ? ' \u00b7 ' + r.porciones + ' porciones' : '') + '</div></div>' +
-      '<div class="recipe-card-sb-arrow">\u25BC</div></div>' +
-      '<div class="recipe-card-sb-body"><div class="recipe-card-sb-inner">' +
-      (r.descripcion ? '<p class="recipe-sb-desc">' + _linkArcanoProducts(r.descripcion) + '</p>' : '') +
-      ingredientes + pasos +
-      '<button class="recipe-share-btn" onclick="event.stopPropagation();compartirReceta(\'' + r._key + '\')">Compartir receta</button>' +
-      '</div></div></div>';
+      '<div class="recipe-card-sb-meta">' +
+        '<span class="recipe-sb-diff" style="color:' + diffColor + '">' + (r.dificultad || '') + '</span>' +
+        (r.tiempo ? ' \u00b7 ' + r.tiempo : '') + (r.porciones ? ' \u00b7 ' + r.porciones + ' porciones' : '') +
+      '</div></div>' +
+      '<div class="recipe-card-sb-arrow">\u203A</div></div>' +
+      '</div>';
   }
   container.innerHTML = h;
+}
+function openRecipeModal(key) {
+  var recetas = getRecetas();
+  var r = null;
+  for (var i = 0; i < recetas.length; i++) { if (recetas[i]._key === key) { r = recetas[i]; break; } }
+  if (!r) return;
+
+  var diffColor = r.dificultad === 'Facil' ? '#4a8a3e' : (r.dificultad === 'Dificil' ? '#a63d3d' : '#c4943a');
+  var catIcon = r.categoria === 'Infusiones' ? '\u2615' : (r.categoria === 'Cocteleria' ? '\ud83c\udf78' : '\ud83c\udf73');
+
+  var ingredientesHtml = '';
+  if (r.ingredientes && r.ingredientes.length) {
+    ingredientesHtml = '<div class="rm-section"><div class="rm-label">Ingredientes</div><ul class="rm-ingredients">';
+    for (var j = 0; j < r.ingredientes.length; j++) ingredientesHtml += '<li>' + _linkArcanoProducts(r.ingredientes[j]) + '</li>';
+    ingredientesHtml += '</ul></div>';
+  }
+
+  var pasosHtml = '';
+  if (r.pasos && r.pasos.length) {
+    pasosHtml = '<div class="rm-section"><div class="rm-label">Preparaci\u00f3n</div><ol class="rm-steps">';
+    for (var k = 0; k < r.pasos.length; k++) pasosHtml += '<li>' + _linkArcanoProducts(r.pasos[k]) + '</li>';
+    pasosHtml += '</ol></div>';
+  }
+
+  var blendHtml = '';
+  if (r.productos_usados && r.productos_usados.length > 0) {
+    blendHtml = '<div class="rm-section rm-blend-section"><div class="rm-label">Producto Arcano</div><div class="rm-blends">';
+    for (var b = 0; b < r.productos_usados.length; b++) {
+      var bName = r.productos_usados[b];
+      var bPid = null;
+      var allProds = getStoreProducts();
+      for (var pi = 0; pi < allProds.length; pi++) {
+        if (allProds[pi].nombre && allProds[pi].nombre.toLowerCase() === bName.toLowerCase()) { bPid = allProds[pi].id; break; }
+      }
+      if (bPid) {
+        blendHtml += '<span class="rm-blend-chip arcano-link" onclick="event.stopPropagation();document.getElementById(\'recipe-overlay\').remove();openDetail(' + bPid + ')">' + bName + '</span>';
+      } else {
+        blendHtml += '<span class="rm-blend-chip rm-blend-chip-static">' + bName + '</span>';
+      }
+    }
+    blendHtml += '</div></div>';
+  }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'detail-overlay';
+  overlay.id = 'recipe-overlay';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  var html = '<div class="recipe-modal">' +
+    '<button class="detail-close" onclick="document.getElementById(\'recipe-overlay\').remove()">&times;</button>' +
+    '<div class="recipe-modal-body">' +
+      '<div class="rm-header">' +
+        '<span class="rm-cat-badge">' + catIcon + ' ' + (r.categoria || '') + '</span>' +
+        '<h2 class="rm-title">' + (r.titulo || 'Sin t\u00edtulo') + '</h2>' +
+        '<div class="rm-meta">' +
+          '<span class="rm-diff" style="color:' + diffColor + '">' + (r.dificultad || '') + '</span>' +
+          (r.tiempo ? '<span class="rm-meta-item">\u23f1 ' + r.tiempo + '</span>' : '') +
+          (r.porciones ? '<span class="rm-meta-item">\ud83c\udf5a ' + r.porciones + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      (r.descripcion ? '<p class="rm-desc">' + _linkArcanoProducts(r.descripcion) + '</p>' : '') +
+      blendHtml +
+      ingredientesHtml +
+      pasosHtml +
+      '<button class="recipe-share-btn" onclick="compartirReceta(\'' + r._key + '\')">Compartir receta</button>' +
+    '</div></div>';
+
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
 }
 function toggleRecipe(key) {
   var card = document.getElementById('recipe-' + key);
@@ -516,3 +573,4 @@ document.addEventListener('DOMContentLoaded', function() {
     renderProducts(currentFilter);
   });
 });
+
