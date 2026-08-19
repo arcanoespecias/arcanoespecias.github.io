@@ -367,13 +367,22 @@ function _renderBlendSidebarIntro() {
     '</div>';
 }
 function openBlendModal() {
-  document.getElementById('bb-modal-overlay').classList.add('open');
+  var panel = document.getElementById('sidebar-panel');
+  var overlay = document.getElementById('bb-modal-overlay');
+  if (panel && panel.classList.contains('open')) {
+    overlay.style.left = panel.offsetWidth + 'px';
+  } else {
+    overlay.style.left = '';
+  }
+  overlay.classList.add('open');
   document.getElementById('bb-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
   renderBlendBuilder();
 }
 function closeBlendModal() {
-  document.getElementById('bb-modal-overlay').classList.remove('open');
+  var overlay = document.getElementById('bb-modal-overlay');
+  overlay.classList.remove('open');
+  overlay.style.left = '';
   document.getElementById('bb-modal').classList.remove('open');
   document.body.style.overflow = '';
 }
