@@ -224,10 +224,9 @@ function renderCartModal() {
       var c = cart[i];
       h += '<div class="cart-item">' +
         '<div class="cart-item-info"><div class="cart-item-name">' + c.nombre + '</div>' +
-        '<div class="cart-item-detail">' + ((c.talla === 'pack' ? 'Pack' : (c.talla === 'grande' ? 'Grande' : 'Pequeño')) + ' \u00b7  + ' c/u') + '</div>' +
+        '<div class="cart-item-detail">' + ((c.talla === 'pack' ? 'Pack' : (c.talla === 'grande' ? 'Grande' : 'Pequeño')) + ' \u00b7 $' + c.precio.toLocaleString() + ' c/u') + '</div>' +
         (c.customBlend ? _renderCartBlendDetail(c.customBlend) : '') +
-        '</div>' +
-        '<div class="cart-item-qty"><button onclick="changeQty(' + i + ',-1)">-</button><span>' + c.qty + '</span><button onclick="changeQty(' + i + ',1)">+</button></div>' +
+        '</div>' +        '<div class="cart-item-qty"><button onclick="changeQty(' + i + ',-1)">-</button><span>' + c.qty + '</span><button onclick="changeQty(' + i + ',1)">+</button></div>' +
         '<div class="cart-item-price">$' + (c.precio * c.qty).toLocaleString() + '</div>' +
         '<button class="cart-item-rm" onclick="removeFromCart(' + i + ')">&times;</button></div>';
     }
