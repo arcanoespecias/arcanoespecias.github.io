@@ -806,11 +806,11 @@
   <div class="tienda-body">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="sidebar-panel" id="sidebar-panel">
-    <div class="sidebar-header"><h3>Recetas</h3><button class="sidebar-close" onclick="closeSidebar()" aria-label="Cerrar recetas">&times;</button></div>
-    <div class="sidebar-tabs">
+    <div class="sidebar-header"><div class="sidebar-main-tabs"><button class="sidebar-main-tab active" data-section="recetas" onclick="switchSidebarSection('recetas')">Recetas</button><button class="sidebar-main-tab" data-section="blend" onclick="switchSidebarSection('blend')">Tu Blend</button></div><button class="sidebar-close" onclick="closeSidebar()" aria-label="Cerrar panel">&times;</button></div>
+    <div class="sidebar-tabs" id="receta-cats-tabs">
       <button class="sidebar-tab active" data-cat="Comida" onclick="selectRecetaCat('Comida')">Comida</button>
       <button class="sidebar-tab" data-cat="Infusiones" onclick="selectRecetaCat('Infusiones')">Infusiones</button>
-      <button class="sidebar-tab" data-cat="Cocteleria" onclick="selectRecetaCat('Cocteleria')">Cocteleria</button><button class="sidebar-tab sidebar-tab-blend" data-cat="blend-builder" onclick="selectRecetaCat('blend-builder')">Mi Blend</button>
+      <button class="sidebar-tab" data-cat="Cocteleria" onclick="selectRecetaCat('Cocteleria')">Coctelería</button>
     </div>
     <div class="sidebar-content" id="sidebar-content"><div class="sidebar-empty">Cargando...</div></div>
     <div class="sidebar-brand" id="sidebar-brand"></div>
