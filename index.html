@@ -794,14 +794,12 @@
 <body>
   <div class="tienda-layout" id="tienda-layout">
   <header class="store-header">
-    <button class="sidebar-btn" onclick="toggleSidebar()" aria-label="Menu recetas">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <div class="store-logo"><img src="icons/logo.png" alt="Arcano Especias" width="160" height="50"></div>
-    <div class="store-header-text">
-      <h1>ARCANO</h1>
-      <div class="sub">Especias &amp; Blends</div>
-    </div>
+    <nav class="store-nav" id="store-nav">
+      <button class="nav-link active" data-nav="tienda" onclick="navigateTo('tienda')">Tienda</button>
+      <button class="nav-link" data-nav="recetas" onclick="navigateTo('recetas')">Recetas</button>
+      <button class="nav-link" data-nav="blend" onclick="navigateTo('blend')">Tu Blend</button>
+      <button class="nav-link" data-nav="faq" onclick="navigateTo('faq')">FAQ</button>
+    </nav>
   </header>
   <div class="tienda-body">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -843,6 +841,41 @@
       <div class="empty-state"><p>Cargando productos...</p></div>
     </div>
   </main>
+  <div class="faq-page" id="faq-page" style="display:none">
+    <div class="faq-container">
+      <h2 class="faq-title">Preguntas Frecuentes</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Cuáles son los tiempos de envío?</button>
+          <div class="faq-a"><p>Realizamos envíos a toda Colombia. El tiempo estimado de entrega es de 2 a 5 días hábiles dependiendo de la ciudad. Para Bogotá y ciudades principales, el envío suele llegar en 1-2 días hábiles.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Qué medios de pago aceptan?</button>
+          <div class="faq-a"><p>Aceptamos pagos por Nequi, Daviplata, transferencia bancaria y efectivo a través de puntos autorizados. Al confirmar tu pedido te enviamos los datos de pago correspondientes.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Cuál es la diferencia entre frasco pequeño y grande?</button>
+          <div class="faq-a"><p>El frasco pequeño contiene aproximadamente 30-40g de producto, ideal para probar o para uso ocasional. El frasco grande contiene entre 80-100g, perfecto para uso frecuente en la cocina. Ambos vienen sellados al vacío para conservar la frescura.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Cómo funciona Tu Blend personalizado?</button>
+          <div class="faq-a"><p>En la sección Tu Blend puedes crear tu propia mezcla de especias. Eliges las especias que quieras, les asignas un porcentaje hasta completar el 100%, seleccionas el tamaño del frasco y lo agregas a tu pedido. Preparamos tu mezcla artesanalmente al momento.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Las especias son naturales?</button>
+          <div class="faq-a"><p>Sí, todas nuestras especias son 100% naturales, sin aditivos artificiales, colorantes ni conservantes. Seleccionamos ingredientes de la más alta calidad y los procesamos artesanalmente para preservar su sabor y aroma.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Puedo pedir por WhatsApp?</button>
+          <div class="faq-a"><p>¡Claro que sí! Puedes escribirnos por WhatsApp y te ayudamos con tu pedido. También puedes hacer tu pedido directamente por aquí en la tienda y nosotros lo confirmamos por mensaje.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">¿Hacen envíos a todo el país?</button>
+          <div class="faq-a"><p>Sí, realizamos envíos a toda Colombia a través de transportadoras especializadas. El costo del envío se calcula según la ciudad de destino y se muestra al momento de confirmar tu pedido.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
   </div><!-- /tienda-body -->
   </div><!-- /tienda-layout -->
 
