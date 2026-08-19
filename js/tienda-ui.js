@@ -367,7 +367,7 @@ function _getEspeciasDisponibles() {
   var products = getStoreProducts();
   var especias = [];
   for (var i = 0; i < products.length; i++) {
-    if (products[i].tipo === 'especia') especias.push(products[i]);
+    if (products[i].tipo === 'especia' && products[i].enBlend !== false && (products[i].stockPala || 0) > 0) especias.push(products[i]);
   }
   especias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
   return especias;
@@ -465,7 +465,7 @@ function renderBlendBuilder() {
       var safeName = availableEspecias[a].nombre.replace(/'/g, "\\'");
       h += '<div class="bb-dropdown-item" data-name="' + availableEspecias[a].nombre + '" onclick="_bbAddSpice(\'' + safeName + '\')">';
       h += '<span class="bb-dd-name">' + availableEspecias[a].nombre + '</span>';
-      if (availableEspecias[a].region) h += '<span class="bb-dd-region">' + availableEspecias[a].region + '</span>';
+      h += '<span class="bb-dd-region">' + (availableEspecias[a].stockPala || 0) + 'g</span>';
       h += '</div>';
     }
     h += '</div></div>';
