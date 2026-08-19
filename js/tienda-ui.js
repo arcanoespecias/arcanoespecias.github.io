@@ -364,10 +364,15 @@ function selectRecetaCat(cat) {
 }
 /* === BLEND BUILDER === */
 function _getEspeciasDisponibles() {
-  var products = getStoreProducts();
+  if (!_sDb || !_sDb.especias) return [];
   var especias = [];
-  for (var i = 0; i < products.length; i++) {
-    if (products[i].tipo === 'especia' && products[i].enBlend !== false && (products[i].stockPala || 0) > 0) especias.push(products[i]);
+  var items = _sDb.especias;
+  for (var i = 0; i < items.length; i++) {
+    var e = items[i];
+    if (!e || !e.nombre) continue;
+    if ((e.stockBolsa || 0) > 0) {
+      especias.push({ nombre: e.nombre, stockPala: e.stockBolsa || 0, id: e.id });
+    }
   }
   especias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
   return especias;
