@@ -313,6 +313,7 @@ function finishOrder() {
 /* === SIDEBAR === */
 var _sidebarOpen = true;
 var _currentRecetaCat = 'Comida';
+var _currentSidebarSection = 'recetas';
 var _blendBuilderState = { nombre: '', talla: 'chico', especias: [], showDropdown: false };
 var _SOCIAL_LINKS = [
   { name: 'Facebook', url: 'https://facebook.com/arcanoespecias', svg: '<svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>' },
@@ -342,17 +343,23 @@ function closeSidebar() {
   panel.classList.remove('open');
   overlay.classList.remove('open');
 }
+function switchSidebarSection(section) {
+  _currentSidebarSection = section;
+  var mainTabs = document.querySelectorAll('.sidebar-main-tab');
+  for (var i = 0; i < mainTabs.length; i++) mainTabs[i].classList.toggle('active', mainTabs[i].dataset.section === section);
+  var catTabs = document.getElementById('receta-cats-tabs');
+  if (section === 'blend') {
+    if (catTabs) catTabs.style.display = 'none';
+    renderBlendBuilder();
+  } else {
+    if (catTabs) catTabs.style.display = 'flex';
+    renderRecetas();
+  }
+}
 function selectRecetaCat(cat) {
   var tabs = document.querySelectorAll('.sidebar-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].dataset.cat === cat);
-  var hdr = document.querySelector('.sidebar-header h3');
-  if (cat === 'blend-builder') {
-    if (hdr) hdr.textContent = 'Tu Blend';
-    renderBlendBuilder();
-    return;
-  }
   _currentRecetaCat = cat;
-  if (hdr) hdr.textContent = 'Recetas';
   renderRecetas();
 }
 /* === BLEND BUILDER === */
