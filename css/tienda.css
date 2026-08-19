@@ -1607,6 +1607,95 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 .text-muted { color: var(--text-muted); }
 .mt-12 { margin-top: 12px; }
 
+/* === STORE NAV === */
+.store-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 auto;
+}
+.nav-link {
+  background: none;
+  border: none;
+  color: var(--text-muted, #8a7a6a);
+  font-size: .88rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: var(--radius-xs, 6px);
+  transition: color var(--fast), background var(--fast);
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+.nav-link:hover { color: var(--gold, #c4943a); background: rgba(196,148,58,0.06); }
+.nav-link.active { color: var(--gold, #c4943a); background: rgba(196,148,58,0.10); }
+
+/* === FAQ PAGE === */
+.faq-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+.faq-title {
+  color: var(--gold, #c4943a);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 24px;
+  text-align: center;
+}
+.faq-list { display: flex; flex-direction: column; gap: 8px; }
+.faq-item {
+  border: 1px solid rgba(196,148,58,0.12);
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  transition: border-color var(--fast);
+}
+.faq-item.open { border-color: rgba(196,148,58,0.25); }
+.faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  color: var(--text, #ece0d0);
+  font-size: .92rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  line-height: 1.4;
+  gap: 12px;
+}
+.faq-q::after {
+  content: '+';
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: var(--gold, #c4943a);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.faq-item.open .faq-q::after {
+  content: '\2212';
+}
+.faq-q:hover { background: rgba(196,148,58,0.04); }
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.faq-item.open .faq-a {
+  max-height: 300px;
+}
+.faq-a p {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: var(--text-secondary, #9a8a78);
+  font-size: .86rem;
+  line-height: 1.65;
+}
+
 /* === BLEND MODAL === */
 .blend-fab-btn {
   display: flex;
@@ -1709,6 +1798,8 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
+  .store-nav { gap: 0; }
+  .nav-link { padding: 8px 10px; font-size: .8rem; }
   .sidebar-btn {
     display: flex;
     background: none;
