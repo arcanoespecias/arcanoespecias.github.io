@@ -16,7 +16,10 @@ function navSidebar(page) {
   var container = document.getElementById('sidebar-content');
   if (page === 'tienda') {
     if (catTabs) catTabs.style.display = 'none';
-    closeSidebar();
+    if (container) container.innerHTML = '';
+    if (window.innerWidth <= 768) {
+      closeSidebar();
+    }
     return;
   }
   if (page === 'recetas') {
