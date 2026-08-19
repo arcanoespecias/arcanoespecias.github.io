@@ -344,17 +344,26 @@ function closeSidebar() {
   overlay.classList.remove('open');
 }
 function switchSidebarSection(section) {
+  if (section === 'blend') {
+    closeSidebar();
+    setTimeout(openBlendModal, 200);
+    return;
+  }
   _currentSidebarSection = section;
   var mainTabs = document.querySelectorAll('.sidebar-main-tab');
   for (var i = 0; i < mainTabs.length; i++) mainTabs[i].classList.toggle('active', mainTabs[i].dataset.section === section);
-  var catTabs = document.getElementById('receta-cats-tabs');
-  if (section === 'blend') {
-    if (catTabs) catTabs.style.display = 'none';
-    renderBlendBuilder();
-  } else {
-    if (catTabs) catTabs.style.display = 'flex';
-    renderRecetas();
-  }
+  renderRecetas();
+}
+function openBlendModal() {
+  document.getElementById('bb-modal-overlay').classList.add('open');
+  document.getElementById('bb-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderBlendBuilder();
+}
+function closeBlendModal() {
+  document.getElementById('bb-modal-overlay').classList.remove('open');
+  document.getElementById('bb-modal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 function selectRecetaCat(cat) {
   var tabs = document.querySelectorAll('.sidebar-tab');
@@ -401,7 +410,7 @@ function _bbGetTotal() {
 }
 
 function renderBlendBuilder() {
-  var container = document.getElementById('sidebar-content');
+  var container = document.getElementById('bb-modal-body');
   if (!container) return;
 
   var especias = _getEspeciasDisponibles();
