@@ -8,43 +8,47 @@ function getCartCount() { var c = 0; for (var i = 0; i < cart.length; i++) c += 
 
 function getCartTotal() { var t = 0; for (var i = 0; i < cart.length; i++) t += cart[i].precio * cart[i].qty; return t; }
 
-function navigateTo(page) {
+function navSidebar(page) {
   _currentPage = page;
-  var links = document.querySelectorAll('.nav-link');
-  for (var i = 0; i < links.length; i++) links[i].classList.toggle('active', links[i].dataset.nav === page);
-  var mainEl = document.querySelector('.tienda-body > main');
-  var faqEl = document.getElementById('faq-page');
-  var filtersEl = document.getElementById('filters');
-  var heroEl = document.querySelector('.hero');
-  closeSidebar();
+  var btns = document.querySelectorAll('.sidebar-nav-btn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i].dataset.nav === page);
+  var catTabs = document.getElementById('receta-cats-tabs');
+  var container = document.getElementById('sidebar-content');
   if (page === 'tienda') {
-    if (mainEl) mainEl.style.display = '';
-    if (filtersEl) filtersEl.style.display = '';
-    if (heroEl) heroEl.style.display = '';
-    if (faqEl) faqEl.style.display = 'none';
-  } else if (page === 'recetas') {
-    if (mainEl) mainEl.style.display = 'none';
-    if (filtersEl) filtersEl.style.display = 'none';
-    if (heroEl) heroEl.style.display = 'none';
-    if (faqEl) faqEl.style.display = 'none';
-    _currentSidebarSection = 'recetas';
-    switchSidebarSection('recetas');
-    toggleSidebar();
-  } else if (page === 'blend') {
-    if (mainEl) mainEl.style.display = 'none';
-    if (filtersEl) filtersEl.style.display = 'none';
-    if (heroEl) heroEl.style.display = 'none';
-    if (faqEl) faqEl.style.display = 'none';
-    _currentSidebarSection = 'blend';
-    switchSidebarSection('blend');
-    toggleSidebar();
-  } else if (page === 'faq') {
-    if (mainEl) mainEl.style.display = 'none';
-    if (filtersEl) filtersEl.style.display = 'none';
-    if (heroEl) heroEl.style.display = 'none';
-    if (faqEl) faqEl.style.display = '';
+    if (catTabs) catTabs.style.display = 'none';
+    closeSidebar();
+    return;
   }
-  window.scrollTo(0, 0);
+  if (page === 'recetas') {
+    if (catTabs) catTabs.style.display = 'flex';
+    renderRecetas();
+  } else if (page === 'blend') {
+    if (catTabs) catTabs.style.display = 'none';
+    _renderBlendSidebarIntro();
+  } else if (page === 'faq') {
+    if (catTabs) catTabs.style.display = 'none';
+    _renderFaqSidebar();
+  }
+}
+
+function _renderFaqSidebar() {
+  var container = document.getElementById('sidebar-content');
+  if (!container) return;
+  var faqs = [
+    {q: '\u00bfCu\u00e1les son los tiempos de env\u00edo?', a: 'Realizamos env\u00edos a toda Colombia. El tiempo estimado de entrega es de 2 a 5 d\u00edas h\u00e1biles dependiendo de la ciudad.'},
+    {q: '\u00bfQu\u00e9 medios de pago aceptan?', a: 'Aceptamos pagos por Nequi, Daviplata, transferencia bancaria y efectivo a trav\u00e9s de puntos autorizados.'},
+    {q: '\u00bfCu\u00e1l es la diferencia entre frasco peque\u00f1o y grande?', a: 'El frasco peque\u00f1o contiene 30-40g, ideal para probar. El grande contiene 80-100g, perfecto para uso frecuente. Ambos vienen sellados al vac\u00edo.'},
+    {q: '\u00bfC\u00f3mo funciona Tu Blend personalizado?', a: 'Eliges las especias, les asignas un porcentaje hasta completar el 100%, seleccionas el tama\u00f1o del frasco y lo agregas a tu pedido. Lo preparamos artesanalmente.'},
+    {q: '\u00bfLas especias son naturales?', a: 'S\u00ed, todas nuestras especias son 100% naturales, sin aditivos artificiales, colorantes ni conservantes.'},
+    {q: '\u00bfPuedo pedir por WhatsApp?', a: '\u00a1Claro que s\u00ed! Puedes escribirnos por WhatsApp y te ayudamos con tu pedido.'},
+    {q: '\u00bfHacen env\u00edos a todo el pa\u00eds?', a: 'S\u00ed, env\u00edos a toda Colombia a trav\u00e9s de transportadoras especializadas. El costo se calcula seg\u00fan la ciudad de destino.'}
+  ];
+  var h = '<div class="sidebar-faq">';
+  for (var i = 0; i < faqs.length; i++) {
+    h += '<div class="sidebar-faq-item" onclick="this.classList.toggle(\'open\')"><div class="sidebar-faq-q">' + faqs[i].q + '<span class="sidebar-faq-icon">+</span></div><div class="sidebar-faq-a"><p>' + faqs[i].a + '</p></div></div>';
+  }
+  h += '</div>';
+  container.innerHTML = h;
 }
 
 function toggleFaq(btn) {
@@ -390,19 +394,6 @@ function closeSidebar() {
   panel.classList.add('closed');
   panel.classList.remove('open');
   overlay.classList.remove('open');
-}
-function switchSidebarSection(section) {
-  _currentSidebarSection = section;
-  var mainTabs = document.querySelectorAll('.sidebar-main-tab');
-  for (var i = 0; i < mainTabs.length; i++) mainTabs[i].classList.toggle('active', mainTabs[i].dataset.section === section);
-  var catTabs = document.getElementById('receta-cats-tabs');
-  if (section === 'blend') {
-    if (catTabs) catTabs.style.display = 'none';
-    _renderBlendSidebarIntro();
-  } else {
-    if (catTabs) catTabs.style.display = 'flex';
-    renderRecetas();
-  }
 }
 function _renderBlendSidebarIntro() {
   var container = document.getElementById('sidebar-content');
