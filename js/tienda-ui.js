@@ -1,11 +1,59 @@
 /* ===================== ARCANO TIENDA — UI ===================== */
 var cart = JSON.parse(localStorage.getItem('arcano_cart') || '[]');
+var _currentPage = 'tienda';
 
 function saveCart() { localStorage.setItem('arcano_cart', JSON.stringify(cart)); }
 
 function getCartCount() { var c = 0; for (var i = 0; i < cart.length; i++) c += cart[i].qty; return c; }
 
 function getCartTotal() { var t = 0; for (var i = 0; i < cart.length; i++) t += cart[i].precio * cart[i].qty; return t; }
+
+function navigateTo(page) {
+  _currentPage = page;
+  var links = document.querySelectorAll('.nav-link');
+  for (var i = 0; i < links.length; i++) links[i].classList.toggle('active', links[i].dataset.nav === page);
+  var mainEl = document.querySelector('.tienda-body > main');
+  var faqEl = document.getElementById('faq-page');
+  var filtersEl = document.getElementById('filters');
+  var heroEl = document.querySelector('.hero');
+  closeSidebar();
+  if (page === 'tienda') {
+    if (mainEl) mainEl.style.display = '';
+    if (filtersEl) filtersEl.style.display = '';
+    if (heroEl) heroEl.style.display = '';
+    if (faqEl) faqEl.style.display = 'none';
+  } else if (page === 'recetas') {
+    if (mainEl) mainEl.style.display = 'none';
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (heroEl) heroEl.style.display = 'none';
+    if (faqEl) faqEl.style.display = 'none';
+    _currentSidebarSection = 'recetas';
+    switchSidebarSection('recetas');
+    toggleSidebar();
+  } else if (page === 'blend') {
+    if (mainEl) mainEl.style.display = 'none';
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (heroEl) heroEl.style.display = 'none';
+    if (faqEl) faqEl.style.display = 'none';
+    _currentSidebarSection = 'blend';
+    switchSidebarSection('blend');
+    toggleSidebar();
+  } else if (page === 'faq') {
+    if (mainEl) mainEl.style.display = 'none';
+    if (filtersEl) filtersEl.style.display = 'none';
+    if (heroEl) heroEl.style.display = 'none';
+    if (faqEl) faqEl.style.display = '';
+  }
+  window.scrollTo(0, 0);
+}
+
+function toggleFaq(btn) {
+  var item = btn.parentElement;
+  var isOpen = item.classList.contains('open');
+  var items = document.querySelectorAll('.faq-item');
+  for (var i = 0; i < items.length; i++) items[i].classList.remove('open');
+  if (!isOpen) item.classList.add('open');
+}
 
 function _showCartToast(nombre) {
   var existing = document.getElementById('cart-toast');
