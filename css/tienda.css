@@ -235,6 +235,10 @@ main {
 }
 
 /* === PRODUCT CARD === */
+
+.product-card { border: 1.5px solid var(--border); }
+.card-img-wrap { background: #EDE5D8; }
+.product-card:hover { border-color: var(--gold); }
 .product-card {
   background: var(--bg-card);
   border-radius: var(--radius);
