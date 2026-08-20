@@ -275,10 +275,10 @@ main {
 .card-type-badge.blend { background: rgba(196,148,58,0.9); color: #fff; }
 .card-type-badge.especia { background: rgba(74,124,89,0.9); color: #fff; }
 .card-type-badge.pack { background: rgba(44,24,16,0.85); color: #F5E6D0; }
-.card-body { padding: 16px 18px 18px; }
+.card-body { padding: 16px 18px 18px; background: #F0E4D0; }
 .card-name {
   font-family: var(--font-display); font-size: 1.05rem; font-weight: 600;
-  color: var(--text); margin-bottom: 4px;
+  color: #1E120A; margin-bottom: 4px;
   line-height: 1.3;
 }
 .card-meta {
@@ -287,8 +287,9 @@ main {
 .card-prices { display: flex; gap: 8px; }
 .price-btn {
   flex: 1; padding: 10px 8px; border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border);
-  text-align: center; transition: all 0.2s var(--ease);
+  border: 1.5px solid #D4C4AC;
+  text-align: center;
+  background: #FAF6EF; transition: all 0.2s var(--ease);
   background: transparent;
 }
 .price-btn:hover { border-color: var(--gold); background: var(--gold-light); }
