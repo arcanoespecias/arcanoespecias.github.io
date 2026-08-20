@@ -8,36 +8,76 @@ function getCartCount() { var c = 0; for (var i = 0; i < cart.length; i++) c += 
 
 function getCartTotal() { var t = 0; for (var i = 0; i < cart.length; i++) t += cart[i].precio * cart[i].qty; return t; }
 
-function navSidebar(page) {
+function navigateTo(page) {
   _currentPage = page;
-  var btns = document.querySelectorAll('.sidebar-nav-btn');
+  var btns = document.querySelectorAll('.nav-link');
   for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i].dataset.nav === page);
+  var pages = {tienda:'page-tienda', recetas:'page-recetas', blend:'page-blend', faq:'page-faq'};
+  for (var key in pages) {
+    var el = document.getElementById(pages[key]);
+    if (el) el.style.display = (key === page) ? '' : 'none';
+  }
   var catTabs = document.getElementById('receta-cats-tabs');
   var container = document.getElementById('sidebar-content');
+  var panel = document.getElementById('sidebar-panel');
+  var overlay = document.getElementById('sidebar-overlay');
   if (page === 'tienda') {
     if (catTabs) catTabs.style.display = 'none';
     if (container) container.innerHTML = '';
-    if (window.innerWidth <= 768) {
-      closeSidebar();
-    }
+    _sidebarOpen = false;
+    panel.classList.add('closed');
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
     return;
+  }
+  _sidebarOpen = true;
+  if (window.innerWidth <= 768) {
+    panel.classList.add('open');
+    panel.classList.remove('closed');
+    overlay.classList.add('open');
+  } else {
+    panel.classList.remove('closed');
+    panel.classList.remove('open');
   }
   if (page === 'recetas') {
     if (catTabs) catTabs.style.display = 'flex';
     renderRecetas();
+    var rp = document.getElementById('page-recetas');
+    if (rp && rp.innerHTML.indexOf('recipe-page') < 0) {
+      rp.innerHTML = '<div class="page-placeholder"><p>Selecciona una receta del panel</p></div>';
+    }
   } else if (page === 'blend') {
     if (catTabs) catTabs.style.display = 'none';
     _renderBlendSidebarIntro();
+    renderBlendBuilder();
   } else if (page === 'faq') {
     if (catTabs) catTabs.style.display = 'none';
-    _renderFaqSidebar();
+    _renderFaqSidebarText();
+    _renderFaqPage();
   }
 }
 
-function _renderFaqSidebar() {
+function openSidebar() {
+  _sidebarOpen = true;
+  var panel = document.getElementById('sidebar-panel');
+  var overlay = document.getElementById('sidebar-overlay');
+  if (window.innerWidth <= 768) {
+    panel.classList.add('open');
+    panel.classList.remove('closed');
+    overlay.classList.add('open');
+  } else {
+    panel.classList.remove('closed');
+  }
+}
+
+function _renderFaqSidebarText() {
   var container = document.getElementById('sidebar-content');
   if (!container) return;
-  var faqs = [
+  container.innerHTML = '<div style="padding:8px 0"><p style="color:var(--text-secondary);font-size:.88rem;line-height:1.6;margin:0 0 10px">Encuentra aqui las respuestas a las preguntas mas frecuentes sobre nuestros productos, envios y formas de pago.</p><p style="color:var(--text-muted);font-size:.82rem;line-height:1.5;margin:0">Si no encuentras lo que buscas, escribenos por WhatsApp y te ayudamos con gusto.</p></div>';
+}
+
+
+var _faqData = [
     {q: '\u00bfCu\u00e1les son los tiempos de env\u00edo?', a: 'Realizamos env\u00edos a toda Colombia. El tiempo estimado de entrega es de 2 a 5 d\u00edas h\u00e1biles dependiendo de la ciudad.'},
     {q: '\u00bfQu\u00e9 medios de pago aceptan?', a: 'Aceptamos pagos por Nequi, Daviplata, transferencia bancaria y efectivo a trav\u00e9s de puntos autorizados.'},
     {q: '\u00bfCu\u00e1l es la diferencia entre frasco peque\u00f1o y grande?', a: 'El frasco peque\u00f1o contiene 30-40g, ideal para probar. El grande contiene 80-100g, perfecto para uso frecuente. Ambos vienen sellados al vac\u00edo.'},
@@ -46,21 +86,20 @@ function _renderFaqSidebar() {
     {q: '\u00bfPuedo pedir por WhatsApp?', a: '\u00a1Claro que s\u00ed! Puedes escribirnos por WhatsApp y te ayudamos con tu pedido.'},
     {q: '\u00bfHacen env\u00edos a todo el pa\u00eds?', a: 'S\u00ed, env\u00edos a toda Colombia a trav\u00e9s de transportadoras especializadas. El costo se calcula seg\u00fan la ciudad de destino.'}
   ];
-  var h = '<div class="sidebar-faq">';
-  for (var i = 0; i < faqs.length; i++) {
-    h += '<div class="sidebar-faq-item" onclick="this.classList.toggle(\'open\')"><div class="sidebar-faq-q">' + faqs[i].q + '<span class="sidebar-faq-icon">+</span></div><div class="sidebar-faq-a"><p>' + faqs[i].a + '</p></div></div>';
+
+function _renderFaqPage() {
+  var el = document.getElementById('page-faq');
+  if (!el) return;
+  var h = '<div class="page-faq"><h2 class="page-faq-title">Preguntas Frecuentes</h2>';
+  for (var i = 0; i < _faqData.length; i++) {
+    h += '<div class="page-faq-item" onclick="this.classList.toggle(\'open\')"><div class="page-faq-q">' + _faqData[i].q + '<span class="page-faq-icon">+</span></div><div class="page-faq-a"><p>' + _faqData[i].a + '</p></div></div>';
   }
   h += '</div>';
-  container.innerHTML = h;
+  el.innerHTML = h;
 }
 
-function toggleFaq(btn) {
-  var item = btn.parentElement;
-  var isOpen = item.classList.contains('open');
-  var items = document.querySelectorAll('.faq-item');
-  for (var i = 0; i < items.length; i++) items[i].classList.remove('open');
-  if (!isOpen) item.classList.add('open');
-}
+
+
 
 function _showCartToast(nombre) {
   var existing = document.getElementById('cart-toast');
@@ -405,29 +444,11 @@ function _renderBlendSidebarIntro() {
     '<h3 style="color:var(--gold);margin:0 0 12px;font-size:1.1rem">Tu Blend Personalizado</h3>' +
     '<p style="margin:0 0 10px;color:var(--text-secondary);font-size:.88rem;line-height:1.6">Crea tu propia mezcla de especias eligiendo las que más te gusten. Selecciona las especias, ajusta los porcentajes y completa el 100% de tu frasco.</p>' +
     '<p style="margin:0 0 16px;color:var(--text-muted);font-size:.82rem;line-height:1.5">Elige entre frasco pequeño o grande y arma una combinación única a tu medida.</p>' +
-    '<button class="bb-crear-btn" onclick="openBlendModal()">Crear Blend</button>' +
+    '
     '</div>';
 }
-function openBlendModal() {
-  var panel = document.getElementById('sidebar-panel');
-  var overlay = document.getElementById('bb-modal-overlay');
-  if (panel && panel.classList.contains('open')) {
-    overlay.style.left = panel.offsetWidth + 'px';
-  } else {
-    overlay.style.left = '';
-  }
-  overlay.classList.add('open');
-  document.getElementById('bb-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  renderBlendBuilder();
-}
-function closeBlendModal() {
-  var overlay = document.getElementById('bb-modal-overlay');
-  overlay.classList.remove('open');
-  overlay.style.left = '';
-  document.getElementById('bb-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
+function openBlendModal() { navigateTo('blend'); }
+function closeBlendModal() { navigateTo('blend'); }
 function selectRecetaCat(cat) {
   var tabs = document.querySelectorAll('.sidebar-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].dataset.cat === cat);
@@ -473,7 +494,7 @@ function _bbGetTotal() {
 }
 
 function renderBlendBuilder() {
-  var container = document.getElementById('bb-modal-body');
+  var container = document.getElementById('page-blend');
   if (!container) return;
 
   var especias = _getEspeciasDisponibles();
@@ -722,7 +743,7 @@ function renderRecetas() {
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
     var diffColor = r.dificultad === 'Facil' ? '#4a8a3e' : (r.dificultad === 'Dificil' ? '#a63d3d' : '#c4943a');
-    h += '<div class="recipe-card-sb" onclick="openRecipeModal(\'' + r._key + '\')">' +
+    h += '<div class="recipe-card-sb" onclick="showRecipeDetail(\'' + r._key + '\')">' +
       '<div class="recipe-card-sb-header"><div>' +
       '<div class="recipe-card-sb-title">' + (r.titulo || 'Sin t\u00edtulo') + '</div>' +
       '<div class="recipe-card-sb-meta">' +
@@ -734,7 +755,7 @@ function renderRecetas() {
   }
   container.innerHTML = h;
 }
-function openRecipeModal(key) {
+function showRecipeDetail(key) {
   var recetas = getRecetas();
   var r = null;
   for (var i = 0; i < recetas.length; i++) { if (recetas[i]._key === key) { r = recetas[i]; break; } }
@@ -781,7 +802,7 @@ function openRecipeModal(key) {
         if (allProds[pi].nombre && allProds[pi].nombre.toLowerCase() === bName.toLowerCase()) { bProd = allProds[pi]; break; }
       }
       if (bProd && blendProd && bProd.id !== blendProd.id) {
-        names.push('<span class="arcano-link" onclick="event.stopPropagation();openDetail(' + bProd.id + ')">' + bName + '</span>');
+        names.push('<span class="arcano-link" onclick="openDetail(' + bProd.id + ')">' + bName + '</span>');
       } else if (!bProd) {
         names.push(bName);
       }
@@ -791,18 +812,16 @@ function openRecipeModal(key) {
     }
   }
 
-  var overlay = document.createElement('div');
-  overlay.className = 'detail-overlay';
-  overlay.id = 'recipe-overlay';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var pageEl = document.getElementById('page-recetas');
+  if (!pageEl) return;
 
   var imgSide = '';
   if (blendProd) {
-    imgSide = '<div class="recipe-modal-img" onclick="event.stopPropagation();openDetail(' + blendProd.id + ')"><img src="' + blendProd.imagen + '" alt="' + blendProd.nombre + '"></div>';
+    imgSide = '<div class="recipe-modal-img" onclick="openDetail(' + blendProd.id + ')"><img src="' + blendProd.imagen + '" alt="' + blendProd.nombre + '"></div>';
   }
 
-  var contentClass = blendProd ? 'recipe-modal-content' : 'recipe-modal-body recipe-modal-full';
-  var modalClass = blendProd ? 'recipe-modal recipe-modal-split' : 'recipe-modal recipe-modal-single';
+  var contentClass = blendProd ? 'recipe-page-content' : 'recipe-modal-body recipe-modal-full';
+  var modalClass = blendProd ? 'recipe-page recipe-page-split' : 'recipe-page recipe-page-single';
 
   var html = '<div class="' + modalClass + '">' +
     '<button class="detail-close" onclick="document.getElementById(\'recipe-overlay\').remove()">&times;</button>' +
@@ -818,15 +837,16 @@ function openRecipeModal(key) {
         '</div>' +
       '</div>' +
       (r.descripcion ? '<p class="rm-desc">' + _linkArcanoProducts(r.descripcion) + '</p>' : '') +
-      (blendProd ? '<div class="rm-blend-tag" onclick="event.stopPropagation();openDetail(' + blendProd.id + ')">' + blendProd.nombre + (blendProd.uso ? ' \u2014 ' + blendProd.uso : '') + '</div>' : '') +
+      (blendProd ? '<div class="rm-blend-tag" onclick="openDetail(' + blendProd.id + ')">' + blendProd.nombre + (blendProd.uso ? ' \u2014 ' + blendProd.uso : '') + '</div>' : '') +
       blendNamesHtml +
       ingredientesHtml +
       pasosHtml +
       '<button class="recipe-share-btn" onclick="compartirReceta(\'' + r._key + '\')">Compartir receta</button>' +
     '</div></div>';
 
-  overlay.innerHTML = html;
-  document.body.appendChild(overlay);
+  pageEl.innerHTML = html;
+  if (window.innerWidth <= 768) { closeSidebar(); }
+  pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }function toggleRecipe(key) {
   var card = document.getElementById('recipe-' + key);
   if (card) card.classList.toggle('expanded');
@@ -898,9 +918,9 @@ document.addEventListener('DOMContentLoaded', function() {
   initTienda().then(function() {
     renderProducts('Todos');
     updateCartFab();
-    onRecetasReady(function() { renderRecetas(); });
     initRecetas();
     renderSidebarLogo();
+    onRecetasReady(function() { if (_currentPage === 'recetas') renderRecetas(); });
     onTiendaChange(function() {
       renderSidebarLogo();
       if (!hasVisiblePacks()) {
