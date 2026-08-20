@@ -257,7 +257,6 @@ function renderProducts(filter) {
 
     h += '<div class="product-card" onclick="openDetail(' + p.id + ')">';
     h += '<div class="card-img-wrap">';
-    h += '<span class="card-type-badge ' + typeClass + '">' + typeLabel + '</span>';
     if (p.imagen) {
       h += '<img src="' + p.imagen + '" alt="' + p.nombre + '" loading="lazy">';
     } else {
