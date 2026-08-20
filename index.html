@@ -833,11 +833,18 @@
   </div>
 
   <main>
+  <aside class="right-sidebar" id="right-sidebar">
+    <div class="sidebar-logo-wrap">
+      <img src="icons/arcano-logo.png" class="sidebar-logo" alt="Arcano Especias">
+    </div>
+    <div class="sidebar-content" id="sidebar-content"></div>
+  </aside>
+  <div class="main-content">
     <div id="page-tienda" class="page">
       <section class="hero-section">
         <div class="hero-accent"></div>
-        <div class="hero-inner"><img src="icons/arcano-logo.png" class="hero-logo" alt="Arcano"><div class="hero-text"><h2>Especias del Mundo</h2>
-        <p>Mezclas artesanales con ingredientes seleccionados de cada rincón</p></div></div>
+        <h2>Especias del Mundo</h2>
+        <p>Mezclas artesanales con ingredientes seleccionados de cada rincón</p>
       </section>
       <div class="filter-bar" id="filters">
         <button class="filter-pill active" data-cat="Todos">Todos</button>
@@ -851,7 +858,7 @@
       </div>
     </div>
     <div id="page-recetas" class="page" style="display:none">
-      <div class="page-header"><img src="icons/arcano-logo.png" class="page-header-logo" alt="Arcano"><div class="page-header-text"><h2>Recetas</h2><p>Inspiracion para cocinar con especias</p></div></div>
+      <div class="page-header"><h2>Recetas</h2><p>Inspiracion para cocinar con especias</p></div>
       <div class="recipe-tabs" id="receta-cats-tabs">
         <button class="recipe-tab active" data-cat="Comida" onclick="selectRecetaCat('Comida')">Comida</button>
         <button class="recipe-tab" data-cat="Infusiones" onclick="selectRecetaCat('Infusiones')">Infusiones</button>
@@ -862,19 +869,20 @@
     </div>
     <div id="page-blend" class="page" style="display:none">
       <div class="page-header">
-        <img src="icons/arcano-logo.png" class="page-header-logo" alt="Arcano"><div class="page-header-text"><h2>Tu Blend Personalizado</h2>
-        <p>Crea tu mezcla unica de especias artesanales</p></div>
+        <h2>Tu Blend Personalizado</h2>
+        <p>Crea tu mezcla unica de especias artesanales</p>
       </div>
       <div id="blend-builder"></div>
     </div>
     <div id="page-faq" class="page" style="display:none">
       <div class="page-header">
-        <img src="icons/arcano-logo.png" class="page-header-logo" alt="Arcano"><div class="page-header-text"><h2>Preguntas Frecuentes</h2>
-        <p>Todo lo que necesitas saber</p></div>
+        <h2>Preguntas Frecuentes</h2>
+        <p>Todo lo que necesitas saber</p>
       </div>
       <div id="faq-container"></div>
     </div>
-  </main>
+    </div>
+</main>
 
   <!-- Cart Drawer -->
   <div class="cart-overlay-bg" id="cart-overlay" onclick="toggleCartDrawer()"></div>
