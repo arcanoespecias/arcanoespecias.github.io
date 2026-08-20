@@ -23,11 +23,17 @@ function navigateTo(page) {
   var overlay = document.getElementById('sidebar-overlay');
   if (page === 'tienda') {
     if (catTabs) catTabs.style.display = 'none';
-    if (container) container.innerHTML = '';
-    _sidebarOpen = false;
-    panel.classList.add('closed');
-    panel.classList.remove('open');
-    overlay.classList.remove('open');
+    _renderSidebarCart();
+    if (window.innerWidth <= 768) {
+      _sidebarOpen = false;
+      panel.classList.add('closed');
+      panel.classList.remove('open');
+      overlay.classList.remove('open');
+    } else {
+      _sidebarOpen = true;
+      panel.classList.remove('closed');
+      panel.classList.remove('open');
+    }
     return;
   }
   _sidebarOpen = true;
@@ -70,6 +76,44 @@ function openSidebar() {
   }
 }
 
+function _renderSidebarCart() {
+  var container = document.getElementById('sidebar-content');
+  if (!container) return;
+  if (cart.length === 0) {
+    container.innerHTML = '<div class="sidebar-empty" style="padding:16px 0;text-align:center"><p style="color:var(--text-muted);font-size:.88rem">Tu pedido esta vacio</p></div>';
+    return;
+  }
+  var h = '<div style="padding:4px 0">';
+  var total = 0;
+  for (var i = 0; i < cart.length; i++) {
+    var c = cart[i];
+    var subt = c.precio * c.qty;
+    total += subt;
+    var tallaLabel = c.talla === 'pack' ? 'Pack' : (c.talla === 'grande' ? 'Grande' : 'Peque\u00f1o');
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(196,148,58,0.12)">';
+    h += '<div style="flex:1;min-width:0">';
+    h += '<div style="font-size:.85rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">' + c.nombre + '</div>';
+    h += '<div style="font-size:.75rem;color:var(--text-muted);margin-top:2px">' + tallaLabel + ' \u00b7 $' + c.precio.toLocaleString() + '</div>';
+    h += '</div>';
+    h += '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
+    h += '<button onclick="_sbCartQty(' + i + ',-1)" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(196,148,58,0.3);background:transparent;color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">-</button>';
+    h += '<span style="font-size:.85rem;color:var(--text);min-width:18px;text-align:center;font-weight:600">' + c.qty + '</span>';
+    h += '<button onclick="_sbCartQty(' + i + ',1)" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(196,148,58,0.3);background:transparent;color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>';
+    h += '</div>';
+    h += '</div>';
+  }
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 4px;border-top:2px solid rgba(196,148,58,0.25);margin-top:4px">';
+  h += '<span style="font-size:.9rem;font-weight:700;color:var(--gold)">Total</span>';
+  h += '<span style="font-size:1rem;font-weight:700;color:var(--gold)">$' + total.toLocaleString() + '</span>';
+  h += '</div>';
+  h += '</div>';
+  container.innerHTML = h;
+}
+function _sbCartQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  saveCart(); updateCartFab(); _renderSidebarCart();
+}
 function _renderFaqSidebarText() {
   var container = document.getElementById('sidebar-content');
   if (!container) return;
@@ -122,18 +166,18 @@ function addToCart(product, talla) {
   var precio = talla === 'grande' ? product.precioGrande : product.precioChico;
   if (precio <= 0) return;
   for (var i = 0; i < cart.length; i++) {
-    if (cart[i].productId === product.id && cart[i].talla === talla) { cart[i].qty++; saveCart(); updateCartFab(); _showCartToast(product.nombre); return; }
+    if (cart[i].productId === product.id && cart[i].talla === talla) { cart[i].qty++; saveCart(); updateCartFab(); _showCartToast(product.nombre); if (_currentPage === 'tienda') _renderSidebarCart(); return; }
   }
   cart.push({ productId: product.id, nombre: product.nombre, tipo: product.tipo, talla: talla, precio: precio, qty: 1 });
-  saveCart(); updateCartFab(); _showCartToast(product.nombre);
+  saveCart(); updateCartFab(); _showCartToast(product.nombre); if (_currentPage === 'tienda') _renderSidebarCart();
 }
 
-function removeFromCart(idx) { cart.splice(idx, 1); saveCart(); updateCartFab(); if (document.getElementById('cart-list')) renderCartModal(); }
+function removeFromCart(idx) { cart.splice(idx, 1); saveCart(); updateCartFab(); if (document.getElementById('cart-list')) renderCartModal(); if (_currentPage === 'tienda') _renderSidebarCart(); }
 
 function changeQty(idx, delta) {
   cart[idx].qty += delta;
   if (cart[idx].qty <= 0) cart.splice(idx, 1);
-  saveCart(); updateCartFab(); if (document.getElementById('cart-list')) renderCartModal();
+  saveCart(); updateCartFab(); if (document.getElementById('cart-list')) renderCartModal(); if (_currentPage === 'tienda') _renderSidebarCart();
 }
 
 function updateCartFab() {
@@ -197,10 +241,10 @@ function addToCartPack(pid) {
   for (var i = 0; i < products.length; i++) { if (products[i].id === pid) { product = products[i]; break; } }
   if (!product || !product.precio) return;
   for (var i = 0; i < cart.length; i++) {
-    if (cart[i].productId === product.id && cart[i].tipo === 'pack') { cart[i].qty++; saveCart(); updateCartFab(); _showCartToast(product.nombre); return; }
+    if (cart[i].productId === product.id && cart[i].tipo === 'pack') { cart[i].qty++; saveCart(); updateCartFab(); _showCartToast(product.nombre); if (_currentPage === 'tienda') _renderSidebarCart(); return; }
   }
   cart.push({ productId: product.id, nombre: product.nombre, tipo: 'pack', talla: 'pack', precio: product.precio, qty: 1 });
-  saveCart(); updateCartFab(); _showCartToast(product.nombre);
+  saveCart(); updateCartFab(); _showCartToast(product.nombre); if (_currentPage === 'tienda') _renderSidebarCart();
 }
 function doAddToCart(pid) {
   var products = getStoreProducts();
@@ -691,6 +735,7 @@ function addCustomBlendToCart() {
   saveCart();
   updateCartFab();
   _showCartToast('Blend ' + nombre + ' agregado');
+  if (_currentPage === 'tienda') _renderSidebarCart();
   _blendBuilderState = { nombre: '', talla: 'chico', especias: [], showDropdown: false };
   renderBlendBuilder();
 }
@@ -918,6 +963,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initTienda().then(function() {
     renderProducts('Todos');
     updateCartFab();
+    _renderSidebarCart();
     initRecetas();
     renderSidebarLogo();
     onRecetasReady(function() { if (_currentPage === 'recetas') renderRecetas(); });
