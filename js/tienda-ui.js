@@ -364,8 +364,9 @@ function selectRecetaCat(cat) {
   _currentRecetaCat = cat;
   var tabs = document.querySelectorAll('.recipe-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].dataset.cat === cat);
-  renderRecipeGrid();
+  var grid = document.getElementById('recipe-grid'); if (grid) grid.style.display = '';
   var rd = document.getElementById('recipe-detail'); if (rd) rd.innerHTML = '';
+  renderRecipeGrid();
 }
 function renderRecipeGrid() {
   var recetas = getRecetas();
