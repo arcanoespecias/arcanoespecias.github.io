@@ -792,78 +792,135 @@
 </script>
 </head>
 <body>
-  <div class="tienda-layout" id="tienda-layout">
-  <header class="store-header">
-    <button class="sidebar-btn" onclick="toggleSidebar()" aria-label="Menu">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <div class="store-logo"><img src="icons/logo.png" alt="Arcano Especias" width="160" height="50"></div>
-    <div class="store-header-text">
-      <h1>ARCANO</h1>
-      <div class="sub">Especias &amp; Blends</div>
+  <header class="nav-header">
+    <div class="nav-inner">
+      <div class="nav-left">
+        <button class="hamburger" onclick="openMobileMenu()" aria-label="Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a class="nav-logo" href="#"><img src="icons/logo.png" alt="Arcano Especias" height="40"></a>
+      </div>
+      <nav class="nav-links" id="desktop-nav">
+        <button class="nav-item active" data-page="tienda" onclick="goTo('tienda')">Tienda</button>
+        <button class="nav-item" data-page="recetas" onclick="goTo('recetas')">Recetas</button>
+        <button class="nav-item" data-page="blend" onclick="goTo('blend')">Tu Blend</button>
+        <button class="nav-item" data-page="faq" onclick="goTo('faq')">F.A.Q</button>
+      </nav>
+      <button class="nav-cart" onclick="toggleCartDrawer()" aria-label="Carrito">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="cart-badge" id="cart-badge" style="display:none">0</span>
+      </button>
     </div>
-    <nav class="store-nav" id="store-nav">
-      <button class="nav-link active" data-nav="tienda" onclick="navigateTo('tienda')">Tienda</button>
-      <button class="nav-link" data-nav="recetas" onclick="navigateTo('recetas')">Recetas</button>
-      <button class="nav-link" data-nav="blend" onclick="navigateTo('blend')">Tu Blend</button>
-      <button class="nav-link" data-nav="faq" onclick="navigateTo('faq')">F.A.Q</button>
-    </nav>
   </header>
-  <div class="tienda-body">
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
-  <div class="sidebar-panel" id="sidebar-panel">
-    <div class="sidebar-header"><button class="sidebar-close" onclick="closeSidebar()" aria-label="Cerrar panel">&times;</button></div>
-    <div class="sidebar-tabs" id="receta-cats-tabs" style="display:none">
-      <button class="sidebar-tab active" data-cat="Comida" onclick="selectRecetaCat('Comida')">Comida</button>
-      <button class="sidebar-tab" data-cat="Infusiones" onclick="selectRecetaCat('Infusiones')">Infusiones</button>
-      <button class="sidebar-tab" data-cat="Cocteleria" onclick="selectRecetaCat('Cocteleria')">Coctelería</button>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu-overlay" id="mobile-menu" onclick="closeMobileMenu()">
+    <div class="mobile-menu-panel" onclick="event.stopPropagation()">
+      <div class="mm-header"><span>Arcano</span><button class="mm-close" onclick="closeMobileMenu()">&times;</button></div>
+      <button class="mm-nav-item active" data-page="tienda" onclick="goTo('tienda');closeMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Tienda
+      </button>
+      <button class="mm-nav-item" data-page="recetas" onclick="goTo('recetas');closeMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Recetas
+      </button>
+      <button class="mm-nav-item" data-page="blend" onclick="goTo('blend');closeMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6v7l4 9H5l4-9V3z"/><line x1="9" y1="3" x2="15" y2="3"/></svg>Tu Blend
+      </button>
+      <button class="mm-nav-item" data-page="faq" onclick="goTo('faq');closeMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>F.A.Q
+      </button>
     </div>
-    <div class="sidebar-content" id="sidebar-content"><div class="sidebar-empty">Cargando...</div></div>
-    <div class="sidebar-brand" id="sidebar-brand"></div>
-    <div class="sidebar-social" id="sidebar-social"></div>
   </div>
 
-
   <main>
-    <div id="page-tienda">
-    <section class="hero">
-      <h2>Especias del Mundo</h2>
-      <p>Mezclas artesanales con ingredientes seleccionados de cada rincon</p>
-    </section>
-
-    <div class="filters" id="filters">
-      <button class="filter-btn active" data-cat="Todos">Todos</button>
-      <button class="filter-btn" data-cat="Comidas">Comidas</button>
-      <button class="filter-btn" data-cat="Infusiones">Infusiones</button>
-      <button class="filter-btn" data-cat="Cocteleria">Coctelería</button>
-      <button class="filter-btn" data-cat="Packs">Packs</button>
+    <div id="page-tienda" class="page">
+      <section class="hero-section">
+        <div class="hero-accent"></div>
+        <h2>Especias del Mundo</h2>
+        <p>Mezclas artesanales con ingredientes seleccionados de cada rincón</p>
+      </section>
+      <div class="filter-bar" id="filters">
+        <button class="filter-pill active" data-cat="Todos">Todos</button>
+        <button class="filter-pill" data-cat="Comidas">Comidas</button>
+        <button class="filter-pill" data-cat="Infusiones">Infusiones</button>
+        <button class="filter-pill" data-cat="Cocteleria">Coctelería</button>
+        <button class="filter-pill" data-cat="Packs">Packs</button>
+      </div>
+      <div class="product-grid" id="products-grid">
+        <div class="empty-state"><p>Cargando productos...</p></div>
+      </div>
     </div>
-
-    <div class="products-grid" id="products-grid">
-      <div class="empty-state"><p>Cargando productos...</p></div>
+    <div id="page-recetas" class="page" style="display:none">
+      <div class="page-header"><h2>Recetas</h2><p>Inspiracion para cocinar con especias</p></div>
+      <div class="recipe-tabs" id="receta-cats-tabs">
+        <button class="recipe-tab active" data-cat="Comida" onclick="selectRecetaCat('Comida')">Comida</button>
+        <button class="recipe-tab" data-cat="Infusiones" onclick="selectRecetaCat('Infusiones')">Infusiones</button>
+        <button class="recipe-tab" data-cat="Cocteleria" onclick="selectRecetaCat('Cocteleria')">Coctelería</button>
+      </div>
+      <div class="recipe-grid" id="recipe-grid"></div>
+      <div id="recipe-detail"></div>
     </div>
-    </div><!-- /page-tienda -->
-    <div id="page-recetas" class="page-section" style="display:none"></div>
-    <div id="page-blend" class="page-section" style="display:none"></div>
-    <div id="page-faq" class="page-section" style="display:none"></div>
+    <div id="page-blend" class="page" style="display:none">
+      <div class="page-header">
+        <h2>Tu Blend Personalizado</h2>
+        <p>Crea tu mezcla unica de especias artesanales</p>
+      </div>
+      <div id="blend-builder"></div>
+    </div>
+    <div id="page-faq" class="page" style="display:none">
+      <div class="page-header">
+        <h2>Preguntas Frecuentes</h2>
+        <p>Todo lo que necesitas saber</p>
+      </div>
+      <div id="faq-container"></div>
+    </div>
   </main>
-  </div><!-- /tienda-body -->
-  </div><!-- /tienda-layout -->
 
-  <button class="cart-fab" id="cart-fab" style="display:none" onclick="openCart()">
-    <span class="cart-count" id="cart-count">0</span> Ver Pedido
-  </button>
+  <!-- Cart Drawer -->
+  <div class="cart-overlay-bg" id="cart-overlay" onclick="toggleCartDrawer()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>Tu Pedido</h3>
+      <button class="cart-drawer-close" onclick="toggleCartDrawer()">&times;</button>
+    </div>
+    <div class="cart-drawer-body" id="cart-drawer-body"></div>
+    <div class="cart-drawer-total" id="cart-drawer-total">
+      <span>Total</span><span id="cart-drawer-total-val">$0</span>
+    </div>
+    <div class="cart-drawer-footer" id="cart-drawer-footer">
+      <button class="btn-primary" onclick="sendOrder()">Enviar Pedido</button>
+      <button class="btn-secondary" onclick="toggleCartDrawer()">Seguir comprando</button>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Tabs -->
+  <nav class="bottom-tabs" id="bottom-tabs">
+    <div class="bottom-tabs-inner">
+      <button class="btab active" data-page="tienda" onclick="goTo('tienda')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span>Tienda</span>
+      </button>
+      <button class="btab" data-page="recetas" onclick="goTo('recetas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        <span>Recetas</span>
+      </button>
+      <button class="btab" data-page="blend" onclick="goTo('blend')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6v7l4 9H5l4-9V3z"/><line x1="9" y1="3" x2="15" y2="3"/></svg>
+        <span>Blend</span>
+      </button>
+      <button class="btab" data-page="faq" onclick="goTo('faq')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>FAQ</span>
+      </button>
+    </div>
+  </nav>
 
   <footer class="store-footer">
-    Arcano Especias &amp; Blends &middot; Especias artesanales &middot; Envíos a toda Colombia 
+    <div class="footer-social" id="footer-social"></div>
+    Arcano Especias &amp; Blends &middot; Especias artesanales &middot; Envios a toda Colombia
   </footer>
 
-  <!-- SEO: Contenido visible por crawlers y AI. Se llena dinámicamente con los productos desde Firebase -->
-  
-
-
-<!-- SEO: Pre-rendered noscript (regenerar con deploy-seo-prerender.js) -->
-<noscript>
+  <noscript>
 <div class="seo-products" style="padding:20px;max-width:1200px;margin:0 auto;font-family:sans-serif">
 <h2>Catalogo de Especias y Blends Artesanales - Arcano Especias</h2>
 <p>Arcano Especias ofrece 32 productos artesanales: blends para comidas, infusiones y cocteleria, especias selectas y packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo. Envios a toda Colombia.</p>
