@@ -55,6 +55,14 @@ function goTo(page) {
 
 
 /* === RIGHT SIDEBAR === */
+function hasVisiblePacks() {
+  var products = getStoreProducts();
+  for (var i = 0; i < products.length; i++) {
+    if (products[i].tipo === 'pack' && (products[i].stock || 0) > 0) return true;
+  }
+  return false;
+}
+
 function _updateSidebar(page) {
   var sb = document.getElementById('sidebar-content');
   if (!sb) return;
