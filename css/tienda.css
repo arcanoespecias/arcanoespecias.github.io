@@ -141,7 +141,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 .mm-nav-item {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 12px; border-radius: var(--radius-sm);
-  font-size: 1rem; font-weight: 500; color: var(--text);
+  font-size: 1.15rem; font-weight: 500; color: var(--text);
   transition: all 0.2s var(--ease);
 }
 .mm-nav-item:hover { background: var(--surface); }
@@ -274,11 +274,11 @@ main {
 .card-body { padding: 16px 18px 18px; }
 .card-name {
   font-family: var(--font-display); font-size: 1.05rem; font-weight: 600;
-  color: var(--dark); margin-bottom: 4px;
+  color: var(--text); margin-bottom: 4px;
   line-height: 1.3;
 }
 .card-meta {
-  font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;
+  font-size: 0.82rem; color: var(--text-sec); margin-bottom: 14px;
 }
 .card-prices { display: flex; gap: 8px; }
 .price-btn {
@@ -290,11 +290,11 @@ main {
 .price-btn:hover { border-color: var(--gold); background: var(--gold-light); }
 .price-btn:active { transform: scale(0.97); }
 .price-label {
-  font-size: 0.68rem; font-weight: 500; color: var(--text-muted);
+  font-size: 0.72rem; font-weight: 600; color: var(--text-sec);
   text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;
 }
 .price-value {
-  font-size: 0.92rem; font-weight: 700; color: var(--dark);
+  font-size: 1.15rem; font-weight: 700; color: var(--text);
 }
 .price-btn:hover .price-value { color: var(--gold); }
 .card-na {
@@ -306,7 +306,7 @@ main {
 .empty-state {
   text-align: center; padding: 60px 20px; color: var(--text-muted);
 }
-.empty-state p { font-size: 1rem; margin-top: 8px; }
+.empty-state p { font-size: 1.15rem; margin-top: 8px; }
 
 /* === PRODUCT DETAIL MODAL === */
 .detail-overlay {
@@ -372,7 +372,7 @@ main {
   background: var(--surface); color: var(--text-sec);
 }
 .detail-desc {
-  font-size: 0.92rem; color: var(--text-sec); line-height: 1.65;
+  font-size: 1.02rem; color: var(--text-sec); line-height: 1.65;
   margin-bottom: 20px;
 }
 .detail-prices-row { display: flex; gap: 10px; }
@@ -467,7 +467,7 @@ main {
   width: 30px; height: 30px; border-radius: 8px;
   border: 1.5px solid var(--border); display: flex;
   align-items: center; justify-content: center;
-  font-size: 1rem; color: var(--text); transition: all 0.15s var(--ease);
+  font-size: 1.15rem; color: var(--text); transition: all 0.15s var(--ease);
 }
 .cart-qty-btn:hover { border-color: var(--gold); color: var(--gold); }
 .cart-qty-num {
@@ -525,7 +525,7 @@ main {
 .form-row { display: flex; gap: 12px; }
 .form-row .form-group { flex: 1; }
 .form-input {
-  width: 100%; padding: 10px 14px; border-radius: var(--radius-xs);
+  width: 100%; padding: 12px 16px; border-radius: var(--radius-xs);
   border: 1.5px solid var(--border); background: var(--bg);
   font-size: 0.9rem; color: var(--text);
   transition: border-color 0.2s var(--ease);
@@ -642,7 +642,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .rd-ingredients { list-style: none; margin-bottom: 28px; }
 .rd-ingredients li {
   padding: 8px 0; border-bottom: 1px solid var(--border-light);
-  font-size: 0.92rem; color: var(--text);
+  font-size: 1.02rem; color: var(--text);
   padding-left: 20px; position: relative;
 }
 .rd-ingredients li::before {
@@ -654,7 +654,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .rd-steps li {
   counter-increment: step; padding: 14px 0 14px 44px;
   border-bottom: 1px solid var(--border-light);
-  font-size: 0.92rem; color: var(--text); line-height: 1.65;
+  font-size: 1.02rem; color: var(--text); line-height: 1.65;
   position: relative;
 }
 .rd-steps li::before {
@@ -737,7 +737,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-rm-btn {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; color: var(--text-muted); transition: all 0.15s var(--ease);
+  font-size: 1.15rem; color: var(--text-muted); transition: all 0.15s var(--ease);
 }
 .bb-rm-btn:hover { background: rgba(196,64,64,0.08); color: var(--error); }
 .bb-empty {
@@ -762,7 +762,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-dropdown-list { max-height: 200px; overflow-y: auto; }
 .bb-dropdown-item {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+  padding: 12px 16px; cursor: pointer; transition: background 0.15s;
   font-size: 0.88rem; color: var(--text);
 }
 .bb-dropdown-item:hover { background: var(--gold-light); color: var(--gold); }
@@ -786,7 +786,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .bb-cart-btn {
   padding: 14px 28px; border-radius: var(--radius-sm);
-  background: var(--dark); color: #F5E6D0; font-size: 0.92rem; font-weight: 600;
+  background: var(--dark); color: #F5E6D0; font-size: 1.02rem; font-weight: 600;
   transition: all 0.2s var(--ease);
 }
 .bb-cart-btn:hover:not(.disabled) { background: #2a1a10; transform: translateY(-1px); box-shadow: var(--shadow-md); }
@@ -801,7 +801,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .faq-q {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 20px 0; cursor: pointer; font-size: 1rem; font-weight: 500;
+  padding: 20px 0; cursor: pointer; font-size: 1.15rem; font-weight: 500;
   color: var(--text); transition: color 0.2s var(--ease);
   gap: 16px;
 }
@@ -818,7 +818,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .faq-item.open .faq-a { max-height: 300px; padding-bottom: 20px; }
 .faq-a p {
-  font-size: 0.92rem; color: var(--text-sec); line-height: 1.7;
+  font-size: 1.02rem; color: var(--text-sec); line-height: 1.7;
 }
 
 /* === TOAST === */
@@ -899,13 +899,13 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   display: block;
 }
 .sidebar-content {
-  font-size: 0.92rem;
+  font-size: 1.02rem;
   color: var(--text-sec);
   line-height: 1.7;
 }
 .sidebar-content h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--dark);
   margin-bottom: 12px;
@@ -919,7 +919,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   margin: 0;
 }
 .sidebar-cat-list li {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius-xs);
   cursor: pointer;
   transition: background 0.2s var(--ease);
@@ -943,7 +943,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .card-img-wrap { height: 180px; }
   .card-body { padding: 12px 14px 14px; }
-  .card-name { font-size: 0.92rem; }
+  .card-name { font-size: 1.02rem; }
   .price-label { font-size: 0.62rem; }
   .price-value { font-size: 0.82rem; }
   .price-btn { padding: 8px 6px; }
@@ -1011,13 +1011,13 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   display: block;
 }
 .sidebar-content {
-  font-size: 0.92rem;
+  font-size: 1.02rem;
   color: var(--text-sec);
   line-height: 1.7;
 }
 .sidebar-content h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--dark);
   margin-bottom: 12px;
@@ -1031,7 +1031,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   margin: 0;
 }
 .sidebar-cat-list li {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius-xs);
   cursor: pointer;
   transition: background 0.2s var(--ease);
