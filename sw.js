@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcano-v4-8';
+const CACHE_NAME = 'arcano-v4-9';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/favicon.png',
