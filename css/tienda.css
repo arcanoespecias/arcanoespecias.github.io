@@ -888,6 +888,143 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 
 /* === SIDEBAR === */
 .sidebar-btn { display: none; }
+
+/* === HEADER NAV === */
+.store-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.nav-link {
+  background: none;
+  border: none;
+  color: rgba(245, 230, 208, 0.55);
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color var(--fast), background var(--fast);
+  font-family: inherit;
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+.nav-link:hover { color: #F5E6D0; background: rgba(196,148,58,0.08); }
+.nav-link.active { color: var(--gold); background: rgba(196,148,58,0.15); }
+
+/* === PAGE SECTIONS === */
+.page-section {
+  padding: 32px 28px 140px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+.page-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: .95rem;
+}
+
+/* === PAGE FAQ === */
+.page-faq { max-width: 680px; margin: 0 auto; }
+.page-faq-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+.page-faq-item {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--fast), box-shadow var(--fast);
+}
+.page-faq-item:hover { border-color: rgba(196,148,58,0.25); }
+.page-faq-item.open { border-color: rgba(196,148,58,0.35); box-shadow: var(--shadow-xs); }
+.page-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--text);
+  user-select: none;
+}
+.page-faq-icon {
+  font-size: 1.2rem;
+  color: var(--gold);
+  transition: transform var(--fast);
+  min-width: 20px;
+  text-align: center;
+}
+.page-faq-item.open .page-faq-icon { transform: rotate(45deg); }
+.page-faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease, padding .3s ease;
+}
+.page-faq-item.open .page-faq-a { max-height: 300px; }
+.page-faq-a p {
+  padding: 0 18px 16px;
+  color: var(--text-secondary);
+  font-size: .88rem;
+  line-height: 1.65;
+}
+
+/* === RECIPE ON PAGE === */
+.recipe-page {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.recipe-page-split { display: flex; max-height: none; }
+.recipe-page-single { max-width: 600px; margin: 0 auto; }
+.recipe-page-img {
+  width: 260px;
+  min-width: 260px;
+  background: linear-gradient(160deg, #1a0a06 0%, #2c1810 40%, #3a2218 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+.recipe-page-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20px;
+  transition: transform .4s var(--ease-out);
+}
+.recipe-page-img:hover img { transform: scale(1.05); }
+.recipe-page-content {
+  flex: 1;
+  padding: 28px 24px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* === BLEND ON PAGE === */
+#page-blend .bb-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, var(--dark) 0%, var(--dark-warm) 100%);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  color: #ece0d0;
+  border: 1px solid rgba(196,148,58,0.1);
+  box-shadow: var(--shadow-md);
+}
+
 .sidebar-close { display: none; }
 .sidebar-overlay { display: none; }
 .sidebar-panel {
@@ -1776,6 +1913,12 @@ textarea.form-input { min-height: 76px; resize: vertical; }
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
+
+  .store-nav { gap: 2px; margin-left: auto; }
+  .nav-link { font-size: .7rem; padding: 5px 10px; letter-spacing: .01em; }
+  .recipe-page-split { flex-direction: column; }
+  .recipe-page-img { width: 100%; min-width: unset; max-height: 240px; }
+  .recipe-page-content { padding: 20px 18px; }
   .sidebar-btn {
     display: flex;
     background: none;
