@@ -61,7 +61,7 @@ function _updateSidebar(page) {
   if (page === 'tienda') {
     sb.innerHTML = '<p>Descubre nuestra coleccion de especias y blends artesanales, seleccionados de cada rincon del mundo. Cada producto es elaborado con ingredientes de alta calidad para llevar sabores unicos a tu mesa.</p><p>Explora nuestras categorias: Comidas, Infusiones, Cocteleria y Packs exclusivos.</p>';
   } else if (page === 'recetas') {
-    sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-receta-cats"><li class="active" onclick="selectRecetaCat('Comida')">Comida</li><li onclick="selectRecetaCat('Infusiones')">Infusiones</li><li onclick="selectRecetaCat('Cocteleria')">Cocteleria</li></ul>';
+    sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-receta-cats"' + '<li class="active" onclick="selectRecetaCat(\'Comida\')">Comida</li>' + '<li onclick="selectRecetaCat(\'Infusiones\')">Infusiones</li>' + '<li onclick="selectRecetaCat(\'Cocteleria\')">Cocteleria</li>' + '</ul>';
   } else if (page === 'blend') {
     sb.innerHTML = '<p>Crea tu blend personalizado seleccionando las especias que mas te gusten. Elige entre nuestra coleccion de ingredientes artesanales y diseña una mezcla unica para tus recetas.</p><p>Puedes elegir el tamano y la proporcion de cada especia para obtener el sabor perfecto.</p>';
   } else if (page === 'faq') {
