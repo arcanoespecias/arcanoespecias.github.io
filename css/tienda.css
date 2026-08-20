@@ -243,7 +243,7 @@ main {
   border-color: transparent;
 }
 .card-img-wrap {
-  height: 180px; position: relative; overflow: hidden;
+  height: 280px; position: relative; overflow: hidden;
   background: #F5F1EB;
   display: flex; align-items: center; justify-content: center;
 }
@@ -251,7 +251,7 @@ main {
   width: 100%; height: 100%; object-fit: contain;
   transition: transform 0.5s var(--ease);
 }
-.product-card:hover .card-img-wrap img { transform: scale(1.06); }
+.product-card:hover .card-img-wrap img { transform: scale(1.03); }
 .card-img-wrap span {
   font-size: 3.5rem; line-height: 1;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
@@ -881,7 +881,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   .hero-section { padding: 32px 16px 28px; }
   .hero-section h2 { font-size: 1.6rem; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .card-img-wrap { height: 140px; }
+  .card-img-wrap { height: 180px; }
   .card-body { padding: 12px 14px 14px; }
   .card-name { font-size: 0.92rem; }
   .price-label { font-size: 0.62rem; }
@@ -900,7 +900,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 @media (max-width: 480px) {
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .card-img-wrap { height: 120px; }
+  .card-img-wrap { height: 150px; }
   .card-body { padding: 10px 12px 12px; }
   .card-name { font-size: 0.85rem; margin-bottom: 2px; }
   .card-meta { font-size: 0.72rem; margin-bottom: 10px; }
