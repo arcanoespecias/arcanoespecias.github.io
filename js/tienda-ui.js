@@ -444,7 +444,7 @@ function _renderBlendSidebarIntro() {
     '<h3 style="color:var(--gold);margin:0 0 12px;font-size:1.1rem">Tu Blend Personalizado</h3>' +
     '<p style="margin:0 0 10px;color:var(--text-secondary);font-size:.88rem;line-height:1.6">Crea tu propia mezcla de especias eligiendo las que más te gusten. Selecciona las especias, ajusta los porcentajes y completa el 100% de tu frasco.</p>' +
     '<p style="margin:0 0 16px;color:var(--text-muted);font-size:.82rem;line-height:1.5">Elige entre frasco pequeño o grande y arma una combinación única a tu medida.</p>' +
-    '
+    '<button class="sidebar-blend-btn" onclick="renderBlendBuilder()" style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,var(--gold),#a67c2e);color:#1b0b07;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:4px">Crear Blend</button>' +
     '</div>';
 }
 function openBlendModal() { navigateTo('blend'); }
