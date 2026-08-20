@@ -923,15 +923,15 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* === HERO & PAGE HEADER LOGO === */
 .hero-inner { display: flex; align-items: center; gap: 20px; }
-.hero-logo { height: 56px; width: auto; flex-shrink: 0; }
+.hero-logo { height: 80px; width: auto; flex-shrink: 0; }
 .hero-text h2 { margin-bottom: 4px; }
 
 .page-header { display: flex; align-items: center; gap: 16px; }
-.page-header-logo { height: 48px; width: auto; flex-shrink: 0; }
+.page-header-logo { height: 64px; width: auto; flex-shrink: 0; }
 .page-header-text h2 { margin-bottom: 4px; }
 .page-header-text p { margin: 0; }
 
 @media (max-width: 768px) {
-  .hero-logo { height: 44px; }
-  .page-header-logo { height: 38px; }
+  .hero-logo { height: 64px; }
+  .page-header-logo { height: 52px; }
 }
