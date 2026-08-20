@@ -802,11 +802,17 @@
       <h1>ARCANO</h1>
       <div class="sub">Especias &amp; Blends</div>
     </div>
+    <nav class="store-nav" id="store-nav">
+      <button class="nav-link active" data-nav="tienda" onclick="navigateTo('tienda')">Tienda</button>
+      <button class="nav-link" data-nav="recetas" onclick="navigateTo('recetas')">Recetas</button>
+      <button class="nav-link" data-nav="blend" onclick="navigateTo('blend')">Tu Blend</button>
+      <button class="nav-link" data-nav="faq" onclick="navigateTo('faq')">F.A.Q</button>
+    </nav>
   </header>
   <div class="tienda-body">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="sidebar-panel" id="sidebar-panel">
-    <div class="sidebar-header"><div class="sidebar-nav"><button class="sidebar-nav-btn active" data-nav="tienda" onclick="navSidebar('tienda')">Tienda</button><button class="sidebar-nav-btn" data-nav="recetas" onclick="navSidebar('recetas')">Recetas</button><button class="sidebar-nav-btn" data-nav="blend" onclick="navSidebar('blend')">Tu Blend</button><button class="sidebar-nav-btn" data-nav="faq" onclick="navSidebar('faq')">F.A.Q</button></div><button class="sidebar-close" onclick="closeSidebar()" aria-label="Cerrar panel">&times;</button></div>
+    <div class="sidebar-header"><button class="sidebar-close" onclick="closeSidebar()" aria-label="Cerrar panel">&times;</button></div>
     <div class="sidebar-tabs" id="receta-cats-tabs" style="display:none">
       <button class="sidebar-tab active" data-cat="Comida" onclick="selectRecetaCat('Comida')">Comida</button>
       <button class="sidebar-tab" data-cat="Infusiones" onclick="selectRecetaCat('Infusiones')">Infusiones</button>
@@ -816,16 +822,10 @@
     <div class="sidebar-brand" id="sidebar-brand"></div>
     <div class="sidebar-social" id="sidebar-social"></div>
   </div>
-  <div class="bb-modal-overlay" id="bb-modal-overlay" onclick="closeBlendModal()"></div>
-  <div class="bb-modal" id="bb-modal">
-    <div class="bb-modal-header">
-      <h3 class="bb-modal-title">Crea Tu Blend</h3>
-      <button class="bb-modal-close" onclick="closeBlendModal()" aria-label="Cerrar">&times;</button>
-    </div>
-    <div class="bb-modal-body" id="bb-modal-body"></div>
-  </div>
+
 
   <main>
+    <div id="page-tienda">
     <section class="hero">
       <h2>Especias del Mundo</h2>
       <p>Mezclas artesanales con ingredientes seleccionados de cada rincon</p>
@@ -842,6 +842,10 @@
     <div class="products-grid" id="products-grid">
       <div class="empty-state"><p>Cargando productos...</p></div>
     </div>
+    </div><!-- /page-tienda -->
+    <div id="page-recetas" class="page-section" style="display:none"></div>
+    <div id="page-blend" class="page-section" style="display:none"></div>
+    <div id="page-faq" class="page-section" style="display:none"></div>
   </main>
   </div><!-- /tienda-body -->
   </div><!-- /tienda-layout -->
