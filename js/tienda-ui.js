@@ -135,6 +135,9 @@ function renderCartDrawer() {
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
   h += '</div>';
   body.innerHTML = h;
+  // Update total
+  var totalEl = document.getElementById('cart-drawer-total-val');
+  if (totalEl) totalEl.textContent = '$' + getCartTotal().toLocaleString();
   // QR
   var config = getTiendaConfig();
   if (config && config.qrPagoImage) {
@@ -303,8 +306,8 @@ function openDetail(pid) {
   if (p.uso) tagsHtml += '<span class="detail-tag">' + p.uso + '</span>';
   if (p.region) tagsHtml += '<span class="detail-tag">' + p.region + '</span>';
   var pricesHtml = '';
-  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',String.fromCharCode(39)+\'chico\'+String.fromCharCode(39));document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
-  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',String.fromCharCode(39)+\'grande\'+String.fromCharCode(39));document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
+  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;chico&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
+  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;grande&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
   var descHtml = p.descripcion ? '<p class="detail-desc">' + p.descripcion + '</p>' : '';
   var ingsHtml = '';
   if (isBlend && p.ingredientes && p.ingredientes.length > 0) {
