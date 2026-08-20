@@ -633,6 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(function() {});
   _initHeaderScroll();
   updateCartBadge();
+  _updateSidebar('tienda');
   initTienda().then(function() {
     renderProducts('Todos');
     initRecetas();
