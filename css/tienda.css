@@ -451,6 +451,11 @@ main {
 .cart-drawer-body {
   flex: 1; overflow-y: auto; padding: 0 24px 24px;
 }
+.cart-order-section {
+  flex-shrink: 0; overflow-y: auto;
+  max-height: 45vh; padding: 0 24px;
+  border-top: 1px solid var(--border-light);
+}
 .cart-drawer-item {
   display: flex; gap: 12px; padding: 16px 0;
   border-bottom: 1px solid var(--border-light);
