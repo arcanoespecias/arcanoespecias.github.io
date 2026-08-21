@@ -592,6 +592,20 @@ function _getCustomBlendPrice(talla) {
   return config.precioBlendChico || 0;
 }
 
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
 function renderBlendBuilder() {
   var container = document.getElementById('blend-builder');
   if (!container) return;
@@ -821,76 +835,7 @@ function addCustomBlendToCart() {
   renderBlendBuilder();
 }
 
-function addCustomBlendToCart() {
-  var nombreInput = document.getElementById('bb-name');
-  var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
-  if (!nombre) { alert('Dale un nombre a tu blend'); return; }
-  var total = _bbGetTotal();
-  if (total !== 100) { alert('El total debe ser 100%'); return; }
-  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
-  var precio = _getCustomBlendPrice(_blendBuilderState.talla);
-  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeno';
-  var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
-  var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
-  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
-    customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
-  }
-  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
-  saveCart(); updateCartBadge(); _showToast('Blend ' + nombre + ' agregado');
-  _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
-  renderBlendBuilder();
-}
 
-function addCustomBlendToCart() {
-  var nombreInput = document.getElementById('bb-name');
-  var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
-  if (!nombre) { alert('Dale un nombre a tu blend'); return; }
-  var total = _bbGetTotal();
-  if (total !== 100) { alert('El total debe ser 100%'); return; }
-  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
-  var precio = _getCustomBlendPrice(_blendBuilderState.talla);
-  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeno';
-  var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
-  var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
-  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
-    customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
-  }
-  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
-  saveCart(); updateCartBadge(); _showToast('Blend ' + nombre + ' agregado');
-  _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
-  renderBlendBuilder();
-}
-
-function addCustomBlendToCart() {
-  var nombreInput = document.getElementById('bb-name');
-  var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
-  if (!nombre) { alert('Dale un nombre a tu blend'); return; }
-  var total = _bbGetTotal();
-  if (total !== 100) { alert('El total debe ser 100%'); return; }
-  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
-  var precio = _getCustomBlendPrice(_blendBuilderState.talla);
-  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeno';
-  var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
-  var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
-  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
-    customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
-  }
-  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
-  saveCart(); updateCartBadge(); _showToast('Blend ' + nombre + ' agregado');
-  _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
-  renderBlendBuilder();
-}
-
-/* === FAQ === */
-var _faqData = [
-  { q: '\u00bfCuales son los tiempos de envio?', a: 'Realizamos envios a toda Colombia. El tiempo estimado de entrega es de 2 a 5 dias habiles dependiendo de la ciudad.' },
-  { q: '\u00bfQue medios de pago aceptan?', a: 'Aceptamos pagos por Nequi, Daviplata, transferencia bancaria y efectivo a traves de puntos autorizados.' },
-  { q: '\u00bfCual es la diferencia entre frasco pequeno y grande?', a: 'El frasco pequeno contiene 30-40g, ideal para probar. El grande contiene 80-100g, perfecto para uso frecuente. Ambos vienen sellados al vacio.' },
-  { q: '\u00bfComo funciona Tu Blend personalizado?', a: 'Eliges las especias, les asignas un porcentaje hasta completar el 100%, seleccionas el tamano del frasco y lo agregas a tu pedido. Lo preparamos artesanalmente.' },
-  { q: '\u00bfLas especias son naturales?', a: 'Si, todas nuestras especias son 100% naturales, sin aditivos artificiales, colorantes ni conservantes.' },
-  { q: '\u00bfPuedo pedir por WhatsApp?', a: 'Claro que si! Puedes escribirnos por WhatsApp y te ayudamos con tu pedido.' },
-  { q: '\u00bfHacen envios a todo el pais?', a: 'Si, envios a toda Colombia a traves de transportadoras especializadas. El costo se calcula segun la ciudad de destino.' }
-];
 function renderFaqPage() {
   var el = document.getElementById('faq-container');
   if (!el) return;
