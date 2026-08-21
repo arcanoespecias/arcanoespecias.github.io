@@ -698,71 +698,53 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   max-width: 640px; margin: 0 auto;
   background: #F0E4D0; padding: 20px;
 }
-.bb-field { margin-bottom: 20px; }
-.bb-label {
-  display: block; font-size: 0.78rem; font-weight: 600;
-  color: var(--text-sec); text-transform: uppercase;
-  letter-spacing: 0.04em; margin-bottom: 8px;
+.bb-header {
+  background: #e6d8c2; border-radius: var(--radius-sm); padding: 16px;
+  margin-bottom: 20px;
 }
-.bb-input {
-  width: 100%; padding: 12px 16px; border-radius: var(--radius-xs);
-  border: 1.5px solid var(--border); background: var(--bg-card);
+.bb-header-top {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.bb-name-input {
+  flex: 1; min-width: 180px; padding: 10px 14px; border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border); background: #F0E4D0;
   font-size: 0.95rem; color: var(--text); outline: none;
   transition: border-color 0.2s var(--ease);
 }
-.bb-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
-.bb-size-row { display: flex; gap: 10px; }
+.bb-name-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+.bb-name-input::placeholder { color: var(--text-muted); }
+.bb-header-right { display: flex; gap: 8px; }
 .bb-size-btn {
-  flex: 1; padding: 12px; border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border); font-size: 0.9rem; font-weight: 500;
-  color: var(--text-sec); background: var(--bg-card);
+  padding: 10px 18px; border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border); font-size: 0.85rem; font-weight: 500;
+  color: var(--text-sec); background: #F0E4D0;
   transition: all 0.2s var(--ease);
 }
-.bb-size-btn.active { border-color: var(--gold); background: var(--gold-light); color: var(--gold); font-weight: 600; }
-.bb-size-btn:hover:not(.active) { border-color: var(--gold); }
-.bb-spice-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 0; border-bottom: 1px solid var(--border-light);
+.bb-size-btn.active { border-color: var(--gold); background: var(--gold); color: #fff; font-weight: 600; }
+.bb-size-btn:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+.bb-price-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light);
 }
-.bb-spice-name { flex: 1; font-size: 0.9rem; font-weight: 500; color: var(--text); }
-.bb-spice-controls { display: flex; align-items: center; gap: 8px; }
-.bb-pct-btn {
-  width: 32px; height: 32px; border-radius: 8px;
-  border: 1.5px solid var(--border); display: flex;
-  align-items: center; justify-content: center;
-  font-size: 1.1rem; color: var(--text); transition: all 0.15s var(--ease);
-}
-.bb-pct-btn:hover { border-color: var(--gold); color: var(--gold); }
-.bb-pct-input {
-  width: 50px; padding: 6px 4px; border-radius: 6px;
-  border: 1.5px solid var(--border); text-align: center;
-  font-size: 0.9rem; font-weight: 600; color: var(--text); outline: none;
-}
-.bb-pct-input:focus { border-color: var(--gold); }
-.bb-pct-sym { font-size: 0.85rem; color: var(--text-muted); }
-.bb-rm-btn {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.15rem; color: var(--text-muted); transition: all 0.15s var(--ease);
-}
-.bb-rm-btn:hover { background: rgba(196,64,64,0.08); color: var(--error); }
-.bb-empty {
-  text-align: center; padding: 32px; color: var(--text-muted);
-  font-size: 0.9rem;
+.bb-price-label { font-size: 0.82rem; color: var(--text-sec); }
+.bb-price-value { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--dark); }
+.bb-section { margin-bottom: 20px; }
+.bb-section-title {
+  font-size: 0.78rem; font-weight: 600; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;
 }
 .bb-chips-grid {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+  display: flex; flex-wrap: wrap; gap: 8px;
 }
 .bb-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 100px;
-  border: 1.5px solid var(--border); background: var(--surface);
+  border: 1.5px solid var(--border); background: #F0E4D0;
   color: var(--text); font-size: 0.85rem; font-weight: 500;
   cursor: pointer; transition: all 0.2s var(--ease);
 }
 .bb-chip:hover {
   border-color: var(--gold); color: var(--gold); background: var(--gold-light);
-  transform: translateY(-1px);
 }
 .bb-chip.selected {
   border-color: var(--gold); background: var(--gold); color: #fff;
@@ -770,35 +752,57 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-chip.selected:hover {
   background: var(--gold-hover, #b8943a); border-color: var(--gold-hover, #b8943a);
 }
-.bb-chip-check {
-  font-size: 0.78rem; font-weight: 700;
+.bb-chip-check { font-size: 0.78rem; font-weight: 700; margin-left: 2px; }
+.bb-empty {
+  text-align: center; padding: 28px 16px; color: var(--text-muted);
+  font-size: 0.88rem;
 }
-.bb-chip-stock {
-  font-size: 0.72rem; color: var(--text-muted); font-weight: 400;
+.bb-mix-list { display: flex; flex-direction: column; gap: 0; }
+.bb-mix-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border-light);
 }
-.bb-chip.selected .bb-chip-stock { color: rgba(255,255,255,0.75); }
-.bb-total-section { margin-top: 20px; }
+.bb-mix-row:last-child { border-bottom: none; }
+.bb-mix-name { flex: 1; font-size: 0.9rem; font-weight: 500; color: var(--text); }
+.bb-mix-controls { display: flex; align-items: center; gap: 6px; }
+.bb-pct-display { display: flex; align-items: center; background: #e6d8c2; border-radius: 6px; overflow: hidden; }
+.bb-pct-input {
+  width: 42px; padding: 6px 2px; border: none; text-align: center;
+  font-size: 0.9rem; font-weight: 600; color: var(--text); outline: none; background: transparent;
+}
+.bb-pct-sym { font-size: 0.78rem; color: var(--text-muted); padding-right: 8px; }
+.bb-pct-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1.5px solid var(--border); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 1rem; color: var(--text-sec); background: #F0E4D0; transition: all 0.15s var(--ease);
+}
+.bb-pct-btn:hover { border-color: var(--gold); color: var(--gold); }
+.bb-rm-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; color: var(--text-muted); transition: all 0.15s var(--ease);
+}
+.bb-rm-btn:hover { background: rgba(196,64,64,0.08); color: var(--error); }
+.bb-footer {
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 8px; padding-top: 16px; border-top: 2px solid var(--border);
+}
+.bb-footer-left { flex: 1; }
 .bb-total-bar {
-  height: 8px; border-radius: 4px; background: var(--surface); overflow: hidden;
-  margin-bottom: 8px;
+  height: 8px; border-radius: 4px; background: var(--surface, #e6d8c2); overflow: hidden;
+  margin-bottom: 6px;
 }
 .bb-total-fill {
   height: 100%; border-radius: 4px; transition: width 0.3s var(--ease), background 0.3s var(--ease);
 }
 .bb-total-text {
-  font-size: 0.85rem; font-weight: 600; text-align: center;
-}
-.bb-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--border);
-}
-.bb-price {
-  font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--dark);
+  font-size: 0.82rem; font-weight: 600;
 }
 .bb-cart-btn {
-  padding: 14px 28px; border-radius: var(--radius-sm);
-  background: var(--dark); color: #F5E6D0; font-size: 1.02rem; font-weight: 600;
-  transition: all 0.2s var(--ease);
+  padding: 12px 24px; border-radius: var(--radius-sm);
+  background: var(--dark); color: #F5E6D0; font-size: 0.95rem; font-weight: 600;
+  white-space: nowrap; transition: all 0.2s var(--ease);
 }
 .bb-cart-btn:hover:not(.disabled) { background: #2a1a10; transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .bb-cart-btn.disabled { opacity: 0.4; cursor: not-allowed; }
