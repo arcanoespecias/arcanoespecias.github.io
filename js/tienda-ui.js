@@ -149,6 +149,42 @@ function renderCartDrawer() {
     h += '<button class="cart-drawer-item-rm" onclick="_cartRm(' + i + ')">\u00d7</button>';
     h += '</div>';
   }
+  body.innerHTML = h;
+  // Update total
+  var totalEl = document.getElementById('cart-drawer-total-val');
+  if (totalEl) totalEl.textContent = '$' + getCartTotal().toLocaleString();
+  // Reset footer to step 1
+  _cartSetFooterStep(1);
+}
+
+var _cartStep = 1;
+function _cartSetFooterStep(step) {
+  _cartStep = step;
+  var footer = document.getElementById('cart-drawer-footer');
+  if (!footer) return;
+  if (step === 1) {
+    footer.innerHTML = '<button class="btn-primary" onclick="showOrderForm()">Confirmar Pedido</button>' +
+      '<button class="btn-secondary" onclick="toggleCartDrawer()">Seguir comprando</button>';
+  } else {
+    footer.innerHTML = '<button class="btn-primary" onclick="sendOrder()">Enviar Pedido</button>' +
+      '<button class="btn-secondary" onclick="backToCart()">Volver</button>';
+  }
+}
+
+function showOrderForm() {
+  var body = document.getElementById('cart-drawer-body');
+  if (!body) return;
+  // Compact item summary
+  var h = '<div class="cart-order-summary">';
+  h += '<div class="cart-order-summary-title">Tu pedido (' + cart.length + ' producto' + (cart.length > 1 ? 's' : '') + ')</div>';
+  for (var i = 0; i < cart.length; i++) {
+    var c = cart[i];
+    h += '<div class="cart-order-summary-item">';
+    h += '<span>' + c.nombre + ' x' + c.qty + '</span>';
+    h += '<span>$' + (c.precio * c.qty).toLocaleString() + '</span>';
+    h += '</div>';
+  }
+  h += '</div>';
   // Order form
   h += '<div class="order-form">';
   h += '<div class="form-group"><label>Nombre</label><input class="form-input" id="o-nombre" placeholder="Tu nombre"></div>';
@@ -158,15 +194,18 @@ function renderCartDrawer() {
   h += '<div class="form-group"><label>Direccion</label><input class="form-input" id="o-dir" placeholder="Direccion de entrega"></div></div>';
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
   h += '</div>';
-  body.innerHTML = h;
-  // Update total
-  var totalEl = document.getElementById('cart-drawer-total-val');
-  if (totalEl) totalEl.textContent = '$' + getCartTotal().toLocaleString();
   // QR
   var config = getTiendaConfig();
   if (config && config.qrPagoImage) {
-    body.innerHTML += '<div class="qr-section"><p>Forma de pago</p><img src="' + config.qrPagoImage + '" alt="QR Pago"><small>Envia el comprobante por WhatsApp</small></div>';
+    h += '<div class="qr-section"><p>Forma de pago</p><img src="' + config.qrPagoImage + '" alt="QR Pago"><small>Envia el comprobante por WhatsApp</small></div>';
   }
+  body.innerHTML = h;
+  body.scrollTop = 0;
+  _cartSetFooterStep(2);
+}
+
+function backToCart() {
+  renderCartDrawer();
 }
 
 function _cartQty(idx, delta) {
