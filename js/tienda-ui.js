@@ -149,16 +149,15 @@ function renderCartDrawer() {
     h += '<button class="cart-drawer-item-rm" onclick="_cartRm(' + i + ')">\u00d7</button>';
     h += '</div>';
   }
-  // Order form (sticky inside scroll)
-  h += '<div class="cart-order-form">';
-  h += '<div class="cart-order-form-inner">';
+  // Order form
+  h += '<div class="order-form">';
   h += '<div class="form-group"><label>Nombre</label><input class="form-input" id="o-nombre" placeholder="Tu nombre"></div>';
   h += '<div class="form-row"><div class="form-group"><label>Telefono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
   h += '<div class="form-group"><label>Email</label><input class="form-input" id="o-email" type="email" placeholder="tu@email.com"></div></div>';
   h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><input class="form-input" id="o-ciudad" placeholder="Bogota"></div>';
   h += '<div class="form-group"><label>Direccion</label><input class="form-input" id="o-dir" placeholder="Direccion de entrega"></div></div>';
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
-  h += '</div></div>';
+  h += '</div>';
   body.innerHTML = h;
   // Update total
   var totalEl = document.getElementById('cart-drawer-total-val');
