@@ -717,3 +717,38 @@ document.addEventListener('DOMContentLoaded', function() {
     renderProducts(currentFilter);
   });
 });
+
+/* === GRANDES CLIENTES === */
+function openGrandesClientes() {
+  var ov = document.getElementById('gc-overlay');
+  if (ov) { ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+function closeGrandesClientes() {
+  var ov = document.getElementById('gc-overlay');
+  if (ov) { ov.classList.remove('open'); document.body.style.overflow = ''; }
+}
+function submitGrandesClientes(e) {
+  e.preventDefault();
+  var nombre = document.getElementById('gc-nombre').value.trim();
+  var tel = document.getElementById('gc-tel').value.trim();
+  var empresa = document.getElementById('gc-empresa').value.trim();
+  if (!nombre || !tel) { alert('Nombre y telefono son obligatorios'); return; }
+  var btn = document.getElementById('gc-submit-btn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  var ref = firebase.database().ref('arcano/db/grandesClientes').push();
+  ref.set({
+    nombre: nombre,
+    telefono: tel,
+    empresa: empresa || '',
+    creado: new Date().toISOString(),
+    estado: 'nuevo'
+  }).then(function() {
+    _showToast('Solicitud enviada correctamente');
+    closeGrandesClientes();
+    document.getElementById('gc-form').reset();
+    btn.disabled = false; btn.textContent = 'Enviar Solicitud';
+  }).catch(function() {
+    alert('Error al enviar. Intenta de nuevo.');
+    btn.disabled = false; btn.textContent = 'Enviar Solicitud';
+  });
+}
