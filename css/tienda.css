@@ -426,7 +426,7 @@ main {
 .cart-drawer {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: 400px; max-width: 100vw; z-index: 301;
-  background: var(--bg-card);
+  background: #F0E4D0;
   transform: translateX(100%);
   transition: transform 0.4s var(--ease);
   display: flex; flex-direction: column;
@@ -496,7 +496,7 @@ main {
   font-family: var(--font-display); font-size: 1.1rem; font-weight: 700;
   flex-shrink: 0;
 }
-.cart-drawer-total span:last-child { color: var(--gold); }
+.cart-drawer-total span:last-child { color: #2a1a10; }
 .cart-drawer-footer {
   padding: 16px 24px 24px; flex-shrink: 0;
   border-top: 1px solid var(--border-light);
