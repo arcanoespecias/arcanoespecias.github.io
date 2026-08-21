@@ -986,6 +986,20 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   background: var(--gold-light); color: var(--gold-hover);
 }
 
+/* === CART ORDER SUMMARY === */
+.cart-order-summary {
+  padding: 16px 0; margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.cart-order-summary-title {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+  color: var(--dark); margin-bottom: 10px;
+}
+.cart-order-summary-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; font-size: 0.85rem; color: var(--text-sec);
+}
+
 
 /* === HERO & PAGE HEADER LOGO === */
 .hero-inner { display: flex; align-items: center; gap: 20px; }
