@@ -550,6 +550,8 @@ function _bbGetTotal() {
 // This file contains the new blend builder functions to be spliced into tienda-ui.js
 // DO NOT deploy this file - it's only used for patching
 
+// New blend builder functions - no grams on chips, restructured layout
+
 function renderBlendBuilder() {
   var container = document.getElementById('blend-builder');
   if (!container) return;
@@ -564,49 +566,79 @@ function renderBlendBuilder() {
     if (document.activeElement.setSelectionRange) { selStart = document.activeElement.selectionStart; selEnd = document.activeElement.selectionEnd; }
   }
   var h = '<div class="bb-container">';
-  h += '<div class="bb-field"><label class="bb-label">Nombre del blend</label>';
-  h += '<input class="bb-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_blendBuilderState.nombre=this.value" placeholder="Ej: Mi mezcla especial"></div>';
-  h += '<div class="bb-field"><label class="bb-label">Tamano del frasco</label><div class="bb-size-row">';
+
+  // Header compacto: nombre + talla + precio
+  h += '<div class="bb-header">';
+  h += '<div class="bb-header-top">';
+  h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_blendBuilderState.nombre=this.value" placeholder="Nombre de tu blend">';
+  h += '<div class="bb-header-right">';
   h += '<button class="bb-size-btn' + (state.talla === 'chico' ? ' active' : '') + '" onclick="_bbSetTalla(\'chico\')">Pequeno</button>';
   h += '<button class="bb-size-btn' + (state.talla === 'grande' ? ' active' : '') + '" onclick="_bbSetTalla(\'grande\')">Grande</button>';
   h += '</div></div>';
-  h += '<div class="bb-field"><label class="bb-label">Tu mezcla</label>';
-  if (state.especias.length === 0) {
-    h += '<div class="bb-empty">Toca las especias de abajo para armar tu blend</div>';
+  h += '<div class="bb-price-row">';
+  if (precio > 0) {
+    h += '<span class="bb-price-label">' + (state.talla === 'grande' ? 'Frasco Grande' : 'Frasco Pequeno') + '</span>';
+    h += '<span class="bb-price-value">$' + precio.toLocaleString() + '</span>';
   } else {
+    h += '<span class="bb-price-label">Selecciona tamano</span>';
+  }
+  h += '</div></div>';
+
+  // Especias disponibles como chips
+  h += '<div class="bb-section">';
+  h += '<div class="bb-section-title">Elige tus especias</div>';
+  if (especias.length === 0) {
+    h += '<div class="bb-empty">No hay especias disponibles</div>';
+  } else {
+    h += '<div class="bb-chips-grid">';
+    for (var e = 0; e < especias.length; e++) {
+      var isSelected = false;
+      for (var s = 0; s < state.especias.length; s++) {
+        if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
+      }
+      var safeName = especias[e].nombre.replace(/'/g, "\\'");
+      if (isSelected) {
+        h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">' + '\u2713' + '</span></button>';
+      } else {
+        h += '<button class="bb-chip" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + '</button>';
+      }
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+
+  // Tu mezcla con controles de porcentaje
+  h += '<div class="bb-section">';
+  h += '<div class="bb-section-title">Tu mezcla</div>';
+  if (state.especias.length === 0) {
+    h += '<div class="bb-empty">Toca las especias de arriba para comenzar</div>';
+  } else {
+    h += '<div class="bb-mix-list">';
     for (var i = 0; i < state.especias.length; i++) {
       var sp = state.especias[i];
-      h += '<div class="bb-spice-row"><div class="bb-spice-name">' + sp.nombre + '</div><div class="bb-spice-controls">';
+      h += '<div class="bb-mix-row">';
+      h += '<span class="bb-mix-name">' + sp.nombre + '</span>';
+      h += '<div class="bb-mix-controls">';
       h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',-5)">-</button>';
-      h += '<input class="bb-pct-input" id="bb-pct-' + i + '" type="number" min="1" max="100" value="' + sp.porcentaje + '" onchange="_bbSetPctDirect(' + i + ',this.value)">';
-      h += '<span class="bb-pct-sym">%</span>';
+      h += '<div class="bb-pct-display"><input class="bb-pct-input" id="bb-pct-' + i + '" type="number" min="1" max="100" value="' + sp.porcentaje + '" onchange="_bbSetPctDirect(' + i + ',this.value)"><span class="bb-pct-sym">%</span></div>';
       h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',5)">+</button>';
       h += '<button class="bb-rm-btn" onclick="_bbRemoveSpice(' + i + ')">' + '\u00d7' + '</button>';
       h += '</div></div>';
     }
+    h += '</div>';
   }
   h += '</div>';
-  // Chips de especias visibles
-  h += '<div class="bb-field"><label class="bb-label">Especias disponibles</label>';
-  h += '<div class="bb-chips-grid">';
-  for (var e = 0; e < especias.length; e++) {
-    var isSelected = false;
-    for (var s = 0; s < state.especias.length; s++) {
-      if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
-    }
-    var safeName = especias[e].nombre.replace(/'/g, "\\'");
-    if (isSelected) {
-      h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">' + '\u2713' + '</span></button>';
-    } else {
-      h += '<button class="bb-chip" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-stock">' + especias[e].stockPala + 'g</span></button>';
-    }
-  }
-  h += '</div></div>';
+
+  // Footer: barra + boton
   var barColor = total === 100 ? 'var(--success)' : (total > 100 ? 'var(--error)' : 'var(--gold)');
-  h += '<div class="bb-total-section"><div class="bb-total-bar"><div class="bb-total-fill" style="width:' + Math.min(total, 100) + '%;background:' + barColor + '"></div></div>';
-  h += '<div class="bb-total-text" style="color:' + barColor + '">' + (total > 100 ? 'Excedes el 100%' : 'Total: ' + total + '%') + '</div></div>';
-  h += '<div class="bb-footer"><div class="bb-price">$' + precio.toLocaleString() + '</div>';
-  h += '<button class="bb-cart-btn' + (isComplete ? '' : ' disabled') + '" onclick="addCustomBlendToCart()"' + (isComplete ? '' : ' disabled') + '>Agregar al carrito</button></div>';
+  h += '<div class="bb-footer">';
+  h += '<div class="bb-footer-left">';
+  h += '<div class="bb-total-bar"><div class="bb-total-fill" style="width:' + Math.min(total, 100) + '%;background:' + barColor + '"></div></div>';
+  h += '<div class="bb-total-text" style="color:' + barColor + '">' + (total > 100 ? 'Excedes el 100%' : 'Total: ' + total + '%') + '</div>';
+  h += '</div>';
+  h += '<button class="bb-cart-btn' + (isComplete ? '' : ' disabled') + '" onclick="addCustomBlendToCart()"' + (isComplete ? '' : ' disabled') + '>Agregar al carrito</button>';
+  h += '</div>';
+
   h += '</div>';
   container.innerHTML = h;
   if (activeId) { var el = document.getElementById(activeId); if (el) { el.focus(); if (selStart !== null) el.setSelectionRange(selStart, selEnd); } }
