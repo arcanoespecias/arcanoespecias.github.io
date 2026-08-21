@@ -1006,7 +1006,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .hero-logo { height: 80px; width: auto; flex-shrink: 0; }
 .hero-text h2 { margin-bottom: 4px; }
 
-.page-header { display: flex; align-items: center; gap: 16px; }
+.page-header:has(.page-header-logo) { display: flex; align-items: center; gap: 16px; }
 .page-header-logo { height: 64px; width: auto; flex-shrink: 0; }
 .page-header-text h2 { margin-bottom: 4px; }
 .page-header-text p { margin: 0; }
