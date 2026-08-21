@@ -254,7 +254,7 @@ main {
 }
 .card-img-wrap {
   height: 280px; position: relative; overflow: hidden;
-  background: #F5F1EB;
+  background: #F0E4D0;
   display: flex; align-items: center; justify-content: center;
 }
 .card-img-wrap img {
@@ -576,7 +576,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   gap: 16px;
 }
 .recipe-grid-card {
-  background: var(--bg-card); border-radius: var(--radius);
+  background: #F0E4D0; border-radius: var(--radius);
   border: 1px solid var(--border-light);
   padding: 20px; cursor: pointer;
   transition: all 0.25s var(--ease);
@@ -696,6 +696,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* === BLEND BUILDER === */
 .bb-container {
   max-width: 640px; margin: 0 auto;
+  background: #F0E4D0; padding: 20px;
 }
 .bb-field { margin-bottom: 20px; }
 .bb-label {
