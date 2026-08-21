@@ -437,33 +437,6 @@ function compartirReceta(key) {
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 2000);
   }
 }
-/* === PROMO POPUP === */
-function checkPromoPopup() {
-  if (sessionStorage.getItem('arcano_promo_shown')) return;
-  var cfg = getTiendaConfig();
-  var promo = (cfg && cfg.promoPopup) || null;
-  if (!promo || !promo.active) return;
-  var isMobile = window.innerWidth <= 768;
-  var imgSrc = isMobile ? promo.imagenMobile : promo.imagenDesktop;
-  if (!imgSrc) imgSrc = promo.imagenDesktop || promo.imagenMobile;
-  if (!imgSrc) return;
-  sessionStorage.setItem('arcano_promo_shown', '1');
-  var overlay = document.createElement('div');
-  overlay.id = 'promo-popup-overlay';
-  var link = promo.link || '';
-  var imgTag = '<img src="' + imgSrc + '" class="promo-popup-img" alt="Promo">';
-  var inner = link ? '<a href="' + link + '" target="_blank" rel="noopener">' + imgTag + '</a>' : imgTag;
-  overlay.innerHTML = inner + '<button class="promo-popup-close" onclick="closePromoPopup()">\u00d7</button>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', function(e) {
-    if (e.target === overlay || e.target.classList.contains('promo-popup-close')) closePromoPopup();
-  });
-}
-function closePromoPopup() {
-  var el = document.getElementById('promo-popup-overlay');
-  if (el) el.remove();
-}
-
 /* === INIT === */
 var currentFilter = 'Todos';
 document.addEventListener('DOMContentLoaded', function() {
@@ -478,7 +451,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initRecetas();
     renderSidebarLogo();
     renderSocialLinks();
-    checkPromoPopup();
   });
 
   document.getElementById('filters').addEventListener('click', function(e) {
