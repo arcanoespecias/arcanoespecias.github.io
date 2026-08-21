@@ -750,28 +750,33 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   text-align: center; padding: 32px; color: var(--text-muted);
   font-size: 0.9rem;
 }
-.bb-add-btn {
-  width: 100%; padding: 12px; border-radius: var(--radius-sm);
-  border: 1.5px dashed var(--border); color: var(--text-sec);
-  font-size: 0.88rem; font-weight: 500; margin-top: 12px;
-  transition: all 0.2s var(--ease);
+.bb-chips-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
 }
-.bb-add-btn:hover { border-color: var(--gold); color: var(--gold); border-style: solid; }
-.bb-dropdown {
-  margin-top: 10px; border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border); overflow: hidden;
+.bb-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 100px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s var(--ease);
 }
-.bb-search {
-  width: 100%; padding: 12px 14px; border: none; border-bottom: 1px solid var(--border-light);
-  font-size: 0.88rem; outline: none; background: transparent;
+.bb-chip:hover {
+  border-color: var(--gold); color: var(--gold); background: var(--gold-light);
+  transform: translateY(-1px);
 }
-.bb-dropdown-list { max-height: 200px; overflow-y: auto; }
-.bb-dropdown-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; cursor: pointer; transition: background 0.15s;
-  font-size: 0.88rem; color: var(--text);
+.bb-chip.selected {
+  border-color: var(--gold); background: var(--gold); color: #fff;
 }
-.bb-dropdown-item:hover { background: var(--gold-light); color: var(--gold); }
+.bb-chip.selected:hover {
+  background: var(--gold-hover, #b8943a); border-color: var(--gold-hover, #b8943a);
+}
+.bb-chip-check {
+  font-size: 0.78rem; font-weight: 700;
+}
+.bb-chip-stock {
+  font-size: 0.72rem; color: var(--text-muted); font-weight: 400;
+}
+.bb-chip.selected .bb-chip-stock { color: rgba(255,255,255,0.75); }
 .bb-total-section { margin-top: 20px; }
 .bb-total-bar {
   height: 8px; border-radius: 4px; background: var(--surface); overflow: hidden;
