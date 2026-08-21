@@ -799,7 +799,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-nav-btn.next.cart:hover { background: var(--gold-hover, #b8943a); }
 /* === BLEND SUCCESS === */
 .bb-success { text-align: center; padding: 40px 20px; animation: pageFadeIn 0.35s var(--ease); }
-.bb-success-icon { font-size: 3rem; margin-bottom: 12px; }
+.bb-success-img { height: 140px; width: auto; margin-bottom: 16px; }
 .bb-success-title { font-size: 1.4rem !important; }
 .bb-success-desc { font-size: 1rem !important; margin-bottom: 28px !important; }
 .bb-success-btns { display: flex; flex-direction: column; gap: 10px; max-width: 260px; margin: 0 auto; }
