@@ -550,6 +550,34 @@ function _getCustomBlendPrice(talla) {
   return config.precioBlendChico || 0;
 }
 
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
 function renderBlendBuilder() {
   var container = document.getElementById('blend-builder');
   if (!container) return;
@@ -584,7 +612,7 @@ function renderBlendBuilder() {
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Nombra tu blend</h3>';
     h += '<p class="bb-step-desc">Dale un nombre unico a tu mezcla especial.</p>';
-    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_blendBuilderState.nombre=this.value" placeholder="Ej: Mi mezcla especial">';
+    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Mi mezcla especial">';
     h += '</div>';
   }
 
@@ -680,7 +708,7 @@ function renderBlendBuilder() {
   }
   if (step < 5) {
     var canNext = _bbCanNext(step);
-    h += '<button class="bb-nav-btn next' + (canNext ? '' : ' disabled') + '" onclick="_bbGoStep(' + (step + 1) + ')"' + (canNext ? '' : ' disabled') + '>Siguiente</button>';
+    h += '<button id="bb-btn-next" class="bb-nav-btn next' + (canNext ? '' : ' disabled') + '" onclick="_bbGoStep(' + (step + 1) + ')"' + (canNext ? '' : ' disabled') + '>Siguiente</button>';
   } else {
     h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Agregar al carrito</button>';
   }
@@ -699,6 +727,18 @@ function _bbCanNext(step) {
   return false;
 }
 
+function _bbOnNameInput(el) {
+  _blendBuilderState.nombre = el.value;
+  var btn = document.getElementById('bb-btn-next');
+  if (!btn) return;
+  if (el.value.trim().length > 0) {
+    btn.removeAttribute('disabled');
+    btn.classList.remove('disabled');
+  } else {
+    btn.setAttribute('disabled', '');
+    btn.classList.add('disabled');
+  }
+}
 function _bbGoStep(n) {
   if (n > _blendBuilderState.step && !_bbCanNext(_blendBuilderState.step)) return;
   // Auto-distribute when entering step 4
@@ -729,6 +769,46 @@ function _bbRemoveSpiceByName(nombre) {
 }
 function _bbChangePct(idx, delta) { var c = _blendBuilderState.especias[idx].porcentaje; var o = _bbGetTotal() - c; var n = c + delta; if (n < 1) n = 1; if (o + n > 100) n = 100 - o; if (n < 1) n = 1; _blendBuilderState.especias[idx].porcentaje = n; renderBlendBuilder(); }
 function _bbSetPctDirect(idx, val) { var num = parseInt(val, 10); if (isNaN(num) || num < 1) num = 1; var o = _bbGetTotal() - _blendBuilderState.especias[idx].porcentaje; if (o + num > 100) num = 100 - o; if (num < 1) num = 1; _blendBuilderState.especias[idx].porcentaje = num; renderBlendBuilder(); }
+function addCustomBlendToCart() {
+  var nombreInput = document.getElementById('bb-name');
+  var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
+  if (!nombre) { alert('Dale un nombre a tu blend'); return; }
+  var total = _bbGetTotal();
+  if (total !== 100) { alert('El total debe ser 100%'); return; }
+  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
+  var precio = _getCustomBlendPrice(_blendBuilderState.talla);
+  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeno';
+  var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
+  var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
+    customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
+  }
+  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
+  saveCart(); updateCartBadge(); _showToast('Blend ' + nombre + ' agregado');
+  _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
+  renderBlendBuilder();
+}
+
+function addCustomBlendToCart() {
+  var nombreInput = document.getElementById('bb-name');
+  var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
+  if (!nombre) { alert('Dale un nombre a tu blend'); return; }
+  var total = _bbGetTotal();
+  if (total !== 100) { alert('El total debe ser 100%'); return; }
+  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
+  var precio = _getCustomBlendPrice(_blendBuilderState.talla);
+  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeno';
+  var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
+  var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
+    customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
+  }
+  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
+  saveCart(); updateCartBadge(); _showToast('Blend ' + nombre + ' agregado');
+  _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
+  renderBlendBuilder();
+}
+
 function addCustomBlendToCart() {
   var nombreInput = document.getElementById('bb-name');
   var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
