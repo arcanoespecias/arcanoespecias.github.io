@@ -1066,4 +1066,74 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 @media (max-width: 768px) {
   .hero-logo { height: 64px; }
   .page-header-logo { height: 52px; }
+  .gc-modal { margin: 16px; padding: 28px 20px; }
+  .gc-benefits { grid-template-columns: 1fr; }
 }
+
+/* === GRANDES CLIENTES NAV HIGHLIGHT === */
+.nav-item-highlight {
+  color: var(--gold) !important;
+  font-weight: 600;
+}
+.nav-item-highlight:hover { opacity: 0.8; }
+.mm-nav-highlight { color: var(--gold) !important; font-weight: 600; }
+
+/* === GRANDES CLIENTES MODAL === */
+.gc-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(27,11,7,0.55);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s var(--ease);
+}
+.gc-overlay.open { opacity: 1; pointer-events: auto; }
+.gc-modal {
+  position: relative;
+  background: #F0E4D0;
+  border-radius: var(--radius);
+  padding: 40px 36px;
+  max-width: 480px; width: 90%;
+  box-shadow: var(--shadow-xl);
+  animation: pageFadeIn 0.3s var(--ease);
+  max-height: 90vh; overflow-y: auto;
+}
+.gc-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; color: var(--text-sec);
+  background: var(--surface); transition: all 0.2s var(--ease);
+  z-index: 2;
+}
+.gc-close:hover { background: var(--gold-light); color: var(--gold); }
+.gc-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--dark); color: #F5E6D0;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.gc-icon svg { width: 28px; height: 28px; }
+.gc-title {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+  color: var(--dark); margin-bottom: 12px;
+}
+.gc-desc {
+  font-size: 0.92rem; color: var(--text-sec); line-height: 1.7;
+  margin-bottom: 20px;
+}
+.gc-benefits {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 24px;
+}
+.gc-benefit {
+  padding: 10px 14px; border-radius: var(--radius-xs);
+  background: var(--bg); font-size: 0.82rem; font-weight: 500;
+  color: var(--text);
+  border-left: 3px solid var(--gold);
+}
+.gc-form .form-group { margin-bottom: 14px; }
+.gc-form .form-input {
+  background: var(--bg-card);
+}
+.gc-form .btn-primary { margin-top: 4px; }
