@@ -561,7 +561,7 @@ function renderBlendBuilder() {
   var especias = _getEspeciasDisponibles();
   var state = _blendBuilderState;
   var total = _bbGetTotal();
-  var precio = _getCustomBlendPrice(state.talla);
+  var precio = state.especias.length > 0 ? _getCustomBlendPrice(state.talla) : 0;
   var isComplete = total === 100 && state.nombre.trim().length > 0 && state.especias.length > 0;
   var activeId = null, selStart = null, selEnd = null;
   if (document.activeElement && document.activeElement.id) {
