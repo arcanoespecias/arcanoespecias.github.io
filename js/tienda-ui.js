@@ -538,17 +538,9 @@ function _getEspeciasDisponibles() {
   return especias;
 }
 function _getCustomBlendPrice(talla) {
-  var products = getStoreProducts();
-  var totalChico = 0, countChico = 0, totalGrande = 0, countGrande = 0;
-  for (var i = 0; i < products.length; i++) {
-    if (products[i].tipo === 'blend') {
-      if (products[i].precioChico > 0) { totalChico += products[i].precioChico; countChico++; }
-      if (products[i].precioGrande > 0) { totalGrande += products[i].precioGrande; countGrande++; }
-    }
-  }
-  if (talla === 'grande' && countGrande > 0) return Math.round(totalGrande / countGrande);
-  if (countChico > 0) return Math.round(totalChico / countChico);
-  return 15000;
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
 }
 function _bbGetTotal() {
   var total = 0;
@@ -561,7 +553,7 @@ function renderBlendBuilder() {
   var especias = _getEspeciasDisponibles();
   var state = _blendBuilderState;
   var total = _bbGetTotal();
-  var precio = state.especias.length > 0 ? _getCustomBlendPrice(state.talla) : 0;
+  var precio = _getCustomBlendPrice(state.talla);
   var isComplete = total === 100 && state.nombre.trim().length > 0 && state.especias.length > 0;
   var activeId = null, selStart = null, selEnd = null;
   if (document.activeElement && document.activeElement.id) {
