@@ -20,7 +20,7 @@ function _showToast(msg) {
 /* === NAVIGATION === */
 function goTo(page) {
   _currentPage = page;
-  var pages = ['tienda','recetas','blend','faq'];
+  var pages = ['tienda','recetas','blog','blend','faq']
   for (var i = 0; i < pages.length; i++) {
     var el = document.getElementById('page-' + pages[i]);
     if (el) {
@@ -44,6 +44,8 @@ function goTo(page) {
     renderRecipeGrid();
     var rd = document.getElementById('recipe-detail');
     if (rd) rd.innerHTML = '';
+  } else if (page === 'blog') {
+    renderBlogList();
   } else if (page === 'blend') {
     renderBlendBuilder();
   } else if (page === 'faq') {
@@ -70,6 +72,8 @@ function _updateSidebar(page) {
     sb.innerHTML = '<p>Descubre mezclas de especias inspiradas en sabores del mundo, creadas para comidas, infusiones y coctelería. Ingredientes seleccionados para llevar nuevos aromas y sabores a cada momento.</p>';
   } else if (page === 'recetas') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-receta-cats">' + '<li class="active" onclick="selectRecetaCat(\'Comida\')">Comida</li>' + '<li onclick="selectRecetaCat(\'Infusiones\')">Infusiones</li>' + '<li onclick="selectRecetaCat(\'Cocteleria\')">Cocteleria</li>' + '</ul>';
+  } else if (page === 'blog') {
+    sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-blog-cats"><li class="active" onclick="selectBlogCat(\'Todos\')">Todos</li><li onclick="selectBlogCat(\'Historias\')">Historias</li><li onclick="selectBlogCat(\'Beneficios\')">Beneficios</li><li onclick="selectBlogCat(\'Investigaciones\')">Investigaciones</li><li onclick="selectBlogCat(\'Curiosidades\')">Curiosidades</li><li onclick="selectBlogCat(\'Origenes\')">Origenes</li></ul>';
   } else if (page === 'blend') {
     sb.innerHTML = '<p>Crea tu blend personalizado seleccionando las especias que mas te gusten. Elige entre nuestra coleccion de ingredientes artesanales y diseña una mezcla unica para tus recetas.</p><p>Puedes elegir el tamano y la proporcion de cada especia para obtener el sabor perfecto.</p>';
   } else if (page === 'faq') {
@@ -912,6 +916,98 @@ var _SOCIAL_LINKS = [
   { name: 'YouTube', url: 'https://youtube.com/@arcanoespecias', svg: '<svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
   { name: 'WhatsApp', url: 'https://wa.me/XXXXXXXXXX', svg: '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.613z"/></svg>' }
 ];
+/* === BLOG === */
+var _blogCurrentCat = 'Todos';
+function selectBlogCat(cat) {
+  _blogCurrentCat = cat;
+  _blogCatFilter = cat;
+  var tabs = document.querySelectorAll('.blog-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].dataset.cat === cat);
+  var sbItems = document.querySelectorAll('#sidebar-blog-cats li');
+  for (var i = 0; i < sbItems.length; i++) sbItems[i].classList.toggle('active', sbItems[i].textContent.trim() === cat);
+  renderBlogList();
+}
+function renderBlogList() {
+  var grid = document.getElementById('blog-grid');
+  var detail = document.getElementById('blog-detail');
+  if (!grid) return;
+  if (detail) detail.innerHTML = '';
+  grid.style.display = '';
+  onBlogReady(function(posts) {
+    var filtered = getBlogPosts();
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="empty-state"><p>Aun no hay articulos en esta categoria.</p></div>';
+      return;
+    }
+    var h = '';
+    for (var i = 0; i < filtered.length; i++) {
+      var p = filtered[i];
+      var fechaStr = '';
+      if (p.fecha) {
+        var parts = p.fecha.split('T')[0].split('-');
+        var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        fechaStr = parseInt(parts[2]) + ' ' + meses[parseInt(parts[1]) - 1] + ' ' + parts[0];
+      }
+      var imgSrc = p.imagen_url || '';
+      h += '<div class="blog-card" onclick="openBlogPost(' + "'" + " + p._key + "'" + ")"  + '>';
+      if (imgSrc) h += '<div class="blog-card-img"><img src="' + imgSrc + '" alt="' + (p.titulo || '').replace(/"/g, '&quot;') + '" loading="lazy"></div>';
+      h += '<div class="blog-card-body">';
+      if (p.categoria) h += '<span class="blog-card-cat">' + p.categoria + '</span>';
+      h += '<h3 class="blog-card-title">' + (p.titulo || 'Sin titulo') + '</h3>';
+      if (p.subtitulo) h += '<p class="blog-card-sub">' + p.subtitulo + '</p>';
+      if (fechaStr) h += '<span class="blog-card-date">' + fechaStr + '</span>';
+      h += '</div></div>';
+    }
+    grid.innerHTML = h;
+  });
+}
+function openBlogPost(key) {
+  onBlogReady(function(posts) {
+    var post = null;
+    for (var i = 0; i < posts.length; i++) {
+      if (posts[i]._key === key) { post = posts[i]; break; }
+    }
+    if (!post) return;
+    var grid = document.getElementById('blog-grid');
+    var detail = document.getElementById('blog-detail');
+    if (grid) grid.style.display = 'none';
+    if (!detail) return;
+    var fechaStr = '';
+    if (post.fecha) {
+      var parts = post.fecha.split('T')[0].split('-');
+      var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      fechaStr = parseInt(parts[2]) + ' ' + meses[parseInt(parts[1]) - 1] + ' ' + parts[0];
+    }
+    var h = '<div class="blog-detail">';
+    h += '<button class="blog-back-btn" onclick="renderBlogList()">&larr; Volver al Blog</button>';
+    h += '<div class="blog-detail-meta">';
+    if (post.categoria) h += '<span class="blog-card-cat">' + post.categoria + '</span>';
+    if (fechaStr) h += '<span class="blog-detail-date">' + fechaStr + '</span>';
+    h += '</div>';
+    h += '<h1 class="blog-detail-title">' + (post.titulo || '') + '</h1>';
+    if (post.subtitulo) h += '<p class="blog-detail-sub">' + post.subtitulo + '</p>';
+    if (post.imagen_url) h += '<img class="blog-detail-img" src="' + post.imagen_url + '" alt="' + (post.titulo || '').replace(/"/g, '&quot;') + '">';
+    if (post.contenido) h += '<div class="blog-detail-content">' + post.contenido + '</div>';
+    h += '<button class="blog-back-btn" style="margin-top:32px" onclick="renderBlogList()">&larr; Volver al Blog</button>';
+    h += '</div>';
+    detail.innerHTML = h;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+function compartirBlog(key) {
+  onBlogReady(function(posts) {
+    var post = null;
+    for (var i = 0; i < posts.length; i++) { if (posts[i]._key === key) { post = posts[i]; break; } }
+    if (!post) return;
+    var text = post.titulo + ' - Arcano Especias';
+    if (navigator.share) { navigator.share({ title: post.titulo, text: text }).catch(function() {}); }
+    else {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      _showToast('Enlace copiado');
+    }
+  });
+}
 function renderSocialLinks() {
   var h = '';
   for (var i = 0; i < _SOCIAL_LINKS.length; i++) {
@@ -932,8 +1028,10 @@ document.addEventListener('DOMContentLoaded', function() {
   initTienda().then(function() {
     renderProducts('Todos');
     initRecetas();
+    initBlog();
     renderSocialLinks();
     onRecetasReady(function() { if (_currentPage === 'recetas') renderRecipeGrid(); });
+    onBlogReady(function() { if (_currentPage === 'blog') renderBlogList(); });
     onTiendaChange(function() {
       if (!hasVisiblePacks()) {
         var pb = document.querySelector('.filter-pill[data-cat="Packs"]');
