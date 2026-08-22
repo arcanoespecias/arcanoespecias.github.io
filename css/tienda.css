@@ -908,9 +908,9 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   flex-shrink: 0;
   position: sticky;
   top: calc(var(--nav-h) + 24px);
-  height: fit-content;
   max-height: calc(100vh - var(--nav-h) - 48px);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 .sidebar-logo-wrap {
   margin-bottom: 28px;
@@ -921,6 +921,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   display: block;
 }
 .sidebar-content {
+  flex: 1;
+  overflow-y: auto;
   font-size: 0.88rem;
   color: var(--text-sec);
   line-height: 1.6;
