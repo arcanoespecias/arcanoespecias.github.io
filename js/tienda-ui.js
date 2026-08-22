@@ -67,7 +67,7 @@ function _updateSidebar(page) {
   var sb = document.getElementById('sidebar-content');
   if (!sb) return;
   if (page === 'tienda') {
-    sb.innerHTML = '<p>Descubre mezclas de especias inspiradas en sabores del mundo, creadas para carnes, comidas, infusiones y coctelería. Ingredientes seleccionados para llevar nuevos aromas y sabores a cada preparación.</p>';
+    sb.innerHTML = '<p>Descubre mezclas de especias inspiradas en sabores del mundo, creadas para comidas, infusiones y coctelería. Ingredientes seleccionados para llevar nuevos aromas y sabores a cada momento.</p>';
   } else if (page === 'recetas') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-receta-cats">' + '<li class="active" onclick="selectRecetaCat(\'Comida\')">Comida</li>' + '<li onclick="selectRecetaCat(\'Infusiones\')">Infusiones</li>' + '<li onclick="selectRecetaCat(\'Cocteleria\')">Cocteleria</li>' + '</ul>';
   } else if (page === 'blend') {
