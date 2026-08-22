@@ -770,8 +770,8 @@ function renderBlendBuilder() {
   // Step 6: Exito
   if (step === 6) {
     h += '<div class="bb-step-content bb-success">';
-    h += '<h3 class="bb-step-title bb-success-title">Tu Blend ha quedado fantastico</h3>';
-    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho caracter y estilo.</p>';
+    h += '<h3 class="bb-step-title bb-success-title">Genial! <br> Tu Blend ha quedado fantástico</h3>';
+    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho carácter y estilo.</p>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn success" onclick="_bbCreateAnother()">Crear otro</button>';
     h += '<button class="bb-nav-btn success" onclick="goTo(\'tienda\')">Ir a la tienda</button>';
