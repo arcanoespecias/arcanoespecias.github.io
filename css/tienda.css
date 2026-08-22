@@ -908,7 +908,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   flex-shrink: 0;
   position: sticky;
   top: calc(var(--nav-h) + 24px);
-  max-height: calc(100vh - var(--nav-h) - 48px);
+  height: calc(100vh - var(--nav-h) - 48px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
