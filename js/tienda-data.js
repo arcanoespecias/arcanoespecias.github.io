@@ -268,3 +268,32 @@ function onRecetasReady(cb) {
   if (_recetasReady) { cb(_recetas); return; }
   _recetasListeners.push(cb);
 }
+/* === BLOG (read) === */
+var _blogPosts = [];
+var _blogReady = false;
+var _blogListeners = [];
+var _blogCatFilter = 'Todos';
+function initBlog() {
+  var ref = firebase.database().ref('arcano/db/blog').orderByChild('fecha');
+  ref.on('value', function(snap) {
+    var d = snap.val();
+    _blogPosts = [];
+    if (d) {
+      var keys = Object.keys(d);
+      for (var i = 0; i < keys.length; i++) {
+        var p = d[keys[i]]; p._key = keys[i]; _blogPosts.push(p);
+      }
+    }
+    _blogPosts.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+    _blogReady = true;
+    for (var j = 0; j < _blogListeners.length; j++) { try { _blogListeners[j](_blogPosts); } catch(e) {} }
+  });
+}
+function getBlogPosts() {
+  if (_blogCatFilter === 'Todos') return _blogPosts;
+  return _blogPosts.filter(function(p) { return p.categoria === _blogCatFilter; });
+}
+function onBlogReady(cb) {
+  if (_blogReady) { cb(_blogPosts); return; }
+  _blogListeners.push(cb);
+}
