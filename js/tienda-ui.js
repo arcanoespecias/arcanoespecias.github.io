@@ -634,6 +634,20 @@ function _getCustomBlendPrice(talla) {
   return config.precioBlendChico || 0;
 }
 
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
 function renderBlendBuilder() {
   var container = document.getElementById('blend-builder');
   if (!container) return;
@@ -742,9 +756,12 @@ function renderBlendBuilder() {
   // Step 6: Exito
   if (step === 6) {
     h += '<div class="bb-step-content bb-success">';
-    h += '<img class="bb-success-img" src="icons/blend-success.png" alt="Frascos Arcano">';
+    h += '<div class="bb-success-body">';
+    h += '<img class="bb-success-img" src="icons/blend-success.jpeg" alt="Frascos Arcano">';
+    h += '<div class="bb-success-text">';
     h += '<h3 class="bb-step-title bb-success-title">Tu Blend ha quedado fantastico</h3>';
     h += '<p class="bb-step-desc bb-success-desc">Tiene mucho caracter y estilo.</p>';
+    h += '</div></div>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn next" onclick="_bbCreateAnother()">Crear otro</button>';
     h += '<button class="bb-nav-btn prev" onclick="goTo(\'tienda\')">Ir a la tienda</button>';
