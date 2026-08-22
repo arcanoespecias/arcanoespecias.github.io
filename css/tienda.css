@@ -741,7 +741,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .bb-size-card:hover { border-color: var(--gold); }
 .bb-size-card.selected { border-color: var(--gold); background: var(--gold-light); }
-.bb-size-card-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.bb-size-card-icon { width: 80px; height: 80px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
+.bb-size-card-icon img { width: 100%; height: 100%; object-fit: contain; }
 .bb-size-card-name { font-size: 1rem; font-weight: 600; color: var(--text); }
 .bb-size-card-price { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--gold); margin-top: 8px; }
 /* Step 3 */
