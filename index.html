@@ -22,9 +22,9 @@
   <meta name="twitter:image" content="https://arcanoespecias.github.io/icons/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" href="css/tienda.css?v=21" as="style">
+  <link rel="preload" href="css/tienda.css?v=22" as="style">
   <link rel="preload" href="icons/logo.png" as="image">
-  <link rel="stylesheet" href="css/tienda.css?v=21">
+  <link rel="stylesheet" href="css/tienda.css?v=22">
 
   <!-- SEO: Structured Data - Organization (static) -->
   <script type="application/ld+json">
@@ -803,6 +803,7 @@
       <nav class="nav-links" id="desktop-nav">
         <button class="nav-item active" data-page="tienda" onclick="goTo('tienda')">Tienda</button>
         <button class="nav-item" data-page="recetas" onclick="goTo('recetas')">Recetas</button>
+        <button class="nav-item" data-page="blog" onclick="goTo('blog')">Blog</button>
         <button class="nav-item" data-page="blend" onclick="goTo('blend')">Tu Blend</button>
         <button class="nav-item" data-page="faq" onclick="goTo('faq')">F.A.Q</button>
         <button class="nav-item nav-item-highlight" onclick="openGrandesClientes()">Grandes Clientes</button>
@@ -821,7 +822,9 @@
       <button class="mm-nav-item active" data-page="tienda" onclick="goTo('tienda');closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Tienda
       </button>
-      <button class="mm-nav-item" data-page="recetas" onclick="goTo('recetas');closeMobileMenu()">
+      <button class="mm-nav-item" data-page="blog" onclick="goTo('blog');closeMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Blog
+      </button><button class="mm-nav-item" data-page="recetas" onclick="goTo('recetas');closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Recetas
       </button>
       <button class="mm-nav-item" data-page="blend" onclick="goTo('blend');closeMobileMenu()">
@@ -872,7 +875,20 @@
       <div class="recipe-grid" id="recipe-grid"></div>
       <div id="recipe-detail"></div>
     </div>
-    <div id="page-blend" class="page" style="display:none">
+    <div id="page-blog" class="page" style="display:none">
+      <div class="page-header"><h2>Blog Arcano</h2><p>Historias, curiosidades y mucho mas sobre especias</p></div>
+      <div class="blog-tabs" id="blog-cat-tabs">
+        <button class="blog-tab active" data-cat="Todos" onclick="selectBlogCat('Todos')">Todos</button>
+        <button class="blog-tab" data-cat="Historias" onclick="selectBlogCat('Historias')">Historias</button>
+        <button class="blog-tab" data-cat="Beneficios" onclick="selectBlogCat('Beneficios')">Beneficios</button>
+        <button class="blog-tab" data-cat="Investigaciones" onclick="selectBlogCat('Investigaciones')">Investigaciones</button>
+        <button class="blog-tab" data-cat="Curiosidades" onclick="selectBlogCat('Curiosidades')">Curiosidades</button>
+        <button class="blog-tab" data-cat="Origenes" onclick="selectBlogCat('Origenes')">Origenes</button>
+      </div>
+      <div class="blog-grid" id="blog-grid"></div>
+      <div id="blog-detail"></div>
+    </div>
+<div id="page-blend" class="page" style="display:none">
       <div class="page-header">
         <h2>Tu Blend Personalizado</h2>
         <p>Crea tu mezcla unica de especias artesanales</p>
@@ -913,6 +929,10 @@
       <button class="btab" data-page="recetas" onclick="goTo('recetas')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         <span>Recetas</span>
+      </button>
+      <button class="btab" data-page="blog" onclick="goTo('blog')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Blog</span>
       </button>
       <button class="btab" data-page="blend" onclick="goTo('blend')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6v7l4 9H5l4-9V3z"/><line x1="9" y1="3" x2="15" y2="3"/></svg>
@@ -1533,6 +1553,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
   <script src="js/tienda-data.js" defer></script>
-  <script src="js/tienda-ui.js?v=21" defer></script>
+  <script src="js/tienda-ui.js?v=22" defer></script>
 </body>
 </html>
