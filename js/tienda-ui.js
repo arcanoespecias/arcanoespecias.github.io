@@ -67,7 +67,7 @@ function _updateSidebar(page) {
   var sb = document.getElementById('sidebar-content');
   if (!sb) return;
   if (page === 'tienda') {
-    sb.innerHTML = '<p>Descubre nuestra coleccion de especias y blends artesanales, seleccionados de cada rincon del mundo. Cada producto es elaborado con ingredientes de alta calidad para llevar sabores unicos a tu mesa.</p><p>Explora nuestras categorias: Comidas, Infusiones, Cocteleria y Packs exclusivos.</p>';
+    sb.innerHTML = '<p>Descubre mezclas de especias inspiradas en sabores del mundo, creadas para carnes, comidas, infusiones y coctelería. Ingredientes seleccionados para llevar nuevos aromas y sabores a cada preparación.</p>';
   } else if (page === 'recetas') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-receta-cats">' + '<li class="active" onclick="selectRecetaCat(\'Comida\')">Comida</li>' + '<li onclick="selectRecetaCat(\'Infusiones\')">Infusiones</li>' + '<li onclick="selectRecetaCat(\'Cocteleria\')">Cocteleria</li>' + '</ul>';
   } else if (page === 'blend') {
@@ -770,7 +770,7 @@ function renderBlendBuilder() {
   // Step 6: Exito
   if (step === 6) {
     h += '<div class="bb-step-content bb-success">';
-    h += '<h3 class="bb-step-title bb-success-title">Genial! <br> Tu Blend ha quedado fantástico</h3>';
+    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fantástico</h3>';
     h += '<p class="bb-step-desc bb-success-desc">Tiene mucho carácter y estilo.</p>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn success" onclick="_bbCreateAnother()">Crear otro</button>';
