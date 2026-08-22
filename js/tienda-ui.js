@@ -949,7 +949,7 @@ function renderBlogList() {
         fechaStr = parseInt(parts[2]) + ' ' + meses[parseInt(parts[1]) - 1] + ' ' + parts[0];
       }
       var imgSrc = p.imagen_url || '';
-      h += '<div class="blog-card" onclick="openBlogPost(' + "'" + p._key + "'" + ')"'>;
+      h += '<div class="blog-card" onclick="openBlogPost(\'' + p._key + '\')">';
       if (imgSrc) h += '<div class="blog-card-img"><img src="' + imgSrc + '" alt="' + (p.titulo || '').replace(/"/g, '&quot;') + '" loading="lazy"></div>';
       h += '<div class="blog-card-body">';
       if (p.categoria) h += '<span class="blog-card-cat">' + p.categoria + '</span>';
