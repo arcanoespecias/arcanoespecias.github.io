@@ -793,6 +793,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-nav-btn.prev { border: 1.5px solid var(--border); background: transparent; color: var(--text-sec); }
 .bb-nav-btn.prev:hover { border-color: var(--gold); color: var(--gold); }
 .bb-nav-btn.next { background: var(--dark); color: #F5E6D0; border: none; }
+.bb-nav-btn.success { background: #a0762c; color: #fff; border: none; }
+
 .bb-nav-btn.next:hover:not(.disabled) { background: #2a1a10; }
 .bb-nav-btn.next.disabled { opacity: 0.35; cursor: not-allowed; }
 .bb-nav-btn.next.cart { background: var(--gold); color: #fff; }
