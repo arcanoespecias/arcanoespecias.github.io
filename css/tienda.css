@@ -911,6 +911,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   max-height: calc(100vh - var(--nav-h) - 48px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .sidebar-logo-wrap {
   margin-bottom: 28px;
