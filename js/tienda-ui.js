@@ -709,12 +709,12 @@ function renderBlendBuilder() {
     h += '<p class="bb-step-desc">Selecciona el tamano del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
-    h += '<div class="bb-size-card-icon">\ud83e\uddf2</div>';
+    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco pequeno"></div>';
     h += '<div class="bb-size-card-name">Pequeno</div>';
     if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
     h += '</div>';
     h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
-    h += '<div class="bb-size-card-icon">\ud83e\uddf2</div>';
+    h += '<div class="bb-size-card-icon"><img src="icons/frasco-grande.png" alt="Frasco grande"></div>';
     h += '<div class="bb-size-card-name">Grande</div>';
     if (precio > 0 && state.talla === 'grande') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
     h += '</div>';
@@ -889,6 +889,8 @@ function addCustomBlendToCart() {
   _blendBuilderState.step = 6;
   renderBlendBuilder();
 }
+
+
 
 
 function renderFaqPage() {
