@@ -17,6 +17,33 @@ function _showToast(msg) {
   setTimeout(function() { if (el.parentNode) el.remove(); }, 2200);
 }
 
+/*** SEO: Dynamic title ***/
+var _BASE_TITLE = 'Arcano Especias';
+function _updateTitle(page, extra) {
+  var titles = {
+    tienda: 'Tienda de Especias y Blends Artesanales',
+    recetas: 'Recetas con Especias Artesanales',
+    blog: 'Blog de Especias y Blends',
+    blend: 'Crea tu Blend Personalizado',
+    faq: 'Preguntas Frecuentes'
+  };
+  var t = titles[page] || titles.tienda;
+  if (extra) t = extra + ' | ' + _BASE_TITLE;
+  else t = t + ' | ' + _BASE_TITLE;
+  document.title = t;
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    var descs = {
+      tienda: 'Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rincon para crear sabores unicos. Comidas, infusiones y cocteleria. Envios a toda Colombia.',
+      recetas: 'Recetas con especias artesanales de Arcano. Inspirate para cocinar con blends unicos de cada rincon del mundo.',
+      blog: 'Blog de especias, blends artesanales, curiosidades, beneficios y origenes de las especias del mundo.',
+      blend: 'Crea tu blend personalizado de especias artesanales con Arcano Especias.',
+      faq: 'Preguntas frecuentes sobre Arcano Especias: envios, pagos, productos y mas.'
+    };
+    metaDesc.setAttribute('content', descs[page] || descs.tienda);
+  }
+}
+
 /* === NAVIGATION === */
 function goTo(page) {
   _currentPage = page;
@@ -39,8 +66,10 @@ function goTo(page) {
   for (var i = 0; i < mmItems.length; i++) mmItems[i].classList.toggle('active', mmItems[i].dataset.page === page);
 
   if (page === 'tienda') {
+    _updateTitle('tienda');
     renderProducts(currentFilter);
   } else if (page === 'recetas') {
+    _updateTitle('recetas');
     renderRecipeGrid();
     var rd = document.getElementById('recipe-detail');
     if (rd) rd.innerHTML = '';
@@ -48,8 +77,10 @@ function goTo(page) {
     _updateTitle('blog');
     renderBlogList();
   } else if (page === 'blend') {
+    _updateTitle('blend');
     renderBlendBuilder();
   } else if (page === 'faq') {
+    _updateTitle('faq');
     renderFaqPage();
   }
   _updateSidebar(page);
@@ -76,7 +107,6 @@ function _updateSidebar(page) {
   } else if (page === 'blog') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-blog-cats"><li class="active" onclick="selectBlogCat(\'Todos\')">Todos</li><li onclick="selectBlogCat(\'Historias\')">Historias</li><li onclick="selectBlogCat(\'Beneficios\')">Beneficios</li><li onclick="selectBlogCat(\'Investigaciones\')">Investigaciones</li><li onclick="selectBlogCat(\'Curiosidades\')">Curiosidades</li><li onclick="selectBlogCat(\'Origenes\')">Origenes</li></ul>';
   } else if (page === 'blend') {
-    _updateTitle('blend');
     sb.innerHTML = '<p>Crea tu blend personalizado seleccionando las especias que mas te gusten. Elige entre nuestra coleccion de ingredientes artesanales y diseña una mezcla unica para tus recetas.</p><p>Puedes elegir el tamano y la proporcion de cada especia para obtener el sabor perfecto.</p>';
   } else if (page === 'faq') {
     sb.innerHTML = '<p>Aqui encontraras respuestas a las preguntas mas frecuentes sobre nuestros productos, envios, formas de pago y mas. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
@@ -1033,8 +1063,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initRecetas();
     initBlog();
     renderSocialLinks();
-    onRecetasReady(function() { _updateTitle('recetas');
-    renderRecipeGrid(); });
+    onRecetasReady(function() { if (_currentPage === 'recetas') renderRecipeGrid(); });
     onBlogReady(function() { if (_currentPage === 'blog') renderBlogList(); });
     onTiendaChange(function() {
       if (!hasVisiblePacks()) {
@@ -1063,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('popstate', function() {
   _updateTitle(_currentPage || 'tienda');
 });
-});
+
 
 /* === GRANDES CLIENTES === */
 function openGrandesClientes() {
