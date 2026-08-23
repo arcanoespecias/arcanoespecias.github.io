@@ -148,27 +148,7 @@ function _injectSEO() {
     document.head.appendChild(_fqEl);
   }
 
-  // 2) Actualizar contenido textual en div seo-content solo si esta vacio (sin pre-render estatico)
-  var seoDiv = document.getElementById('seo-content');
-  if (seoDiv && !seoDiv.innerHTML.trim()) {
-    var html = '<h2>Catalogo de Especias y Blends Artesanales</h2>';
-    html += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y cocteleria, ademas de packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo.</p>';
-    for (var j = 0; j < products.length; j++) {
-      var pr = products[j];
-      var pPrecio = pr.precioChico > 0 ? pr.precioChico : pr.precioGrande;
-      html += '<article>';
-      html += '<h3>' + pr.nombre + '</h3>';
-      if (pr.descripcion) html += '<p>' + pr.descripcion + '</p>';
-      html += '<p>Categoria: ' + pr.categoria;
-      if (pr.region) html += ' | Origen: ' + pr.region;
-      if (pr.tags && pr.tags.length) html += ' | Usos: ' + pr.tags.join(', ');
-      html += '</p>';
-      if (pPrecio > 0) html += '<p>Precio desde $' + pPrecio.toLocaleString('es-CO') + ' COP</p>';
-      html += '</article>';
-    }
-    seoDiv.innerHTML = html;
-  }
-}
+  
 
 /* === PEDIDOS (write) === */
 var _pedidosRef = null;
