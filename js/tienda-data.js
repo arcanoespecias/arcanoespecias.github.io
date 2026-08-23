@@ -147,8 +147,7 @@ function _injectSEO() {
     _fqEl.textContent = JSON.stringify(_fLd);
     document.head.appendChild(_fqEl);
   }
-
-  
+}
 
 /* === PEDIDOS (write) === */
 var _pedidosRef = null;
