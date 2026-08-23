@@ -45,6 +45,7 @@ function goTo(page) {
     var rd = document.getElementById('recipe-detail');
     if (rd) rd.innerHTML = '';
   } else if (page === 'blog') {
+    _updateTitle('blog');
     renderBlogList();
   } else if (page === 'blend') {
     renderBlendBuilder();
@@ -75,6 +76,7 @@ function _updateSidebar(page) {
   } else if (page === 'blog') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-blog-cats"><li class="active" onclick="selectBlogCat(\'Todos\')">Todos</li><li onclick="selectBlogCat(\'Historias\')">Historias</li><li onclick="selectBlogCat(\'Beneficios\')">Beneficios</li><li onclick="selectBlogCat(\'Investigaciones\')">Investigaciones</li><li onclick="selectBlogCat(\'Curiosidades\')">Curiosidades</li><li onclick="selectBlogCat(\'Origenes\')">Origenes</li></ul>';
   } else if (page === 'blend') {
+    _updateTitle('blend');
     sb.innerHTML = '<p>Crea tu blend personalizado seleccionando las especias que mas te gusten. Elige entre nuestra coleccion de ingredientes artesanales y diseña una mezcla unica para tus recetas.</p><p>Puedes elegir el tamano y la proporcion de cada especia para obtener el sabor perfecto.</p>';
   } else if (page === 'faq') {
     sb.innerHTML = '<p>Aqui encontraras respuestas a las preguntas mas frecuentes sobre nuestros productos, envios, formas de pago y mas. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
@@ -404,6 +406,7 @@ function openDetail(pid) {
   html += '</div></div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
+  _updateTitle(null, p.nombre + ' - Arcano Especias');
 }
 
 /* === RECETAS === */
@@ -1030,7 +1033,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initRecetas();
     initBlog();
     renderSocialLinks();
-    onRecetasReady(function() { if (_currentPage === 'recetas') renderRecipeGrid(); });
+    onRecetasReady(function() { _updateTitle('recetas');
+    renderRecipeGrid(); });
     onBlogReady(function() { if (_currentPage === 'blog') renderBlogList(); });
     onTiendaChange(function() {
       if (!hasVisiblePacks()) {
@@ -1055,6 +1059,10 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.classList.add('active');
     renderProducts(currentFilter);
   });
+
+window.addEventListener('popstate', function() {
+  _updateTitle(_currentPage || 'tienda');
+});
 });
 
 /* === GRANDES CLIENTES === */
