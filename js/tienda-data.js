@@ -147,54 +147,7 @@ function _injectSEO() {
     _fqEl.textContent = JSON.stringify(_fLd);
     document.head.appendChild(_fqEl);
   }
-
-  // 2) seo-content: texto enriquecido para crawlers y AI
-  var seoDiv = document.getElementById('seo-content');
-  if (seoDiv && !seoDiv.innerHTML.trim()) {
-    var html = '<h2>Catalogo de Especias y Blends Artesanales</h2>';
-    html += '<p>Arcano Especias es una marca colombiana especializada en blends y mezclas artesanales de especias selectas de cada rincon del mundo. Ofrecemos ' + products.length + ' productos artesanales para comidas, infusiones y cocteleria, con ingredientes 100% naturales y de alta calidad. Envios a toda Colombia.</p>';
-    var cats = {};
-    for (var ci = 0; ci < products.length; ci++) {
-      var cat = products[ci].categoria || 'General';
-      if (!cats[cat]) cats[cat] = [];
-      cats[cat].push(products[ci]);
-    }
-    var catDescs = {
-      'Comidas': 'Nuestras mezclas para comidas estan disenadas para realzar el sabor de carnes, sopas, arroces, pastas y preparaciones culinarias de todo el mundo. Cada blend combina especias seleccionadas en proporciones optimas para lograr perfiles de sabor unicos.',
-      'Infusiones': 'Nuestras infusiones artesanales combinan especias y botanicos selectos para crear bebidas calientes con perfiles de sabor unicos. Ideales para cada momento del dia, desde un chai matutino hasta una infusion relajante nocturna.',
-      'Cocteleria': 'Mezclas especializadas para transformar tragos y cocteles. Cada blend aporta notas aromaticas y de sabor que elevan bebidas clasicas y creaciones de bartenders.',
-      'Packs': 'Combina varios blends artesanales a un precio especial. Packs curados para descubrir multiples sabores de Arcano Especias o para regalos originales.'
-    };
-    var catKeys = Object.keys(cats);
-    for (var ck = 0; ck < catKeys.length; ck++) {
-      var catName = catKeys[ck];
-      var catProds = cats[catName];
-      html += '<h3>' + catName + ' (' + catProds.length + ' productos)</h3>';
-      html += '<p>' + (catDescs[catName] || 'Productos artesanales de Arcano Especias.') + '</p>';
-      html += '<p>';
-      for (var cp = 0; cp < catProds.length; cp++) {
-        if (cp > 0) html += ' | ';
-        html += catProds[cp].nombre;
-      }
-      html += '</p>';
-    }
-    html += '<h3>Por que elegir Arcano Especias</h3>';
-    html += '<p>Todos nuestros productos son 100% naturales, sin aditivos artificiales ni conservantes. Cada blend es mezclado de forma artesanal con ingredientes seleccionados por su calidad y origen. Ofrecemos envios a toda Colombia con atencion personalizada. Aceptamos pagos por Nequi y transferencia bancaria.</p>';
-    for (var j = 0; j < products.length; j++) {
-      var pr = products[j];
-      var pPrecio = pr.tipo === 'pack' ? (pr.precio || 0) : (pr.precioChico > 0 ? pr.precioChico : pr.precioGrande);
-      html += '<article>';
-      html += '<h4>' + pr.nombre + '</h4>';
-      if (pr.descripcion) html += '<p>' + pr.descripcion + '</p>';
-      html += '<p>Categoria: ' + pr.categoria;
-      if (pr.region) html += ' | Origen: ' + pr.region;
-      html += '</p>';
-      if (pPrecio > 0) html += '<p>Precio desde $' + pPrecio.toLocaleString('es-CO') + ' COP</p>';
-      html += '</article>';
-    }
-    seoDiv.innerHTML = html;
-  }
-  }
+}
 
 /* === PEDIDOS (write) === */
 var _pedidosRef = null;
