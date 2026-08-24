@@ -16,137 +16,81 @@ var _sListeners = [];
 function initTienda() {
   return new Promise(function(resolve) {
     firebase.initializeApp(FIREBASE_CONFIG);
-    var ref = firebase.database().ref(FB_PATH);
-    ref.once('value').then(function(snap) {
-      var d = snap.val();
-      if (d && d.especias && d.blends) { _sDb = d; _sReady = true; }
-      resolve();
-    }).catch(function() { resolve(); });
-    ref.on('value', function(snap) {
-      var d = snap.val();
-      if (d && d.especias && d.blends) {
-        _sDb = d; _sReady = true;
+    // Only load what the store needs: especias, blends, packs, tiendaConfig
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
+    var loaded = 0;
+    _sDb = {};
+    function checkReady() {
+      loaded++;
+      if (loaded >= neededPaths.length) {
+        if (_sDb.especias && _sDb.blends) { _sReady = true; }
         _injectSEO();
         for (var i = 0; i < _sListeners.length; i++) { try { _sListeners[i](); } catch(e) {} }
+        resolve();
       }
-    });
+    }
+    for (var p = 0; p < neededPaths.length; p++) {
+      (function(path) {
+        firebase.database().ref(FB_PATH + '/' + path).on('value', function(snap) {
+          _sDb[path] = snap.val() || {};
+          if (!_sReady && _sDb.especias && _sDb.blends) { _sReady = true; }
+          _notifyListeners();
+        });
+        // Initial read
+        firebase.database().ref(FB_PATH + '/' + path).once('value', function(snap) {
+          _sDb[path] = snap.val() || {};
+          checkReady();
+        }).catch(function() { checkReady(); });
+      })(neededPaths[p]);
+    }
   });
+}
+
+function _notifyListeners() {
+  for (var i = 0; i < _sListeners.length; i++) { try { _sListeners[i](); } catch(e) {} }
 }
 
 function onTiendaChange(fn) { _sListeners.push(fn); }
 
-/* === SEO: JSON-LD + contenido para crawlers === */
+/* === SEO: JSON-LD fallback (only if no static prerender) === */
 var _seoInjected = false;
 function _injectSEO() {
   if (_seoInjected) return;
   var products = getStoreProducts();
   if (!products.length) return;
-  _seoInjected = true;
-
-  var SITE_URL = 'https://arcanoespecias.github.io/';
-
-  // 1) Product JSON-LD — solo inyectar si NO existe el estatico (pre-render)
   var existingLd = document.querySelectorAll('script[type="application/ld+json"]');
   var hasStaticProducts = false;
   for (var k = 0; k < existingLd.length; k++) {
     try {
       var parsed = JSON.parse(existingLd[k].textContent);
       if (parsed['@type'] === 'ItemList' && parsed.itemListElement && parsed.itemListElement.length > 0) {
-        hasStaticProducts = true;
-        break;
+        hasStaticProducts = true; break;
       }
     } catch(e) {}
   }
-
-  if (!hasStaticProducts) {
-    var jsonLdProducts = [];
-    for (var i = 0; i < products.length; i++) {
-      var p = products[i];
-      var precio = p.precioChico > 0 ? p.precioChico : p.precioGrande;
-      var inStock = (p.stockChico > 0 || p.stockGrande > 0);
-      var entry = {
-        '@type': 'Product',
-        'name': p.nombre,
-        'description': p.descripcion || ('Blend artesanal ' + p.nombre + ' de Arcano Especias'),
-        'brand': { '@type': 'Brand', 'name': 'Arcano Especias' },
-        'category': p.categoria + (p.tipo === 'pack' ? ' - Pack' : p.tipo === 'blend' ? ' - Blend' : ' - Especia'),
-        'offers': {
-          '@type': 'Offer',
-          'price': String(precio),
-          'priceCurrency': 'COP',
-          'availability': inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          'seller': { '@type': 'Organization', 'name': 'Arcano Especias' }
-        }
-      };
-      var ings = [];
-      if (p.ingredientes) {
-        for (var ig = 0; ig < p.ingredientes.length; ig++) {
-          var nm = p.ingredientes[ig].nombre || p.ingredientes[ig].especiaNombre || '';
-          if (nm.trim()) ings.push(nm.trim());
-        }
-      }
-      if (ings.length > 0) entry['material'] = ings.join(', ');
-      if (p.region) entry['countryOfOrigin'] = { '@type': 'Country', 'name': p.region };
-      jsonLdProducts.push(entry);
-    }
-    var itemList = {
-      '@context': 'https://schema.org',
-      '@type': 'ItemList',
-      'name': 'Catalogo Arcano Especias',
-      'description': 'Especias y Blends artesanales del mundo',
-      'numberOfItems': jsonLdProducts.length,
-      'itemListElement': jsonLdProducts
+  if (hasStaticProducts) { _seoInjected = true; return; }
+  _seoInjected = true;
+  var SITE_URL = 'https://arcanoespecias.github.io/';
+  var jsonLdProducts = [];
+  for (var i = 0; i < products.length; i++) {
+    var p = products[i];
+    var precio = p.precioChico > 0 ? p.precioChico : p.precioGrande;
+    var inStock = (p.stockChico > 0 || p.stockGrande > 0 || p.stock > 0);
+    var entry = {
+      '@type': 'Product', 'name': p.nombre,
+      'description': p.descripcion || ('Blend artesanal ' + p.nombre + ' de Arcano Especias'),
+      'brand': { '@type': 'Brand', 'name': 'Arcano Especias' },
+      'offers': { '@type': 'Offer', 'price': String(precio), 'priceCurrency': 'COP',
+        'availability': inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        'seller': { '@type': 'Organization', 'name': 'Arcano Especias' } }
     };
-    var scriptEl = document.createElement('script');
-    scriptEl.type = 'application/ld+json';
-    scriptEl.textContent = JSON.stringify(itemList);
-    document.head.appendChild(scriptEl);
+    jsonLdProducts.push(entry);
   }
-
-  // 1b) BreadcrumbList JSON-LD (site-wide)
-  var hasBreadcrumb = false;
-  for (var _bi = 0; _bi < existingLd.length; _bi++) {
-    try { var _bp = JSON.parse(existingLd[_bi].textContent); if (_bp['@type'] === 'BreadcrumbList') { hasBreadcrumb = true; break; } } catch(_be) {}
-  }
-  if (!hasBreadcrumb) {
-    var _bLd = {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      'itemListElement': [
-        { '@type': 'ListItem', 'position': 1, 'name': 'Inicio', 'item': SITE_URL },
-        { '@type': 'ListItem', 'position': 2, 'name': 'Catalogo de Especias y Blends', 'item': SITE_URL }
-      ]
-    };
-    var _bsEl = document.createElement('script');
-    _bsEl.type = 'application/ld+json';
-    _bsEl.textContent = JSON.stringify(_bLd);
-    document.head.appendChild(_bsEl);
-  }
-
-  // 1c) FAQ JSON-LD (site-wide)
-  var hasFaq = false;
-  for (var _fi = 0; _fi < existingLd.length; _fi++) {
-    try { var _fp = JSON.parse(existingLd[_fi].textContent); if (_fp['@type'] === 'FAQPage') { hasFaq = true; break; } } catch(_fe) {}
-  }
-
-  if (!hasFaq) {
-    var _fLd = {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      'mainEntity': [
-        { '@type': 'Question', 'name': '¿Qué es Arcano Especias?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Arcano Especias es una marca colombiana especializada en blends y mezclas artesanales de especias selectas de cada rincón del mundo. Creamos combinaciones únicas para comidas, infusiones y coctelería, con ingredientes 100% naturales y de alta calidad.' }},
-        { '@type': 'Question', 'name': '¿Realizan envíos a toda Colombia?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sí, Arcano Especias realiza envíos a todas las ciudades y municipios de Colombia. Los pedidos se envían una vez confirmado el pago y el tiempo de entrega varía según la ubicación.' }},
-        { '@type': 'Question', 'name': '¿Cuáles son las formas de pago aceptadas?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Aceptamos pagos mediante Nequi, transferencia bancaria a Bancolombia y otros métodos de pago disponibles. Los datos de pago se proporcionan al confirmar el pedido.' }},
-        { '@type': 'Question', 'name': '¿Qué presentaciones de productos ofrecen?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Nuestros blends y especias se ofrecen en dos presentaciones: tamaño pequeño y tamaño grande. También contamos con packs exclusivos que combinan varios productos a un precio especial.' }},
-        { '@type': 'Question', 'name': '¿Son productos naturales?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sí, todos los productos de Arcano Especias son 100% naturales. Utilizamos especias y ingredientes de alta calidad, sin aditivos artificiales ni conservantes. Cada blend es mezclado de forma artesanal.' }},
-        { '@type': 'Question', 'name': '¿Para qué se pueden usar los blends de especias?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Nuestros blends están categorizados según su uso ideal: para comidas (carnes, sopas, arroces), para infusiones (tés y bebidas calientes) y para coctelería (bebidas y cócteles). Cada blend está diseñado para realzar el sabor de tus preparaciones.' }}
-      ]
-    };
-    var _fqEl = document.createElement('script');
-    _fqEl.type = 'application/ld+json';
-    _fqEl.textContent = JSON.stringify(_fLd);
-    document.head.appendChild(_fqEl);
-  }
+  var itemList = { '@context': 'https://schema.org', '@type': 'ItemList', 'name': 'Catalogo Arcano Especias', 'numberOfItems': jsonLdProducts.length, 'itemListElement': jsonLdProducts };
+  var scriptEl = document.createElement('script');
+  scriptEl.type = 'application/ld+json';
+  scriptEl.textContent = JSON.stringify(itemList);
+  document.head.appendChild(scriptEl);
 }
 
 /* === PEDIDOS (write) === */
@@ -158,8 +102,7 @@ function submitOrder(orderData) {
     orderData.creado = new Date().toISOString();
     orderData.estado = 'nuevo';
     _pedidosRef.push(orderData, function(error) {
-      if (error) reject(error);
-      else resolve();
+      if (error) reject(error); else resolve();
     });
   });
 }
@@ -198,7 +141,6 @@ function getStoreProducts() {
       ingredientes: b.ingredientes || []
     });
   }
-  // Packs
   var pkKeys = Object.keys(_sDb.packs || {});
   for (var pi = 0; pi < pkKeys.length; pi++) {
     var pk = _sDb.packs[pkKeys[pi]];
@@ -213,16 +155,18 @@ function getStoreProducts() {
       blendItems: pk.blendItems || []
     });
   }
-
   return products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
 }
 
-/* === RECETAS (read) === */
+/* === RECETAS (read, lazy) === */
 var _recetas = [];
 var _recetasReady = false;
 var _recetasListeners = [];
+var _recetasInited = false;
 
 function initRecetas() {
+  if (_recetasInited) return;
+  _recetasInited = true;
   var recetasRef = firebase.database().ref('arcano/db/recetas').orderByChild('fecha');
   recetasRef.on('value', function(snap) {
     var data = snap.val();
@@ -230,9 +174,7 @@ function initRecetas() {
     if (data) {
       var keys = Object.keys(data);
       for (var i = 0; i < keys.length; i++) {
-        var r = data[keys[i]];
-        r._key = keys[i];
-        _recetas.push(r);
+        var r = data[keys[i]]; r._key = keys[i]; _recetas.push(r);
       }
     }
     _recetas.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
@@ -247,12 +189,17 @@ function onRecetasReady(cb) {
   if (_recetasReady) { cb(_recetas); return; }
   _recetasListeners.push(cb);
 }
-/* === BLOG (read) === */
+
+/* === BLOG (read, lazy) === */
 var _blogPosts = [];
 var _blogReady = false;
 var _blogListeners = [];
 var _blogCatFilter = 'Todos';
+var _blogInited = false;
+
 function initBlog() {
+  if (_blogInited) return;
+  _blogInited = true;
   var ref = firebase.database().ref('arcano/db/blog').orderByChild('fecha');
   ref.on('value', function(snap) {
     var d = snap.val();
