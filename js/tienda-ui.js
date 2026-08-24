@@ -966,6 +966,7 @@ function addCustomBlendToCart() {
 
 
 function renderFaqPage() {
+  if (typeof _faqData === 'undefined' || !_faqData.length) return;
   var el = document.getElementById('faq-container');
   if (!el) return;
   var h = '<div class="faq-container">';
