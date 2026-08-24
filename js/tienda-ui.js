@@ -70,11 +70,13 @@ function goTo(page) {
     renderProducts(currentFilter);
   } else if (page === 'recetas') {
     _updateTitle('recetas');
+    initRecetas();
     renderRecipeGrid();
     var rd = document.getElementById('recipe-detail');
     if (rd) rd.innerHTML = '';
   } else if (page === 'blog') {
     _updateTitle('blog');
+    initBlog();
     renderBlogList();
   } else if (page === 'blend') {
     _updateTitle('blend');
@@ -1096,11 +1098,7 @@ document.addEventListener('DOMContentLoaded', function() {
   _updateSidebar('tienda');
   initTienda().then(function() {
     renderProducts('Todos');
-    initRecetas();
-    initBlog();
     renderSocialLinks();
-    onRecetasReady(function() { if (_currentPage === 'recetas') renderRecipeGrid(); });
-    onBlogReady(function() { if (_currentPage === 'blog') renderBlogList(); });
     onTiendaChange(function() {
       if (!hasVisiblePacks()) {
         var pb = document.querySelector('.filter-pill[data-cat="Packs"]');
