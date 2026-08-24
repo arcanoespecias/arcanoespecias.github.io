@@ -31,9 +31,10 @@
   <meta name="twitter:image" content="https://arcanoespecias.github.io/icons/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" href="css/tienda.css?v=24" as="style">
-  <link rel="preload" href="icons/logo.png" as="image">
-  <link rel="stylesheet" href="css/tienda.css?v=22">
+  <link rel="preconnect" href="https://arcano-6788d-default-rtdb.firebaseio.com">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preload" href="icons/arcano-logo.webp" as="image" type="image/webp">
+  <link rel="stylesheet" href="css/tienda.css?v=24">
 
   <!-- SEO: Structured Data - Organization (static) -->
   <script type="application/ld+json">
@@ -1910,7 +1911,7 @@
         <button class="hamburger" onclick="openMobileMenu()" aria-label="Menu">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <a class="nav-logo" href="#" onclick="goTo('tienda')"><img src="icons/arcano-logo.png" alt="Arcano Especias"></a>
+        <a class="nav-logo" href="#" onclick="goTo('tienda')"><img src="icons/arcano-logo.webp" alt="Arcano Especias"></a>
       </div>
       <nav class="nav-links" id="desktop-nav">
         <button class="nav-item active" data-page="tienda" onclick="goTo('tienda')">Tienda</button>
@@ -1954,7 +1955,7 @@
   <main>
   <aside class="right-sidebar" id="right-sidebar">
     <div class="sidebar-logo-wrap">
-      <img src="icons/arcano-logo.png" class="sidebar-logo" alt="Arcano Especias">
+      <img src="icons/arcano-logo.webp" class="sidebar-logo" alt="Arcano Especias">
     </div>
     <div class="sidebar-content" id="sidebar-content"></div>
     <div class="sidebar-social" id="sidebar-social"></div>
@@ -2748,3 +2749,4 @@
   <script src="js/tienda-ui.js?v=24" defer></script>
 </body>
 </html>
+
