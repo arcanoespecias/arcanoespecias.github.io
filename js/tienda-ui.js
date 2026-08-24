@@ -84,6 +84,13 @@ function goTo(page) {
     renderFaqPage();
   }
   _updateSidebar(page);
+  // GA4: track SPA page view
+  if (typeof gtag === 'function') {
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_location: 'https://arcanoespecias.github.io/#' + page
+    });
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -280,6 +287,25 @@ function sendOrder() {
   var body = document.getElementById('cart-drawer-body');
   body.innerHTML = '<div style="text-align:center;padding:48px 0"><div class="loader"></div><p style="color:var(--text-sec);margin-top:12px">Enviando pedido...</p></div>';
   submitOrder(orderData).then(function() {
+    // GA4: purchase event
+    if (typeof gtag === 'function') {
+      var ga4Items = [];
+      for (var gi = 0; gi < cart.length; gi++) {
+        ga4Items.push({
+          item_id: String(cart[gi].productId),
+          item_name: cart[gi].nombre,
+          item_category: cart[gi].tipo,
+          price: cart[gi].precio,
+          quantity: cart[gi].qty
+        });
+      }
+      gtag('event', 'purchase', {
+        transaction_id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        currency: 'COP',
+        value: getCartTotal(),
+        items: ga4Items
+      });
+    }
     body.innerHTML = '<div class="success-box"><div class="success-icon">\u2705</div><h3>Pedido enviado</h3><p>Tu pedido fue recibido correctamente.</p><button class="btn-primary" onclick="_finishOrder()" style="max-width:200px;margin:0 auto">Entendido</button></div>';
   }).catch(function(err) {
     alert('Error: ' + (err.message || err));
@@ -391,6 +417,15 @@ function openDetail(pid) {
   var p = null;
   for (var i = 0; i < products.length; i++) { if (products[i].id === pid) { p = products[i]; break; } }
   if (!p) return;
+  // GA4: view_item event
+  if (typeof gtag === 'function') {
+    var _isPack = p.tipo === 'pack';
+    gtag('event', 'view_item', {
+      currency: 'COP',
+      value: _isPack ? (p.precio || 0) : (p.precioGrande > 0 ? p.precioGrande : p.precioChico),
+      items: [{ item_id: String(p.id), item_name: p.nombre, item_category: p.tipo }]
+    });
+  }
   var isPack = p.tipo === 'pack';
   var isBlend = p.tipo === 'blend';
   var hasChico = !isPack && p.stockChico > 0 && p.precioChico > 0;
