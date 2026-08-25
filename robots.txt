@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+
 Sitemap: https://arcanoespecias.github.io/sitemap.xml
