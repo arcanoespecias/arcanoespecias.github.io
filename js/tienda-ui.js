@@ -78,13 +78,13 @@ function goTo(page) {
   } else if (page === 'recetas') {
     _updateTitle('recetas');
     initRecetas();
-    renderRecipeGrid();
+    onRecetasReady(function() { renderRecipeGrid(); });
     var rd = document.getElementById('recipe-detail');
     if (rd) rd.innerHTML = '';
   } else if (page === 'blog') {
     _updateTitle('blog');
     initBlog();
-    renderBlogList();
+    onBlogReady(function() { renderBlogList(); });
   } else if (page === 'blend') {
     _updateTitle('blend');
     renderBlendBuilder();
@@ -1104,6 +1104,8 @@ document.addEventListener('DOMContentLoaded', function() {
   updateCartBadge();
   _updateSidebar('tienda');
   initTienda().then(function() {
+    initRecetas();
+    initBlog();
     renderProducts('Todos');
     renderSocialLinks();
     onTiendaChange(function() {
