@@ -1160,3 +1160,6 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   .blog-detail-title { font-size: 1.4rem; }
   .blog-card-img { height: 160px; }
 }
+
+/* SEO: screen-reader only - visible to crawlers, hidden to users */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
