@@ -578,6 +578,7 @@ function showRecipeDetail(key) {
     h += '</ol>';
   }
   h += '<button class="rd-share-btn" onclick="compartirReceta(\'' + r._key + '\')">Compartir receta</button>';
+  h += '<a href="https://arcanoespecias.github.io/recetas/' + _recetaSlug(r.titulo) + '.html" class="rd-static-link" target="_blank" rel="noopener" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#c9a84c;color:#1b0b07;border-radius:6px;font-weight:600;text-decoration:none">Ver receta completa &rarr;</a>';
   h += '</div>';
   el.innerHTML = h;
   _updateSidebar(page);
