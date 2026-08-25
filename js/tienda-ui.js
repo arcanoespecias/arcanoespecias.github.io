@@ -16,6 +16,13 @@ function _showToast(msg) {
   document.body.appendChild(el);
   setTimeout(function() { if (el.parentNode) el.remove(); }, 2200);
 }
+/* === SEO: Rich alt text helper === */
+function _productAlt(p) {
+  var t = p.tipo === 'blend' ? 'Blend' : (p.tipo === 'pack' ? 'Pack' : 'Especia');
+  var cat = (p.categorias && p.categorias[0]) || p.categoria || '';
+  return p.nombre + ' - ' + t + (cat ? ' para ' + cat : '') + ' | Arcano Especias';
+}
+
 
 /*** SEO: Dynamic title ***/
 var _BASE_TITLE = 'Arcano Especias';
@@ -385,7 +392,7 @@ function renderProducts(filter) {
     h += '<div class="product-card" onclick="openDetail(' + p.id + ')">';
     h += '<div class="card-img-wrap">';
     if (p.imagen) {
-      h += '<img src="' + p.imagen + '" alt="' + p.nombre + '" loading="lazy">';
+      h += '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '" loading="lazy" decoding="async">';
     } else {
       h += '<span>' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>';
     }
@@ -463,7 +470,7 @@ function openDetail(pid) {
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   var html = '<div class="detail-modal">';
   html += '<button class="detail-close" onclick="document.getElementById(\'detail-ov\').remove()">&times;</button>';
-  html += '<div class="detail-modal-img">' + (p.imagen ? '<img src="' + p.imagen + '" alt="' + p.nombre + '">' : '<span>' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>') + '</div>';
+  html += '<div class="detail-modal-img">' + (p.imagen ? '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '" fetchpriority="high">' : '<span>' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>') + '</div>';
   html += '<div class="detail-modal-content">';
   html += '<span class="detail-type-tag ' + typeClass + '">' + typeLabel + '</span>';
   html += '<h2>' + p.nombre + '</h2>';
