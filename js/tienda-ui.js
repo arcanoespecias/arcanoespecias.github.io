@@ -341,13 +341,13 @@ function addToCart(product, talla) {
 function addToCartByIdAndSize(pid, talla) {
   var products = getStoreProducts();
   for (var i = 0; i < products.length; i++) {
-    if (products[i].id === pid) { addToCart(products[i], talla); return; }
+    if (products[i].id == pid) { addToCart(products[i], talla); return; }
   }
 }
 function addToCartPack(pid) {
   var products = getStoreProducts();
   for (var i = 0; i < products.length; i++) {
-    if (products[i].id === pid) {
+    if (products[i].id == pid) {
       var p = products[i];
       if (!p.precio) return;
       for (var j = 0; j < cart.length; j++) {
@@ -424,7 +424,7 @@ function renderProducts(filter) {
 function openDetail(pid) {
   var products = getStoreProducts();
   var p = null;
-  for (var i = 0; i < products.length; i++) { if (products[i].id === pid) { p = products[i]; break; } }
+  for (var i = 0; i < products.length; i++) { if (products[i].id == pid) { p = products[i]; break; } }
   if (!p) return;
   // GA4: view_item event
   if (typeof gtag === 'function') {
