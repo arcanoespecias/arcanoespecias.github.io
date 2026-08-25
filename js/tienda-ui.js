@@ -17,6 +17,10 @@ function _showToast(msg) {
   setTimeout(function() { if (el.parentNode) el.remove(); }, 2200);
 }
 /* === SEO: Rich alt text helper === */
+function _recetaSlug(titulo) {
+  var s = titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$ /g, '').substring(0, 120);
+  return s;
+}
 function _productAlt(p) {
   var t = p.tipo === 'blend' ? 'Blend' : (p.tipo === 'pack' ? 'Pack' : 'Especia');
   var cat = (p.categorias && p.categorias[0]) || p.categoria || '';
