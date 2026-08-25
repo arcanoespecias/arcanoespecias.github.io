@@ -23,12 +23,16 @@
   <meta property="og:description" content="Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rincón. Comidas, infusiones, coctelería. Envíos a toda Colombia.">
   <meta property="og:url" content="https://arcanoespecias.github.io/">
   <meta property="og:image" content="https://arcanoespecias.github.io/icons/logo.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:locale" content="es_CO">
   <meta property="og:site_name" content="Arcano Especias">
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Arcano Especias — Especias y Blends Artesanales">
   <meta name="twitter:description" content="Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rincón. Envíos a toda Colombia.">
   <meta name="twitter:image" content="https://arcanoespecias.github.io/icons/logo.png">
+  <meta name="twitter:image:width" content="1200">
+  <meta name="twitter:image:height" content="630">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://arcano-6788d-default-rtdb.firebaseio.com">
@@ -36,20 +40,44 @@
   <link rel="preload" href="icons/arcano-logo.webp" as="image" type="image/webp">
   <link rel="stylesheet" href="css/tienda.css?v=24">
 
-  <!-- SEO: Structured Data - Organization (static) -->
+  <!-- SEO: Structured Data - LocalBusiness -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "LocalBusiness",
+    "@id": "https://arcanoespecias.github.io/#business",
     "name": "Arcano Especias",
     "url": "https://arcanoespecias.github.io/",
     "logo": "https://arcanoespecias.github.io/icons/logo.png",
-    "description": "Tienda de especias y blends artesanales del mundo. Ingredientes seleccionados de cada rinc\u00f3n para crear sabores \u00fanicos en comidas, infusiones y cocteler\u00eda.",
+    "image": "https://arcanoespecias.github.io/icons/logo.png",
+    "description": "Tienda colombiana de especias y blends artesanales del mundo. Ingredientes 100% naturales seleccionados de cada rinc\u00f3n para crear sabores \u00fanicos en comidas, infusiones y cocteler\u00eda. Env\u00edos a toda Colombia.",
+    "priceRange": "$",
+    "currenciesAccepted": "COP",
+    "paymentAccepted": "Transferencia bancaria, Nequi",
     "address": {
       "@type": "PostalAddress",
+      "addressCountry": "CO",
+      "addressLocality": "Colombia"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
       "addressCountry": "CO"
     },
-    "sameAs": ["https://facebook.com/arcanoespecias", "https://instagram.com/arcanoespecias", "https://tiktok.com/@arcanoespecias", "https://youtube.com/@arcanoespecias", "https://wa.me/XXXXXXXXXX"]
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Cat\u00e1logo de Especias y Blends",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Blends para Comidas" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Blends para Infusiones" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Blends para Cocteler\u00eda" } }
+      ]
+    },
+    "sameAs": [
+      "https://facebook.com/arcanoespecias",
+      "https://instagram.com/arcanoespecias",
+      "https://tiktok.com/@arcanoespecias",
+      "https://youtube.com/@arcanoespecias"
+    ]
   }
   </script>
   <script type="application/ld+json">
@@ -90,7 +118,7 @@
         <button class="hamburger" onclick="openMobileMenu()" aria-label="Menu">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <a class="nav-logo" href="#" onclick="goTo('tienda')"><img src="icons/arcano-logo.webp" alt="Arcano Especias"></a>
+        <a class="nav-logo" href="#" onclick="goTo('tienda')"><img src="icons/arcano-logo.webp" alt="Arcano Especias - Logo" fetchpriority="high"></a>
       </div>
       <nav class="nav-links" id="desktop-nav">
         <button class="nav-item active" data-page="tienda" onclick="goTo('tienda')">Tienda</button>
@@ -134,7 +162,7 @@
   <main>
   <aside class="right-sidebar" id="right-sidebar">
     <div class="sidebar-logo-wrap">
-      <img src="icons/arcano-logo.webp" class="sidebar-logo" alt="Arcano Especias">
+      <img src="icons/arcano-logo.webp" class="sidebar-logo" alt="Arcano Especias - Logo" fetchpriority="high">
     </div>
     <div class="sidebar-content" id="sidebar-content"></div>
     <div class="sidebar-social" id="sidebar-social"></div>
