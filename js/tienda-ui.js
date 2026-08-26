@@ -393,7 +393,7 @@ function renderProducts(filter) {
     else if (p.categoria) meta = p.categoria;
     if (p.region) meta += (meta ? ' \u00b7 ' : '') + p.region;
 
-    h += '<div class="product-card" onclick="openDetail(' + p.id + ')">';
+    h += '<a class="product-card" href="/tienda/' + _slugify(p.nombre) + '.html" onclick="event.preventDefault();openDetail(' + p.id + ')">';
     h += '<div class="card-img-wrap">';
     if (p.imagen) {
       h += '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '" loading="lazy" decoding="async">';
@@ -419,10 +419,12 @@ function renderProducts(filter) {
     if (!hasChico && !hasGrande && !hasPack && (isPack ? !(p.stock > 0) : !(p.stockChico > 0 || p.stockGrande > 0))) {
       h += '<div class="card-oos">Sin stock</div>';
     }
-    h += '</div></div></div>';
+    h += '</div></div></a>';
   }
   grid.innerHTML = h;
 }
+
+function _slugify(t){var s=t.toLowerCase();s=s.replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n').replace(/ü/g,'u');s=s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');return s;}
 
 /* === PRODUCT DETAIL === */
 function openDetail(pid) {
