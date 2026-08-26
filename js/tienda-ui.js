@@ -1139,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('popstate', function() {
   _updateTitle(_currentPage || 'tienda');
 });
-
+});
 
 /* === GRANDES CLIENTES === */
 function openGrandesClientes() {
@@ -1175,4 +1175,3 @@ function submitGrandesClientes(e) {
     btn.disabled = false; btn.textContent = 'Enviar Solicitud';
   });
 }
-});
