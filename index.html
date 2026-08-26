@@ -121,12 +121,12 @@
         <a class="nav-logo" href="/" onclick="goTo('tienda')"><img src="icons/arcano-logo.webp" alt="Arcano Especias - Logo" fetchpriority="high"></a>
       </div>
       <nav class="nav-links" id="desktop-nav">
-        <button class="nav-item active" data-page="tienda" onclick="goTo('tienda')">Tienda</button>
-        <button class="nav-item" data-page="recetas" onclick="goTo('recetas')">Recetas</button>
-        <button class="nav-item" data-page="blog" onclick="goTo('blog')">Blog</button>
-        <button class="nav-item" data-page="blend" onclick="goTo('blend')">Tu Blend</button>
-        <button class="nav-item" data-page="faq" onclick="goTo('faq')">F.A.Q</button>
-        <button class="nav-item nav-item-highlight" onclick="openGrandesClientes()">Grandes Clientes</button>
+        <a class="nav-item active" data-page="tienda" href="/" onclick="goTo('tienda');return false">Tienda</a>
+        <a class="nav-item" data-page="recetas" href="/recetas/ceviche-de-camarones-con-costeno-caribe.html" onclick="goTo('recetas');return false">Recetas</a>
+        <a class="nav-item" data-page="blog" href="/blog/el-brebaje-sagrado-de-los-dioses-el-origen-oscuro-y-especiado-del-cacao.html" onclick="goTo('blog');return false">Blog</a>
+        <a class="nav-item" data-page="blend" href="/" onclick="goTo('blend');return false">Tu Blend</a>
+        <a class="nav-item" data-page="faq" href="/" onclick="goTo('faq');return false">F.A.Q</a>
+        <a class="nav-item nav-item-highlight" href="/" onclick="openGrandesClientes();return false">Grandes Clientes</a>
       </nav>
       <button class="nav-cart" onclick="toggleCartDrawer()" aria-label="Carrito">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -138,11 +138,11 @@
   <!-- Mobile Menu -->
   <div class="mobile-menu-overlay" id="mobile-menu" onclick="closeMobileMenu()">
     <div class="mobile-menu-panel" onclick="event.stopPropagation()">
-      <div class="mm-header"><span>Arcano</span><button class="mm-close" onclick="closeMobileMenu()">&times;</button></div>
-      <button class="mm-nav-item active" data-page="tienda" onclick="goTo('tienda');closeMobileMenu()">
+      <div class="mm-header"><span>Arcano</span><a class="mm-close" href="/" onclick="closeMobileMenu();return false">&times;</a></div>
+      <a class="mm-nav-item active" data-page="tienda" href="/" onclick="goTo('tienda');closeMobileMenu();return false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Tienda
       </button>
-      <button class="mm-nav-item" data-page="blog" onclick="goTo('blog');closeMobileMenu()">
+      <a class="mm-nav-item" data-page="blog" href="/blog/el-brebaje-sagrado-de-los-dioses-el-origen-oscuro-y-especiado-del-cacao.html" onclick="goTo('blog');closeMobileMenu();return false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Blog
       </button><button class="mm-nav-item" data-page="recetas" onclick="goTo('recetas');closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Recetas
@@ -153,7 +153,7 @@
       <button class="mm-nav-item" data-page="faq" onclick="goTo('faq');closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>F.A.Q
       </button>
-      <button class="mm-nav-item mm-nav-highlight" onclick="openGrandesClientes();closeMobileMenu()">
+      <a class="mm-nav-item mm-nav-highlight" href="/" onclick="openGrandesClientes();closeMobileMenu();return false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Grandes Clientes
       </button>
     </div>
