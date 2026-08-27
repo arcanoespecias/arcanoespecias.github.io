@@ -781,21 +781,21 @@ function renderBlendBuilder() {
   // Step 1: Nombre
   if (step === 1) {
     h += '<div class="bb-step-content">';
-    h += '<h3 class="bb-step-title">Nombra tu blend</h3>';
-    h += '<p class="bb-step-desc">Dale un nombre único a tu mezcla especial.</p>';
-    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Mi mezcla especial">';
+    h += '<h3 class="bb-step-title">NOMBRE DE TU BLEND</h3>';
+    h += '<p class="bb-step-desc">Para un sabor único, un nombre increíble!.</p>';
+    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Sazón Original">';
     h += '</div>';
   }
 
-  // Step 2: Tamano
+  // Step 2: Tamaño
   if (step === 2) {
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Elige el tamaño</h3>';
-    h += '<p class="bb-step-desc">Selecciona el tamano del frasco para tu blend.</p>';
+    h += '<p class="bb-step-desc">Selecciona el tamaño del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
     h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco pequeño"></div>';
-    h += '<div class="bb-size-card-name">Pequeno</div>';
+    h += '<div class="bb-size-card-name">Pequeño</div>';
     if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
     h += '</div>';
     h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
@@ -859,19 +859,19 @@ function renderBlendBuilder() {
     h += '<p class="bb-step-desc bb-success-desc">Tiene mucho carácter y estilo.</p>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn success" onclick="_bbCreateAnother()">Crear otro</button>';
-    h += '<button class="bb-nav-btn success" onclick="goTo(\'tienda\')">Ir a la tienda</button>';
+    h += '<button class="bb-nav-btn success" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
     h += '<button class="bb-nav-btn success" onclick="toggleCartDrawer()">Ver Carrito</button>';
     h += '</div></div>';
   }
 
   // Step 5: Confirmar
   if (step === 5) {
-    var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Pequeno';
+    var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Pequeño';
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Resumen de tu blend</h3>';
     h += '<div class="bb-summary">';
     h += '<div class="bb-summary-row"><span class="bb-summary-label">Nombre</span><span class="bb-summary-value">' + (state.nombre || '-') + '</span></div>';
-    h += '<div class="bb-summary-row"><span class="bb-summary-label">Tamano</span><span class="bb-summary-value">' + tallaLabel + '</span></div>';
+    h += '<div class="bb-summary-row"><span class="bb-summary-label">Tamaño</span><span class="bb-summary-value">' + tallaLabel + '</span></div>';
     h += '<div class="bb-summary-row"><span class="bb-summary-label">Precio</span><span class="bb-summary-value bb-summary-price">$' + precio.toLocaleString() + '</span></div>';
     h += '</div>';
     h += '<div class="bb-summary-specs">';
@@ -963,7 +963,7 @@ function addCustomBlendToCart() {
   if (total !== 100) { alert('El total debe ser 100%'); return; }
   if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
   var precio = _getCustomBlendPrice(_blendBuilderState.talla);
-  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeno';
+  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeño';
   var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
   var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
   for (var i = 0; i < _blendBuilderState.especias.length; i++) {
