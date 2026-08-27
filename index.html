@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://arcano-6788d-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preload" href="icons/arcano-logo.webp" as="image" type="image/webp">
-  <link rel="stylesheet" href="css/tienda.css?v=29">
+  <link rel="stylesheet" href="css/tienda.css?v=30">
 
   <!-- SEO: Structured Data - LocalBusiness -->
   <script type="application/ld+json">
@@ -132,7 +132,10 @@
       <button class="nav-cart" onclick="toggleCartDrawer()" aria-label="Carrito">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-badge" id="cart-badge" style="display:none">0</span>
-      </button>
+      
+      <button class="nav-faq-mm" onclick="goTo('faq')" aria-label="FAQ">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button></button>
     </div>
   </header>
 
@@ -151,10 +154,7 @@
       <button class="mm-nav-item" data-page="blend" onclick="goTo('blend');closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6v7l4 9H5l4-9V3z"/><line x1="9" y1="3" x2="15" y2="3"/></svg>Tu Blend
       </button>
-      <button class="mm-nav-item" data-page="faq" onclick="goTo('faq');closeMobileMenu()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>F.A.Q
-      </button>
-      <button class="mm-nav-item mm-nav-highlight" onclick="openGrandesClientes();closeMobileMenu()">
+            <button class="mm-nav-item mm-nav-highlight" onclick="openGrandesClientes();closeMobileMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>Grandes Clientes
       </button>
       <div class="mm-footer" id="mm-footer"></div>
@@ -339,11 +339,16 @@
       </button>
       <button class="btab" data-page="blend" onclick="goTo('blend')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6v7l4 9H5l4-9V3z"/><line x1="9" y1="3" x2="15" y2="3"/></svg>
-        <span>Blend</span>
+        <span>Tu Blend</span>
       </button>
       <button class="btab" data-page="faq" onclick="goTo('faq')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <span>FAQ</span>
+      </button>
+      <button class="btab btab-cart" onclick="toggleCartDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span>Carrito</span>
+        <span class="cart-badge btab-badge" id="cart-badge-mm" style="display:none">0</span>
       </button>
     </div>
   </nav>
@@ -953,7 +958,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
   <script src="js/tienda-data.js?v=2" defer></script>
-  <script src="js/tienda-ui.js?v=29" defer></script>
+  <script src="js/tienda-ui.js?v=30" defer></script>
 </body>
 </html>
 
