@@ -98,6 +98,12 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   transition: all 0.2s var(--ease);
 }
 .nav-cart:hover { background: var(--surface); color: var(--gold); }
+.nav-faq-mm {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: none; align-items: center; justify-content: center;
+  color: var(--text); position: relative;
+  transition: all 0.2s var(--ease);
+}
 .cart-badge {
   position: absolute; top: 2px; right: 2px;
   min-width: 18px; height: 18px; padding: 0 5px;
@@ -1015,6 +1021,16 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .sidebar-social a:hover { color: var(--gold); background: var(--gold-light); }
 .sidebar-social svg { width: 16px; height: 16px; }
 @media (max-width: 768px) {
+  .nav-cart { display: none !important; }
+  .nav-faq-mm { display: flex !important; }
+  .btab-cart { position: relative; }
+  .btab-badge {
+    position: absolute; top: 4px; right: 50%; transform: translateX(16px);
+    min-width: 16px; height: 16px; padding: 0 4px;
+    background: var(--gold); color: #fff; font-size: 0.6rem; font-weight: 700;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    line-height: 1; pointer-events: none;
+  }
   .right-sidebar { display: none; }
   main { flex-direction: column; gap: 0; }
   .nav-links { display: none; }
