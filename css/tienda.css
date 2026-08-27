@@ -1022,7 +1022,6 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .sidebar-social svg { width: 16px; height: 16px; }
 @media (max-width: 768px) {
   .nav-cart { display: none !important; }
-  .nav-faq-mm { display: flex !important; }
   .btab-cart { position: relative; }
   .btab-badge {
     position: absolute; top: 4px; right: 50%; transform: translateX(16px);
@@ -1034,7 +1033,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   .right-sidebar { display: none; }
   main { flex-direction: column; gap: 0; }
   .nav-links { display: none; }
-  .hamburger { display: flex; }
+  .hamburger { display: flex; margin-left: auto; }
   .bottom-tabs { display: block; }
   main { padding: calc(var(--nav-h) + 16px) 16px calc(var(--tabs-h) + 24px); }
   .hero-section { padding: 32px 16px 28px; }
