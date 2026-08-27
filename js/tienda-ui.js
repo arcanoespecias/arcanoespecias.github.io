@@ -273,10 +273,12 @@ function _cartRm(idx) {
   cart.splice(idx, 1); saveCart(); updateCartBadge(); renderCartDrawer();
 }
 function updateCartBadge() {
-  var badge = document.getElementById('cart-badge');
   var count = getCartCount();
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'flex' : 'none';
+  var badges = document.querySelectorAll('.cart-badge');
+  for (var i = 0; i < badges.length; i++) {
+    badges[i].textContent = count;
+    badges[i].style.display = count > 0 ? 'flex' : 'none';
+  }
 }
 
 function sendOrder() {
