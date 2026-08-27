@@ -45,11 +45,11 @@ function _updateTitle(page, extra) {
   var metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc) {
     var descs = {
-      tienda: 'Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rincon para crear sabores unicos. Comidas, infusiones y cocteleria. Envios a toda Colombia.',
-      recetas: 'Recetas con especias artesanales de Arcano. Inspirate para cocinar con blends unicos de cada rincon del mundo.',
+      tienda: 'Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rincón para crear sabores únicos. Comidas, infusiones y coctelería. Envíos a toda Colombia.',
+      recetas: 'Recetas con especias artesanales de Arcano. Inspírate para cocinar con blends únicos de cada rincón del mundo.',
       blog: 'Blog de especias, blends artesanales, curiosidades, beneficios y origenes de las especias del mundo.',
       blend: 'Crea tu blend personalizado de especias artesanales con Arcano Especias.',
-      faq: 'Preguntas frecuentes sobre Arcano Especias: envios, pagos, productos y mas.'
+      faq: 'Preguntas frecuentes sobre Arcano Especias: envíos, pagos, productos y más.'
     };
     metaDesc.setAttribute('content', descs[page] || descs.tienda);
   }
@@ -127,9 +127,9 @@ function _updateSidebar(page) {
   } else if (page === 'blog') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-blog-cats"><li class="active" onclick="selectBlogCat(\'Todos\')">Todos</li><li onclick="selectBlogCat(\'Historias\')">Historias</li><li onclick="selectBlogCat(\'Beneficios\')">Beneficios</li><li onclick="selectBlogCat(\'Investigaciones\')">Investigaciones</li><li onclick="selectBlogCat(\'Curiosidades\')">Curiosidades</li><li onclick="selectBlogCat(\'Origenes\')">Origenes</li></ul>';
   } else if (page === 'blend') {
-    sb.innerHTML = '<p>Crea tu blend personalizado. Mezcla las especias a tu gusto para dar sabor, aroma y caracter a tus comidas, infusiones o cocteles.</p>';
+    sb.innerHTML = '<p>Crea tu blend personalizado. Mezcla las especias a tu gusto para dar sabor, aroma y carácter a tus comidas, infusiones o cocteles.</p>';
   } else if (page === 'faq') {
-    sb.innerHTML = '<p>Aqui encontraras respuestas a las preguntas mas frecuentes sobre nuestros productos, envios, formas de pago y mas. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
+    sb.innerHTML = '<p>Aquí encontrarás respuestas a las preguntas más frecuentes sobre nuestros productos, envíos, formas de pago y más. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
   }
 }
 /* === MOBILE MENU === */
@@ -178,7 +178,7 @@ function renderCartDrawer() {
   if (!body) return;
   var total = getCartTotal();
   if (cart.length === 0) {
-    body.innerHTML = '<div class="empty-state" style="padding:48px 0"><p>Tu pedido esta vacio</p></div>';
+    body.innerHTML = '<div class="empty-state" style="padding:48px 0"><p>Tu pedido está vacío</p></div>';
     return;
   }
   var h = '';
@@ -244,16 +244,16 @@ function showOrderForm() {
   // Order form
   h += '<div class="order-form">';
   h += '<div class="form-group"><label>Nombre</label><input class="form-input" id="o-nombre" placeholder="Tu nombre"></div>';
-  h += '<div class="form-row"><div class="form-group"><label>Telefono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
+  h += '<div class="form-row"><div class="form-group"><label>Teléfono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
   h += '<div class="form-group"><label>Email</label><input class="form-input" id="o-email" type="email" placeholder="tu@email.com"></div></div>';
   h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><input class="form-input" id="o-ciudad" placeholder="Bogota"></div>';
-  h += '<div class="form-group"><label>Direccion</label><input class="form-input" id="o-dir" placeholder="Direccion de entrega"></div></div>';
+  h += '<div class="form-group"><label>Dirección</label><input class="form-input" id="o-dir" placeholder="Dirección de entrega"></div></div>';
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
   h += '</div>';
   // QR
   var config = getTiendaConfig();
   if (config && config.qrPagoImage) {
-    h += '<div class="qr-section"><p>Forma de pago</p><img src="' + config.qrPagoImage + '" alt="QR Pago"><small>Envia el comprobante por WhatsApp</small></div>';
+    h += '<div class="qr-section"><p>Forma de pago</p><img src="' + config.qrPagoImage + '" alt="QR Pago"><small>Envía el comprobante por WhatsApp</small></div>';
   }
   body.innerHTML = h;
   body.scrollTop = 0;
@@ -287,7 +287,7 @@ function sendOrder() {
   var dir = document.getElementById('o-dir').value.trim();
   var notas = document.getElementById('o-notas').value.trim();
   if (!nombre || !tel) { alert('Nombre y telefono son obligatorios'); return; }
-  if (cart.length === 0) { alert('El carrito esta vacio'); return; }
+  if (cart.length === 0) { alert('El carrito está vacío'); return; }
   var items = [];
   for (var i = 0; i < cart.length; i++) {
     var c = cart[i];
@@ -502,14 +502,14 @@ function renderRecipeGrid() {
   var filtered = [];
   for (var i = 0; i < recetas.length; i++) { if (recetas[i].categoria === _currentRecetaCat) filtered.push(recetas[i]); }
   var grid = document.getElementById('recipe-grid');
-  if (filtered.length === 0) { grid.innerHTML = '<div class="page-placeholder"><p>Sin recetas aun</p></div>'; return; }
+  if (filtered.length === 0) { grid.innerHTML = '<div class="page-placeholder"><p>Sin recetas aún</p></div>'; return; }
   var h = '';
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
     var diffClass = r.dificultad === 'Facil' ? 'easy' : (r.dificultad === 'Dificil' ? 'hard' : 'medium');
     h += '<div class="recipe-grid-card" onclick="showRecipeDetail(\'' + r._key + '\')">';
     h += '<div class="rgc-cat">' + (r.categoria || '') + '</div>';
-    h += '<div class="rgc-title">' + (r.titulo || 'Sin titulo') + '</div>';
+    h += '<div class="rgc-title">' + (r.titulo || 'Sin título') + '</div>';
     h += '<div class="rgc-meta">';
     h += '<span class="rgc-diff ' + diffClass + '">' + (r.dificultad || '') + '</span>';
     if (r.tiempo) h += '<span>' + r.tiempo + '</span>';
@@ -559,7 +559,7 @@ function showRecipeDetail(key) {
   h += '<button class="recipe-detail-back" onclick="_backToRecipes()">\u2190 Volver a recetas</button>';
   h += '<div class="rd-header">';
   h += '<div class="rd-cat-badge">' + catIcon + ' ' + (r.categoria || '') + '</div>';
-  h += '<h2 class="rd-title">' + (r.titulo || 'Sin titulo') + '</h2>';
+  h += '<h2 class="rd-title">' + (r.titulo || 'Sin título') + '</h2>';
   h += '<div class="rd-meta">';
   h += '<span class="rd-diff" style="color:' + diffColor + '">' + (r.dificultad || '') + '</span>';
   if (r.tiempo) h += '<span>\u23f1 ' + r.tiempo + '</span>';
@@ -572,7 +572,7 @@ function showRecipeDetail(key) {
     h += '</ul>';
   }
   if (r.pasos && r.pasos.length) {
-    h += '<div class="rd-section-label">Preparacion</div><ol class="rd-steps">';
+    h += '<div class="rd-section-label">Preparación</div><ol class="rd-steps">';
     for (var k = 0; k < r.pasos.length; k++) h += '<li>' + _linkArcanoProducts(r.pasos[k]) + '</li>';
     h += '</ol>';
   }
@@ -599,7 +599,7 @@ function compartirReceta(key) {
     text += '\n';
   }
   if (receta.pasos && receta.pasos.length) {
-    text += 'Preparacion:\n';
+    text += 'Preparación:\n';
     for (var j = 0; j < receta.pasos.length; j++) text += (j + 1) + '. ' + receta.pasos[j] + '\n';
   }
   text += '\n\u2728 Arcano Especias';
@@ -782,7 +782,7 @@ function renderBlendBuilder() {
   if (step === 1) {
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Nombra tu blend</h3>';
-    h += '<p class="bb-step-desc">Dale un nombre unico a tu mezcla especial.</p>';
+    h += '<p class="bb-step-desc">Dale un nombre único a tu mezcla especial.</p>';
     h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Mi mezcla especial">';
     h += '</div>';
   }
@@ -790,11 +790,11 @@ function renderBlendBuilder() {
   // Step 2: Tamano
   if (step === 2) {
     h += '<div class="bb-step-content">';
-    h += '<h3 class="bb-step-title">Elige el tamano</h3>';
+    h += '<h3 class="bb-step-title">Elige el tamaño</h3>';
     h += '<p class="bb-step-desc">Selecciona el tamano del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
-    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco pequeno"></div>';
+    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco pequeño"></div>';
     h += '<div class="bb-size-card-name">Pequeno</div>';
     if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
     h += '</div>';
@@ -886,7 +886,7 @@ function renderBlendBuilder() {
   if (step < 6) {
   h += '<div class="bb-nav">';
   if (step > 1) {
-    h += '<button class="bb-nav-btn prev" onclick="_bbGoStep(' + (step - 1) + ')">Atras</button>';
+    h += '<button class="bb-nav-btn prev" onclick="_bbGoStep(' + (step - 1) + ')">Atrás</button>';
   } else {
     h += '<div></div>';
   }
@@ -1018,7 +1018,7 @@ function renderBlogList() {
   onBlogReady(function(posts) {
     var filtered = getBlogPosts();
     if (filtered.length === 0) {
-      grid.innerHTML = '<div class="empty-state"><p>Aun no hay articulos en esta categoria.</p></div>';
+      grid.innerHTML = '<div class="empty-state"><p>Aún no hay artículos en esta categoria.</p></div>';
       return;
     }
     var h = '';
@@ -1035,7 +1035,7 @@ function renderBlogList() {
       if (imgSrc) h += '<div class="blog-card-img"><img src="' + imgSrc + '" alt="' + (p.titulo || '').replace(/"/g, '&quot;') + '" loading="lazy"></div>';
       h += '<div class="blog-card-body">';
       if (p.categoria) h += '<span class="blog-card-cat">' + p.categoria + '</span>';
-      h += '<h3 class="blog-card-title">' + (p.titulo || 'Sin titulo') + '</h3>';
+      h += '<h3 class="blog-card-title">' + (p.titulo || 'Sin título') + '</h3>';
       if (p.subtitulo) h += '<p class="blog-card-sub">' + p.subtitulo + '</p>';
       if (fechaStr) h += '<span class="blog-card-date">' + fechaStr + '</span>';
       h += '</div></div>';
