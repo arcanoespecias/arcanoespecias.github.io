@@ -1099,6 +1099,10 @@ function renderSocialLinks() {
   if (footer) footer.innerHTML = h;
   var sidebar = document.getElementById('sidebar-social');
   if (sidebar) sidebar.innerHTML = h;
+  var mmFooter = document.getElementById('mm-footer');
+  if (mmFooter) {
+    mmFooter.innerHTML = '<img src="icons/arcano-logo.webp" class="mm-logo" alt="Arcano Especias"><div class="mm-social">' + h + '</div>';
+  }
 }
 
 /* === INIT === */
