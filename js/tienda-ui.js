@@ -762,7 +762,7 @@ function renderBlendBuilder() {
   }
 
   // Step indicators (hide on success)
-  var steps = ['Nombre', 'Tamano', 'Especias', 'Proporciones', 'Confirmar'];
+  var steps = ['Nombre', 'Tamaño', 'Especias', 'Proporciones', 'Confirmar'];
   var h = '<div class="bb-container">';
   if (step < 6) {
   h += '<div class="bb-steps">';
