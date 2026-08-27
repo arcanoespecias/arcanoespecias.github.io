@@ -148,6 +148,46 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 .mm-nav-item.active { background: var(--gold-light); color: var(--gold); font-weight: 600; }
 .mm-nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
 
+/* Mobile Menu Footer */
+.mm-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.mm-logo {
+  height: 40px;
+  width: auto;
+  opacity: 0.7;
+}
+.mm-social {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.mm-social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--text-sec);
+  transition: all 0.2s var(--ease);
+}
+.mm-social a:hover {
+  color: var(--gold);
+  background: var(--gold-light);
+}
+.mm-social svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
 /* === BOTTOM TABS (MOBILE) === */
 .bottom-tabs {
   display: none; position: fixed; bottom: 0; left: 0; right: 0;
