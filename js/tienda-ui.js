@@ -127,7 +127,7 @@ function _updateSidebar(page) {
   } else if (page === 'blog') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-blog-cats"><li class="active" onclick="selectBlogCat(\'Todos\')">Todos</li><li onclick="selectBlogCat(\'Historias\')">Historias</li><li onclick="selectBlogCat(\'Beneficios\')">Beneficios</li><li onclick="selectBlogCat(\'Investigaciones\')">Investigaciones</li><li onclick="selectBlogCat(\'Curiosidades\')">Curiosidades</li><li onclick="selectBlogCat(\'Origenes\')">Origenes</li></ul>';
   } else if (page === 'blend') {
-    sb.innerHTML = '<p>Elige las especias y personaliza tu blend para que cada receta lleve TU toque secreto.</p>';
+    sb.innerHTML = '<p>Crea tu blend personalizado. Mezcla las especias a tu gusto para dar sabor, aroma y caracter a tus comidas, infusiones o cocteles.</p>';
   } else if (page === 'faq') {
     sb.innerHTML = '<p>Aqui encontraras respuestas a las preguntas mas frecuentes sobre nuestros productos, envios, formas de pago y mas. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
   }
