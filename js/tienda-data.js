@@ -176,18 +176,28 @@ function submitOrder(orderData) {
       upsertCliente(orderData.cliente).then(function(result) {
         orderData.clienteId = result.id;
         _pedidosRef.push(orderData, function(error) {
-          if (error) reject(error); else resolve(orderData);
+          if (error) reject(error); else {
+            // Marcar carrito como convertido en tracking
+            markCarritoAsConverted();
+            resolve(orderData);
+          }
         });
       }).catch(function(err) {
         // Si falla el upsert, igual guardamos el pedido sin clienteId
         console.warn('[Tienda] upsertCliente fallo, guardando pedido sin vincular:', err);
         _pedidosRef.push(orderData, function(error) {
-          if (error) reject(error); else resolve(orderData);
+          if (error) reject(error); else {
+            markCarritoAsConverted();
+            resolve(orderData);
+          }
         });
       });
     } else {
       _pedidosRef.push(orderData, function(error) {
-        if (error) reject(error); else resolve(orderData);
+        if (error) reject(error); else {
+          markCarritoAsConverted();
+          resolve(orderData);
+        }
       });
     }
   });
@@ -317,6 +327,149 @@ function getClientePedidos(clienteId) {
       pedidos.sort(function(a, b) { return (b.creado || '').localeCompare(a.creado || ''); });
       resolve(pedidos);
     }, function(err) { reject(err); });
+  });
+}
+
+/* === PROMOCIONES (read-only para clientes) === */
+var _promocionesRef = null;
+
+/**
+ * Devuelve las promociones activas vigentes para clientes.
+ * Filtro: activa=true Y (fechaInicio <= ahora <= fechaFin O sin fechas).
+ */
+function getPromocionesActivas() {
+  return new Promise(function(resolve, reject) {
+    if (!_promocionesRef) _promocionesRef = firebase.database().ref('arcano/db/promociones');
+    _promocionesRef.once('value', function(snap) {
+      var data = snap.val();
+      var promos = [];
+      var now = Date.now();
+      if (data) {
+        var keys = Object.keys(data);
+        for (var i = 0; i < keys.length; i++) {
+          var promo = data[keys[i]];
+          if (!promo || promo.activa === false) continue;
+          // Validar vigencia
+          if (promo.fechaInicio && new Date(promo.fechaInicio).getTime() > now) continue;
+          if (promo.fechaFin && new Date(promo.fechaFin).getTime() < now) continue;
+          promo._key = keys[i];
+          promos.push(promo);
+        }
+      }
+      // Ordenar: destacadas primero, luego por fecha de creacion desc
+      promos.sort(function(a, b) {
+        if ((a.destacada ? 1 : 0) !== (b.destacada ? 1 : 0)) return (b.destacada ? 1 : 0) - (a.destacada ? 1 : 0);
+        return (b.creado || '').localeCompare(a.creado || '');
+      });
+      resolve(promos);
+    }, function(err) { reject(err); });
+  });
+}
+
+/* === CARRITOS (tracking de carritos abandonados) === */
+var _carritosRef = null;
+var _carritoTrackingTimer = null;
+var _carritoTrackingKey = null;
+
+/**
+ * Guarda o actualiza el carrito del cliente en Firebase para tracking.
+ * Si clienteId es null, usa una key anonima persistida en localStorage.
+ * Se llama periodicamente (cada 60s) y al cerrar la pagina.
+ */
+function saveCarritoTracking(cart, clienteId, clienteData) {
+  return new Promise(function(resolve, reject) {
+    if (!_carritosRef) _carritosRef = firebase.database().ref('arcano/db/carritos');
+    if (!cart || cart.length === 0) {
+      // Si el carrito esta vacio y existe una key, marcar como convertido o eliminar
+      if (_carritoTrackingKey) {
+        _carritosRef.child(_carritoTrackingKey).update({
+          estado: 'vacio',
+          actualizado: new Date().toISOString()
+        }, function() { resolve(); });
+      } else { resolve(); }
+      return;
+    }
+    var now = new Date().toISOString();
+    if (!_carritoTrackingKey) {
+      // Crear nuevo carrito tracking
+      var newRef = _carritosRef.push();
+      _carritoTrackingKey = newRef.key;
+      try { localStorage.setItem('arcano_carrito_key', _carritoTrackingKey); } catch(e) {}
+      var data = {
+        items: cart,
+        total: cart.reduce(function(s, c) { return s + (c.precio * c.qty); }, 0),
+        itemCount: cart.reduce(function(s, c) { return s + c.qty; }, 0),
+        clienteId: clienteId || null,
+        cliente: clienteData || null,
+        creado: now,
+        actualizado: now,
+        estado: 'activo'
+      };
+      newRef.set(data, function(err) { if (err) reject(err); else resolve(); });
+    } else {
+      // Actualizar carrito existente
+      var updates = {
+        items: cart,
+        total: cart.reduce(function(s, c) { return s + (c.precio * c.qty); }, 0),
+        itemCount: cart.reduce(function(s, c) { return s + c.qty; }, 0),
+        clienteId: clienteId || null,
+        cliente: clienteData || null,
+        actualizado: now,
+        estado: 'activo'
+      };
+      _carritosRef.child(_carritoTrackingKey).update(updates, function(err) { if (err) reject(err); else resolve(); });
+    }
+  });
+}
+
+/**
+ * Marca el carrito como convertido (se completo el pedido).
+ * Se llama desde submitOrder tras exito.
+ */
+function markCarritoAsConverted() {
+  return new Promise(function(resolve) {
+    if (!_carritosRef || !_carritoTrackingKey) { resolve(); return; }
+    _carritosRef.child(_carritoTrackingKey).update({
+      estado: 'convertido',
+      convertidoEn: new Date().toISOString()
+    }, function() {
+      _carritoTrackingKey = null;
+      try { localStorage.removeItem('arcano_carrito_key'); } catch(e) {}
+      resolve();
+    });
+  });
+}
+
+/**
+ * Inicia el tracking automatico del carrito. Llamar al cargar la tienda.
+ * Guarda el carrito cada 60s y al detectar cambios.
+ */
+function initCarritoTracking(getCartFn, getClienteSessionFn) {
+  // Restaurar key previa si existe
+  try {
+    _carritoTrackingKey = localStorage.getItem('arcano_carrito_key') || null;
+  } catch(e) { _carritoTrackingKey = null; }
+  // Tracking periodico
+  if (_carritoTrackingTimer) clearInterval(_carritoTrackingTimer);
+  _carritoTrackingTimer = setInterval(function() {
+    try {
+      var s = getClienteSessionFn ? getClienteSessionFn() : null;
+      saveCarritoTracking(getCartFn(), s && s.id, s).catch(function() {});
+    } catch(e) {}
+  }, 60000);
+  // Guardar al salir de la pagina
+  window.addEventListener('beforeunload', function() {
+    try {
+      var s = getClienteSessionFn ? getClienteSessionFn() : null;
+      // Marcar como abandonado si no se completo en 30 min
+      if (_carritoTrackingKey && getCartFn().length > 0) {
+        saveCarritoTracking(getCartFn(), s && s.id, s).then(function() {
+          if (_carritosRef && _carritoTrackingKey) {
+            _carritosRef.child(_carritoTrackingKey).update({ estado: 'abandonado' });
+          }
+        }).catch(function() {});
+      }
+    } catch(e) {}
   });
 }
 

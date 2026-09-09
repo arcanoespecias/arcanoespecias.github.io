@@ -1132,6 +1132,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initBlog();
     renderProducts('Todos');
     renderSocialLinks();
+    // Inicializar tracking de carrito (cada 60s + al salir de pagina)
+    initCarritoTracking(function() { return cart; }, getClienteSession);
     onTiendaChange(function() {
       if (!hasVisiblePacks()) {
         var pb = document.querySelector('.filter-pill[data-cat="Packs"]');
@@ -1302,57 +1304,171 @@ function _mcVerifyOTP() {
 function _mcShowHistorial(cliente) {
   var el = document.getElementById('mc-content');
   if (!el) return;
+  // Calcular stats resumen
+  var totalPedidos = cliente.totalPedidos || 0;
+  // Layout con header de cliente, promos y tabs de pedidos
   el.innerHTML =
     '<div class="mc-historial">' +
       '<div class="mc-user-info">' +
         '<div class="mc-user-name">' + (cliente.nombre || 'Cliente') + '</div>' +
         '<div class="mc-user-meta">' + (cliente.telefono || '') + '</div>' +
         '<div class="mc-user-stats">' +
-          '<span><b>' + (cliente.totalPedidos || 0) + '</b> pedidos</span>' +
+          '<span><b>' + totalPedidos + '</b> pedidos</span>' +
         '</div>' +
       '</div>' +
-      '<h4>Mis Pedidos</h4>' +
+      // Seccion promos exclusivas
+      '<div id="mc-promos-section"></div>' +
+      // Tabs de pedidos
+      '<div class="mc-tabs">' +
+        '<button class="mc-tab active" data-tab="entregados" onclick="_mcSwitchTab(\'entregados\')">Entregados <span class="mc-tab-count" id="mc-c-entregados">0</span></button>' +
+        '<button class="mc-tab" data-tab="proceso" onclick="_mcSwitchTab(\'proceso\')">En proceso <span class="mc-tab-count" id="mc-c-proceso">0</span></button>' +
+        '<button class="mc-tab" data-tab="anulados" onclick="_mcSwitchTab(\'anulados\')">Anulados <span class="mc-tab-count" id="mc-c-anulados">0</span></button>' +
+      '</div>' +
       '<div id="mc-pedidos-list"><div class="loader"></div></div>' +
       '<button class="btn-secondary btn-block" style="margin-top:18px" onclick="_mcLogout()">Cerrar sesión</button>' +
     '</div>';
+  // Cargar promos
+  _mcLoadPromos();
+  // Cargar pedidos
   if (!cliente.id) {
     var list = document.getElementById('mc-pedidos-list');
     if (list) list.innerHTML = '<p class="mc-empty">No se pudo cargar el historial.</p>';
     return;
   }
+  // Guardar cliente.id para que _mcSwitchTab pueda acceder
+  el.dataset.clienteId = cliente.id;
   getClientePedidos(cliente.id).then(function(pedidos) {
-    var list = document.getElementById('mc-pedidos-list');
-    if (!list) return;
-    if (pedidos.length === 0) {
-      list.innerHTML = '<p class="mc-empty">Aún no tienes pedidos.</p>';
-      return;
-    }
-    var h = '';
-    for (var i = 0; i < pedidos.length; i++) {
-      var p = pedidos[i];
-      var fecha = (p.creado || '').slice(0, 16).replace('T', ' ');
-      var estado = p.estado || 'nuevo';
-      var estadoCls = 'mc-estado-' + (estado === 'nuevo' ? 'nuevo' : estado === 'confirmado' || estado === 'enviado' ? 'ok' : estado === 'cancelado' ? 'cancelado' : 'pend');
-      var items = '';
-      if (p.items) {
-        for (var j = 0; j < p.items.length; j++) {
-          items += '<div class="mc-pedido-item">' + p.items[j].nombre + ' x' + p.items[j].qty + '</div>';
-        }
-      }
-      h += '<div class="mc-pedido-card">' +
-        '<div class="mc-pedido-top">' +
-          '<span class="mc-pedido-fecha">' + fecha + '</span>' +
-          '<span class="mc-pedido-estado ' + estadoCls + '">' + estado + '</span>' +
-        '</div>' +
-        '<div class="mc-pedido-items">' + items + '</div>' +
-        '<div class="mc-pedido-total">Total: $' + (p.total || 0).toLocaleString() + '</div>' +
-      '</div>';
-    }
-    list.innerHTML = h;
+    // Guardar en cache del modulo
+    Pages._mcPedidosCache = pedidos;
+    // Contar por categoria
+    var entregados = pedidos.filter(function(p) { return p.estado === 'entregado'; });
+    var anulados = pedidos.filter(function(p) { return p.estado === 'cancelado'; });
+    var enProceso = pedidos.filter(function(p) { return ['nuevo','confirmado','enviado'].indexOf(p.estado || 'nuevo') !== -1; });
+    document.getElementById('mc-c-entregados').textContent = entregados.length;
+    document.getElementById('mc-c-proceso').textContent = enProceso.length;
+    document.getElementById('mc-c-anulados').textContent = anulados.length;
+    _mcRenderPedidosTab('entregados');
   }).catch(function(err) {
     var list = document.getElementById('mc-pedidos-list');
     if (list) list.innerHTML = '<p class="mc-empty">Error al cargar: ' + (err.message || err) + '</p>';
   });
+}
+
+var _mcCurrentTab = 'entregados';
+
+function _mcSwitchTab(tab) {
+  _mcCurrentTab = tab;
+  // Actualizar tabs activos
+  var tabs = document.querySelectorAll('.mc-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].dataset.tab === tab);
+  }
+  _mcRenderPedidosTab(tab);
+}
+
+function _mcRenderPedidosTab(tab) {
+  var list = document.getElementById('mc-pedidos-list');
+  if (!list) return;
+  var pedidos = Pages._mcPedidosCache || [];
+  var filtrados;
+  if (tab === 'entregados') {
+    filtrados = pedidos.filter(function(p) { return p.estado === 'entregado'; });
+  } else if (tab === 'anulados') {
+    filtrados = pedidos.filter(function(p) { return p.estado === 'cancelado'; });
+  } else {
+    filtrados = pedidos.filter(function(p) { return ['nuevo','confirmado','enviado'].indexOf(p.estado || 'nuevo') !== -1; });
+  }
+  if (filtrados.length === 0) {
+    list.innerHTML = '<p class="mc-empty">No tienes pedidos ' + (tab === 'entregados' ? 'entregados aún.' : tab === 'anulados' ? 'anulados.' : 'en proceso.') + '</p>';
+    return;
+  }
+  var h = '';
+  for (var i = 0; i < filtrados.length; i++) {
+    var p = filtrados[i];
+    var fecha = (p.creado || '').slice(0, 16).replace('T', ' ');
+    var estado = p.estado || 'nuevo';
+    var estadoCls = 'mc-estado-' + (estado === 'nuevo' ? 'nuevo' : estado === 'confirmado' || estado === 'enviado' ? 'ok' : estado === 'entregado' ? 'ok' : estado === 'cancelado' ? 'cancelado' : 'pend');
+    var estadoLabel = {
+      nuevo: 'Nuevo', confirmado: 'Confirmado', enviado: 'Enviado',
+      entregado: 'Entregado', cancelado: 'Anulado'
+    }[estado] || estado;
+    var items = '';
+    if (p.items) {
+      for (var j = 0; j < p.items.length; j++) {
+        items += '<div class="mc-pedido-item">' + (p.items[j].nombre || '?') + ' x' + p.items[j].qty + '</div>';
+      }
+    }
+    h += '<div class="mc-pedido-card">' +
+      '<div class="mc-pedido-top">' +
+        '<span class="mc-pedido-fecha">' + fecha + '</span>' +
+        '<span class="mc-pedido-estado ' + estadoCls + '">' + estadoLabel + '</span>' +
+      '</div>' +
+      '<div class="mc-pedido-items">' + items + '</div>' +
+      '<div class="mc-pedido-total">Total: $' + (p.total || 0).toLocaleString() + '</div>' +
+    '</div>';
+  }
+  list.innerHTML = h;
+}
+
+function _mcLoadPromos() {
+  var container = document.getElementById('mc-promos-section');
+  if (!container) return;
+  container.innerHTML = '<h4 class="mc-promos-title">🎁 Promociones exclusivas para ti</h4><div id="mc-promos-list" class="mc-promos-list"><div class="loader"></div></div>';
+  getPromocionesActivas().then(function(promos) {
+    var list = document.getElementById('mc-promos-list');
+    if (!list) return;
+    if (promos.length === 0) {
+      list.innerHTML = '<p class="mc-empty">Sin promociones activas por ahora. ¡Vuelve pronto!</p>';
+      return;
+    }
+    var h = '';
+    for (var i = 0; i < promos.length; i++) {
+      var pr = promos[i];
+      var vigencia = '';
+      if (pr.fechaFin) {
+        var f = new Date(pr.fechaFin);
+        vigencia = '<div class="mc-promo-vigencia">Vence: ' + f.toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) + '</div>';
+      } else if (pr.fechaInicio) {
+        var fi = new Date(pr.fechaInicio);
+        vigencia = '<div class="mc-promo-vigencia">Desde: ' + fi.toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) + '</div>';
+      }
+      var codigo = pr.codigo ? '<div class="mc-promo-codigo" onclick="_mcCopiarCodigo(\'' + pr.codigo + '\')"><span>Código:</span><b>' + pr.codigo + '</b><span class="mc-copy-hint">📋 copiar</span></div>' : '';
+      var descuento = '';
+      if (pr.tipo === 'porcentaje') descuento = pr.valor + '% OFF';
+      else if (pr.tipo === 'monto') descuento = '$' + (pr.valor || 0).toLocaleString() + ' Off';
+      else if (pr.tipo === 'envio') descuento = 'Envío gratis';
+      else if (pr.tipo === 'producto') descuento = 'Producto gratis';
+      else descuento = pr.titulo || 'Promo';
+      h += '<div class="mc-promo-card' + (pr.destacada ? ' mc-promo-destacada' : '') + '">' +
+        '<div class="mc-promo-badge">' + descuento + '</div>' +
+        '<div class="mc-promo-nombre">' + (pr.titulo || 'Promoción') + '</div>' +
+        (pr.descripcion ? '<div class="mc-promo-desc">' + pr.descripcion + '</div>' : '') +
+        codigo + vigencia +
+      '</div>';
+    }
+    list.innerHTML = h;
+  }).catch(function(err) {
+    var list = document.getElementById('mc-promos-list');
+    if (list) list.innerHTML = '<p class="mc-empty">No se pudieron cargar promociones.</p>';
+  });
+}
+
+function _mcCopiarCodigo(codigo) {
+  try {
+    navigator.clipboard.writeText(codigo).then(function() {
+      _showToast('Código copiado: ' + codigo);
+    }).catch(function() {
+      // Fallback para navegadores sin clipboard API
+      var tmp = document.createElement('input');
+      tmp.value = codigo;
+      document.body.appendChild(tmp);
+      tmp.select();
+      try { document.execCommand('copy'); _showToast('Código copiado: ' + codigo); } catch(e) {}
+      document.body.removeChild(tmp);
+    });
+  } catch(e) {
+    _showToast('Código: ' + codigo);
+  }
 }
 
 function _mcLogout() {
