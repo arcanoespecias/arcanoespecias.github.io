@@ -258,6 +258,8 @@ function showOrderForm() {
   body.innerHTML = h;
   body.scrollTop = 0;
   _cartSetFooterStep(2);
+  // Autocompletar si hay sesion de cliente
+  setTimeout(_autocompletarCheckoutSiSesion, 50);
 }
 
 function backToCart() {
@@ -301,7 +303,19 @@ function sendOrder() {
   };
   var body = document.getElementById('cart-drawer-body');
   body.innerHTML = '<div style="text-align:center;padding:48px 0"><div class="loader"></div><p style="color:var(--text-sec);margin-top:12px">Enviando pedido...</p></div>';
-  submitOrder(orderData).then(function() {
+  submitOrder(orderData).then(function(savedOrder) {
+    // Si el pedido se vinculo a un cliente y no hay sesion local, la creamos
+    if (savedOrder && savedOrder.clienteId && !getClienteSession()) {
+      saveClienteSession({
+        id: savedOrder.clienteId,
+        nombre: nombre,
+        telefono: tel,
+        email: email,
+        ciudad: ciudad,
+        direccion: dir
+      });
+      _updateCuentaBadge();
+    }
     // GA4: purchase event
     if (typeof gtag === 'function') {
       var ga4Items = [];
@@ -1180,4 +1194,200 @@ function submitGrandesClientes(e) {
     alert('Error al enviar. Intenta de nuevo.');
     btn.disabled = false; btn.textContent = 'Enviar Solicitud';
   });
+}
+
+/* ===================== MI CUENTA (cliente) =====================
+   Flujo:
+   1. Cliente hace click en "Mi cuenta" del header.
+   2. Si hay sesion local activa -> muestra historial directamente.
+   3. Si no -> pide WhatsApp -> genera OTP -> abre wa.me con el codigo
+      para que el cliente se lo auto-envie (o el admin se lo envia luego).
+   4. Cliente ingresa OTP -> verifica -> sesion creada -> historial.
+   5. El checkout autocompleta datos si hay sesion activa.
+   ============================================================ */
+
+function openMiCuenta() {
+  var existing = document.getElementById('mc-overlay');
+  if (existing) existing.remove();
+  var session = getClienteSession();
+  var overlay = document.createElement('div');
+  overlay.id = 'mc-overlay';
+  overlay.className = 'mc-overlay';
+  overlay.onclick = function(e) { if (e.target === overlay) closeMiCuenta(); };
+  overlay.innerHTML =
+    '<div class="mc-modal">' +
+      '<button class="mc-close" onclick="closeMiCuenta()">&times;</button>' +
+      '<div id="mc-content"><div class="loader"></div></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  if (session) {
+    _mcShowHistorial(session);
+  } else {
+    _mcShowLogin();
+  }
+}
+
+function closeMiCuenta() {
+  var ov = document.getElementById('mc-overlay');
+  if (ov) { ov.remove(); document.body.style.overflow = ''; }
+}
+
+function _mcShowLogin() {
+  var el = document.getElementById('mc-content');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="mc-login">' +
+      '<h3>Mi Cuenta</h3>' +
+      '<p class="mc-sub">Ingresa con tu WhatsApp para ver tus pedidos</p>' +
+      '<div class="form-group"><label>Número de WhatsApp</label>' +
+        '<input class="form-input" id="mc-tel" placeholder="300 123 4567" maxlength="15"></div>' +
+      '<button class="btn-primary btn-block" onclick="_mcSendOTP()">Enviar código</button>' +
+      '<div id="mc-otp-step" style="display:none;margin-top:18px">' +
+        '<p class="mc-sub">Te enviamos un código por WhatsApp. Ingresalo abajo:</p>' +
+        '<div class="form-group"><label>Código (6 dígitos)</label>' +
+          '<input class="form-input" id="mc-otp" placeholder="123456" maxlength="6"></div>' +
+        '<button class="btn-primary btn-block" onclick="_mcVerifyOTP()">Verificar</button>' +
+        '<p class="mc-help" id="mc-otp-help"></p>' +
+      '</div>' +
+      '<p class="mc-hint">Si nunca hiciste un pedido, regístrate haciendo tu primera compra.</p>' +
+    '</div>';
+}
+
+function _mcSendOTP() {
+  var tel = (document.getElementById('mc-tel').value || '').trim();
+  if (!tel) { alert('Ingresa tu número de WhatsApp'); return; }
+  var btn = event.target;
+  var original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  requestClienteOTP(tel).then(function(result) {
+    // Mostrar paso OTP y un link wa.me para que el cliente se auto-envie el codigo
+    var otpStep = document.getElementById('mc-otp-step');
+    if (otpStep) otpStep.style.display = 'block';
+    var help = document.getElementById('mc-otp-help');
+    var telNorm = _normalizeWhatsapp(tel);
+    var waLink = 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent('Mi código de acceso a Arcano Especias es: ' + result.otp);
+    if (help) {
+      help.innerHTML = '¿No te llegó? <a href="' + waLink + '" target="_blank" style="color:var(--gold)">Envíate el código por WhatsApp</a>';
+    }
+    // Guardar telefono temporal para verify
+    btn.dataset.tel = tel;
+    btn.disabled = false; btn.textContent = 'Reenviar código';
+    _showToast('Código generado');
+  }).catch(function(err) {
+    alert(err.message || err);
+    btn.disabled = false; btn.textContent = original;
+  });
+}
+
+function _mcVerifyOTP() {
+  var tel = (document.querySelector('#mc-content [data-tel]') || {}).dataset ? document.querySelector('#mc-content [data-tel]').dataset.tel : '';
+  if (!tel) tel = (document.getElementById('mc-tel').value || '').trim();
+  var codigo = (document.getElementById('mc-otp').value || '').trim();
+  if (!codigo) { alert('Ingresa el código de 6 dígitos'); return; }
+  var btn = event.target;
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  verifyClienteOTP(tel, codigo).then(function(cliente) {
+    saveClienteSession(cliente);
+    _showToast('Bienvenido ' + (cliente.nombre || 'de nuevo'));
+    _mcShowHistorial(cliente);
+    // Actualizar header si hay badge de cuenta
+    _updateCuentaBadge();
+  }).catch(function(err) {
+    alert(err.message || err);
+    btn.disabled = false; btn.textContent = 'Verificar';
+  });
+}
+
+function _mcShowHistorial(cliente) {
+  var el = document.getElementById('mc-content');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="mc-historial">' +
+      '<div class="mc-user-info">' +
+        '<div class="mc-user-name">' + (cliente.nombre || 'Cliente') + '</div>' +
+        '<div class="mc-user-meta">' + (cliente.telefono || '') + '</div>' +
+        '<div class="mc-user-stats">' +
+          '<span><b>' + (cliente.totalPedidos || 0) + '</b> pedidos</span>' +
+        '</div>' +
+      '</div>' +
+      '<h4>Mis Pedidos</h4>' +
+      '<div id="mc-pedidos-list"><div class="loader"></div></div>' +
+      '<button class="btn-secondary btn-block" style="margin-top:18px" onclick="_mcLogout()">Cerrar sesión</button>' +
+    '</div>';
+  if (!cliente.id) {
+    var list = document.getElementById('mc-pedidos-list');
+    if (list) list.innerHTML = '<p class="mc-empty">No se pudo cargar el historial.</p>';
+    return;
+  }
+  getClientePedidos(cliente.id).then(function(pedidos) {
+    var list = document.getElementById('mc-pedidos-list');
+    if (!list) return;
+    if (pedidos.length === 0) {
+      list.innerHTML = '<p class="mc-empty">Aún no tienes pedidos.</p>';
+      return;
+    }
+    var h = '';
+    for (var i = 0; i < pedidos.length; i++) {
+      var p = pedidos[i];
+      var fecha = (p.creado || '').slice(0, 16).replace('T', ' ');
+      var estado = p.estado || 'nuevo';
+      var estadoCls = 'mc-estado-' + (estado === 'nuevo' ? 'nuevo' : estado === 'confirmado' || estado === 'enviado' ? 'ok' : estado === 'cancelado' ? 'cancelado' : 'pend');
+      var items = '';
+      if (p.items) {
+        for (var j = 0; j < p.items.length; j++) {
+          items += '<div class="mc-pedido-item">' + p.items[j].nombre + ' x' + p.items[j].qty + '</div>';
+        }
+      }
+      h += '<div class="mc-pedido-card">' +
+        '<div class="mc-pedido-top">' +
+          '<span class="mc-pedido-fecha">' + fecha + '</span>' +
+          '<span class="mc-pedido-estado ' + estadoCls + '">' + estado + '</span>' +
+        '</div>' +
+        '<div class="mc-pedido-items">' + items + '</div>' +
+        '<div class="mc-pedido-total">Total: $' + (p.total || 0).toLocaleString() + '</div>' +
+      '</div>';
+    }
+    list.innerHTML = h;
+  }).catch(function(err) {
+    var list = document.getElementById('mc-pedidos-list');
+    if (list) list.innerHTML = '<p class="mc-empty">Error al cargar: ' + (err.message || err) + '</p>';
+  });
+}
+
+function _mcLogout() {
+  clearClienteSession();
+  closeMiCuenta();
+  _updateCuentaBadge();
+  _showToast('Sesión cerrada');
+}
+
+function _updateCuentaBadge() {
+  var session = getClienteSession();
+  var initials = document.querySelector('.mc-btn-initials');
+  if (initials) {
+    if (session && session.nombre) {
+      var n = session.nombre.trim().split(/\s+/)[0] || 'C';
+      initials.textContent = n.charAt(0).toUpperCase();
+      initials.classList.add('mc-btn-active');
+    } else {
+      initials.textContent = '';
+      initials.classList.remove('mc-btn-active');
+    }
+  }
+}
+
+/**
+ * Autocompleta el formulario de checkout si hay sesion de cliente activa.
+ * Llamado al mostrar showOrderForm().
+ */
+function _autocompletarCheckoutSiSesion() {
+  var s = getClienteSession();
+  if (!s) return;
+  var setVal = function(id, val) { var el = document.getElementById(id); if (el && val && !el.value) el.value = val; };
+  setVal('o-nombre', s.nombre);
+  setVal('o-tel', s.telefono);
+  setVal('o-email', s.email);
+  setVal('o-ciudad', s.ciudad);
+  setVal('o-dir', s.direccion);
 }
