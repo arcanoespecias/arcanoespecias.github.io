@@ -930,6 +930,23 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   border-top: 1px solid var(--border-light);
   max-width: 1280px; margin: 0 auto;
 }
+.store-footer .footer-line { display: block; margin-top: 4px; }
+.store-footer .footer-crypto {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(247, 147, 26, 0.08);
+  border: 1px solid rgba(247, 147, 26, 0.25);
+  color: #f7a23a;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+}
+.store-footer .footer-crypto .crypto-icon {
+  width: 16px; height: 16px; flex-shrink: 0;
+  display: inline-block; vertical-align: middle;
+}
 
 /* === SOCIAL (in footer) === */
 .footer-social {
