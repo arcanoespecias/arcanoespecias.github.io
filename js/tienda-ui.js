@@ -860,8 +860,8 @@ function renderBlendBuilder() {
     h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fantástico</h3>';
     h += '<p class="bb-step-desc bb-success-desc">Tiene mucho carácter y estilo.</p>';
     h += '<div class="bb-success-btns">';
-    h += '<button class="bb-nav-btn success" onclick="_bbCreateAnother()">Crear otro</button>';
-    h += '<button class="bb-nav-btn success" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
+    h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
+    h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
     h += '<button class="bb-nav-btn success" onclick="toggleCartDrawer()">Ver Carrito</button>';
     h += '</div></div>';
   }

@@ -841,6 +841,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-nav-btn.prev:hover { border-color: var(--gold); color: var(--gold); }
 .bb-nav-btn.next { background: var(--dark); color: #F5E6D0; border: none; }
 .bb-nav-btn.success { background: #a0762c; color: #fff; border: none; }
+.bb-nav-btn.success.dark { background: #281606; }
 
 .bb-nav-btn.next:hover:not(.disabled) { background: #2a1a10; }
 .bb-nav-btn.next.disabled { opacity: 0.35; cursor: not-allowed; }
@@ -1047,7 +1048,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   .price-value { font-size: 0.82rem; }
   .price-btn { padding: 8px 6px; }
   .detail-modal { flex-direction: column; border-radius: 16px; max-height: 92vh; }
-  .detail-modal-img { width: 100%; min-height: 200px; max-height: 240px; border-radius: 16px 16px 0 0; }
+  .detail-modal-img { width: 100%; min-height: 200px; max-height: none; border-radius: 16px 16px 0 0; }
+  .detail-modal-img img { height: auto; object-fit: contain; }
   .detail-modal-img span { font-size: 3.5rem; }
   .detail-modal-content { padding: 24px 20px; }
   .detail-modal-content h2 { font-size: 1.3rem; }
