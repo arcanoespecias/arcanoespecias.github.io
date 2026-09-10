@@ -49,6 +49,12 @@
    2. Mesh gradient con "polvo de especias" dorado (rotación lenta)
    3. Partículas doradas flotando
    Todo en un div fijo detrás del contenido.
+
+   Variables dinámicas (seteadas por bg-dynamic.js):
+   --scroll-progress: 0 a 1 (progreso del BG, no del texto)
+   --mesh-opacity: opacidad del mesh gradient
+   --particles-opacity: opacidad de las partículas
+   --vignette-opacity: opacidad del vignette
 */
 .bg-dynamic {
   position: fixed;
@@ -58,7 +64,13 @@
   transition: background 0.6s var(--ease);
 }
 
-/* Mesh gradient: manchas doradas suaves que rotan lentamente */
+/* Mesh gradient: manchas doradas suaves que rotan lentamente.
+   Velocidad controlada por data-mesh-speed:
+   - slow: 120s
+   - normal: 60s
+   - fast: 25s
+   - none: sin animación
+*/
 .bg-dynamic::before {
   content: '';
   position: absolute;
@@ -68,9 +80,14 @@
     radial-gradient(ellipse 800px 500px at 85% 60%, rgba(196, 148, 58, 0.08), transparent 65%),
     radial-gradient(ellipse 500px 400px at 50% 90%, rgba(160, 118, 44, 0.06), transparent 60%);
   animation: bg-mesh-rotate 60s linear infinite;
-  opacity: calc(0.5 + var(--scroll-progress) * 0.7);
+  opacity: var(--mesh-opacity, 0.5);
   transition: opacity 1.2s var(--ease);
 }
+
+.bg-dynamic[data-mesh-speed="slow"]::before    { animation-duration: 120s; }
+.bg-dynamic[data-mesh-speed="normal"]::before   { animation-duration: 60s; }
+.bg-dynamic[data-mesh-speed="fast"]::before     { animation-duration: 25s; }
+.bg-dynamic[data-mesh-speed="none"]::before     { animation: none; }
 
 @keyframes bg-mesh-rotate {
   0% { transform: rotate(0deg) scale(1); }
@@ -85,7 +102,7 @@
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
-  opacity: calc(0.3 + var(--scroll-progress) * 0.6);
+  opacity: var(--particles-opacity, 0.5);
   transition: opacity 1.2s var(--ease);
 }
 
@@ -108,22 +125,25 @@
   75% { transform: translate(25px, -40px) scale(1.4); opacity: 0.9; }
 }
 
-/* Vignette sutil que aparece en scroll profundo */
+/* Vignette sutil que aparece en scroll profundo.
+   Opacidad controlada por --vignette-opacity (seteada por JS según config.intensidad). */
 .bg-vignette {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, calc(var(--scroll-progress) * 0.5)) 100%);
-  opacity: var(--scroll-progress);
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 1) 100%);
+  opacity: var(--vignette-opacity, 0);
   transition: opacity 0.8s var(--ease);
 }
 
 /* Respetar accesibilidad: si el usuario prefiere menos movimiento, desactivar */
 @media (prefers-reduced-motion: reduce) {
   .bg-dynamic::before { animation: none; }
+  .bg-dynamic[data-mesh-speed="slow"]::before,
+  .bg-dynamic[data-mesh-speed="normal"]::before,
+  .bg-dynamic[data-mesh-speed="fast"]::before { animation: none; }
   .bg-particle { animation: none; }
-  .bg-particles { opacity: 0.4 !important; }
   * { scroll-behavior: auto !important; }
 }
 
