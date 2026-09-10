@@ -1,18 +1,13 @@
-/* ===================== ARCANO TIENDA — FONDO DINÁMICO v2 =====================
+/* ===================== ARCANO TIENDA — FONDO DINÁMICO v3 =====================
    Concepto: "De la luz dorada al misterio oscuro"
 
-   Mejoras v2:
-   - Configuración remota desde Firebase (admin controla todo).
-   - Texto y fondo usan curvas de easing DIFERENTES para mantener
-     contraste legible en TODO el rango de scroll.
-   - Tipos de partículas: dust, sparkles, snow, embers, stars.
-   - Velocidad, cantidad e intensidad configurables.
-
-   Estrategia de contraste:
-   - BG cambia en [0 → 0.65] con smoothstep.
-   - Texto cambia en [0.30 → 0.65] (más tarde y más rápido) → siempre
-     hay buen contraste porque el texto solo empieza a invertirse
-     cuando el fondo ya está suficientemente oscuro.
+   v3 — Cambios principales:
+   - MECANISMO TIEMPO (no scroll): el tema cambia según segundos de
+     navegación del usuario en el sitio, no por scroll.
+   - Se interpolan TODAS las variables de texto (--text, --text-sec,
+     --text-muted, --dark) para que ningún texto se vuelva invisible.
+   - Curva diferenciada: bg empieza a cambiar primero, texto retrasado
+     para mantener contraste legible en TODO el rango.
    ==================================================================== */
 
 (function() {
@@ -20,88 +15,103 @@
 
   // === CONFIG DEFAULT (overrideable por Firebase) ===
   var DEFAULT_CONFIG = {
-    tipoParticulas: 'dust',     // dust | sparkles | snow | embers | stars
-    cantidadParticulas: 18,     // 0 | 8 | 18 | 30
+    tipoParticulas: 'dust',         // dust | sparkles | snow | embers | stars
+    cantidadParticulas: 18,         // 0 | 8 | 18 | 30
     velocidadParticulas: 'normal', // slow | normal | fast
-    velocidadMesh: 'normal',    // slow | normal | fast | none
-    intensidad: 'normal',       // sutil | normal | dramatico
+    velocidadMesh: 'normal',        // slow | normal | fast | none
+    intensidad: 'normal',           // sutil | normal | dramatico
     vignette: true,
     habilitado: true,
-    scrollCompleteAt: 0.65      // 0.4 | 0.65 | 0.9
+    // Tiempo total de transición en segundos (configurable por admin)
+    // sutil = más lento, dramatico = más rápido
+    duracionSegundos: 60            // default normal
   };
 
-  // === PALETA ===
+  // === PALETA INICIAL (crema cálido + dorado) ===
   var THEME_START = {
     bg:        [248, 243, 235],   // #F8F3EB
     bgCard:    [255, 255, 255],   // #FFFFFF
+    bgSecondary: [240, 228, 208], // #F0E4D0 (cards internos, hover)
     surface:   [235, 227, 213],   // #EBE3D5
     border:    [221, 210, 194],   // #DDD2C2
-    text:      [30, 18, 10],      // #1E120A
-    textSec:   [90, 74, 62],      // #5A4A3E
-    textMuted: [138, 122, 106]    // #8A7A6A
+    text:      [30, 18, 10],      // #1E120A (texto principal)
+    textSec:   [90, 74, 62],      // #5A4A3E (texto secundario)
+    textMuted: [138, 122, 106],   // #8A7A6A (texto terciario)
+    dark:      [26, 16, 8]        // #1A1008 (headings, botones)
   };
 
+  // === PALETA FINAL (negro café profundo + crema como texto) ===
   var THEME_END = {
     bg:        [22, 14, 8],       // #160E08 — café muy oscuro
-    bgCard:    [38, 26, 16],      // #261A10
+    bgCard:    [38, 26, 16],      // #261A10 — café oscuro
+    bgSecondary: [48, 34, 22],    // #302216 — café medio
     surface:   [50, 36, 22],      // #322416
     border:    [80, 60, 40],      // #503C28
-    text:      [245, 230, 208],   // #F5E6D0
-    textSec:   [200, 180, 152],   // #C8B498
-    textMuted: [150, 130, 105]    // #968269
+    text:      [245, 230, 208],   // #F5E6D0 — crema
+    textSec:   [220, 200, 170],   // #DCC8AA — crema medio
+    textMuted: [180, 160, 135],   // #B4A087 — crema tenue
+    dark:      [245, 230, 208]    // #F5E6D0 — invertido a crema (headings)
+  };
+
+  // Colores FIJOS (no cambian con tema): dorado y sus variaciones
+  // Estos son los acentos de marca, siempre se ven bien sobre cualquier fondo
+  var GOLD = {
+    gold: '#A0762C',
+    goldHover: '#876324',
+    goldLight: '#F5E6CC',
+    success: '#4A7C59',
+    error: '#A63D3D'
   };
 
   // === PRESETS DE PARTÍCULAS ===
   var PARTICLE_PRESETS = {
     dust: {
-      // Polvo dorado de especias (original)
       color: 'radial-gradient(circle, rgba(196, 148, 58, 0.9), rgba(160, 118, 44, 0))',
-      sizeMin: 2, sizeMax: 6,
-      blur: 0.5
+      sizeMin: 2, sizeMax: 6, blur: 0.5
     },
     sparkles: {
-      // Destellos dorados más grandes y brillantes
       color: 'radial-gradient(circle, rgba(255, 215, 100, 1), rgba(196, 148, 58, 0))',
-      sizeMin: 3, sizeMax: 8,
-      blur: 0
+      sizeMin: 3, sizeMax: 8, blur: 0
     },
     snow: {
-      // Copos blancos suaves
       color: 'radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(245, 230, 208, 0))',
-      sizeMin: 3, sizeMax: 7,
-      blur: 1
+      sizeMin: 3, sizeMax: 7, blur: 1
     },
     embers: {
-      // Brasas anaranjadas (fuego)
       color: 'radial-gradient(circle, rgba(255, 140, 50, 0.9), rgba(220, 80, 30, 0))',
-      sizeMin: 2, sizeMax: 5,
-      blur: 0.8
+      sizeMin: 2, sizeMax: 5, blur: 0.8
     },
     stars: {
-      // Estrellas blancas pequeñas (cielo nocturno)
       color: 'radial-gradient(circle, rgba(255, 255, 255, 1), rgba(200, 200, 220, 0))',
-      sizeMin: 1, sizeMax: 3,
-      blur: 0
+      sizeMin: 1, sizeMax: 3, blur: 0
     }
   };
 
   var SPEED_MULTIPLIERS = {
-    slow: 1.8,   // 80% más lento
-    normal: 1.0,
-    fast: 0.5    // 50% más rápido
+    slow: 1.8, normal: 1.0, fast: 0.5
   };
 
-  var INTENSITY_CONFIG = {
-    sutil:     { meshOpacityBase: 0.3, meshOpacityMax: 0.6,  particlesOpacityMax: 0.5, vignetteMax: 0.3, scrollCompleteAt: 0.9 },
-    normal:    { meshOpacityBase: 0.5, meshOpacityMax: 1.0,  particlesOpacityMax: 0.9, vignetteMax: 0.5, scrollCompleteAt: 0.65 },
-    dramatico: { meshOpacityBase: 0.7, meshOpacityMax: 1.2,  particlesOpacityMax: 1.0, vignetteMax: 0.7, scrollCompleteAt: 0.4 }
+  // Configuración de duración según intensidad (en segundos)
+  var INTENSITY_DURATION = {
+    sutil: 120,     // 2 minutos
+    normal: 60,      // 1 minuto
+    dramatico: 30    // 30 segundos
+  };
+
+  // Opacidades según intensidad
+  var INTENSITY_OPACITY = {
+    sutil:     { meshBase: 0.3, meshMax: 0.6,  particlesMax: 0.5, vignetteMax: 0.3 },
+    normal:    { meshBase: 0.5, meshMax: 1.0,  particlesMax: 0.9, vignetteMax: 0.5 },
+    dramatico: { meshBase: 0.7, meshMax: 1.2,  particlesMax: 1.0, vignetteMax: 0.7 }
   };
 
   // === ESTADO ===
   var config = Object.assign({}, DEFAULT_CONFIG);
   var root = document.documentElement;
+  var startTime = null;
   var lastProgress = -1;
   var ticking = false;
+  var timeInterval = null;
 
   // === HELPERS ===
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -112,45 +122,38 @@
       Math.round(lerp(start[2], end[2], t))
     ];
   }
-  // Smoothstep (curva S): 0→0, 0.5→0.5, 1→1, derivada 0 en extremos
   function smoothstep(t) {
     t = Math.max(0, Math.min(1, t));
     return t * t * (3 - 2 * t);
   }
-  // Remap de un valor de un rango a otro con clamp
   function remapClamp(t, inStart, inEnd) {
     if (t <= inStart) return 0;
     if (t >= inEnd) return 1;
     return (t - inStart) / (inEnd - inStart);
   }
+  function rgbStr(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
 
   // === APLICAR TEMA ===
   // Estrategia de contraste:
-  // - BG: cambia en [0 → scrollCompleteAt] con smoothstep
-  // - Texto: cambia en [scrollCompleteAt * 0.45 → scrollCompleteAt] con smoothstep
-  //   (texto empieza a invertirse después de que el fondo ya bajó un 45% del camino)
-  // Esto asegura que SIEMPRE hay buen contraste: el texto solo cambia
-  // de color cuando el fondo es lo suficientemente oscuro para justificarlo.
+  // - BG cambia en [0 → 1] con smoothstep (durante toda la duración)
+  // - Texto cambia en [0.45 → 1] con smoothstep (empieza cuando bg ya bajó 45%)
+  // - Esto mantiene SIEMPRE buen contraste: texto solo se invierte cuando
+  //   el fondo ya está lo suficientemente oscuro para justificarlo.
   function applyTheme(progress) {
-    var scrollEnd = config.scrollCompleteAt;
-    var intensity = INTENSITY_CONFIG[config.intensidad] || INTENSITY_CONFIG.normal;
+    // BG: cambia en todo el rango
+    var bgT = smoothstep(progress);
+    // Texto: retrasado, empieza a los 0.45
+    var textT = smoothstep(remapClamp(progress, 0.45, 1));
 
-    // BG: interpola en el rango completo [0 → scrollEnd]
-    var bgT = smoothstep(progress / scrollEnd);
-
-    // Texto: empieza a cambiar a los 0.45 * scrollEnd, completa al final
-    // Esto da como resultado: bg baja un 45% antes de que el texto empiece a cambiar
-    var textStart = scrollEnd * 0.45;
-    var textT = smoothstep(remapClamp(progress, textStart, scrollEnd));
-
-    // Aplicar
     var bg = lerpColor(THEME_START.bg, THEME_END.bg, bgT);
     var bgCard = lerpColor(THEME_START.bgCard, THEME_END.bgCard, bgT);
+    var bgSecondary = lerpColor(THEME_START.bgSecondary, THEME_END.bgSecondary, bgT);
     var surface = lerpColor(THEME_START.surface, THEME_END.surface, bgT);
     var border = lerpColor(THEME_START.border, THEME_END.border, bgT);
     var text = lerpColor(THEME_START.text, THEME_END.text, textT);
     var textSec = lerpColor(THEME_START.textSec, THEME_END.textSec, textT);
     var textMuted = lerpColor(THEME_START.textMuted, THEME_END.textMuted, textT);
+    var dark = lerpColor(THEME_START.dark, THEME_END.dark, textT);
 
     root.style.setProperty('--bg-r', bg[0]);
     root.style.setProperty('--bg-g', bg[1]);
@@ -158,6 +161,9 @@
     root.style.setProperty('--bg-card-r', bgCard[0]);
     root.style.setProperty('--bg-card-g', bgCard[1]);
     root.style.setProperty('--bg-card-b', bgCard[2]);
+    root.style.setProperty('--bg-secondary-r', bgSecondary[0]);
+    root.style.setProperty('--bg-secondary-g', bgSecondary[1]);
+    root.style.setProperty('--bg-secondary-b', bgSecondary[2]);
     root.style.setProperty('--surface-r', surface[0]);
     root.style.setProperty('--surface-g', surface[1]);
     root.style.setProperty('--surface-b', surface[2]);
@@ -167,18 +173,26 @@
     root.style.setProperty('--text-r', text[0]);
     root.style.setProperty('--text-g', text[1]);
     root.style.setProperty('--text-b', text[2]);
+    // Actualizar TODAS las variables de color de texto (no solo --text)
+    // para que los elementos con --dark, --text-sec, --text-muted también cambien
+    root.style.setProperty('--dark', rgbStr(dark));
+    root.style.setProperty('--text-sec', rgbStr(textSec));
+    root.style.setProperty('--text-muted', rgbStr(textMuted));
+    // Variable para bg-secondary (reemplaza hex #F0E4D0 hardcodeado)
+    root.style.setProperty('--bg-secondary', rgbStr(bgSecondary));
+
     // scroll-progress ahora refleja el progreso del BG (no del texto)
-    // para que las partículas y vignette se sincronicen con el fondo, no con el texto
     root.style.setProperty('--scroll-progress', bgT);
 
     // Gold glow ajusta brillo en oscuro
     var glowAlpha = 0.15 + bgT * 0.20;
     root.style.setProperty('--gold-glow', 'rgba(196, 148, 58, ' + glowAlpha.toFixed(3) + ')');
 
-    // Aplicar intensidad al mesh y partículas via CSS vars adicionales
-    var meshOpacity = intensity.meshOpacityBase + bgT * (intensity.meshOpacityMax - intensity.meshOpacityBase);
+    // Aplicar intensidad al mesh y partículas
+    var intensity = INTENSITY_OPACITY[config.intensidad] || INTENSITY_OPACITY.normal;
+    var meshOpacity = intensity.meshBase + bgT * (intensity.meshMax - intensity.meshBase);
     root.style.setProperty('--mesh-opacity', meshOpacity.toFixed(3));
-    var particlesOpacity = 0.3 + bgT * (intensity.particlesOpacityMax - 0.3);
+    var particlesOpacity = 0.3 + bgT * (intensity.particlesMax - 0.3);
     root.style.setProperty('--particles-opacity', particlesOpacity.toFixed(3));
     var vignetteOpacity = config.vignette ? (bgT * intensity.vignetteMax) : 0;
     root.style.setProperty('--vignette-opacity', vignetteOpacity.toFixed(3));
@@ -186,33 +200,47 @@
     lastProgress = progress;
   }
 
-  // === SCROLL PROGRESS ===
-  function getScrollProgress() {
-    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    var docHeight = Math.max(
-      document.body.scrollHeight,
-      document.documentElement.scrollHeight,
-      document.body.offsetHeight,
-      document.documentElement.offsetHeight
-    ) - window.innerHeight;
-    if (docHeight <= 0) return 0;
-    return Math.min(1, Math.max(0, scrollTop / docHeight));
+  // === PROGRESO POR TIEMPO (no por scroll) ===
+  function getProgress() {
+    if (!startTime) return 0;
+    var elapsed = (Date.now() - startTime) / 1000;  // segundos
+    var duration = config.duracionSegundos || 60;
+    return Math.min(1, elapsed / duration);
   }
 
   function update() {
     if (!config.habilitado) return;
-    var progress = getScrollProgress();
+    var progress = getProgress();
     if (Math.abs(progress - lastProgress) > 0.001) {
       applyTheme(progress);
     }
     ticking = false;
+    // Si ya llegamos al 100%, no hace seguir actualizando
+    if (progress >= 1) {
+      if (timeInterval) { clearInterval(timeInterval); timeInterval = null; }
+      return;
+    }
   }
 
-  function onScroll() {
+  function tick() {
     if (!ticking) {
-      window.requestAnimationFrame(update);
+      // Usar requestAnimationFrame para sincronizar con el paint del browser
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(update);
+      } else {
+        update();
+      }
       ticking = true;
     }
+  }
+
+  function startTimer() {
+    if (timeInterval) clearInterval(timeInterval);
+    startTime = Date.now();
+    // Update cada 500ms (suficiente para transición suave de 0.6s)
+    timeInterval = setInterval(tick, 500);
+    // Update inmediato
+    update();
   }
 
   // === PARTÍCULAS ===
@@ -225,7 +253,6 @@
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     var count = config.cantidadParticulas;
-    // Reducir en mobile
     if (window.innerWidth < 768) count = Math.min(count, Math.ceil(count / 2));
     if (count <= 0) return;
 
@@ -242,7 +269,6 @@
       p.style.height = size + 'px';
       p.style.background = preset.color;
       p.style.filter = preset.blur > 0 ? 'blur(' + preset.blur + 'px)' : 'none';
-      // Duración base 15-35s, multiplicada por factor de velocidad
       var baseDuration = 15 + Math.random() * 20;
       p.style.setProperty('--p-duration', (baseDuration * speedMul) + 's');
       p.style.setProperty('--p-delay', (Math.random() * -20 * speedMul) + 's');
@@ -255,32 +281,34 @@
   function applyConfig(remoteConfig) {
     if (!remoteConfig) return;
     config = Object.assign({}, DEFAULT_CONFIG, remoteConfig);
-    // Re-aplicar intensidad / scrollComplete
-    var intensity = INTENSITY_CONFIG[config.intensidad] || INTENSITY_CONFIG.normal;
-    config.scrollCompleteAt = intensity.scrollCompleteAt;
+    // Mapear intensidad a duración de segundos
+    if (!config.duracionSegundos && INTENSITY_DURATION[config.intensidad]) {
+      config.duracionSegundos = INTENSITY_DURATION[config.intensidad];
+    }
 
-    // Aplicar velocidad del mesh via data attribute (CSS lo lee)
     var bgDynamic = document.querySelector('.bg-dynamic');
     if (bgDynamic) {
       bgDynamic.setAttribute('data-mesh-speed', config.velocidadMesh);
     }
 
-    // Toggle de vignette
     var vignette = document.querySelector('.bg-vignette');
     if (vignette) {
       vignette.style.display = config.vignette ? '' : 'none';
     }
 
-    // Toggle partículas
     var particles = document.getElementById('bg-particles');
     if (particles) {
       particles.style.display = config.habilitado ? '' : 'none';
     }
 
-    // Regenerar partículas con nuevo tipo/cantidad/velocidad
     generateParticles();
-    // Re-aplicar tema con nueva config
-    applyTheme(getScrollProgress());
+    // Resetear el timer con la nueva duración
+    if (config.habilitado) {
+      startTimer();
+    } else {
+      // Si está deshabilitado, aplicar tema inicial fijo
+      applyTheme(0);
+    }
   }
 
   // === CARGAR CONFIG DESDE FIREBASE ===
@@ -293,14 +321,15 @@
         if (data && typeof data === 'object') {
           applyConfig(data);
         } else {
-          // No hay config remota, usar defaults
           applyConfig(DEFAULT_CONFIG);
         }
       }, function(err) {
         console.warn('[bg-dynamic] No se pudo cargar config remota:', err);
+        applyConfig(DEFAULT_CONFIG);
       });
     } catch (e) {
       console.warn('[bg-dynamic] Firebase no disponible, usando defaults:', e);
+      applyConfig(DEFAULT_CONFIG);
     }
   }
 
@@ -309,15 +338,13 @@
     // Aplicar defaults inicial
     applyConfig(DEFAULT_CONFIG);
     applyTheme(0);
-    // Listener de scroll
-    window.addEventListener('scroll', onScroll, { passive: true });
+    // Listener de resize (regenera partículas)
     window.addEventListener('resize', function() {
       generateParticles();
-      update();
     }, { passive: true });
     // Aplicar una vez más después del primer paint
     setTimeout(update, 50);
-    // Cargar config remota (Firebase puede no estar listo aún, lo reintentamos)
+    // Cargar config remota (Firebase puede no estar listo aún)
     var attempts = 0;
     function tryLoadConfig() {
       if (typeof firebase !== 'undefined' && firebase.database) {
@@ -325,6 +352,9 @@
       } else if (attempts < 10) {
         attempts++;
         setTimeout(tryLoadConfig, 500);
+      } else {
+        // Sin Firebase, usar defaults y arrancar timer
+        startTimer();
       }
     }
     tryLoadConfig();
@@ -336,10 +366,12 @@
     init();
   }
 
-  // Exponer API para debugging/manual override
+  // Exponer API para debugging
   window.ArcanoBgDynamic = {
     getConfig: function() { return config; },
     applyConfig: applyConfig,
-    regenerate: generateParticles
+    regenerate: generateParticles,
+    restartTimer: function() { startTimer(); },
+    setProgress: function(p) { applyTheme(Math.max(0, Math.min(1, p))); }
   };
 })();
