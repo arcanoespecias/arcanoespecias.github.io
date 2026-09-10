@@ -185,7 +185,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::selection { background: var(--gold-light); color: var(--dark); }
+::selection { background: var(--gold); color: var(--bg); }
 
 /* === HEADER / NAV === */
 .nav-header {
@@ -375,7 +375,7 @@ main {
 }
 .hero-section h2 {
   font-family: var(--font-display); font-size: 2.25rem; font-weight: 700;
-  color: var(--dark); margin-bottom: 10px;
+  color: var(--text); margin-bottom: 10px;
   letter-spacing: -0.01em;
 }
 .hero-section p {
@@ -545,7 +545,7 @@ main {
 .detail-type-tag.pack { background: rgba(192,73,44,0.18); color: var(--spice-red); }
 .detail-modal-content h2 {
   font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
-  color: var(--dark); margin-bottom: 12px; line-height: 1.2;
+  color: var(--text); margin-bottom: 12px; line-height: 1.2;
 }
 .detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 .detail-tag {
@@ -573,7 +573,7 @@ main {
   text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px;
 }
 .detail-price-val {
-  font-size: 1.1rem; font-weight: 700; color: var(--dark);
+  font-size: 1.1rem; font-weight: 700; color: var(--text);
 }
 .detail-price-card:hover .detail-price-val { color: var(--gold); }
 .detail-ingredients {
@@ -635,7 +635,7 @@ main {
 }
 .cart-drawer-item-info { flex: 1; min-width: 0; }
 .cart-drawer-item-name {
-  font-size: 0.9rem; font-weight: 600; color: var(--dark);
+  font-size: 0.9rem; font-weight: 600; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cart-drawer-item-detail {
@@ -656,7 +656,7 @@ main {
   font-size: 0.9rem; font-weight: 600; min-width: 20px; text-align: center;
 }
 .cart-drawer-item-price {
-  font-size: 0.95rem; font-weight: 700; color: var(--dark);
+  font-size: 0.95rem; font-weight: 700; color: var(--text);
   white-space: nowrap; flex-shrink: 0; padding-top: 2px;
 }
 .cart-drawer-item-rm {
@@ -673,7 +673,7 @@ main {
   font-family: var(--font-display); font-size: 1.1rem; font-weight: 700;
   flex-shrink: 0;
 }
-.cart-drawer-total span:last-child { color: var(--dark); }
+.cart-drawer-total span:last-child { color: var(--text); }
 .cart-drawer-footer {
   padding: 16px 24px 24px; flex-shrink: 0;
   border-top: 1px solid var(--border-light);
@@ -732,7 +732,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .page-header h2 {
   font-family: var(--font-display); font-size: 2rem; font-weight: 700;
-  color: var(--dark); margin-bottom: 6px;
+  color: var(--text); margin-bottom: 6px;
 }
 .page-header p {
   color: var(--text-sec); font-size: 0.95rem;
@@ -770,7 +770,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .rgc-title {
   font-family: var(--font-display); font-size: 1.1rem; font-weight: 600;
-  color: var(--dark); margin-bottom: 6px;
+  color: var(--text); margin-bottom: 6px;
 }
 .rgc-meta {
   display: flex; gap: 12px; font-size: 0.8rem; color: var(--text-muted);
@@ -804,7 +804,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .rd-title {
   font-family: var(--font-display); font-size: 1.8rem; font-weight: 700;
-  color: var(--dark); line-height: 1.2; margin-bottom: 12px;
+  color: var(--text); line-height: 1.2; margin-bottom: 12px;
 }
 .rd-meta {
   display: flex; gap: 16px; font-size: 0.88rem; color: var(--text-sec);
@@ -900,7 +900,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-step.active .bb-step-label { color: var(--text); font-weight: 600; }
 /* Step content */
 .bb-step-content { min-height: 200px; }
-.bb-step-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--dark); margin: 0 0 6px; }
+.bb-step-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 6px; }
 .bb-step-desc { font-size: 0.88rem; color: var(--text-sec); margin: 0 0 20px; }
 /* Step 1 */
 .bb-name-input {
@@ -958,7 +958,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-summary-row:not(:last-child) { border-bottom: 1px solid var(--border-light); }
 .bb-summary-label { font-size: 0.85rem; color: var(--text-sec); }
 .bb-summary-value { font-size: 0.9rem; font-weight: 600; color: var(--text); }
-.bb-summary-price { font-family: var(--font-display); font-size: 1.1rem; color: var(--dark); }
+.bb-summary-price { font-family: var(--font-display); font-size: 1.1rem; color: var(--text); }
 .bb-summary-specs { display: flex; flex-direction: column; gap: 6px; }
 .bb-summary-spec { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--surface); border-radius: 8px; }
 .bb-spec-name { font-size: 0.9rem; font-weight: 500; color: var(--text); }
@@ -1043,7 +1043,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .success-icon { font-size: 3rem; margin-bottom: 16px; }
 .success-box h3 {
   font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
-  color: var(--dark); margin-bottom: 8px;
+  color: var(--text); margin-bottom: 8px;
 }
 .success-box p { color: var(--text-sec); margin-bottom: 24px; }
 
@@ -1113,7 +1113,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 600;
-  color: var(--dark);
+  color: var(--text);
   margin-bottom: 10px;
 }
 .sidebar-content p {
@@ -1221,7 +1221,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .cart-order-summary-title {
   font-family: var(--font-display); font-size: 1rem; font-weight: 600;
-  color: var(--dark); margin-bottom: 10px;
+  color: var(--text); margin-bottom: 10px;
 }
 .cart-order-summary-item {
   display: flex; justify-content: space-between; align-items: center;
@@ -1294,7 +1294,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .gc-icon svg { width: 28px; height: 28px; }
 .gc-title {
   font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
-  color: var(--dark); margin-bottom: 12px;
+  color: var(--text); margin-bottom: 12px;
 }
 .gc-desc {
   font-size: 0.92rem; color: var(--text-sec); line-height: 1.7;
