@@ -27,62 +27,64 @@
     duracionSegundos: 60            // default normal
   };
 
-  // === PALETA INICIAL (crema cálido + dorado) ===
+  // === PALETA INICIAL (negro café profundo - Arcano Nocturno) ===
   var THEME_START = {
-    bg:        [248, 243, 235],   // #F8F3EB
-    bgCard:    [255, 255, 255],   // #FFFFFF
-    bgSecondary: [240, 228, 208], // #F0E4D0 (cards internos, hover)
-    surface:   [235, 227, 213],   // #EBE3D5
-    border:    [221, 210, 194],   // #DDD2C2
-    text:      [30, 18, 10],      // #1E120A (texto principal)
-    textSec:   [90, 74, 62],      // #5A4A3E (texto secundario)
-    textMuted: [138, 122, 106],   // #8A7A6A (texto terciario)
-    dark:      [26, 16, 8]        // #1A1008 (headings, botones)
+    bg:        [14, 10, 7],       // #0E0A07 — negro café profundo
+    bgCard:    [26, 19, 13],      // #1A130D
+    bgSecondary: [37, 26, 17],    // #251A11
+    surface:   [43, 31, 20],      // #2B1F14
+    border:    [61, 42, 28],      // #3D2A1C
+    text:      [245, 230, 208],   // #F5E6D0 — crema principal
+    textSec:   [201, 184, 154],   // #C9B89A — crema medio
+    textMuted: [138, 122, 106],   // #8A7A6A — crema tenue
+    dark:      [245, 230, 208]    // #F5E6D0 — headings claros
   };
 
-  // === PALETA FINAL (negro café profundo + crema como texto) ===
+  // === PALETA FINAL (negro MÁS profundo + dorado más vibrante) ===
+  // El efecto dinámico es ahora MUY sutil: profundiza el negro y aviva el dorado
   var THEME_END = {
-    bg:        [22, 14, 8],       // #160E08 — café muy oscuro
-    bgCard:    [38, 26, 16],      // #261A10 — café oscuro
-    bgSecondary: [48, 34, 22],    // #302216 — café medio
-    surface:   [50, 36, 22],      // #322416
-    border:    [80, 60, 40],      // #503C28
-    text:      [245, 230, 208],   // #F5E6D0 — crema
-    textSec:   [220, 200, 170],   // #DCC8AA — crema medio
-    textMuted: [180, 160, 135],   // #B4A087 — crema tenue
-    dark:      [245, 230, 208]    // #F5E6D0 — invertido a crema (headings)
+    bg:        [6, 4, 3],         // #060403 — negro casi puro
+    bgCard:    [16, 12, 8],       // #100C08
+    bgSecondary: [26, 18, 12],    // #1A120C
+    surface:   [33, 24, 16],       // #211810
+    border:    [50, 35, 22],      // #322316
+    text:      [255, 240, 215],   // #FFF0D7 — crema más brillante
+    textSec:   [220, 200, 165],   // #DCC8A5
+    textMuted: [165, 145, 122],   // #A5917A
+    dark:      [255, 240, 215]    // #FFF0D7
   };
 
-  // Colores FIJOS (no cambian con tema): dorado y sus variaciones
-  // Estos son los acentos de marca, siempre se ven bien sobre cualquier fondo
+  // Colores FIJOS (no cambian con tema): dorados y especias
+  // Dorado más vivo para destacar sobre negro
   var GOLD = {
-    gold: '#A0762C',
-    goldHover: '#876324',
-    goldLight: '#F5E6CC',
-    success: '#4A7C59',
-    error: '#A63D3D'
+    gold: '#E8B84B',
+    goldHover: '#C9963A',
+    goldLight: 'rgba(232,184,75,0.15)',
+    success: '#6B8E4E',
+    error: '#C0492C'
   };
 
   // === PRESETS DE PARTÍCULAS ===
+  // Optimizados para fondo oscuro — colores más vivos
   var PARTICLE_PRESETS = {
     dust: {
-      color: 'radial-gradient(circle, rgba(196, 148, 58, 0.9), rgba(160, 118, 44, 0))',
+      color: 'radial-gradient(circle, rgba(232, 184, 75, 0.95), rgba(201, 150, 58, 0))',
       sizeMin: 2, sizeMax: 6, blur: 0.5
     },
     sparkles: {
-      color: 'radial-gradient(circle, rgba(255, 215, 100, 1), rgba(196, 148, 58, 0))',
+      color: 'radial-gradient(circle, rgba(255, 220, 120, 1), rgba(232, 184, 75, 0))',
       sizeMin: 3, sizeMax: 8, blur: 0
     },
     snow: {
-      color: 'radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(245, 230, 208, 0))',
+      color: 'radial-gradient(circle, rgba(245, 230, 208, 0.85), rgba(220, 200, 165, 0))',
       sizeMin: 3, sizeMax: 7, blur: 1
     },
     embers: {
-      color: 'radial-gradient(circle, rgba(255, 140, 50, 0.9), rgba(220, 80, 30, 0))',
+      color: 'radial-gradient(circle, rgba(255, 140, 50, 0.95), rgba(192, 73, 44, 0))',
       sizeMin: 2, sizeMax: 5, blur: 0.8
     },
     stars: {
-      color: 'radial-gradient(circle, rgba(255, 255, 255, 1), rgba(200, 200, 220, 0))',
+      color: 'radial-gradient(circle, rgba(255, 255, 255, 1), rgba(220, 220, 240, 0))',
       sizeMin: 1, sizeMax: 3, blur: 0
     }
   };

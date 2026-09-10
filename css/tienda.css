@@ -3,28 +3,47 @@
 
 /* === VARIABLES === */
 :root {
-  --bg: #F8F3EB;
-  --bg-card: #FFFFFF;
-  --bg-secondary: #F0E4D0; /* fallback, JS setea rgb dinámico */
-  --surface: #EBE3D5;
-  --dark: #1A1008;
-  --gold: #A0762C;
-  --gold-hover: #876324;
-  --gold-light: #F5E6CC;
-  --gold-glow: rgba(160,118,44,0.15);
-  --text: #1E120A;
-  --text-sec: #5A4A3E;
+  /* === BASE: negro café profundo (Arcano Nocturno) === */
+  --bg: #0E0A07;
+  --bg-card: #1A130D;
+  --bg-secondary: #251A11;
+  --surface: #2B1F14;
+  --border: #3D2A1C;
+  --border-light: #2A1C12;
+
+  /* === TEXTO: tonos crema cálido (alto contraste sobre negro) === */
+  --text: #F5E6D0;
+  --text-sec: #C9B89A;
   --text-muted: #8A7A6A;
-  --border: #DDD2C2;
-  --border-light: #EAE0D4;
-  --success: #4A7C59;
-  --error: #A63D3D;
-  --text-on-dark: #F5E6D0; /* texto claro para botones/elementos oscuros: siempre crema, no cambia con tema */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
-  --shadow-xl: 0 16px 48px rgba(0,0,0,0.12);
+  --dark: #F5E6D0; /* headings — ahora claros sobre fondo oscuro */
+
+  /* === ACENTOS DE MARCA: dorados del logo (más vivos para oscuro) === */
+  --gold: #E8B84B;
+  --gold-hover: #C9963A;
+  --gold-light: rgba(232,184,75,0.15);
+  --gold-glow: rgba(232,184,75,0.25);
+
+  /* === ACENTOS DE ESPECIAS: matices complementarios === */
+  --spice-red: #C0492C;     /* pimentón / ají */
+  --spice-green: #6B8E4E;   /* hierbas */
+  --spice-amber: #D4924A;   /* curry / cúrcuma */
+
+  /* === ESTADOS (tonos más armónicos con especias) === */
+  --success: #6B8E4E;
+  --error: #C0492C;
+  --warning: #D4924A;
+
+  /* === Texto sobre elementos oscuros/dorados: siempre crema === */
+  --text-on-dark: #F5E6D0;
+
+  /* === Sombras (más profundas para fondo oscuro) === */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
+
+  /* === Radios y curvas === */
   --radius: 14px;
   --radius-sm: 10px;
   --radius-xs: 6px;
@@ -34,16 +53,15 @@
   --nav-h: 64px;
   --tabs-h: 64px;
 
-  /* === TEMA DINÁMICO (cambia con tiempo via JS) === */
-  /* Variables RGB que se actualizan dinámicamente */
-  --bg-r: 248; --bg-g: 243; --bg-b: 235;
-  --bg-card-r: 255; --bg-card-g: 255; --bg-card-b: 255;
-  --bg-secondary-r: 240; --bg-secondary-g: 228; --bg-secondary-b: 208;
-  --surface-r: 235; --surface-g: 227; --surface-b: 213;
-  --border-r: 221; --border-g: 210; --border-b: 194;
-  --text-r: 30; --text-g: 18; --text-b: 10;
+  /* === TEMA DINÁMICO (variables RGB que JS actualiza) === */
+  --bg-r: 14; --bg-g: 10; --bg-b: 7;
+  --bg-card-r: 26; --bg-card-g: 19; --bg-card-b: 13;
+  --bg-secondary-r: 37; --bg-secondary-g: 26; --bg-secondary-b: 17;
+  --surface-r: 43; --surface-g: 31; --surface-b: 20;
+  --border-r: 61; --border-g: 42; --border-b: 28;
+  --text-r: 245; --text-g: 230; --text-b: 208;
   --scroll-progress: 0;
-  /* --dark, --text-sec, --text-muted se setean via JS también */
+  /* --dark, --text-sec, --text-muted se setean via JS */
 }
 
 /* === FONDO DINÁMICO ===
@@ -68,20 +86,15 @@
 }
 
 /* Mesh gradient: manchas doradas suaves que rotan lentamente.
-   Velocidad controlada por data-mesh-speed:
-   - slow: 120s
-   - normal: 60s
-   - fast: 25s
-   - none: sin animación
-*/
+   En tema oscuro, los tonos dorados se ven más vibrantes. */
 .bg-dynamic::before {
   content: '';
   position: absolute;
   inset: -20%;
   background:
-    radial-gradient(ellipse 600px 400px at 15% 20%, rgba(160, 118, 44, 0.10), transparent 60%),
-    radial-gradient(ellipse 800px 500px at 85% 60%, rgba(196, 148, 58, 0.08), transparent 65%),
-    radial-gradient(ellipse 500px 400px at 50% 90%, rgba(160, 118, 44, 0.06), transparent 60%);
+    radial-gradient(ellipse 600px 400px at 15% 20%, rgba(232, 184, 75, 0.12), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 85% 60%, rgba(212, 146, 74, 0.08), transparent 65%),
+    radial-gradient(ellipse 500px 400px at 50% 90%, rgba(192, 73, 44, 0.05), transparent 60%);
   animation: bg-mesh-rotate 60s linear infinite;
   opacity: var(--mesh-opacity, 0.5);
   transition: opacity 1.2s var(--ease);
@@ -233,7 +246,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 /* === MOBILE MENU OVERLAY === */
 .mobile-menu-overlay {
   position: fixed; inset: 0; z-index: 200;
-  background: rgba(27,11,7,0.5);
+  background: rgba(0,0,0,0.7);
   backdrop-filter: blur(8px);
   opacity: 0; pointer-events: none;
   transition: opacity 0.3s var(--ease);
@@ -436,9 +449,9 @@ main {
   font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.card-type-badge.blend { background: rgba(196,148,58,0.9); color: #fff; }
-.card-type-badge.especia { background: rgba(74,124,89,0.9); color: #fff; }
-.card-type-badge.pack { background: rgba(44,24,16,0.85); color: var(--text-on-dark); }
+.card-type-badge.blend { background: var(--gold); color: #1A130D; }
+.card-type-badge.especia { background: var(--spice-green); color: #1A130D; }
+.card-type-badge.pack { background: var(--spice-red); color: var(--text-on-dark); }
 .card-body { padding: 16px 18px 18px; background: var(--bg-secondary); }
 .card-name {
   font-family: var(--font-display); font-size: 1.05rem; font-weight: 600;
@@ -480,7 +493,7 @@ main {
 /* === PRODUCT DETAIL MODAL === */
 .detail-overlay {
   position: fixed; inset: 0; z-index: 500;
-  background: rgba(27,11,7,0.6);
+  background: rgba(0,0,0,0.8);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
@@ -503,7 +516,7 @@ main {
 }
 .detail-modal-img {
   width: 280px; min-height: 320px; flex-shrink: 0;
-  background: linear-gradient(145deg, #F5ECD7, #EDE4D3);
+  background: linear-gradient(145deg, var(--surface), var(--bg-secondary));
   display: flex; align-items: center; justify-content: center;
   border-radius: 20px 0 0 20px; overflow: hidden;
 }
@@ -528,8 +541,8 @@ main {
   letter-spacing: 0.05em; margin-bottom: 12px;
 }
 .detail-type-tag.blend { background: var(--gold-light); color: var(--gold); }
-.detail-type-tag.especia { background: rgba(74,124,89,0.1); color: var(--success); }
-.detail-type-tag.pack { background: rgba(44,24,16,0.08); color: var(--dark); }
+.detail-type-tag.especia { background: rgba(107,142,78,0.18); color: var(--spice-green); }
+.detail-type-tag.pack { background: rgba(192,73,44,0.18); color: var(--spice-red); }
 .detail-modal-content h2 {
   font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
   color: var(--dark); margin-bottom: 12px; line-height: 1.2;
@@ -581,7 +594,7 @@ main {
 /* === CART DRAWER === */
 .cart-overlay-bg {
   position: fixed; inset: 0; z-index: 300;
-  background: rgba(27,11,7,0.5);
+  background: rgba(0,0,0,0.7);
   backdrop-filter: blur(4px);
   opacity: 0; pointer-events: none;
   transition: opacity 0.3s var(--ease);
@@ -877,7 +890,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-step.done:not(:last-child)::after { background: var(--gold); }
 .bb-step-num {
   width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 0.78rem; font-weight: 700; border: 2px solid var(--border); color: var(--text-muted); background: #e6d8c2; z-index: 1;
+  font-size: 0.78rem; font-weight: 700; border: 2px solid var(--border); color: var(--text-muted); background: var(--surface); z-index: 1;
 }
 .bb-step.done .bb-step-num { border-color: var(--gold); background: var(--gold); color: #fff; }
 .bb-step.active .bb-step-num { border-color: var(--gold); background: var(--bg-secondary); color: var(--gold); }
@@ -891,7 +904,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* Step 1 */
 .bb-name-input {
   width: 100%; padding: 14px 16px; border-radius: var(--radius-xs);
-  border: 1.5px solid var(--border); background: #e6d8c2;
+  border: 1.5px solid var(--border); background: var(--surface);
   font-size: 1rem; color: var(--text); outline: none;
   transition: border-color 0.2s var(--ease);
 }
@@ -901,7 +914,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-size-cards { display: flex; gap: 16px; }
 .bb-size-card {
   flex: 1; padding: 28px 20px; border-radius: var(--radius-sm); border: 2px solid var(--border);
-  background: #e6d8c2; text-align: center; cursor: pointer; transition: all 0.2s var(--ease);
+  background: var(--surface); text-align: center; cursor: pointer; transition: all 0.2s var(--ease);
 }
 .bb-size-card:hover { border-color: var(--gold); }
 .bb-size-card.selected { border-color: var(--gold); background: var(--gold-light); }
@@ -914,13 +927,13 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-chips-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .bb-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 100px;
-  border: 1.5px solid var(--border); background: #e6d8c2;
+  border: 1.5px solid var(--border); background: var(--surface);
   color: var(--text); font-size: 0.85rem; font-weight: 500;
   cursor: pointer; transition: all 0.2s var(--ease);
 }
 .bb-chip:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-light); }
 .bb-chip.selected { border-color: var(--gold); background: var(--gold); color: #fff; }
-.bb-chip.selected:hover { background: var(--gold-hover, #b8943a); border-color: var(--gold-hover, #b8943a); }
+.bb-chip.selected:hover { background: var(--gold-hover); border-color: var(--gold-hover); }
 .bb-chip.disabled { opacity: 0.35; pointer-events: none; }
 .bb-chip-check { font-size: 0.78rem; font-weight: 700; margin-left: 2px; }
 /* Step 4 */
@@ -929,24 +942,24 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-mix-row:last-child { border-bottom: none; }
 .bb-mix-name { flex: 1; font-size: 0.95rem; font-weight: 500; color: var(--text); }
 .bb-mix-controls { display: flex; align-items: center; gap: 6px; }
-.bb-pct-display { display: flex; align-items: center; background: #e6d8c2; border-radius: 6px; overflow: hidden; }
+.bb-pct-display { display: flex; align-items: center; background: var(--surface); border-radius: 6px; overflow: hidden; }
 .bb-pct-input { width: 44px; padding: 6px 2px; border: none; text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--text); outline: none; background: transparent; }
 .bb-pct-sym { font-size: 0.78rem; color: var(--text-muted); padding-right: 8px; }
-.bb-pct-btn { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--text-sec); background: #e6d8c2; transition: all 0.15s var(--ease); }
+.bb-pct-btn { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--text-sec); background: var(--surface); transition: all 0.15s var(--ease); }
 .bb-pct-btn:hover { border-color: var(--gold); color: var(--gold); }
 .bb-total-section { margin-top: 16px; }
-.bb-total-bar { height: 8px; border-radius: 4px; background: #e6d8c2; overflow: hidden; margin-bottom: 6px; }
+.bb-total-bar { height: 8px; border-radius: 4px; background: var(--surface); overflow: hidden; margin-bottom: 6px; }
 .bb-total-fill { height: 100%; border-radius: 4px; transition: width 0.3s var(--ease), background 0.3s var(--ease); }
 .bb-total-text { font-size: 0.82rem; font-weight: 600; }
 /* Step 5 */
-.bb-summary { background: #e6d8c2; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
+.bb-summary { background: var(--surface); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
 .bb-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
 .bb-summary-row:not(:last-child) { border-bottom: 1px solid var(--border-light); }
 .bb-summary-label { font-size: 0.85rem; color: var(--text-sec); }
 .bb-summary-value { font-size: 0.9rem; font-weight: 600; color: var(--text); }
 .bb-summary-price { font-family: var(--font-display); font-size: 1.1rem; color: var(--dark); }
 .bb-summary-specs { display: flex; flex-direction: column; gap: 6px; }
-.bb-summary-spec { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #e6d8c2; border-radius: 8px; }
+.bb-summary-spec { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--surface); border-radius: 8px; }
 .bb-spec-name { font-size: 0.9rem; font-weight: 500; color: var(--text); }
 .bb-spec-pct { font-size: 0.9rem; font-weight: 700; color: var(--gold); }
 /* Navigation */
@@ -964,7 +977,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-nav-btn.next:hover:not(.disabled) { background: var(--dark); }
 .bb-nav-btn.next.disabled { opacity: 0.35; cursor: not-allowed; }
 .bb-nav-btn.next.cart { background: var(--gold); color: #fff; }
-.bb-nav-btn.next.cart:hover { background: var(--gold-hover, #b8943a); }
+.bb-nav-btn.next.cart:hover { background: var(--gold-hover, var(--gold-hover)); }
 /* === BLEND SUCCESS === */
 .bb-success { text-align: center; padding: 40px 20px; animation: pageFadeIn 0.35s var(--ease); }
 .bb-success-body { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
@@ -1245,7 +1258,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* === GRANDES CLIENTES MODAL === */
 .gc-overlay {
   position: fixed; inset: 0; z-index: 400;
-  background: rgba(27,11,7,0.55);
+  background: rgba(0,0,0,0.75);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none;
@@ -1308,7 +1321,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .blog-tab:hover { border-color: var(--gold); color: var(--gold); }
 .blog-tab.active { background: var(--gold); color: #fff; border-color: var(--gold); }
 .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.blog-card { background-color: #F5E6CC; border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; transition: all 0.2s var(--ease); border: 1px solid var(--border); }
+.blog-card { background-color: var(--bg-card); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; transition: all 0.2s var(--ease); border: 1px solid var(--border); }
 .blog-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 .blog-card-img { width: 100%; height: 180px; overflow: hidden; background: var(--bg); }
 .blog-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
@@ -1455,10 +1468,11 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   padding: 2px 8px; border-radius: 10px;
   text-transform: uppercase; letter-spacing: 0.04em;
 }
-.mc-estado-nuevo { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
-.mc-estado-ok { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
-.mc-estado-cancelado { background: rgba(155, 100, 100, 0.2); color: #c47373; }
-.mc-estado-pend { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
+/* Estados de pedido — paleta de especias */
+.mc-estado-nuevo { background: rgba(192, 73, 44, 0.18); color: #E8633E; }
+.mc-estado-ok { background: rgba(107, 142, 78, 0.18); color: #8FB568; }
+.mc-estado-cancelado { background: rgba(155, 100, 100, 0.18); color: #D89090; }
+.mc-estado-pend { background: rgba(212, 146, 74, 0.18); color: #E8A560; }
 
 .mc-pedido-items {
   font-size: 0.8rem;
