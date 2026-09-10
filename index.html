@@ -115,6 +115,10 @@
 </script>
 </head>
 <body>
+  <!-- Fondo dinámico: cambia gradualmente de crema a negro con scroll -->
+  <div class="bg-dynamic" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="bg-particles" id="bg-particles" aria-hidden="true"></div>
   <header class="nav-header">
     <div class="nav-inner">
             <div class="nav-left">
@@ -962,6 +966,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
+  <script src="js/bg-dynamic.js?v=1" defer></script>
   <script src="js/tienda-data.js?v=2" defer></script>
   <script src="js/tienda-ui.js?v=33" defer></script>
 </body>
