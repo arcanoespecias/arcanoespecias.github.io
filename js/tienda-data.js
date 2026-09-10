@@ -246,27 +246,50 @@ function clearClienteSession() {
 
 /**
  * Genera un OTP de 6 digitos y lo guarda en Firebase con expiracion 10 min.
- * El admin lo enviaria manualmente por WhatsApp (o un futuro bot).
- * Por ahora se devuelve para que el frontend lo muestre/ envie via wa.me link.
+ * Si el cliente no existe, lo crea automáticamente (registro nuevo).
+ * Si existe, usa el cliente existente.
+ * Devuelve { otp, clienteKey, telefono, nombre } para que el frontend
+ * muestre el código y arme el link wa.me.
  */
-function requestClienteOTP(telefono) {
+function requestClienteOTP(telefono, nombreOpt) {
   return new Promise(function(resolve, reject) {
     var tel = _normalizeWhatsapp(telefono);
-    if (!tel) { reject(new Error('Telefono invalido')); return; }
+    if (!tel) { reject(new Error('Teléfono inválido. Ingresa tu número de WhatsApp con código de país.')); return; }
     if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
     _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
       var data = snap.val();
-      if (!data) { reject(new Error('No encontramos un cliente con ese numero. Haz tu primer pedido para registrarte.')); return; }
-      var key = Object.keys(data)[0];
-      var cliente = data[key];
       var otp = '';
       for (var i = 0; i < 6; i++) otp += Math.floor(Math.random() * 10);
       var now = Date.now();
       var otpData = { codigo: otp, creado: now, expira: now + 10 * 60 * 1000 };
-      _clientesRef.child(key).update({ otp: otpData }, function(err) {
-        if (err) reject(err);
-        else resolve({ otp: otp, clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || '' });
-      });
+      if (data) {
+        // Cliente existente
+        var key = Object.keys(data)[0];
+        var cliente = data[key];
+        _clientesRef.child(key).update({ otp: otpData }, function(err) {
+          if (err) reject(err);
+          else resolve({ otp: otp, clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || nombreOpt || '' });
+        });
+      } else {
+        // Cliente nuevo: crear registro pendiente (se completa al primer pedido)
+        var newRef = _clientesRef.push();
+        var newKey = newRef.key;
+        var newCliente = {
+          nombre: nombreOpt || '',
+          telefono: telefono,
+          telNorm: tel,
+          email: '',
+          ciudad: '',
+          direccion: '',
+          creado: new Date().toISOString(),
+          totalPedidos: 0,
+          otp: otpData
+        };
+        newRef.set(newCliente, function(err) {
+          if (err) reject(err);
+          else resolve({ otp: otp, clienteKey: newKey, telefono: telefono, nombre: nombreOpt || '', esNuevo: true });
+        });
+      }
     }, function(err) { reject(err); });
   });
 }
