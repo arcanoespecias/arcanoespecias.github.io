@@ -1240,58 +1240,129 @@ function _mcShowLogin() {
   if (!el) return;
   el.innerHTML =
     '<div class="mc-login">' +
-      '<h3>Mi Cuenta</h3>' +
-      '<p class="mc-sub">Ingresa con tu WhatsApp para ver tus pedidos y promociones exclusivas.</p>' +
+      '<div class="mc-login-header">' +
+        '<div class="mc-login-icon">' +
+          '<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.354 2.618 6.782 6.98 6.979C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.668-.072-4.948-.2-4.354-2.618-6.782-6.98-6.979C15.667.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>' +
+        '</div>' +
+        '<h3>Mi Cuenta</h3>' +
+        '<p class="mc-sub">Accede para ver tus pedidos y promociones exclusivas</p>' +
+      '</div>' +
       '<div class="form-group"><label>Número de WhatsApp</label>' +
         '<input class="form-input" id="mc-tel" placeholder="300 123 4567" maxlength="15" inputmode="numeric"></div>' +
-      '<div class="form-group"><label>Tu nombre (opcional)</label>' +
+      '<div class="form-group"><label>Tu nombre</label>' +
         '<input class="form-input" id="mc-nombre" placeholder="Tu nombre" maxlength="40"></div>' +
-      '<button class="btn-primary btn-block" onclick="_mcSendOTP()">Generar código de acceso</button>' +
-      '<div id="mc-otp-step" style="display:none;margin-top:24px;padding-top:20px;border-top:1px solid var(--border-light)">' +
-        '<p class="mc-sub" style="margin-bottom:8px">Tu código de acceso es:</p>' +
-        '<div id="mc-otp-display" style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--gold);text-align:center;letter-spacing:0.3em;padding:12px;background:var(--gold-light);border-radius:var(--radius-sm);margin-bottom:12px"></div>' +
-        '<p class="mc-sub" style="margin-bottom:12px">Para activarlo, envíatelo por WhatsApp tocando el botón:</p>' +
-        '<a id="mc-wa-link" href="#" target="_blank" class="btn-primary btn-block" style="background:#25D366;color:#fff;border-color:#25D366;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">' +
-          '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="fill:#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.613z"/></svg>' +
-          '<span>Enviar código por WhatsApp</span>' +
-        '</a>' +
-        '<p class="mc-sub" style="margin-top:14px;margin-bottom:6px">Después de enviártelo, ingrésalo aquí:</p>' +
-        '<div class="form-group"><label>Código (6 dígitos)</label>' +
-          '<input class="form-input" id="mc-otp" placeholder="123456" maxlength="6" inputmode="numeric"></div>' +
-        '<button class="btn-primary btn-block" onclick="_mcVerifyOTP()">Verificar código</button>' +
-        '<p class="mc-hint" id="mc-otp-help" style="margin-top:10px"></p>' +
-      '</div>' +
-      '<p class="mc-hint" style="margin-top:18px">💡 Si ya hiciste un pedido antes, ya estás registrado. Si es tu primera vez, te creamos la cuenta automáticamente.</p>' +
+      '<button class="btn-primary btn-block" onclick="_mcInscribirme()" id="mc-btn-inscribir">' +
+        '<span>Inscribirme</span>' +
+      '</button>' +
+      '<p class="mc-hint">💡 Te enviaremos un código por WhatsApp para verificar tu número.</p>' +
+      '<div class="mc-divider"><span>o</span></div>' +
+      '<p class="mc-sub" style="text-align:center;margin:0">¿Ya tienes tu código?</p>' +
+      '<button class="btn-secondary btn-block" style="margin-top:8px" onclick="_mcShowVerify()">Ingresar código</button>' +
     '</div>';
 }
 
-function _mcSendOTP() {
+// Estado: "Inscribirme" - cliente envía WhatsApp + nombre, NO ve el código en la web
+function _mcInscribirme() {
   var tel = (document.getElementById('mc-tel').value || '').trim();
   var nombre = (document.getElementById('mc-nombre').value || '').trim();
   if (!tel) { alert('Ingresa tu número de WhatsApp'); return; }
-  var btn = event.target;
-  var original = btn.textContent;
-  btn.disabled = true; btn.textContent = 'Generando...';
+  if (!nombre) { alert('Ingresa tu nombre'); return; }
+
+  var btn = document.getElementById('mc-btn-inscribir');
+  var original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Enviando...</span>';
+
   requestClienteOTP(tel, nombre).then(function(result) {
-    // Mostrar paso OTP con el código visible + link wa.me GRANDE
-    var otpStep = document.getElementById('mc-otp-step');
-    if (otpStep) otpStep.style.display = 'block';
-    var otpDisplay = document.getElementById('mc-otp-display');
-    if (otpDisplay) otpDisplay.textContent = result.otp;
-    var telNorm = _normalizeWhatsapp(tel);
-    var waLink = 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent('Hola! Mi código de acceso a Arcano Especias es: ' + result.otp + '. Lo ingreso en la tienda para ver mis pedidos y promociones exclusivas.');
-    var waBtn = document.getElementById('mc-wa-link');
-    if (waBtn) waBtn.href = waLink;
-    // Guardar telefono en el botón para verify
-    btn.dataset.tel = tel;
-    btn.disabled = false; btn.textContent = 'Generar otro código';
-    _showToast('Código generado: ' + result.otp);
-    // Scroll suave al paso OTP
-    if (otpStep) otpStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // NO mostrar el código al cliente. Mostrar estado de espera.
+    // El admin recibirá la notificación y enviará el código por WhatsApp.
+    _mcShowEspera(tel, nombre);
   }).catch(function(err) {
     alert(err.message || err);
-    btn.disabled = false; btn.textContent = original;
+    btn.disabled = false;
+    btn.innerHTML = original;
   });
+}
+
+// Estado: esperando código con UX clara
+function _mcShowEspera(tel, nombre) {
+  var el = document.getElementById('mc-content');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="mc-login">' +
+      '<div class="mc-espera-icon">' +
+        '<div class="mc-espera-pulse"></div>' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.613z"/></svg>' +
+      '</div>' +
+      '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">¡Código enviado!</h3>' +
+      '<p class="mc-sub" style="text-align:center;margin-bottom:16px">' +
+        'Te enviamos un código de 6 dígitos por WhatsApp al<br><b style="color:var(--text)">' + esc(tel) + '</b>' +
+      '</p>' +
+      '<div class="mc-timer" id="mc-timer">' +
+        '<div class="mc-timer-bar" id="mc-timer-bar"></div>' +
+      '</div>' +
+      '<p class="mc-sub" style="text-align:center;margin-top:8px" id="mc-timer-text">Recibelo en unos 2 minutos</p>' +
+      '<div class="form-group mt-16"><label>Ingresa el código que recibiste</label>' +
+        '<input class="form-input mc-otp-input" id="mc-otp" placeholder="• • • • • •" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></div>' +
+      '<button class="btn-primary btn-block" onclick="_mcVerifyOTP(\'' + tel.replace(/'/g, "\\'") + '\')">Verificar código</button>' +
+      '<p class="mc-sub" style="text-align:center;margin-top:16px">¿No te llegó el código?</p>' +
+      '<div style="display:flex;gap:8px;margin-top:8px">' +
+        '<button class="btn-secondary" style="flex:1" onclick="_mcReenviarCodigo(\'' + tel.replace(/'/g, "\\'") + '\',\'' + nombre.replace(/'/g, "\\'") + '\')">Reenviar código</button>' +
+        '<button class="btn-secondary" style="flex:1" onclick="_mcShowLogin()">Cambiar número</button>' +
+      '</div>' +
+    '</div>';
+
+  // Focus en input OTP + barra de progreso animada
+  setTimeout(function() {
+    var otpInput = document.getElementById('mc-otp');
+    if (otpInput) otpInput.focus();
+    // Animar barra de 2 min
+    var bar = document.getElementById('mc-timer-bar');
+    var txt = document.getElementById('mc-timer-text');
+    if (bar) {
+      bar.style.transition = 'width 120s linear';
+      requestAnimationFrame(function() { bar.style.width = '100%'; });
+    }
+    var startTime = Date.now();
+    var timerInterval = setInterval(function() {
+      var elapsed = Math.floor((Date.now() - startTime) / 1000);
+      var remaining = 120 - elapsed;
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        if (txt) txt.textContent = 'Si no recibiste el código, reenvíalo';
+        return;
+      }
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      if (txt) txt.textContent = 'Recíbelo en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + ' min';
+    }, 1000);
+  }, 200);
+}
+
+function _mcReenviarCodigo(tel, nombre) {
+  requestClienteOTP(tel, nombre).then(function() {
+    _showToast('Código reenviado');
+    // Reiniciar UI de espera
+    _mcShowEspera(tel, nombre);
+  }).catch(function(err) {
+    alert(err.message || err);
+  });
+}
+
+function _mcShowVerify() {
+  var el = document.getElementById('mc-content');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="mc-login">' +
+      '<h3>Verificar código</h3>' +
+      '<p class="mc-sub">Ingresa tu WhatsApp y el código que recibiste</p>' +
+      '<div class="form-group"><label>Número de WhatsApp</label>' +
+        '<input class="form-input" id="mc-tel" placeholder="300 123 4567" maxlength="15" inputmode="numeric"></div>' +
+      '<div class="form-group"><label>Código (6 dígitos)</label>' +
+        '<input class="form-input mc-otp-input" id="mc-otp" placeholder="• • • • • •" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></div>' +
+      '<button class="btn-primary btn-block" onclick="_mcVerifyOTP()">Verificar</button>' +
+      '<button class="btn-secondary btn-block" style="margin-top:8px" onclick="_mcShowLogin()">Volver</button>' +
+    '</div>';
 }
 
 function _mcVerifyOTP() {

@@ -248,8 +248,10 @@ function clearClienteSession() {
  * Genera un OTP de 6 digitos y lo guarda en Firebase con expiracion 10 min.
  * Si el cliente no existe, lo crea automáticamente (registro nuevo).
  * Si existe, usa el cliente existente.
- * Devuelve { otp, clienteKey, telefono, nombre } para que el frontend
- * muestre el código y arme el link wa.me.
+ * NO devuelve el código al frontend (UX: el cliente no debe ver el código,
+ * solo recibirlo por WhatsApp desde el admin).
+ * También encola el OTP en arcano/db/otpPendientes para que el admin
+ * lo vea y lo envíe por WhatsApp manualmente.
  */
 function requestClienteOTP(telefono, nombreOpt) {
   return new Promise(function(resolve, reject) {
@@ -262,16 +264,33 @@ function requestClienteOTP(telefono, nombreOpt) {
       for (var i = 0; i < 6; i++) otp += Math.floor(Math.random() * 10);
       var now = Date.now();
       var otpData = { codigo: otp, creado: now, expira: now + 10 * 60 * 1000 };
+      var finish = function(key, cliente, esNuevo) {
+        // Encolar OTP pendiente para que el admin lo envíe por WhatsApp
+        try {
+          var pendienteRef = firebase.database().ref('arcano/db/otpPendientes').push();
+          pendienteRef.set({
+            clienteKey: key,
+            nombre: cliente.nombre || nombreOpt || '',
+            telefono: cliente.telefono || telefono,
+            telNorm: tel,
+            codigo: otp,
+            creado: new Date().toISOString(),
+            expira: otpData.expira,
+            enviado: false,
+            esNuevo: !!esNuevo
+          });
+        } catch(e) { console.warn('No se pudo encolar OTP pendiente:', e); }
+        // Resolver sin devolver el código al frontend
+        resolve({ clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || nombreOpt || '', esNuevo: !!esNuevo });
+      };
       if (data) {
-        // Cliente existente
         var key = Object.keys(data)[0];
         var cliente = data[key];
         _clientesRef.child(key).update({ otp: otpData }, function(err) {
           if (err) reject(err);
-          else resolve({ otp: otp, clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || nombreOpt || '' });
+          else finish(key, cliente, false);
         });
       } else {
-        // Cliente nuevo: crear registro pendiente (se completa al primer pedido)
         var newRef = _clientesRef.push();
         var newKey = newRef.key;
         var newCliente = {
@@ -287,7 +306,7 @@ function requestClienteOTP(telefono, nombreOpt) {
         };
         newRef.set(newCliente, function(err) {
           if (err) reject(err);
-          else resolve({ otp: otp, clienteKey: newKey, telefono: telefono, nombre: nombreOpt || '', esNuevo: true });
+          else finish(newKey, newCliente, true);
         });
       }
     }, function(err) { reject(err); });

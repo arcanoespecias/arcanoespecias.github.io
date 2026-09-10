@@ -1584,3 +1584,92 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+/* === MI CUENTA — UX Mejorada (Inscribirme + Espera) === */
+.mc-login-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.mc-login-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--gold-light);
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.mc-divider {
+  display: flex; align-items: center;
+  margin: 20px 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.mc-divider::before, .mc-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.mc-divider span {
+  padding: 0 12px;
+}
+
+/* Estado de espera: icono pulse + timer */
+.mc-espera-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: #25D366;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  position: relative;
+}
+.mc-espera-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: #25D366;
+  opacity: 0.4;
+  animation: mc-pulse 2s ease-out infinite;
+}
+@keyframes mc-pulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.mc-espera-icon svg { position: relative; z-index: 1; }
+
+.mc-timer {
+  height: 4px;
+  background: var(--surface);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+  max-width: 240px;
+}
+.mc-timer-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--spice-amber));
+  border-radius: 2px;
+}
+
+/* Input OTP con estilo premium */
+.mc-otp-input {
+  text-align: center;
+  letter-spacing: 0.4em;
+  font-size: 1.4rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--gold) !important;
+  background: var(--gold-light) !important;
+  border: 2px solid var(--gold) !important;
+  padding: 14px !important;
+}
+.mc-otp-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--gold-glow);
+}
+.mc-otp-input::placeholder {
+  color: var(--text-muted);
+  letter-spacing: 0.4em;
+  opacity: 0.5;
+}
