@@ -36,7 +36,7 @@
     border:    [61, 42, 28],      // #3D2A1C
     text:      [245, 230, 208],   // #F5E6D0 — crema principal
     textSec:   [201, 184, 154],   // #C9B89A — crema medio
-    textMuted: [138, 122, 106],   // #8A7A6A — crema tenue
+    textMuted: [154, 138, 120],   // #9A8A78 — crema tenue (WCAG AA small)
     dark:      [245, 230, 208]    // #F5E6D0 — headings claros
   };
 
