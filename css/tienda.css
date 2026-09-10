@@ -1362,16 +1362,28 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   border-radius: 50%;
   background: transparent;
   border: 1px solid var(--border-light);
-  color: var(--text-muted);
+  color: var(--text-sec);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.2s var(--ease);
   padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .mc-btn:hover { color: var(--gold); border-color: var(--gold); background: var(--gold-light); }
-.mc-btn-initials { display: none; font-size: 0.85rem; font-weight: 700; color: var(--gold); }
-.mc-btn-active .mc-btn-initials { display: block; }
+.mc-btn-initials { display: none; font-size: 0.8rem; font-weight: 700; color: var(--gold); }
+.mc-btn-active .mc-btn-initials { display: inline; }
 .mc-btn-active svg { display: none; }
-.mc-btn-active { background: var(--gold-light); border-color: var(--gold); }
+.mc-btn-active {
+  background: var(--gold-light);
+  border-color: var(--gold);
+  width: auto;
+  height: 34px;
+  border-radius: 20px;
+  padding: 0 14px;
+  color: var(--gold);
+}
+.mc-btn-active:hover { background: var(--gold); color: var(--bg); }
+.mc-btn-active:hover .mc-btn-initials { color: var(--bg); }
 
 .mc-overlay {
   position: fixed; inset: 0;

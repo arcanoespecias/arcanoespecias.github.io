@@ -1137,6 +1137,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(function() {});
   _initHeaderScroll();
   updateCartBadge();
+  _updateCuentaBadge();
   _updateSidebar('tienda');
   initTienda().then(function() {
     initRecetas();
@@ -1411,7 +1412,7 @@ function _mcShowHistorial(cliente) {
   el.dataset.clienteId = cliente.id;
   getClientePedidos(cliente.id).then(function(pedidos) {
     // Guardar en cache del modulo
-    Pages._mcPedidosCache = pedidos;
+    _mcPedidosCache = pedidos;
     // Contar por categoria
     var entregados = pedidos.filter(function(p) { return p.estado === 'entregado'; });
     var anulados = pedidos.filter(function(p) { return p.estado === 'cancelado'; });
@@ -1427,6 +1428,7 @@ function _mcShowHistorial(cliente) {
 }
 
 var _mcCurrentTab = 'entregados';
+var _mcPedidosCache = [];
 
 function _mcSwitchTab(tab) {
   _mcCurrentTab = tab;
@@ -1441,7 +1443,7 @@ function _mcSwitchTab(tab) {
 function _mcRenderPedidosTab(tab) {
   var list = document.getElementById('mc-pedidos-list');
   if (!list) return;
-  var pedidos = Pages._mcPedidosCache || [];
+  var pedidos = _mcPedidosCache || [];
   var filtrados;
   if (tab === 'entregados') {
     filtrados = pedidos.filter(function(p) { return p.estado === 'entregado'; });
@@ -1552,16 +1554,31 @@ function _mcLogout() {
 
 function _updateCuentaBadge() {
   var session = getClienteSession();
-  var initials = document.querySelector('.mc-btn-initials');
-  if (initials) {
-    if (session && session.nombre) {
-      var n = session.nombre.trim().split(/\s+/)[0] || 'C';
-      initials.textContent = n.charAt(0).toUpperCase();
-      initials.classList.add('mc-btn-active');
-    } else {
-      initials.textContent = '';
-      initials.classList.remove('mc-btn-active');
+  var btn = document.querySelector('.mc-btn');
+  var initialsEl = document.querySelector('.mc-btn-initials');
+  var svgEl = btn ? btn.querySelector('svg') : null;
+  if (!btn) return;
+  if (session && session.nombre) {
+    // Mostrar primer nombre (no inicial) en el botón
+    var primerNombre = session.nombre.trim().split(/\s+/)[0] || '';
+    if (initialsEl) {
+      initialsEl.textContent = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+      initialsEl.style.display = 'inline';
     }
+    if (svgEl) svgEl.style.display = 'none';
+    btn.classList.add('mc-btn-active');
+    btn.setAttribute('title', 'Mi cuenta: ' + session.nombre + ' (click para ver pedidos y promos)');
+    btn.setAttribute('aria-label', 'Mi cuenta: ' + session.nombre);
+  } else {
+    // No hay sesión: mostrar icono default
+    if (initialsEl) {
+      initialsEl.textContent = '';
+      initialsEl.style.display = '';
+    }
+    if (svgEl) svgEl.style.display = '';
+    btn.classList.remove('mc-btn-active');
+    btn.setAttribute('title', 'Mi cuenta');
+    btn.setAttribute('aria-label', 'Mi cuenta');
   }
 }
 
