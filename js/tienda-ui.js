@@ -1304,11 +1304,9 @@ function _mcShowExito(cliente) {
       '</div>' +
       '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">¡Bienvenido, ' + esc(cliente.nombre || '').split(' ')[0] + '!</h3>' +
       '<p class="mc-sub" style="text-align:center;margin-bottom:20px">' +
-        (cliente.esNuevo ? 'Tu cuenta fue creada correctamente.' : 'Sesión iniciada.') + '<br>' +
-        'Ya podés ver tus pedidos y promociones exclusivas.' +
+        'Ya eres parte de Arcano!' +
       '</p>' +
-      '<button class="btn-primary btn-block" onclick="_mcShowHistorial(' + JSON.stringify(cliente).replace(/'/g, '&#39;') + ')">Ver mis pedidos</button>' +
-      '<button class="btn-secondary btn-block" style="margin-top:8px" onclick="closeMiCuenta()">Empezar a comprar</button>' +
+      '<button class="btn-primary btn-block" onclick="closeMiCuenta()">Ir a la tienda</button>' +
     '</div>';
 }
 
