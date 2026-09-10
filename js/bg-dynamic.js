@@ -134,16 +134,28 @@
   function rgbStr(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
 
   // === APLICAR TEMA ===
-  // Estrategia de contraste:
-  // - BG cambia en [0 → 1] con smoothstep (durante toda la duración)
-  // - Texto cambia en [0.45 → 1] con smoothstep (empieza cuando bg ya bajó 45%)
-  // - Esto mantiene SIEMPRE buen contraste: texto solo se invierte cuando
-  //   el fondo ya está lo suficientemente oscuro para justificarlo.
+  // Estrategia de contraste (v3 - SALTO RÁPIDO en vez de transición suave):
+  //
+  // PROBLEMA anterior: BG y texto transicionaban suavemente al mismo tiempo,
+  // cruzando ambos por tonos grises medios → contraste ~0 en el medio
+  // → textos invisibles durante un momento.
+  //
+  // SOLUCIÓN: el texto "salta" de oscuro a claro en un rango MUY corto
+  // (5% del progreso) justo cuando el BG ya está al 50% de oscurecido.
+  // Así:
+  //   - BG 0% a 50%: texto oscuro sobre fondo claro/medio → buen contraste
+  //   - BG 50% a 55%: texto salta rápido (imperceptible) → contraste mínimo solo 5%
+  //   - BG 55% a 100%: texto claro sobre fondo oscuro → buen contraste
+  //
+  // El texto NUNCA se queda en gris medio mientras el BG también está en gris medio.
   function applyTheme(progress) {
-    // BG: cambia en todo el rango
+    // BG: cambia suavemente en todo el rango [0 → 1] con smoothstep
     var bgT = smoothstep(progress);
-    // Texto: retrasado, empieza a los 0.45
-    var textT = smoothstep(remapClamp(progress, 0.45, 1));
+
+    // Texto: SALTO RÁPIDO cuando BG cruza el 50% de oscurecimiento.
+    // Mapear bgT en [0.50 → 0.55] a [0 → 1] con smoothstep.
+    // Fuera de ese rango: 0 (texto oscuro) o 1 (texto claro).
+    var textT = smoothstep(remapClamp(bgT, 0.50, 0.55));
 
     var bg = lerpColor(THEME_START.bg, THEME_END.bg, bgT);
     var bgCard = lerpColor(THEME_START.bgCard, THEME_END.bgCard, bgT);
@@ -237,8 +249,9 @@
   function startTimer() {
     if (timeInterval) clearInterval(timeInterval);
     startTime = Date.now();
-    // Update cada 500ms (suficiente para transición suave de 0.6s)
-    timeInterval = setInterval(tick, 500);
+    // Update cada 250ms para que el salto de texto (5% del progreso) sea fluido
+    // En una duración de 60s, 5% = 3s = 12 ticks de 250ms (suficiente granularidad)
+    timeInterval = setInterval(tick, 250);
     // Update inmediato
     update();
   }
