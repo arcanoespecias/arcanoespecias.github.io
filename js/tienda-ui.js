@@ -1262,32 +1262,30 @@ function _mcShowLogin() {
         '<input class="form-input" id="mc-tel" placeholder="300 123 4567" maxlength="15" inputmode="numeric"></div>' +
       '<div class="form-group"><label>Tu nombre</label>' +
         '<input class="form-input" id="mc-nombre" placeholder="Tu nombre" maxlength="40"></div>' +
-      '<button class="btn-primary btn-block" onclick="_mcInscribirme()" id="mc-btn-inscribir">' +
-        '<span>Inscribirme</span>' +
+      '<button class="btn-primary btn-block" onclick="_mcRegistrar()" id="mc-btn-registrar">' +
+        '<span>Ingresar</span>' +
       '</button>' +
-      '<p class="mc-hint">💡 Te enviaremos un código por WhatsApp para verificar tu número.</p>' +
-      '<div class="mc-divider"><span>o</span></div>' +
-      '<p class="mc-sub" style="text-align:center;margin:0">¿Ya tienes tu código?</p>' +
-      '<button class="btn-secondary btn-block" style="margin-top:8px" onclick="_mcShowVerify()">Ingresar código</button>' +
+      '<p class="mc-hint">💡 Regístrate con tu WhatsApp y nombre. Podrás ver tus pedidos y promociones exclusivas.</p>' +
     '</div>';
 }
 
-// Estado: "Inscribirme" - cliente envía WhatsApp + nombre, NO ve el código en la web
-function _mcInscribirme() {
+// Registro directo: cliente solo deja WhatsApp + nombre, queda logueado
+function _mcRegistrar() {
   var tel = (document.getElementById('mc-tel').value || '').trim();
   var nombre = (document.getElementById('mc-nombre').value || '').trim();
   if (!tel) { alert('Ingresa tu número de WhatsApp'); return; }
   if (!nombre) { alert('Ingresa tu nombre'); return; }
 
-  var btn = document.getElementById('mc-btn-inscribir');
+  var btn = document.getElementById('mc-btn-registrar');
   var original = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span>Enviando...</span>';
+  btn.innerHTML = '<span>Ingresando...</span>';
 
-  requestClienteOTP(tel, nombre).then(function(result) {
-    // NO mostrar el código al cliente. Mostrar estado de espera.
-    // El admin recibirá la notificación y enviará el código por WhatsApp.
-    _mcShowEspera(tel, nombre);
+  registrarCliente(tel, nombre).then(function(cliente) {
+    saveClienteSession(cliente);
+    _showToast('¡Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
+    _updateCuentaBadge();
+    _mcShowExito(cliente);
   }).catch(function(err) {
     alert(err.message || err);
     btn.disabled = false;
@@ -1295,84 +1293,22 @@ function _mcInscribirme() {
   });
 }
 
-// Estado: esperando código con UX clara
-function _mcShowEspera(tel, nombre) {
+// Pantalla de éxito: registro confirmado
+function _mcShowExito(cliente) {
   var el = document.getElementById('mc-content');
   if (!el) return;
   el.innerHTML =
     '<div class="mc-login">' +
-      '<div class="mc-espera-icon">' +
-        '<div class="mc-espera-pulse"></div>' +
-        '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.613z"/></svg>' +
+      '<div class="mc-exito-icon">' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
       '</div>' +
-      '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">¡Código enviado!</h3>' +
-      '<p class="mc-sub" style="text-align:center;margin-bottom:16px">' +
-        'Te enviamos un código de 6 dígitos por WhatsApp al<br><b style="color:var(--text)">' + esc(tel) + '</b>' +
+      '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">¡Bienvenido, ' + esc(cliente.nombre || '').split(' ')[0] + '!</h3>' +
+      '<p class="mc-sub" style="text-align:center;margin-bottom:20px">' +
+        (cliente.esNuevo ? 'Tu cuenta fue creada correctamente.' : 'Sesión iniciada.') + '<br>' +
+        'Ya podés ver tus pedidos y promociones exclusivas.' +
       '</p>' +
-      '<div class="mc-timer" id="mc-timer">' +
-        '<div class="mc-timer-bar" id="mc-timer-bar"></div>' +
-      '</div>' +
-      '<p class="mc-sub" style="text-align:center;margin-top:8px" id="mc-timer-text">Recibelo en unos 2 minutos</p>' +
-      '<div class="form-group mt-16"><label>Ingresa el código que recibiste</label>' +
-        '<input class="form-input mc-otp-input" id="mc-otp" placeholder="• • • • • •" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></div>' +
-      '<button class="btn-primary btn-block" onclick="_mcVerifyOTP(\'' + tel.replace(/'/g, "\\'") + '\')">Verificar código</button>' +
-      '<p class="mc-sub" style="text-align:center;margin-top:16px">¿No te llegó el código?</p>' +
-      '<div style="display:flex;gap:8px;margin-top:8px">' +
-        '<button class="btn-secondary" style="flex:1" onclick="_mcReenviarCodigo(\'' + tel.replace(/'/g, "\\'") + '\',\'' + nombre.replace(/'/g, "\\'") + '\')">Reenviar código</button>' +
-        '<button class="btn-secondary" style="flex:1" onclick="_mcShowLogin()">Cambiar número</button>' +
-      '</div>' +
-    '</div>';
-
-  // Focus en input OTP + barra de progreso animada
-  setTimeout(function() {
-    var otpInput = document.getElementById('mc-otp');
-    if (otpInput) otpInput.focus();
-    // Animar barra de 2 min
-    var bar = document.getElementById('mc-timer-bar');
-    var txt = document.getElementById('mc-timer-text');
-    if (bar) {
-      bar.style.transition = 'width 120s linear';
-      requestAnimationFrame(function() { bar.style.width = '100%'; });
-    }
-    var startTime = Date.now();
-    var timerInterval = setInterval(function() {
-      var elapsed = Math.floor((Date.now() - startTime) / 1000);
-      var remaining = 120 - elapsed;
-      if (remaining <= 0) {
-        clearInterval(timerInterval);
-        if (txt) txt.textContent = 'Si no recibiste el código, reenvíalo';
-        return;
-      }
-      var mins = Math.floor(remaining / 60);
-      var secs = remaining % 60;
-      if (txt) txt.textContent = 'Recíbelo en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + ' min';
-    }, 1000);
-  }, 200);
-}
-
-function _mcReenviarCodigo(tel, nombre) {
-  requestClienteOTP(tel, nombre).then(function() {
-    _showToast('Código reenviado');
-    // Reiniciar UI de espera
-    _mcShowEspera(tel, nombre);
-  }).catch(function(err) {
-    alert(err.message || err);
-  });
-}
-
-function _mcShowVerify() {
-  var el = document.getElementById('mc-content');
-  if (!el) return;
-  el.innerHTML =
-    '<div class="mc-login">' +
-      '<h3>Verificar código</h3>' +
-      '<p class="mc-sub">Ingresa tu WhatsApp y el código que recibiste</p>' +
-      '<div class="form-group"><label>Número de WhatsApp</label>' +
-        '<input class="form-input" id="mc-tel" placeholder="300 123 4567" maxlength="15" inputmode="numeric"></div>' +
-      '<div class="form-group"><label>Código (6 dígitos)</label>' +
-        '<input class="form-input mc-otp-input" id="mc-otp" placeholder="• • • • • •" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></div>' +
-      '<button class="btn-primary btn-block" onclick="_mcVerifyOTP()">Verificar</button>' +
-      '<button class="btn-secondary btn-block" style="margin-top:8px" onclick="_mcShowLogin()">Volver</button>' +
+      '<button class="btn-primary btn-block" onclick="_mcShowHistorial(' + JSON.stringify(cliente).replace(/'/g, '&#39;') + ')">Ver mis pedidos</button>' +
+      '<button class="btn-secondary btn-block" style="margin-top:8px" onclick="closeMiCuenta()">Empezar a comprar</button>' +
     '</div>';
 }
 

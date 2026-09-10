@@ -245,6 +245,78 @@ function clearClienteSession() {
 }
 
 /**
+ * Registra o actualiza un cliente solo con WhatsApp + nombre.
+ * Sin OTP, sin verificación — el cliente queda logueado directamente.
+ * Si el cliente ya existe, actualiza el nombre si vino nuevo.
+ * Devuelve los datos del cliente para crear sesión local.
+ */
+function registrarCliente(telefono, nombre) {
+  return new Promise(function(resolve, reject) {
+    var tel = _normalizeWhatsapp(telefono);
+    if (!tel) { reject(new Error('Teléfono inválido. Ingresa tu número de WhatsApp con código de país.')); return; }
+    if (!nombre || !nombre.trim()) { reject(new Error('Ingresa tu nombre')); return; }
+    if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
+    _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
+      var data = snap.val();
+      var now = new Date().toISOString();
+      if (data) {
+        // Cliente existente: actualizar ultimoLogin
+        var key = Object.keys(data)[0];
+        var cliente = data[key];
+        var updates = { ultimoLogin: now };
+        // Si el nombre cambió, actualizarlo
+        if (nombre && nombre.trim() && (!cliente.nombre || cliente.nombre !== nombre.trim())) {
+          updates.nombre = nombre.trim();
+        }
+        _clientesRef.child(key).update(updates, function(err) {
+          if (err) reject(err);
+          else resolve({
+            id: key,
+            nombre: cliente.nombre || nombre,
+            telefono: cliente.telefono || telefono,
+            email: cliente.email || '',
+            ciudad: cliente.ciudad || '',
+            direccion: cliente.direccion || '',
+            totalPedidos: cliente.totalPedidos || 0,
+            creado: cliente.creado || now,
+            esNuevo: false
+          });
+        });
+      } else {
+        // Cliente nuevo: crear
+        var newRef = _clientesRef.push();
+        var newKey = newRef.key;
+        var newCliente = {
+          nombre: nombre.trim(),
+          telefono: telefono,
+          telNorm: tel,
+          email: '',
+          ciudad: '',
+          direccion: '',
+          creado: now,
+          ultimoLogin: now,
+          totalPedidos: 0
+        };
+        newRef.set(newCliente, function(err) {
+          if (err) reject(err);
+          else resolve({
+            id: newKey,
+            nombre: nombre.trim(),
+            telefono: telefono,
+            email: '',
+            ciudad: '',
+            direccion: '',
+            totalPedidos: 0,
+            creado: now,
+            esNuevo: true
+          });
+        });
+      }
+    }, function(err) { reject(err); });
+  });
+}
+
+/**
  * Genera un OTP de 6 digitos y lo guarda en Firebase con expiracion 10 min.
  * Si el cliente no existe, lo crea automáticamente (registro nuevo).
  * Si existe, usa el cliente existente.
