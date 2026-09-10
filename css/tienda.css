@@ -1071,10 +1071,10 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .footer-social a {
   width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); transition: all 0.2s var(--ease);
+  color: var(--text-sec); transition: all 0.2s var(--ease);
 }
 .footer-social a:hover { color: var(--gold); background: var(--gold-light); }
-.footer-social svg { width: 18px; height: 18px; }
+.footer-social svg { width: 18px; height: 18px; fill: currentColor; }
 
 /* === PAGE PLACEHOLDER === */
 .page-placeholder {
@@ -1150,10 +1150,10 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .sidebar-social a {
   width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); transition: all 0.2s var(--ease);
+  color: var(--text-sec); transition: all 0.2s var(--ease);
 }
 .sidebar-social a:hover { color: var(--gold); background: var(--gold-light); }
-.sidebar-social svg { width: 16px; height: 16px; }
+.sidebar-social svg { width: 16px; height: 16px; fill: currentColor; }
 @media (max-width: 768px) {
   .nav-cart { display: none !important; }
   .btab-cart { position: relative; }
