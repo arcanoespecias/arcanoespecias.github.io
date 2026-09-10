@@ -4,6 +4,17 @@ var _currentPage = 'tienda';
 var _currentRecetaCat = 'Comida';
 var _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
 
+/* === UTIL: escapar HTML para evitar inyección XSS === */
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function saveCart() { localStorage.setItem('arcano_cart', JSON.stringify(cart)); }
 function getCartCount() { var c = 0; for (var i = 0; i < cart.length; i++) c += cart[i].qty; return c; }
 function getCartTotal() { var t = 0; for (var i = 0; i < cart.length; i++) t += cart[i].precio * cart[i].qty; return t; }
