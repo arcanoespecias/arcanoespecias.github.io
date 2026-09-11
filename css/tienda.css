@@ -1767,7 +1767,9 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1801,34 +1803,38 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 .popup-lateral-title {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--pp-accent, #E8B84B);
-  margin-bottom: 10px;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  margin-bottom: 12px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 .popup-lateral-text {
-  font-size: 0.86rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 400;
   color: var(--pp-text, #F5E6D0);
   line-height: 1.6;
-  margin-bottom: 16px;
-  opacity: 0.9;
+  margin-bottom: 18px;
+  opacity: 0.92;
+  letter-spacing: 0.005em;
 }
 
 /* Botón CTA con estilo premium */
 .popup-lateral-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 11px 28px;
+  gap: 8px;
+  padding: 12px 28px;
   border-radius: 12px;
   background: var(--pp-btn-bg, #E8B84B);
   color: var(--pp-btn-text, #0E0A07);
+  font-family: var(--font-body);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   text-decoration: none;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
