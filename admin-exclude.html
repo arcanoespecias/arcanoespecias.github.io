@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Excluir visitas - Arcano Especias</title>
+  <style>
+    body {
+      font-family: 'Open Sans', -apple-system, sans-serif;
+      background: #0E0A07;
+      color: #F5E6D0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: #1A130D;
+      border: 1px solid rgba(232, 184, 75, 0.2);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 480px;
+      text-align: center;
+    }
+    .icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #E8B84B;
+      color: #0E0A07;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #E8B84B;
+      margin: 0 0 12px;
+    }
+    p {
+      font-size: 0.95rem;
+      color: #C9B89A;
+      line-height: 1.6;
+      margin: 0 0 24px;
+    }
+    .status {
+      display: inline-block;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+    .status.active {
+      background: rgba(107, 142, 78, 0.2);
+      color: #8FB568;
+    }
+    .status.inactive {
+      background: rgba(232, 184, 75, 0.15);
+      color: #E8B84B;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 32px;
+      border-radius: 12px;
+      background: #E8B84B;
+      color: #0E0A07;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .link {
+      display: block;
+      margin-top: 16px;
+      color: #8A7A6A;
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    .link:hover { color: #E8B84B; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🔒</div>
+    <h1>Exclusión de Analytics</h1>
+    <p>Esta página excluye tus visitas de Google Analytics para que no contamine las estadísticas del sitio.</p>
+    <div id="status" class="status inactive">Verificando...</div>
+    <div>
+      <button class="btn" id="toggle-btn" onclick="toggleExclusion()">Activar exclusión</button>
+    </div>
+    <a href="https://arcanoespecias.github.io/" class="link">← Volver a la tienda</a>
+  </div>
+
+  <script>
+    var COOKIE_NAME = 'ga_exclude';
+    var COOKIE_DAYS = 365;
+
+    function isExcluded() {
+      return document.cookie.indexOf(COOKIE_NAME + '=1') !== -1;
+    }
+
+    function updateUI() {
+      var statusEl = document.getElementById('status');
+      var btnEl = document.getElementById('toggle-btn');
+      if (isExcluded()) {
+        statusEl.className = 'status active';
+        statusEl.textContent = '✓ Exclusión ACTIVADA — tus visitas no se registran';
+        btnEl.textContent = 'Desactivar exclusión';
+      } else {
+        statusEl.className = 'status inactive';
+        statusEl.textContent = 'Exclusión desactivada — tus visitas se registran normalmente';
+        btnEl.textContent = 'Activar exclusión';
+      }
+    }
+
+    function toggleExclusion() {
+      if (isExcluded()) {
+        // Desactivar: borrar cookie
+        document.cookie = COOKIE_NAME + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+      } else {
+        // Activar: setear cookie por 1 año
+        document.cookie = COOKIE_NAME + '=1; max-age=' + (COOKIE_DAYS * 24 * 60 * 60) + '; path=/';
+      }
+      updateUI();
+    }
+
+    updateUI();
+  </script>
+</body>
+</html>

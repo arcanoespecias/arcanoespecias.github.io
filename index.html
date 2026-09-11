@@ -969,7 +969,9 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-YEMY7SN2GK');
+    // Excluir visitas del admin si la cookie ga_exclude está activa
+    var _gaExclude = document.cookie.indexOf('ga_exclude=1') !== -1;
+    gtag('config', 'G-YEMY7SN2GK', _gaExclude ? { send_page_view: false } : {});
   </script>
 
   <!-- Service Worker para cache offline + images -->
