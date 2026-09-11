@@ -1646,9 +1646,13 @@ function _showPopupLateral(popup) {
 
   var html = '';
   if (popup.imagen) {
+    html += '<div class="popup-lateral-header">';
     html += '<img class="popup-lateral-img" src="' + popup.imagen + '" alt="Promo">';
+    html += '<button class="popup-lateral-close" onclick="_closePopupLateral()">&times;</button>';
+    html += '</div>';
+  } else {
+    html += '<button class="popup-lateral-close" onclick="_closePopupLateral()" style="top:12px;right:12px">&times;</button>';
   }
-  html += '<button class="popup-lateral-close" onclick="_closePopupLateral()">&times;</button>';
   html += '<div class="popup-lateral-body">';
   if (popup.titulo) {
     html += '<div class="popup-lateral-title">' + esc(popup.titulo) + '</div>';
