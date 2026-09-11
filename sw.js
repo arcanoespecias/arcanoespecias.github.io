@@ -1,9 +1,18 @@
-const CACHE_NAME = 'arcano-v4-21';
+const CACHE_NAME = 'arcano-tienda-v1';
 const STATIC_ASSETS = [
+  '/',
+  '/index.html',
   '/manifest.json',
   '/icons/favicon.png',
+  '/icons/favicon-16.png',
+  '/icons/favicon-32.png',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  '/icons/arcano-logo.webp',
+  '/css/tienda.css',
+  '/js/bg-dynamic.js',
+  '/js/tienda-data.js',
+  '/js/tienda-ui.js'
 ];
 
 self.addEventListener('install', e => {

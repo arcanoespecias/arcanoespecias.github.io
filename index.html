@@ -12,14 +12,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="canonical" href="https://arcanoespecias.github.io/">
 
-  <!-- Google Analytics 4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YEMY7SN2GK"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-YEMY7SN2GK');
-  </script>
   <title>Arcano Especias — Tienda de Especias y Blends Artesanales</title>
   <meta property="og:type" content="website">
   <meta property="og:title" content="Arcano Especias — Especias y Blends Artesanales">
@@ -41,7 +33,8 @@
   <link rel="preconnect" href="https://arcano-6788d-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preload" href="icons/arcano-logo.webp" as="image" type="image/webp">
-  <link rel="stylesheet" href="css/tienda.css?v=33">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/tienda.css?v=34">
 
   <!-- SEO: Structured Data - LocalBusiness -->
   <script type="application/ld+json">
@@ -966,9 +959,27 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
-  <script src="js/bg-dynamic.js?v=1" defer></script>
-  <script src="js/tienda-data.js?v=2" defer></script>
-  <script src="js/tienda-ui.js?v=33" defer></script>
+  <script src="js/bg-dynamic.js?v=2" defer></script>
+  <script src="js/tienda-data.js?v=3" defer></script>
+  <script src="js/tienda-ui.js?v=34" defer></script>
+
+  <!-- Google Analytics 4 (al final del body para no bloquear first paint) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YEMY7SN2GK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YEMY7SN2GK');
+  </script>
+
+  <!-- Service Worker para cache offline + images -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function() {});
+      });
+    }
+  </script>
 </body>
 </html>
 

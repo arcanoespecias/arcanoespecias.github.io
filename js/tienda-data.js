@@ -20,15 +20,50 @@ function initTienda() {
     var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
     var loaded = 0;
     _sDb = {};
+
+    // === CACHE LOCAL: cargar datos cacheados instantáneamente ===
+    var CACHE_KEY = 'arcano_tienda_cache';
+    var cacheValid = false;
+    try {
+      var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+      if (cached.timestamp && (Date.now() - cached.timestamp) < 5 * 60 * 1000) {
+        // Cache válido por 5 minutos
+        for (var cp = 0; cp < neededPaths.length; cp++) {
+          var path = neededPaths[cp];
+          if (cached[path]) {
+            _sDb[path] = cached[path];
+          }
+        }
+        if (_sDb.especias && _sDb.blends) {
+          _sReady = true;
+          _injectSEO();
+          _notifyListeners();
+          // Render inmediato con datos cacheados
+          resolve();
+          cacheValid = true;
+        }
+      }
+    } catch(e) {}
+
     function checkReady() {
       loaded++;
       if (loaded >= neededPaths.length) {
         if (_sDb.especias && _sDb.blends) { _sReady = true; }
         _injectSEO();
-        for (var i = 0; i < _sListeners.length; i++) { try { _sListeners[i](); } catch(e) {} }
-        resolve();
+        _notifyListeners();
+        if (!cacheValid) resolve();
+        // Guardar cache
+        try {
+          var toCache = { timestamp: Date.now() };
+          for (var sp = 0; sp < neededPaths.length; sp++) {
+            toCache[neededPaths[sp]] = _sDb[neededPaths[sp]];
+          }
+          localStorage.setItem(CACHE_KEY, JSON.stringify(toCache));
+        } catch(e) {}
       }
     }
+
+    // Listeners realtime + initial read
     for (var p = 0; p < neededPaths.length; p++) {
       (function(path) {
         firebase.database().ref(FB_PATH + '/' + path).on('value', function(snap) {
@@ -36,7 +71,6 @@ function initTienda() {
           if (!_sReady && _sDb.especias && _sDb.blends) { _sReady = true; }
           _notifyListeners();
         });
-        // Initial read
         firebase.database().ref(FB_PATH + '/' + path).once('value', function(snap) {
           _sDb[path] = snap.val() || {};
           checkReady();
@@ -567,8 +601,10 @@ function initCarritoTracking(getCartFn, getClienteSessionFn) {
   if (_carritoTrackingTimer) clearInterval(_carritoTrackingTimer);
   _carritoTrackingTimer = setInterval(function() {
     try {
+      var cartItems = getCartFn();
+      if (!cartItems || cartItems.length === 0) return; // skip empty carts
       var s = getClienteSessionFn ? getClienteSessionFn() : null;
-      saveCarritoTracking(getCartFn(), s && s.id, s).catch(function() {});
+      saveCarritoTracking(cartItems, s && s.id, s).catch(function() {});
     } catch(e) {}
   }, 60000);
   // Guardar al salir de la pagina

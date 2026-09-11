@@ -251,9 +251,8 @@
   function startTimer() {
     if (timeInterval) clearInterval(timeInterval);
     startTime = Date.now();
-    // Update cada 250ms para que el salto de texto (5% del progreso) sea fluido
-    // En una duración de 60s, 5% = 3s = 12 ticks de 250ms (suficiente granularidad)
-    timeInterval = setInterval(tick, 250);
+    // Update cada 500ms (suficiente para transición suave de 0.6s)
+    timeInterval = setInterval(tick, 500);
     // Update inmediato
     update();
   }
@@ -353,9 +352,11 @@
     // Aplicar defaults inicial
     applyConfig(DEFAULT_CONFIG);
     applyTheme(0);
-    // Listener de resize (regenera partículas)
+    // Listener de resize con debounce (evita thrash del DOM)
+    var _resizeTimer;
     window.addEventListener('resize', function() {
-      generateParticles();
+      clearTimeout(_resizeTimer);
+      _resizeTimer = setTimeout(generateParticles, 200);
     }, { passive: true });
     // Aplicar una vez más después del primer paint
     setTimeout(update, 50);

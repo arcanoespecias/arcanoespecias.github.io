@@ -153,14 +153,19 @@ function closeMobileMenu() {
   document.body.style.overflow = '';
 }
 
-/* === HEADER SCROLL === */
+/* === HEADER SCROLL (rAF throttled) === */
 function _initHeaderScroll() {
   var header = document.querySelector('.nav-header');
-  var last = 0;
+  var ticking = false;
   window.addEventListener('scroll', function() {
-    var y = window.scrollY;
-    if (y > 10) header.classList.add('scrolled'); else header.classList.remove('scrolled');
-    last = y;
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function() {
+      var y = window.scrollY;
+      if (y > 10) header.classList.add('scrolled');
+      else header.classList.remove('scrolled');
+      ticking = false;
+    });
   }, { passive: true });
 }
 
