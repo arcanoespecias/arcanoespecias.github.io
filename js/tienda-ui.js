@@ -456,8 +456,14 @@ function renderProducts(filter) {
 /* === PRODUCT DETAIL === */
 function openDetail(pid) {
   var products = getStoreProducts();
-  var p = null;
-  for (var i = 0; i < products.length; i++) { if (products[i].id == pid) { p = products[i]; break; } }
+  var currentIdx = -1;
+  for (var i = 0; i < products.length; i++) { if (products[i].id == pid) { currentIdx = i; break; } }
+  if (currentIdx === -1) return;
+  _renderDetail(products, currentIdx);
+}
+
+function _renderDetail(products, idx) {
+  var p = products[idx];
   if (!p) return;
   // GA4: view_item event
   if (typeof gtag === 'function') {
@@ -497,11 +503,32 @@ function openDetail(pid) {
     }
     ingsHtml += '</div>';
   }
+
+  // Remover overlay existente si hay
+  var existing = document.getElementById('detail-ov');
+  if (existing) existing.remove();
+
   var overlay = document.createElement('div');
-  overlay.className = 'detail-overlay'; overlay.id = 'detail-ov';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  overlay.className = 'detail-overlay';
+  overlay.id = 'detail-ov';
+
+  var hasPrev = idx > 0;
+  var hasNext = idx < products.length - 1;
+
   var html = '<div class="detail-modal">';
   html += '<button class="detail-close" onclick="document.getElementById(\'detail-ov\').remove()">&times;</button>';
+  // Flecha izquierda (producto anterior)
+  if (hasPrev) {
+    html += '<button class="detail-nav detail-nav-prev" onclick="_swipeDetail(' + idx + ',-1)" title="Anterior">';
+    html += '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    html += '</button>';
+  }
+  // Flecha derecha (producto siguiente)
+  if (hasNext) {
+    html += '<button class="detail-nav detail-nav-next" onclick="_swipeDetail(' + idx + ',1)" title="Siguiente">';
+    html += '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+    html += '</button>';
+  }
   html += '<div class="detail-modal-img">' + (p.imagen ? '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '" fetchpriority="high">' : '<span>' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>') + '</div>';
   html += '<div class="detail-modal-content">';
   html += '<span class="detail-type-tag ' + typeClass + '">' + typeLabel + '</span>';
@@ -512,7 +539,47 @@ function openDetail(pid) {
   html += '</div></div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
+
+  // Click en overlay (fuera del modal) para cerrar
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  // Swipe con touch
+  var touchStartX = 0;
+  var touchEndX = 0;
+  overlay.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  overlay.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    var diff = touchEndX - touchStartX;
+    if (Math.abs(diff) < 60) return; // swipe mínimo 60px
+    if (diff > 0 && hasPrev) _swipeDetail(idx, -1);
+    else if (diff < 0 && hasNext) _swipeDetail(idx, 1);
+  }, { passive: true });
+
   _updateTitle(null, p.nombre + ' - Arcano Especias');
+}
+
+function _swipeDetail(currentIdx, direction) {
+  var products = getStoreProducts();
+  var newIdx = currentIdx + direction;
+  if (newIdx < 0 || newIdx >= products.length) return;
+  // Re-render con el nuevo producto (sin animación de overlay)
+  var overlay = document.getElementById('detail-ov');
+  if (overlay) {
+    // Animación de salida del modal actual
+    var modal = overlay.querySelector('.detail-modal');
+    if (modal) {
+      modal.style.transition = 'transform 0.25s var(--ease), opacity 0.25s var(--ease)';
+      modal.style.transform = direction > 0 ? 'translateX(-30px)' : 'translateX(30px)';
+      modal.style.opacity = '0';
+    }
+    setTimeout(function() {
+      _renderDetail(products, newIdx);
+    }, 200);
+  } else {
+    _renderDetail(products, newIdx);
+  }
 }
 
 /* === RECETAS === */
