@@ -485,12 +485,14 @@ main {
 }
 .price-btn:hover .price-value { color: var(--gold); }
 .card-coming-soon {
-  font-size: 0.95rem; font-weight: 700; color: var(--gold);
-  text-align: center; padding: 14px 8px;
-  letter-spacing: 0.03em; text-transform: uppercase;
-  background: var(--gold-light);
-  border-radius: var(--radius-sm);
-  width: 100%;
+  font-size: 0.72rem; font-weight: 600; color: var(--gold);
+  text-align: center; padding: 8px 12px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid rgba(232, 184, 75, 0.3);
+  border-radius: 100px;
+  background: transparent;
+  display: inline-block;
+  margin: 4px auto;
 }
 .empty-state {
   text-align: center; padding: 60px 20px; color: var(--text-muted);
