@@ -1148,6 +1148,8 @@ document.addEventListener('DOMContentLoaded', function() {
     renderSocialLinks();
     // Inicializar tracking de carrito (cada 60s + al salir de pagina)
     initCarritoTracking(function() { return cart; }, getClienteSession);
+    // Inicializar popup lateral (configurado por admin)
+    initPopupLateral();
     onTiendaChange(function() {
       if (!hasVisiblePacks()) {
         var pb = document.querySelector('.filter-pill[data-cat="Packs"]');
@@ -1594,4 +1596,82 @@ function _autocompletarCheckoutSiSesion() {
   setVal('o-email', s.email);
   setVal('o-ciudad', s.ciudad);
   setVal('o-dir', s.direccion);
+}
+
+/* ===================== POPUP LATERAL =====================
+   Pestaña que asoma desde la derecha a los X segundos
+   configurados por el admin. Muestra mensaje + imagen.
+   ================================================================== */
+var _popupLateralTimer = null;
+var _popupLateralShown = false;
+
+function initPopupLateral() {
+  if (_popupLateralShown) return;
+  var config = getTiendaConfig();
+  var popup = config.popupTienda;
+  if (!popup || !popup.activo) return;
+  if (!popup.mensaje && !popup.imagen) return;
+
+  var segundos = parseInt(popup.segundos, 10) || 15;
+  if (segundos < 3) segundos = 3;
+
+  _popupLateralTimer = setTimeout(function() {
+    _showPopupLateral(popup);
+  }, segundos * 1000);
+}
+
+function _showPopupLateral(popup) {
+  if (_popupLateralShown) return;
+  _popupLateralShown = true;
+
+  var existing = document.getElementById('popup-lateral');
+  if (existing) existing.remove();
+
+  var el = document.createElement('div');
+  el.className = 'popup-lateral';
+  el.id = 'popup-lateral';
+
+  var html = '';
+  if (popup.imagen) {
+    html += '<img class="popup-lateral-img" src="' + popup.imagen + '" alt="Promo">';
+  }
+  html += '<button class="popup-lateral-close" onclick="_closePopupLateral()">&times;</button>';
+  html += '<div class="popup-lateral-body">';
+  if (popup.titulo) {
+    html += '<div class="popup-lateral-title">' + esc(popup.titulo) + '</div>';
+  }
+  if (popup.mensaje) {
+    html += '<div class="popup-lateral-text">' + esc(popup.mensaje) + '</div>';
+  }
+  if (popup.botonTexto && popup.botonLink) {
+    html += '<a href="' + esc(popup.botonLink) + '" target="_blank" style="display:inline-block;padding:8px 20px;border-radius:8px;background:var(--gold);color:var(--bg);font-weight:600;font-size:0.85rem;text-decoration:none;letter-spacing:0.02em">' + esc(popup.botonTexto) + '</a>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  document.body.appendChild(el);
+
+  // Trigger animación de entrada
+  requestAnimationFrame(function() {
+    el.classList.add('show');
+  });
+
+  // Auto-cerrar después de 10 segundos (si no tiene botón link)
+  setTimeout(function() {
+    _closePopupLateral();
+  }, 15000);
+
+  // No volver a mostrar en esta sesión
+  try {
+    sessionStorage.setItem('arcano_popup_shown', '1');
+  } catch(e) {}
+}
+
+function _closePopupLateral() {
+  var el = document.getElementById('popup-lateral');
+  if (el) {
+    el.classList.remove('show');
+    setTimeout(function() {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 500);
+  }
 }
