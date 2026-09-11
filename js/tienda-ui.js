@@ -564,22 +564,97 @@ function _swipeDetail(currentIdx, direction) {
   var products = getStoreProducts();
   var newIdx = currentIdx + direction;
   if (newIdx < 0 || newIdx >= products.length) return;
-  // Re-render con el nuevo producto (sin animación de overlay)
   var overlay = document.getElementById('detail-ov');
-  if (overlay) {
-    // Animación de salida del modal actual
-    var modal = overlay.querySelector('.detail-modal');
-    if (modal) {
-      modal.style.transition = 'transform 0.25s var(--ease), opacity 0.25s var(--ease)';
-      modal.style.transform = direction > 0 ? 'translateX(-30px)' : 'translateX(30px)';
-      modal.style.opacity = '0';
+  if (!overlay) { _renderDetail(products, newIdx); return; }
+  var modal = overlay.querySelector('.detail-modal');
+  if (!modal) { _renderDetail(products, newIdx); return; }
+  // Animación tipo carta: deslizar fuera + fade
+  modal.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+  modal.style.transform = direction > 0 ? 'translateX(-40px) scale(0.95)' : 'translateX(40px) scale(0.95)';
+  modal.style.opacity = '0';
+  setTimeout(function() {
+    // Renderizar el nuevo contenido directamente en el modal existente
+    _updateDetailContent(overlay, products, newIdx);
+    // Reset transform para que entre desde el lado opuesto
+    modal.style.transform = direction > 0 ? 'translateX(40px) scale(0.95)' : 'translateX(-40px) scale(0.95)';
+    modal.style.opacity = '0';
+    // Forzar reflow para que la transición funcione
+    void modal.offsetHeight;
+    // Animar entrada
+    modal.style.transform = 'translateX(0) scale(1)';
+    modal.style.opacity = '1';
+  }, 200);
+}
+
+function _updateDetailContent(overlay, products, idx) {
+  var p = products[idx];
+  if (!p) return;
+  var isPack = p.tipo === 'pack';
+  var isBlend = p.tipo === 'blend';
+  var hasChico = !isPack && p.stockChico > 0 && p.precioChico > 0;
+  var hasGrande = !isPack && p.stockGrande > 0 && p.precioGrande > 0;
+  var typeClass = isPack ? 'pack' : (isBlend ? 'blend' : 'especia');
+  var typeLabel = isPack ? 'Pack' : (isBlend ? 'Blend' : 'Especia');
+  var tagsHtml = '';
+  if (p.categorias && p.categorias.length > 0) {
+    for (var ci = 0; ci < p.categorias.length; ci++) tagsHtml += '<span class="detail-tag">' + p.categorias[ci] + '</span>';
+  } else if (p.categoria) { tagsHtml += '<span class="detail-tag">' + p.categoria + '</span>'; }
+  if (p.region) tagsHtml += '<span class="detail-tag">' + p.region + '</span>';
+  var pricesHtml = '';
+  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;chico&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
+  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;grande&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
+  var descHtml = p.descripcion ? '<p class="detail-desc">' + p.descripcion + '</p>' : '';
+  var ingsHtml = '';
+  if (isBlend && p.ingredientes && p.ingredientes.length > 0) {
+    ingsHtml = '<div class="detail-ingredients"><div class="detail-ingredients-label">Ingredientes</div>';
+    for (var ii = 0; ii < p.ingredientes.length; ii++) {
+      var ingName = p.ingredientes[ii].especiaNombre;
+      if (!ingName && p.ingredientes[ii].especiaId != null && _sDb && _sDb.especias) {
+        var esObj = _sDb.especias[p.ingredientes[ii].especiaId];
+        if (esObj && esObj.nombre) ingName = esObj.nombre;
+      }
+      if (!ingName) ingName = 'Especia';
+      ingsHtml += '<span class="detail-ingredient-chip">' + ingName + '</span>';
     }
-    setTimeout(function() {
-      _renderDetail(products, newIdx);
-    }, 200);
-  } else {
-    _renderDetail(products, newIdx);
+    ingsHtml += '</div>';
   }
+  var hasPrev = idx > 0;
+  var hasNext = idx < products.length - 1;
+  var html = '<div class="detail-modal">';
+  html += '<button class="detail-close" onclick="document.getElementById(\'detail-ov\').remove()">&times;</button>';
+  if (hasPrev) {
+    html += '<button class="detail-nav detail-nav-prev" onclick="_swipeDetail(' + idx + ',-1)" title="Anterior">';
+    html += '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    html += '</button>';
+  }
+  if (hasNext) {
+    html += '<button class="detail-nav detail-nav-next" onclick="_swipeDetail(' + idx + ',1)" title="Siguiente">';
+    html += '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+    html += '</button>';
+  }
+  html += '<div class="detail-modal-img">' + (p.imagen ? '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '" fetchpriority="high">' : '<span>' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>') + '</div>';
+  html += '<div class="detail-modal-content">';
+  html += '<span class="detail-type-tag ' + typeClass + '">' + typeLabel + '</span>';
+  html += '<h2>' + p.nombre + '</h2>';
+  if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
+  html += descHtml + ingsHtml;
+  if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
+  html += '</div></div>';
+  // Actualizar el contenido del overlay
+  overlay.innerHTML = html;
+  // Re-attach touch listeners
+  var touchStartX = 0;
+  overlay.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  overlay.addEventListener('touchend', function(e) {
+    var touchEndX = e.changedTouches[0].screenX;
+    var diff = touchEndX - touchStartX;
+    if (Math.abs(diff) < 60) return;
+    if (diff > 0 && hasPrev) _swipeDetail(idx, -1);
+    else if (diff < 0 && hasNext) _swipeDetail(idx, 1);
+  }, { passive: true });
+  _updateTitle(null, p.nombre + ' - Arcano Especias');
 }
 
 /* === RECETAS === */
