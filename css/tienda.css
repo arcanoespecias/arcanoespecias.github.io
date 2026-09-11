@@ -658,7 +658,8 @@ main {
 .cart-drawer {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: 400px; max-width: 100vw; z-index: 301;
-  background: var(--bg-secondary);
+  background: var(--bg-card);
+  border-left: 2px solid rgba(232, 184, 75, 0.15);
   transform: translateX(100%);
   transition: transform 0.4s var(--ease);
   display: flex; flex-direction: column;
