@@ -1643,6 +1643,33 @@ function _showPopupLateral(popup) {
   el.style.setProperty('--pp-accent', accentColor);
   el.style.setProperty('--pp-btn-bg', btnBg);
   el.style.setProperty('--pp-btn-text', btnText);
+  // Tipografía configurable
+  el.style.setProperty('--pp-title-size', popup.tamanoTitulo || '1.25rem');
+  el.style.setProperty('--pp-text-size', popup.tamanoTexto || '0.9rem');
+  // Estilos (negrita, subrayada, cursiva, combinaciones)
+  var titleWeight = '800';
+  var titleItalic = 'normal';
+  var titleUnderline = 'none';
+  var estiloT = popup.estiloTitulo || 'negrita';
+  if (estiloT === 'negrita') { titleWeight = '800'; }
+  else if (estiloT === 'subrayada') { titleWeight = '600'; titleUnderline = 'underline'; }
+  else if (estiloT === 'cursiva') { titleWeight = '600'; titleItalic = 'italic'; }
+  else if (estiloT === 'negrita-subrayada') { titleWeight = '800'; titleUnderline = 'underline'; }
+  else if (estiloT === 'negrita-cursiva') { titleWeight = '800'; titleItalic = 'italic'; }
+  el.style.setProperty('--pp-title-weight', titleWeight);
+  el.style.setProperty('--pp-title-italic', titleItalic);
+  el.style.setProperty('--pp-title-deco', titleUnderline);
+
+  var textWeight = '400';
+  var textItalic = 'normal';
+  var textUnderline = 'none';
+  var estiloTx = popup.estiloTexto || 'normal';
+  if (estiloTx === 'negrita') { textWeight = '700'; }
+  else if (estiloTx === 'cursiva') { textItalic = 'italic'; }
+  else if (estiloTx === 'subrayada') { textUnderline = 'underline'; }
+  el.style.setProperty('--pp-text-weight', textWeight);
+  el.style.setProperty('--pp-text-italic', textItalic);
+  el.style.setProperty('--pp-text-deco', textUnderline);
 
   var html = '';
   if (popup.imagen) {

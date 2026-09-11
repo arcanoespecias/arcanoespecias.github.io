@@ -1803,8 +1803,10 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 .popup-lateral-title {
   font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: var(--pp-title-size, 1.25rem);
+  font-weight: var(--pp-title-weight, 800);
+  font-style: var(--pp-title-italic, normal);
+  text-decoration: var(--pp-title-deco, none);
   color: var(--pp-accent, #E8B84B);
   margin-bottom: 12px;
   letter-spacing: -0.03em;
@@ -1812,8 +1814,10 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .popup-lateral-text {
   font-family: var(--font-body);
-  font-size: 0.9rem;
-  font-weight: 400;
+  font-size: var(--pp-text-size, 0.9rem);
+  font-weight: var(--pp-text-weight, 400);
+  font-style: var(--pp-text-italic, normal);
+  text-decoration: var(--pp-text-deco, none);
   color: var(--pp-text, #F5E6D0);
   line-height: 1.6;
   margin-bottom: 18px;
