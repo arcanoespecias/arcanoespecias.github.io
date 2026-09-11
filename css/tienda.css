@@ -484,11 +484,13 @@ main {
   font-size: 1.15rem; font-weight: 700; color: var(--text);
 }
 .price-btn:hover .price-value { color: var(--gold); }
-.card-na {
-  font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 10px;
-}
-.card-oos {
-  font-size: 0.78rem; color: var(--error); font-weight: 500; margin-top: 8px; text-align: center;
+.card-coming-soon {
+  font-size: 0.95rem; font-weight: 700; color: var(--gold);
+  text-align: center; padding: 14px 8px;
+  letter-spacing: 0.03em; text-transform: uppercase;
+  background: var(--gold-light);
+  border-radius: var(--radius-sm);
+  width: 100%;
 }
 .empty-state {
   text-align: center; padding: 60px 20px; color: var(--text-muted);

@@ -446,10 +446,7 @@ function renderProducts(filter) {
       h += '<button class="price-btn" onclick="event.stopPropagation();addToCartPack(' + p.id + ')"><div class="price-label">Pack</div><div class="price-value">$' + p.precio.toLocaleString() + '</div></button>';
     }
     if (!hasChico && !hasGrande && !hasPack) {
-      h += '<div class="card-na">Sin precio</div>';
-    }
-    if (!hasChico && !hasGrande && !hasPack && (isPack ? !(p.stock > 0) : !(p.stockChico > 0 || p.stockGrande > 0))) {
-      h += '<div class="card-oos">Sin stock</div>';
+      h += '<div class="card-coming-soon">Muy Pronto</div>';
     }
     h += '</div></div></div>';
   }
