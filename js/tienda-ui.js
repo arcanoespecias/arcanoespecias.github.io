@@ -1631,6 +1631,19 @@ function _showPopupLateral(popup) {
   el.className = 'popup-lateral';
   el.id = 'popup-lateral';
 
+  // Colores configurables (defaults a dorado/oscuro)
+  var bgColor = popup.colorFondo || '#1A130D';
+  var textColor = popup.colorTexto || '#F5E6D0';
+  var accentColor = popup.colorAcento || '#E8B84B';
+  var btnBg = popup.colorBoton || '#E8B84B';
+  var btnText = popup.colorBotonTexto || '#0E0A07';
+
+  el.style.setProperty('--pp-bg', bgColor);
+  el.style.setProperty('--pp-text', textColor);
+  el.style.setProperty('--pp-accent', accentColor);
+  el.style.setProperty('--pp-btn-bg', btnBg);
+  el.style.setProperty('--pp-btn-text', btnText);
+
   var html = '';
   if (popup.imagen) {
     html += '<img class="popup-lateral-img" src="' + popup.imagen + '" alt="Promo">';
@@ -1644,21 +1657,25 @@ function _showPopupLateral(popup) {
     html += '<div class="popup-lateral-text">' + esc(popup.mensaje) + '</div>';
   }
   if (popup.botonTexto && popup.botonLink) {
-    html += '<a href="' + esc(popup.botonLink) + '" target="_blank" style="display:inline-block;padding:8px 20px;border-radius:8px;background:var(--gold);color:var(--bg);font-weight:600;font-size:0.85rem;text-decoration:none;letter-spacing:0.02em">' + esc(popup.botonTexto) + '</a>';
+    html += '<a href="' + esc(popup.botonLink) + '" target="_blank" class="popup-lateral-btn">' + esc(popup.botonTexto) + '</a>';
   }
   html += '</div>';
   el.innerHTML = html;
   document.body.appendChild(el);
 
-  // Trigger animación de entrada
+  // Animación de entrada: doble rAF para asegurar que el browser pinte el estado inicial
   requestAnimationFrame(function() {
-    el.classList.add('show');
+    requestAnimationFrame(function() {
+      el.classList.add('show');
+    });
   });
 
-  // Auto-cerrar después de 10 segundos (si no tiene botón link)
+  // Auto-cerrar después de la duración configurada
+  var duracion = parseInt(popup.duracion, 10) || 8;
+  if (duracion < 3) duracion = 3;
   setTimeout(function() {
     _closePopupLateral();
-  }, 15000);
+  }, duracion * 1000);
 
   // No volver a mostrar en esta sesión
   try {
@@ -1672,6 +1689,6 @@ function _closePopupLateral() {
     el.classList.remove('show');
     setTimeout(function() {
       if (el.parentNode) el.parentNode.removeChild(el);
-    }, 500);
+    }, 700);
   }
 }
