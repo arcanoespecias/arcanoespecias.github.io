@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin-exclude.html
+Disallow: /clear.html
+Disallow: /tienda/seo-test-product-x7k9.html
+Disallow: /tienda/seo-test-x7k9.html
+Disallow: /p/test.html
 
 Sitemap: https://arcanoespecias.com/sitemap.xml
