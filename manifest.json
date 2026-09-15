@@ -1,12 +1,16 @@
 {
-  "name": "Arcano Especias",
+  "name": "Arcano Especias — Tienda de Especias y Blends Artesanales",
   "short_name": "Arcano",
+  "description": "Especias y blends artesanales del mundo. Envíos a toda Colombia.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0E0A07",
   "theme_color": "#0E0A07",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
