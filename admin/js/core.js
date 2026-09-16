@@ -354,6 +354,8 @@ const App = {
               '<span class="nav-icon">📉</span><span class="nav-label">Gastos</span></a>' +
             '<a class="nav-item" data-page="pedidos" onclick="App.navigate(\'pedidos\')" id="nav-pedidos">' +
               '<span class="nav-icon">📦</span><span class="nav-label">Pedidos</span><span class="nav-badge" id="pedidos-badge" style="display:none"></span></a>' +
+            '<a class="nav-item" data-page="envios" onclick="App.navigate(\'envios\')">' +
+              '<span class="nav-icon">🚚</span><span class="nav-label">Envíos</span></a>' +
             '<a class="nav-item" data-page="stock" onclick="App.navigate(\'stock\')">' +
               '<span class="nav-icon">📋</span><span class="nav-label">Stock</span></a>' +
             '<a class="nav-item" data-page="costos" onclick="App.navigate(\'costos\')">' +
@@ -422,7 +424,7 @@ const App = {
     this.closeMobileSidebar();
     var titles = {
       dashboard: 'Dashboard', productos: 'Productos', insumos: 'Insumos', testing: 'Testing',
-      produccion: 'Produccion', costales: 'Costales', ventas: 'Ventas', gastos: 'Gastos', pedidos: 'Pedidos', stock: 'Stock', costos: 'Costos', palas: 'Palas', tienda: 'Tienda', tublend: 'Tu Blend', recetas: 'Recetas IA', blog: 'Blog IA', estadisticas: 'Estadisticas', usuarios: 'Usuarios', puntosdeventa: 'P. Venta', grandesClientes: 'Grandes Clientes', clientes: 'Clientes', promociones: 'Promociones', carritos: 'Carritos', mensajes: 'Mensajes WhatsApp'
+      produccion: 'Produccion', costales: 'Costales', ventas: 'Ventas', gastos: 'Gastos', pedidos: 'Pedidos', envios: 'Envíos', stock: 'Stock', costos: 'Costos', palas: 'Palas', tienda: 'Tienda', tublend: 'Tu Blend', recetas: 'Recetas IA', blog: 'Blog IA', estadisticas: 'Estadisticas', usuarios: 'Usuarios', puntosdeventa: 'P. Venta', grandesClientes: 'Grandes Clientes', clientes: 'Clientes', promociones: 'Promociones', carritos: 'Carritos', mensajes: 'Mensajes WhatsApp'
     };
     document.getElementById('page-title').textContent = titles[page] || page;
     // Cierra el drawer lateral en mobile al cambiar de pagina
@@ -481,6 +483,7 @@ const App = {
         case 'ventas': Pages.renderVentas(container); break;
         case 'gastos': Pages.renderGastos(container); break;
         case 'pedidos': Pages.renderPedidos(container); break;
+        case 'envios': Pages.renderEnvios(container); break;
         case 'stock': Pages.renderStock(container); break;
         case 'costos': Pages.renderCostos(container); break;
         case 'palas': Pages.renderPalas(container); break;

@@ -16,19 +16,35 @@ var ARCANO_TARIFAS_SERVIENTREGA = {
 };
 
 /* === PESOS PROMEDIO (en gramos) ===
-   No se muestran al usuario. Calcula automáticamente el peso del pedido. */
-var ARCANO_PESOS = {
+   No se muestran al usuario. Calcula automáticamente el peso del pedido.
+   El peso del empaque y de los frascos puede ser configurado desde el admin
+   (Firebase: tiendaConfig.configEnvio). Acá solo quedan los defaults. */
+var ARCANO_PESOS_DEFAULT = {
   frascoPequeno: 145,    // promedio 140-150g
   frascoGrande:  230,    // promedio 220-240g
-  pack:          600,    // pack típico (3-4 frascos) — ajustar si tenés el real
+  pack:          600,    // pack típico (3-4 frascos)
   empaque:       200     // caja + relleno protector
 };
 
 /* === ENVÍO GRATIS === */
-var ARCANO_ENVIO_GRATIS = {
+var ARCANO_ENVIO_GRATIS_DEFAULT = {
   montoMinimo: 60000,
-  categoriasAplican: ['urbano']  // Medellín. Sumá 'zonal' si querés extender al AMVA
+  categoriasAplican: ['urbano']  // Medellín
 };
+
+/* === Lee config dinámica desde tiendaConfig (Firebase) === */
+function _arcanoGetConfigEnvio() {
+  var cfg = (typeof getTiendaConfig === 'function') ? getTiendaConfig() : {};
+  var ce = (cfg && cfg.configEnvio) ? cfg.configEnvio : {};
+  return {
+    frascoPequeno: ce.frascoPequeno || ARCANO_PESOS_DEFAULT.frascoPequeno,
+    frascoGrande:  ce.frascoGrande  || ARCANO_PESOS_DEFAULT.frascoGrande,
+    pack:          ce.pack          || ARCANO_PESOS_DEFAULT.pack,
+    empaque:       ce.empaque       !== undefined ? ce.empaque : ARCANO_PESOS_DEFAULT.empaque,
+    montoMinimoGratis: ce.montoMinimoGratis || ARCANO_ENVIO_GRATIS_DEFAULT.montoMinimo,
+    categoriasGratis:  (ce.categoriasGratis && ce.categoriasGratis.length) ? ce.categoriasGratis : ARCANO_ENVIO_GRATIS_DEFAULT.categoriasAplican
+  };
+}
 
 /* === MAPEO CIUDADES → CATEGORÍA SERVIENTREGA === */
 var ARCANO_CIUDADES_CATEGORIA = {
@@ -90,13 +106,14 @@ function _arcanoObtenerCategoria(ciudad) {
 }
 
 function _arcanoCalcularPesoTotal(items) {
-  var gramos = ARCANO_PESOS.empaque;
+  var cfg = _arcanoGetConfigEnvio();
+  var gramos = cfg.empaque;
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
     var pesoUnitario = 0;
-    if (item.talla === 'grande') pesoUnitario = ARCANO_PESOS.frascoGrande;
-    else if (item.talla === 'pequeño' || item.talla === 'pequeno') pesoUnitario = ARCANO_PESOS.frascoPequeno;
-    else if (item.talla === 'pack') pesoUnitario = ARCANO_PESOS.pack;
+    if (item.talla === 'grande') pesoUnitario = cfg.frascoGrande;
+    else if (item.talla === 'pequeño' || item.talla === 'pequeno') pesoUnitario = cfg.frascoPequeno;
+    else if (item.talla === 'pack') pesoUnitario = cfg.pack;
     gramos += (pesoUnitario * item.qty);
   }
   return gramos;
@@ -118,14 +135,15 @@ function arcanoCalcularEnvio(ciudadDestino, items, subtotal) {
   var pesoKg = Math.ceil(pesoGramos / 1000);
   var kilosAdicionales = Math.max(0, pesoKg - 1);
 
+  var cfg = _arcanoGetConfigEnvio();
   var aplicaGratis =
-    ARCANO_ENVIO_GRATIS.categoriasAplican.indexOf(categoria) !== -1 &&
-    subtotal >= ARCANO_ENVIO_GRATIS.montoMinimo;
+    cfg.categoriasGratis.indexOf(categoria) !== -1 &&
+    subtotal >= cfg.montoMinimoGratis;
 
   if (aplicaGratis) {
     return {
       exito: true, costo: 0, gratis: true, categoria: categoria,
-      pesoGramos: pesoGramos, mensaje: 'Envío gratis por compras desde $60.000'
+      pesoGramos: pesoGramos, mensaje: 'Envío gratis por compras desde $' + cfg.montoMinimoGratis.toLocaleString('es-CO')
     };
   }
 
@@ -135,7 +153,7 @@ function arcanoCalcularEnvio(ciudadDestino, items, subtotal) {
   var mensaje = null;
   if (categoria === 'urbano') {
     // En Medellín, recordá siempre la promo aunque no aplique
-    var faltan = ARCANO_ENVIO_GRATIS.montoMinimo - subtotal;
+    var faltan = cfg.montoMinimoGratis - subtotal;
     mensaje = 'Te faltan $' + faltan.toLocaleString('es-CO') + ' para tener envío gratis en Medellín.';
   }
 
@@ -148,9 +166,11 @@ function arcanoCalcularEnvio(ciudadDestino, items, subtotal) {
 /* === DEBUG (admin, F12) === */
 function arcanoDebugEnvio(ciudadDestino, items, subtotal) {
   var r = arcanoCalcularEnvio(ciudadDestino, items, subtotal);
+  var cfg = _arcanoGetConfigEnvio();
   console.log('=== ARCANO DEBUG DE ENVÍO ===');
   console.log('Ciudad:', ciudadDestino, '| Categoría:', r.categoria);
   console.log('Items:', items.length, '| Subtotal: $' + subtotal.toLocaleString('es-CO'));
+  console.log('Config pesos:', cfg);
   console.log('Peso total:', r.pesoGramos + 'g =', Math.ceil(r.pesoGramos / 1000) + 'kg');
   console.log('Envío gratis:', r.gratis);
   console.log('Costo mostrado al cliente: $' + (r.gratis ? 0 : r.costo).toLocaleString('es-CO'));

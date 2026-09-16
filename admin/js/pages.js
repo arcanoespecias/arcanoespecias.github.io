@@ -10262,3 +10262,309 @@ Pages._removePopupImg = function() {
   var btn = area.querySelector('button');
   if (btn) btn.remove();
 };
+
+/* ==================== ENVÍOS (SERVIENTREGA) ==================== */
+
+Pages.renderEnvios = function(container) {
+  var cfg = ArcanoDB.getTiendaConfig();
+  var ce = (cfg && cfg.configEnvio) ? cfg.configEnvio : {};
+  var pedidos = ArcanoDB.getPedidos();
+
+  // Defaults
+  var frascoPequeno = ce.frascoPequeno || 145;
+  var frascoGrande  = ce.frascoGrande  || 230;
+  var pack          = ce.pack          || 600;
+  var empaque       = (ce.empaque !== undefined) ? ce.empaque : 200;
+  var montoMinimoGratis = ce.montoMinimoGratis || 60000;
+  var categoriasGratis  = (ce.categoriasGratis && ce.categoriasGratis.length) ? ce.categoriasGratis : ['urbano'];
+
+  // Tarifas Servientrega (vigencia ago 2026)
+  var tarifas = [
+    { cat: 'urbano',   label: 'Urbano (Medellín ciudad)',          base: 7800, adicional: 3600 },
+    { cat: 'zonal',    label: 'Zonal (Área Metropolitana AMVA)',   base: 11500, adicional: 4400 },
+    { cat: 'capital',  label: 'Capital (capitales departamentales)', base: 16950, adicional: 4750 },
+    { cat: 'especial', label: 'Especial (capitales remotas/insular)', base: 34500, adicional: 12000 }
+  ];
+
+  // Tab de la página: 'envios' (listado) o 'config' (configuración)
+  if (!Pages._enviosTab) Pages._enviosTab = 'envios';
+  var tab = Pages._enviosTab;
+
+  var h = '<div class="page-actions"><button class="btn btn-outline" onclick="App.renderPage(\'dashboard\')">Volver al Dashboard</button></div>';
+
+  // Tabs
+  h += '<div class="mt-12" style="display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:16px">';
+  h += '<button class="tab ' + (tab === 'envios' ? 'active' : '') + '" onclick="Pages._enviosTab=\'envios\';App.renderPage(\'envios\')">📋 Listado de envíos</button>';
+  h += '<button class="tab ' + (tab === 'config' ? 'active' : '') + '" onclick="Pages._enviosTab=\'config\';App.renderPage(\'envios\')">⚙ Configuración</button>';
+  h += '</div>';
+
+  // ---- KPIs comunes ----
+  var totalEnvios = 0, totalCostoEnvios = 0, totalRecaudadoEnvios = 0, totalGratis = 0;
+  for (var i = 0; i < pedidos.length; i++) {
+    var p = pedidos[i];
+    if (!p.envio) continue;
+    totalEnvios++;
+    if (p.envio.costo) totalCostoEnvios += p.envio.costo;
+    if (p.envio.gratis) totalGratis++;
+  }
+
+  // ---- Tab LISTADO ----
+  if (tab === 'envios') {
+    h += '<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr)">' +
+      '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">' + totalEnvios + '</div><div class="stat-label">Pedidos con envío</div></div>' +
+      '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value">$' + totalCostoEnvios.toLocaleString() + '</div><div class="stat-label">Costo total cobrado</div></div>' +
+      '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">' + totalGratis + '</div><div class="stat-label">Envíos gratis</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + (totalEnvios - totalGratis) + '</div><div class="stat-label">Envíos pagados</div></div>' +
+      '</div>';
+
+    h += '<div class="card mt-16"><div class="card-header"><h3>Envíos por pedido</h3></div><div class="card-body">';
+    var conEnvio = [];
+    for (var i = 0; i < pedidos.length; i++) {
+      if (pedidos[i].envio) conEnvio.push(pedidos[i]);
+    }
+    conEnvio.sort(function(a, b) { return (b.creado || '').localeCompare(a.creado || ''); });
+
+    if (conEnvio.length === 0) {
+      h += '<p class="text-muted text-center">Aún no hay pedidos con envío registrado.</p>';
+    } else {
+      h += '<div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Categoría</th><th>Peso</th>' +
+        '<th>Costo envío</th><th>Gratis</th><th>Carrier</th><th>Estado pedido</th><th></th>' +
+        '</tr></thead><tbody>';
+      for (var i = 0; i < conEnvio.length; i++) {
+        var p = conEnvio[i];
+        var cl = p.cliente || {};
+        var e = p.envio || {};
+        var fecha = p.creado ? p.creado.slice(0, 10) : '';
+        var hora = p.creado ? p.creado.slice(11, 16) : '';
+        h += '<tr>' +
+          '<td class="fw7">' + fecha + ' ' + hora + '</td>' +
+          '<td>' + (cl.nombre || '?') + '</td>' +
+          '<td>' + (cl.ciudad || '?') + '</td>' +
+          '<td><span class="badge ' + _arcanoCategoriaBadgeClass(e.categoria) + '">' + (e.categoria || '?') + '</span></td>' +
+          '<td>' + (e.pesoKg ? e.pesoKg + ' kg' : (e.pesoGramos ? Math.ceil(e.pesoGramos/1000) + ' kg' : '-')) + '</td>' +
+          '<td class="text-gold fw7">' + (e.gratis ? '$0' : '$' + (e.costo || 0).toLocaleString()) + '</td>' +
+          '<td>' + (e.gratis ? '<span class="badge text-green">SÍ</span>' : '<span class="badge text-muted">no</span>') + '</td>' +
+          '<td>' + (e.carrier || 'Servientrega') + '</td>' +
+          '<td>' + _arcanoEstadoPedidoLabel(p.estado) + '</td>' +
+          '<td><button class="btn btn-sm btn-gold" onclick="Pages.verPedido(\'' + p._key + '\')">Ver</button></td>' +
+          '</tr>';
+      }
+      h += '</tbody></table></div>';
+    }
+    h += '</div></div>';
+
+    // Tarifas Servientrega (referencia)
+    h += '<div class="card mt-16"><div class="card-header"><h3>Tarifas Servientrega vigentes</h3><p class="text-xs text-muted">Modalidad: Contado - Normal - Terrestre. Vigencia: desde agosto 2026. Origen: Medellín.</p></div><div class="card-body">';
+    h += '<div class="table-wrap"><table class="table"><thead><tr><th>Categoría</th><th>Kilo inicial</th><th>Kilo adicional</th></tr></thead><tbody>';
+    for (var t = 0; t < tarifas.length; t++) {
+      h += '<tr><td class="fw7">' + tarifas[t].label + '</td><td class="text-gold">$' + tarifas[t].base.toLocaleString() + '</td><td>$' + tarifas[t].adicional.toLocaleString() + '</td></tr>';
+    }
+    h += '</tbody></table></div>';
+    h += '<p class="text-xs text-muted mt-8">El sobreflete (1% sobre valor declarado, mín $80.000) es absorbido por Arcano y NO se suma al cliente.</p>';
+    h += '</div></div>';
+  }
+
+  // ---- Tab CONFIGURACIÓN ----
+  if (tab === 'config') {
+    h += '<div class="card"><div class="card-header"><h3>Configuración de envíos</h3><p class="text-xs text-muted">Estos valores se guardan en Firebase (tiendaConfig.configEnvio) y se usan automáticamente en el checkout de la tienda. Si vaciás un campo, se vuelve al default.</p></div><div class="card-body">';
+
+    // Pesos
+    h += '<h4 class="mt-8">Pesos por unidad (gramos)</h4>';
+    h += '<p class="text-sm text-muted mb-12">El cálculo de peso es automático y oculto para el cliente. El peso del pedido = empaque + sumatoria de (peso unitario × cantidad) de cada item.</p>';
+    h += '<div class="g4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">';
+    h += '<div class="form-group"><label>Frasco pequeño</label><input type="number" class="form-input" id="cfg-pq" value="' + frascoPequeno + '" min="0" max="2000"><p class="text-xs text-muted">Default: 145g (140-150g)</p></div>';
+    h += '<div class="form-group"><label>Frasco grande</label><input type="number" class="form-input" id="cfg-gr" value="' + frascoGrande + '" min="0" max="2000"><p class="text-xs text-muted">Default: 230g (220-240g)</p></div>';
+    h += '<div class="form-group"><label>Pack</label><input type="number" class="form-input" id="cfg-pk" value="' + pack + '" min="0" max="5000"><p class="text-xs text-muted">Default: 600g</p></div>';
+    h += '<div class="form-group"><label>Empaque (caja + relleno)</label><input type="number" class="form-input" id="cfg-emp" value="' + empaque + '" min="0" max="2000"><p class="text-xs text-muted">Default: 200g</p></div>';
+    h += '</div>';
+
+    // Envío gratis
+    h += '<h4 class="mt-16">Envío gratis</h4>';
+    h += '<p class="text-sm text-muted mb-12">Define desde qué monto se aplica envío gratis y en qué categorías de destino. Para desactivar envío gratis, subí el monto a un valor muy alto.</p>';
+    h += '<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    h += '<div class="form-group"><label>Monto mínimo (COP)</label><input type="number" class="form-input" id="cfg-monto-gratis" value="' + montoMinimoGratis + '" min="0" step="1000"><p class="text-xs text-muted">Default: $60.000</p></div>';
+    h += '<div class="form-group"><label>Categorías que aplican</label><div style="display:flex;flex-direction:column;gap:6px;padding-top:6px">';
+    for (var t = 0; t < tarifas.length; t++) {
+      var checked = categoriasGratis.indexOf(tarifas[t].cat) !== -1 ? 'checked' : '';
+      h += '<label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer"><input type="checkbox" name="cfg-cat-gratis" value="' + tarifas[t].cat + '" ' + checked + '> ' + tarifas[t].label + '</label>';
+    }
+    h += '</div></div>';
+    h += '</div>';
+
+    // Botón guardar
+    h += '<div class="mt-16" style="display:flex;gap:8px;align-items:center">';
+    h += '<button class="btn btn-gold" onclick="Pages.guardarConfigEnvio()">Guardar configuración</button>';
+    h += '<button class="btn btn-outline" onclick="Pages.restaurarDefaultsEnvio()">Restaurar defaults</button>';
+    h += '<span id="cfg-envio-status" class="text-sm ml-8"></span>';
+    h += '</div>';
+
+    h += '</div></div>';
+
+    // Simulador
+    h += '<div class="card mt-16"><div class="card-header"><h3>Simulador de envío</h3><p class="text-xs text-muted">Probá combinaciones para verificar que el cálculo esté bien.</p></div><div class="card-body">';
+    h += '<div class="g3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+    h += '<div class="form-group"><label>Ciudad destino</label><select class="form-input" id="sim-ciudad">';
+    var ciudades = ['Medellín','Bello','Envigado','Bogotá','Cali','Barranquilla','Cartagena','Bucaramanga','Pereira','Manizales','Cúcuta','Santa Marta','Ibagué','Villavicencio','Armenia','Neiva','Sincelejo','Popayán','Tunja','Montería','Valledupar','Riohacha','Pasto','Quibdó','Florencia','Yopal','Arauca','Leticia','San Andrés','Mocoa'];
+    for (var ci = 0; ci < ciudades.length; ci++) {
+      h += '<option value="' + ciudades[ci] + '">' + ciudades[ci] + '</option>';
+    }
+    h += '</select></div>';
+    h += '<div class="form-group"><label>Frascos pequeños</label><input type="number" class="form-input" id="sim-pq" value="2" min="0" max="50"></div>';
+    h += '<div class="form-group"><label>Frascos grandes</label><input type="number" class="form-input" id="sim-gr" value="1" min="0" max="50"></div>';
+    h += '</div>';
+    h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center">';
+    h += '<button class="btn btn-gold" onclick="Pages.simularEnvio()">Calcular</button>';
+    h += '<div class="form-group" style="flex:1;margin:0"><label>Subtotal del carrito (COP)</label><input type="number" class="form-input" id="sim-subtotal" value="60000" min="0" step="1000"></div>';
+    h += '</div>';
+    h += '<div id="sim-result" class="mt-12" style="padding:14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);min-height:48px"></div>';
+    h += '</div></div>';
+  }
+
+  container.innerHTML = h;
+};
+
+Pages.guardarConfigEnvio = function() {
+  var frascoPequeno = parseInt(document.getElementById('cfg-pq').value, 10);
+  var frascoGrande  = parseInt(document.getElementById('cfg-gr').value, 10);
+  var pack          = parseInt(document.getElementById('cfg-pk').value, 10);
+  var empaque       = parseInt(document.getElementById('cfg-emp').value, 10);
+  var montoMinimoGratis = parseInt(document.getElementById('cfg-monto-gratis').value, 10);
+
+  // Validaciones
+  if (isNaN(frascoPequeno) || frascoPequeno < 0) { alert('Peso frasco pequeño inválido'); return; }
+  if (isNaN(frascoGrande) || frascoGrande < 0) { alert('Peso frasco grande inválido'); return; }
+  if (isNaN(pack) || pack < 0) { alert('Peso pack inválido'); return; }
+  if (isNaN(empaque) || empaque < 0) { alert('Peso empaque inválido'); return; }
+  if (isNaN(montoMinimoGratis) || montoMinimoGratis < 0) { alert('Monto mínimo envío gratis inválido'); return; }
+
+  var catsChecked = document.querySelectorAll('input[name="cfg-cat-gratis"]:checked');
+  var categoriasGratis = [];
+  for (var i = 0; i < catsChecked.length; i++) categoriasGratis.push(catsChecked[i].value);
+  if (categoriasGratis.length === 0) {
+    if (!confirm('No seleccionaste ninguna categoría para envío gratis. ¿Continuar de todas formas?')) return;
+  }
+
+  var configEnvio = {
+    frascoPequeno: frascoPequeno,
+    frascoGrande: frascoGrande,
+    pack: pack,
+    empaque: empaque,
+    montoMinimoGratis: montoMinimoGratis,
+    categoriasGratis: categoriasGratis
+  };
+
+  var status = document.getElementById('cfg-envio-status');
+  if (status) { status.textContent = 'Guardando...'; status.style.color = 'var(--gold)'; }
+
+  ArcanoDB.saveTiendaConfig({ configEnvio: configEnvio });
+
+  if (status) {
+    status.textContent = '✓ Guardado en Firebase';
+    status.style.color = 'var(--green)';
+    setTimeout(function() { if (status) status.textContent = ''; }, 3000);
+  }
+  toast('Configuración de envío guardada');
+};
+
+Pages.restaurarDefaultsEnvio = function() {
+  if (!confirm('¿Restaurar los valores por defecto? Esto sobreescribe tu configuración actual.')) return;
+  ArcanoDB.saveTiendaConfig({
+    configEnvio: {
+      frascoPequeno: 145,
+      frascoGrande: 230,
+      pack: 600,
+      empaque: 200,
+      montoMinimoGratis: 60000,
+      categoriasGratis: ['urbano']
+    }
+  });
+  toast('Defaults restaurados');
+  App.renderPage('envios');
+};
+
+Pages.simularEnvio = function() {
+  var ciudad = document.getElementById('sim-ciudad').value;
+  var pq = parseInt(document.getElementById('sim-pq').value, 10) || 0;
+  var gr = parseInt(document.getElementById('sim-gr').value, 10) || 0;
+  var subtotal = parseInt(document.getElementById('sim-subtotal').value, 10) || 0;
+
+  // Items simulados
+  var items = [];
+  if (pq > 0) items.push({ talla: 'pequeño', qty: pq });
+  if (gr > 0) items.push({ talla: 'grande', qty: gr });
+
+  // Cálculo en vivo (usa la misma lógica que el front)
+  var cfg = ArcanoDB.getTiendaConfig();
+  var ce = (cfg && cfg.configEnvio) ? cfg.configEnvio : {};
+  var ePq = ce.frascoPequeno || 145;
+  var eGr = ce.frascoGrande  || 230;
+  var eEmp = (ce.empaque !== undefined) ? ce.empaque : 200;
+  var eMonto = ce.montoMinimoGratis || 60000;
+  var eCats = (ce.categoriasGratis && ce.categoriasGratis.length) ? ce.categoriasGratis : ['urbano'];
+
+  var CATEGORIAS = {
+    'Medellín':'urbano','Bello':'zonal','Itagüí':'zonal','Envigado':'zonal','Sabaneta':'zonal',
+    'La Estrella':'zonal','Caldas':'zonal','Copacabana':'zonal','Girardota':'zonal','Barbosa':'zonal',
+    'Bogotá':'capital','Cali':'capital','Barranquilla':'capital','Cartagena':'capital','Bucaramanga':'capital',
+    'Pereira':'capital','Manizales':'capital','Cúcuta':'capital','Santa Marta':'capital','Ibagué':'capital',
+    'Villavicencio':'capital','Armenia':'capital','Neiva':'capital','Sincelejo':'capital','Popayán':'capital',
+    'Tunja':'capital','Montería':'capital','Valledupar':'capital','Riohacha':'capital','Pasto':'capital',
+    'Quibdó':'capital','Florencia':'capital','Yopal':'capital','Arauca':'capital',
+    'Leticia':'especial','San Andrés':'especial','Mocoa':'especial'
+  };
+  var TARIFAS = {
+    urbano:   { base: 7800,  adicional: 3600  },
+    zonal:    { base: 11500, adicional: 4400  },
+    capital:  { base: 16950, adicional: 4750  },
+    especial: { base: 34500, adicional: 12000 }
+  };
+
+  var categoria = CATEGORIAS[ciudad];
+  var pesoGramos = eEmp + (pq * ePq) + (gr * eGr);
+  var pesoKg = Math.ceil(pesoGramos / 1000);
+  var kilosAdic = Math.max(0, pesoKg - 1);
+  var aplicaGratis = categoria && eCats.indexOf(categoria) !== -1 && subtotal >= eMonto;
+  var costo = categoria ? TARIFAS[categoria].base + (kilosAdic * TARIFAS[categoria].adicional) : 0;
+  var totalFinal = subtotal + (aplicaGratis ? 0 : (categoria ? costo : 0));
+
+  var html = '';
+  if (!categoria) {
+    html = '<div style="color:var(--red)">⚠ Sin cobertura para ' + ciudad + '</div>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">';
+    html += '<div><div class="text-xs text-muted">Ciudad</div><div class="fw7">' + ciudad + '</div></div>';
+    html += '<div><div class="text-xs text-muted">Categoría</div><div class="fw7">' + categoria + '</div></div>';
+    html += '<div><div class="text-xs text-muted">Peso calculado</div><div class="fw7">' + pesoGramos + 'g = ' + pesoKg + 'kg</div></div>';
+    html += '<div><div class="text-xs text-muted">Kilos adicionales</div><div class="fw7">' + kilosAdic + '</div></div>';
+    html += '</div>';
+    html += '<div class="mt-8" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:12px;border-top:1px solid var(--border)">';
+    if (aplicaGratis) {
+      html += '<div><div class="text-xs text-muted">Envío</div><div class="fw7 text-green">¡GRATIS!</div></div>';
+    } else {
+      html += '<div><div class="text-xs text-muted">Envío</div><div class="fw7 text-gold">$' + costo.toLocaleString() + '</div></div>';
+    }
+    html += '<div><div class="text-xs text-muted">Subtotal</div><div class="fw7">$' + subtotal.toLocaleString() + '</div></div>';
+    html += '<div><div class="text-xs text-muted">Total a cobrar</div><div class="fw7" style="font-size:1.15rem">$' + totalFinal.toLocaleString() + '</div></div>';
+    html += '</div>';
+    if (!aplicaGratis && categoria === 'urbano' && eMonto > subtotal) {
+      var faltan = eMonto - subtotal;
+      html += '<div class="mt-8 text-sm" style="color:var(--gold);font-style:italic">Te faltan $' + faltan.toLocaleString() + ' para tener envío gratis.</div>';
+    }
+  }
+  var res = document.getElementById('sim-result');
+  if (res) res.innerHTML = html;
+};
+
+// Helpers de badges para la tabla de envíos
+function _arcanoCategoriaBadgeClass(cat) {
+  if (cat === 'urbano') return 'badge-green';
+  if (cat === 'zonal') return 'badge-blue';
+  if (cat === 'capital') return 'badge-gold';
+  if (cat === 'especial') return 'text-red';
+  return 'text-muted';
+}
+function _arcanoEstadoPedidoLabel(estado) {
+  var m = { nuevo: 'Nuevo', confirmado: 'Confirmado', enviado: 'Enviado', entregado: 'Entregado', cancelado: 'Cancelado' };
+  return m[estado] || (estado || '?');
+}
