@@ -264,52 +264,30 @@ function showOrderForm() {
   h += '<div class="form-group"><label>Nombre</label><input class="form-input" id="o-nombre" placeholder="Tu nombre"></div>';
   h += '<div class="form-row"><div class="form-group"><label>Teléfono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
   h += '<div class="form-group"><label>Email</label><input class="form-input" id="o-email" type="email" placeholder="tu@email.com"></div></div>';
-  h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><select class="form-input" id="o-ciudad"><option value="">Selecciona tu ciudad</option><option value="Medellín">Medellín</option><option value="Bogotá">Bogotá</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option><option value="Cartagena">Cartagena</option><option value="Bucaramanga">Bucaramanga</option><option value="Pereira">Pereira</option><option value="Manizales">Manizales</option><option value="Cúcuta">Cúcuta</option><option value="Santa Marta">Santa Marta</option><option value="Ibagué">Ibagué</option><option value="Villavicencio">Villavicencio</option><option value="Armenia">Armenia</option><option value="Neiva">Neiva</option><option value="Sincelejo">Sincelejo</option><option value="Popayán">Popayán</option><option value="Tunja">Tunja</option><option value="Montería">Montería</option><option value="Valledupar">Valledupar</option><option value="Riohacha">Riohacha</option><option value="Pasto">Pasto</option><option value="Quibdó">Quibdó</option><option value="Otra">Otra ciudad</option></select></div>';
+  h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><select class="form-input" id="o-ciudad" onchange="arcanoActualizarShippingInfo()"><option value="">Selecciona tu ciudad</option><option value="Medellín">Medellín</option><option value="Bello">Bello</option><option value="Itagüí">Itagüí</option><option value="Envigado">Envigado</option><option value="Sabaneta">Sabaneta</option><option value="La Estrella">La Estrella</option><option value="Caldas">Caldas</option><option value="Copacabana">Copacabana</option><option value="Girardota">Girardota</option><option value="Barbosa">Barbosa</option><option value="Bogotá">Bogotá</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option><option value="Cartagena">Cartagena</option><option value="Bucaramanga">Bucaramanga</option><option value="Pereira">Pereira</option><option value="Manizales">Manizales</option><option value="Cúcuta">Cúcuta</option><option value="Santa Marta">Santa Marta</option><option value="Ibagué">Ibagué</option><option value="Villavicencio">Villavicencio</option><option value="Armenia">Armenia</option><option value="Neiva">Neiva</option><option value="Sincelejo">Sincelejo</option><option value="Popayán">Popayán</option><option value="Tunja">Tunja</option><option value="Montería">Montería</option><option value="Valledupar">Valledupar</option><option value="Riohacha">Riohacha</option><option value="Pasto">Pasto</option><option value="Quibdó">Quibdó</option><option value="Florencia">Florencia</option><option value="Yopal">Yopal</option><option value="Arauca">Arauca</option><option value="Leticia">Leticia</option><option value="Inírida">Inírida</option><option value="San José del Guaviare">San José del Guaviare</option><option value="Mitú">Mitú</option><option value="Puerto Carreño">Puerto Carreño</option><option value="Mocoa">Mocoa</option><option value="San Andrés">San Andrés</option><option value="Otra">Otra ciudad</option></select></div>';
   h += '<div class="form-group"><label>Dirección</label><input class="form-input" id="o-dir" placeholder="Dirección de entrega"></div></div>';
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
+  // Bloque donde se muestra el costo de envío (lo llena arcanoActualizarShippingInfo)
+  h += '<div id="shipping-info" style="display:none"></div>';
   h += '</div>';
-  // QR
-  var config = getTiendaConfig();
   // QR removido del checkout — el admin coordina el pago por WhatsApp
   body.innerHTML = h;
   body.scrollTop = 0;
   _cartSetFooterStep(2);
   // Autocompletar si hay sesion de cliente
   setTimeout(_autocompletarCheckoutSiSesion, 50);
+  // Llamada inicial por si la ciudad quedó preseleccionada por autocompletar
+  setTimeout(function() { if (typeof arcanoActualizarShippingInfo === 'function') arcanoActualizarShippingInfo(); }, 80);
 }
 
 function backToCart() {
   renderCartDrawer();
 }
 
+// Mantenemos la función vieja como alias para no romper otros lugares que la llamen
 function updateShippingInfo() {
-  var ciudad = document.getElementById('o-ciudad') ? document.getElementById('o-ciudad').value : '';
-  var infoEl = document.getElementById('shipping-info');
-  var total = getCartTotal();
-  if (!infoEl) return;
-  if (!ciudad) {
-    infoEl.style.display = 'none';
-    return;
-  }
-  infoEl.style.display = 'block';
-  if (ciudad === 'Medellín') {
-    if (total >= 60000) {
-      infoEl.style.background = 'rgba(107,142,78,0.15)';
-      infoEl.style.border = '1px solid rgba(107,142,78,0.3)';
-      infoEl.style.color = '#6b8e4e';
-      infoEl.innerHTML = '✓ <strong>¡Envío gratis!</strong> Tu pedido supera los $60.000, el envío por Medellín es sin costo.';
-    } else {
-      infoEl.style.background = 'rgba(232,184,75,0.1)';
-      infoEl.style.border = '1px solid rgba(232,184,75,0.3)';
-      infoEl.style.color = '#c9a84c';
-      var faltan = 60000 - total;
-      infoEl.innerHTML = 'Te faltan <strong>$' + faltan.toLocaleString() + '</strong> para tener envío gratis en Medellín. Envío dentro de la ciudad: $6.000.';
-    }
-  } else {
-    infoEl.style.background = 'rgba(231,76,60,0.08)';
-    infoEl.style.border = '1px solid rgba(231,76,60,0.2)';
-    infoEl.style.color = '#c7553f';
-    infoEl.innerHTML = 'Te informaremos el costo de envío';
+  if (typeof arcanoActualizarShippingInfo === 'function') {
+    arcanoActualizarShippingInfo();
   }
 }
 
@@ -341,15 +319,19 @@ function sendOrder() {
   if (!ciudad) { alert('Selecciona tu ciudad'); return; }
   if (cart.length === 0) { alert('El carrito está vacío'); return; }
   var total = getCartTotal();
-  var envioInfoNotas = '';
-  if (ciudad === 'Medellín') {
-    if (total >= 60000) {
-      envioInfoNotas = 'Envío gratis (Medellín, pedido > $60.000)';
-    } else {
-      envioInfoNotas = 'Envío Medellín: $6.000';
-    }
+  // Cálculo real de envío con Servientrega
+  var envio = (typeof arcanoCalcularEnvio === 'function')
+    ? arcanoCalcularEnvio(ciudad, cart, total)
+    : { exito: false, costo: 0, gratis: false, categoria: null, pesoGramos: 0 };
+  var envioCosto = envio.gratis ? 0 : (envio.exito ? envio.costo : 0);
+  var totalFinal = total + envioCosto;
+  var envioInfoNotas;
+  if (!envio.exito) {
+    envioInfoNotas = 'Sin cobertura automática. Coordinar con el cliente.';
+  } else if (envio.gratis) {
+    envioInfoNotas = 'Envío gratis (Medellín, pedido ≥ $60.000)';
   } else {
-    envioInfoNotas = 'Te informaremos el costo de envío';
+    envioInfoNotas = 'Envío ' + ciudad + ' (' + envio.categoria + ', ' + Math.ceil(envio.pesoGramos / 1000) + 'kg): $' + envio.costo.toLocaleString('es-CO') + ' (Servientrega Contado Normal Terrestre)';
   }
   var items = [];
   for (var i = 0; i < cart.length; i++) {
@@ -358,7 +340,19 @@ function sendOrder() {
   }
   var orderData = {
     cliente: { nombre: nombre, telefono: tel, email: email, ciudad: ciudad, direccion: dir },
-    items: items, total: total, notas: notas ? notas + ' | ' + envioInfoNotas : envioInfoNotas
+    items: items,
+    subtotal: total,
+    envio: {
+      costo: envioCosto,
+      gratis: envio.gratis,
+      categoria: envio.categoria,
+      pesoGramos: envio.pesoGramos || 0,
+      pesoKg: envio.pesoGramos ? Math.ceil(envio.pesoGramos / 1000) : 0,
+      carrier: 'Servientrega',
+      modalidad: 'Contado - Normal - Terrestre'
+    },
+    total: totalFinal,
+    notas: notas ? notas + ' | ' + envioInfoNotas : envioInfoNotas
   };
   var body = document.getElementById('cart-drawer-body');
   body.innerHTML = '<div style="text-align:center;padding:48px 0"><div class="loader"></div><p style="color:var(--text-sec);margin-top:12px">Enviando pedido...</p></div>';
@@ -390,7 +384,8 @@ function sendOrder() {
       gtag('event', 'purchase', {
         transaction_id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
         currency: 'COP',
-        value: getCartTotal(),
+        value: totalFinal,
+        shipping: envioCosto,
         items: ga4Items
       });
     }
