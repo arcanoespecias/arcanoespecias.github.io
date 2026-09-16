@@ -236,10 +236,12 @@ function _cartSetFooterStep(step) {
   if (!footer) return;
   if (step === 1) {
     footer.innerHTML = '<button class="btn-primary" onclick="showOrderForm()">Confirmar Pedido</button>' +
-      '<button class="btn-secondary" onclick="toggleCartDrawer()">Seguir comprando</button>';
+      '<button class="btn-secondary" onclick="toggleCartDrawer()">Seguir comprando</button>' +
+      '<p style="text-align:center;margin:8px 0 0;font-size:0.8rem;color:#a08b6e;line-height:1.5">🚚 Envío gratis en Medellín desde \$60.000. En compras inferiores y envíos fuera de Medellín, el envío tiene costo adicional.</p>';
   } else {
     footer.innerHTML = '<button class="btn-primary" onclick="sendOrder()">Enviar Pedido</button>' +
-      '<button class="btn-secondary" onclick="backToCart()">Volver</button>';
+      '<button class="btn-secondary" onclick="backToCart()">Volver</button>' +
+      '<p style="text-align:center;margin:8px 0 0;font-size:0.8rem;color:#a08b6e;line-height:1.5">🚚 Envío gratis en Medellín desde \$60.000. En compras inferiores y envíos fuera de Medellín, el envío tiene costo adicional.</p>';
   }
 }
 
@@ -262,9 +264,8 @@ function showOrderForm() {
   h += '<div class="form-group"><label>Nombre</label><input class="form-input" id="o-nombre" placeholder="Tu nombre"></div>';
   h += '<div class="form-row"><div class="form-group"><label>Teléfono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
   h += '<div class="form-group"><label>Email</label><input class="form-input" id="o-email" type="email" placeholder="tu@email.com"></div></div>';
-  h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><select class="form-input" id="o-ciudad" onchange="updateShippingInfo()"><option value="">Selecciona tu ciudad</option><option value="Medellín">Medellín</option><option value="Bogotá">Bogotá</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option><option value="Cartagena">Cartagena</option><option value="Bucaramanga">Bucaramanga</option><option value="Pereira">Pereira</option><option value="Manizales">Manizales</option><option value="Cúcuta">Cúcuta</option><option value="Santa Marta">Santa Marta</option><option value="Ibagué">Ibagué</option><option value="Villavicencio">Villavicencio</option><option value="Armenia">Armenia</option><option value="Neiva">Neiva</option><option value="Sincelejo">Sincelejo</option><option value="Popayán">Popayán</option><option value="Tunja">Tunja</option><option value="Montería">Montería</option><option value="Valledupar">Valledupar</option><option value="Riohacha">Riohacha</option><option value="Pasto">Pasto</option><option value="Quibdó">Quibdó</option><option value="Otra">Otra ciudad</option></select></div>';
+  h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><select class="form-input" id="o-ciudad"><option value="">Selecciona tu ciudad</option><option value="Medellín">Medellín</option><option value="Bogotá">Bogotá</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option><option value="Cartagena">Cartagena</option><option value="Bucaramanga">Bucaramanga</option><option value="Pereira">Pereira</option><option value="Manizales">Manizales</option><option value="Cúcuta">Cúcuta</option><option value="Santa Marta">Santa Marta</option><option value="Ibagué">Ibagué</option><option value="Villavicencio">Villavicencio</option><option value="Armenia">Armenia</option><option value="Neiva">Neiva</option><option value="Sincelejo">Sincelejo</option><option value="Popayán">Popayán</option><option value="Tunja">Tunja</option><option value="Montería">Montería</option><option value="Valledupar">Valledupar</option><option value="Riohacha">Riohacha</option><option value="Pasto">Pasto</option><option value="Quibdó">Quibdó</option><option value="Otra">Otra ciudad</option></select></div>';
   h += '<div class="form-group"><label>Dirección</label><input class="form-input" id="o-dir" placeholder="Dirección de entrega"></div></div>';
-  h += '<div id="shipping-info" style="display:none;margin:12px 0;padding:12px 16px;border-radius:8px;font-size:0.9rem"></div>';
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
   h += '</div>';
   // QR
@@ -342,18 +343,14 @@ function sendOrder() {
   if (!ciudad) { alert('Selecciona tu ciudad'); return; }
   if (cart.length === 0) { alert('El carrito está vacío'); return; }
   var total = getCartTotal();
-  var envioInfoHtml = '';
   var envioInfoNotas = '';
   if (ciudad === 'Medellín') {
     if (total >= 60000) {
-      envioInfoHtml = '<p style="background:rgba(107,142,78,0.15);border:1px solid rgba(107,142,78,0.3);border-radius:8px;padding:12px 16px;margin:16px 0;color:#6b8e4e;font-size:0.95rem">✓ <strong>Envío gratis</strong> por Medellín (pedido superior a $60.000)</p>';
       envioInfoNotas = 'Envío gratis (Medellín, pedido > $60.000)';
     } else {
-      envioInfoHtml = '<p style="background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.3);border-radius:8px;padding:12px 16px;margin:16px 0;color:#c9a84c;font-size:0.95rem">Envío dentro de Medellín: $6.000</p>';
       envioInfoNotas = 'Envío Medellín: $6.000';
     }
   } else {
-    envioInfoHtml = '<p style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:12px 16px;margin:16px 0;color:#c7553f;font-size:0.95rem">Te informaremos el costo de envío</p>';
     envioInfoNotas = 'Te informaremos el costo de envío';
   }
   var items = [];
@@ -399,7 +396,7 @@ function sendOrder() {
         items: ga4Items
       });
     }
-    body.innerHTML = '<div class="success-box"><div class="success-icon">\u2705</div><h3>Pedido enviado</h3><p>Tu pedido fue recibido correctamente.</p>' + envioInfoHtml + '<button class="btn-primary" onclick="_finishOrder()" style="max-width:200px;margin:0 auto">Entendido</button></div>';
+    body.innerHTML = '<div class="success-box"><div class="success-icon">\u2705</div><h3>Pedido enviado</h3><p>Tu pedido fue recibido correctamente.</p><button class="btn-primary" onclick="_finishOrder()" style="max-width:200px;margin:0 auto">Entendido</button></div>';
   }).catch(function(err) {
     alert('Error: ' + (err.message || err));
     renderCartDrawer();
@@ -1785,8 +1782,6 @@ function _autocompletarCheckoutSiSesion() {
   setVal('o-tel', s.telefono);
   setVal('o-email', s.email);
   setVal('o-ciudad', s.ciudad);
-  // Trigger shipping info update
-  if (s.ciudad) updateShippingInfo();
   setVal('o-dir', s.direccion);
 }
 
