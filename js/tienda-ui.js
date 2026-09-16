@@ -310,7 +310,7 @@ function updateShippingInfo() {
     infoEl.style.background = 'rgba(231,76,60,0.08)';
     infoEl.style.border = '1px solid rgba(231,76,60,0.2)';
     infoEl.style.color = '#c7553f';
-    infoEl.innerHTML = 'El costo de envío a <strong>' + ciudad + '</strong> se confirmará al procesar tu pedido. Nos contactaremos por WhatsApp para coordinar la entrega y el pago.';
+    infoEl.innerHTML = 'Te informaremos el costo de envío';
   }
 }
 
@@ -342,15 +342,19 @@ function sendOrder() {
   if (!ciudad) { alert('Selecciona tu ciudad'); return; }
   if (cart.length === 0) { alert('El carrito está vacío'); return; }
   var total = getCartTotal();
-  var envioInfo = '';
+  var envioInfoHtml = '';
+  var envioInfoNotas = '';
   if (ciudad === 'Medellín') {
     if (total >= 60000) {
-      envioInfo = 'Envío gratis (Medellín, pedido > $60.000)';
+      envioInfoHtml = '<p style="background:rgba(107,142,78,0.15);border:1px solid rgba(107,142,78,0.3);border-radius:8px;padding:12px 16px;margin:16px 0;color:#6b8e4e;font-size:0.95rem">✓ <strong>Envío gratis</strong> por Medellín (pedido superior a $60.000)</p>';
+      envioInfoNotas = 'Envío gratis (Medellín, pedido > $60.000)';
     } else {
-      envioInfo = 'Envío Medellín: $6.000 (a confirmar)';
+      envioInfoHtml = '<p style="background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.3);border-radius:8px;padding:12px 16px;margin:16px 0;color:#c9a84c;font-size:0.95rem">Envío dentro de Medellín: $6.000</p>';
+      envioInfoNotas = 'Envío Medellín: $6.000';
     }
   } else {
-    envioInfo = 'Envío a ' + ciudad + ': costo a confirmar';
+    envioInfoHtml = '<p style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:12px 16px;margin:16px 0;color:#c7553f;font-size:0.95rem">Te informaremos el costo de envío</p>';
+    envioInfoNotas = 'Te informaremos el costo de envío';
   }
   var items = [];
   for (var i = 0; i < cart.length; i++) {
@@ -359,7 +363,7 @@ function sendOrder() {
   }
   var orderData = {
     cliente: { nombre: nombre, telefono: tel, email: email, ciudad: ciudad, direccion: dir },
-    items: items, total: total, notas: notas ? notas + ' | ' + envioInfo : envioInfo
+    items: items, total: total, notas: notas ? notas + ' | ' + envioInfoNotas : envioInfoNotas
   };
   var body = document.getElementById('cart-drawer-body');
   body.innerHTML = '<div style="text-align:center;padding:48px 0"><div class="loader"></div><p style="color:var(--text-sec);margin-top:12px">Enviando pedido...</p></div>';
@@ -395,7 +399,7 @@ function sendOrder() {
         items: ga4Items
       });
     }
-    body.innerHTML = '<div class="success-box"><div class="success-icon">\u2705</div><h3>Pedido enviado</h3><p>Tu pedido fue recibido correctamente.</p><button class="btn-primary" onclick="_finishOrder()" style="max-width:200px;margin:0 auto">Entendido</button></div>';
+    body.innerHTML = '<div class="success-box"><div class="success-icon">\u2705</div><h3>Pedido enviado</h3><p>Tu pedido fue recibido correctamente.</p>' + envioInfoHtml + '<button class="btn-primary" onclick="_finishOrder()" style="max-width:200px;margin:0 auto">Entendido</button></div>';
   }).catch(function(err) {
     alert('Error: ' + (err.message || err));
     renderCartDrawer();
