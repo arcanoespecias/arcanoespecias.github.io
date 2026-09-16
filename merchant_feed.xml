@@ -5,19 +5,6 @@
 <link>https://arcanoespecias.com/</link>
 <description>Feed de productos de Arcano Especias para Google Merchant Center</description>
 <item>
-<g:id>achiote</g:id>
-<g:title>Achiote</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/achiote.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-</item>
-<item>
 <g:id>adobo-colombiano</g:id>
 <g:title>Adobo Colombiano</g:title>
 <g:description>Equilibrio perfecto de notas botánicas locales que transforman sopas y guisos cotidianos en platos memorables.</g:description>
@@ -27,21 +14,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones</g:google_product_category>
-<g:product_type>Comidas, Infusiones</g:product_type>
-</item>
-<item>
-<g:id>adobo-criollo</g:id>
-<g:title>ADOBO CRIOLLO</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/adobo-criollo.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>aji-andino</g:id>
@@ -53,8 +27,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Perú</g:google_product_category>
-<g:product_type>Comidas · Perú</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>amazonia-verde</g:id>
@@ -66,8 +40,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Amazonía</g:google_product_category>
-<g:product_type>Comidas · Amazonía</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>andean-fire</g:id>
@@ -79,8 +53,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>arcano-signature</g:id>
@@ -92,8 +66,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>asado-pampeano</g:id>
@@ -105,8 +79,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>baharat</g:id>
@@ -118,8 +92,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>balkan-grill</g:id>
@@ -131,8 +105,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>bangkok-curry</g:id>
@@ -144,8 +118,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>bavarian-roast</g:id>
@@ -157,8 +131,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>bbq-kansas</g:id>
@@ -170,8 +144,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>berbere</g:id>
@@ -183,8 +157,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>bourbon-bbq</g:id>
@@ -196,8 +170,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>cajun-lousiana</g:id>
@@ -209,8 +183,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>caribbean-citrus</g:id>
@@ -222,8 +196,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>caribbean-rum</g:id>
@@ -235,8 +209,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>caribe-costeno</g:id>
@@ -248,8 +222,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · COLOMBIA</g:google_product_category>
-<g:product_type>Comidas · COLOMBIA</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>chai-imperial</g:id>
@@ -261,8 +235,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>chimichurri-argentino</g:id>
@@ -274,8 +248,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Buenos Aires, Argentina</g:google_product_category>
-<g:product_type>Comidas · Buenos Aires, Argentina</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>chinese-five</g:id>
@@ -287,21 +261,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · China</g:google_product_category>
-<g:product_type>Comidas · China</g:product_type>
-</item>
-<item>
-<g:id>citrus-balance</g:id>
-<g:title>Citrus Balance</g:title>
-<g:description>Equilibrio cítrico con manzana, limón, jengibre y cardamomo. Secado perfecto que conjuga notas refrescantes y especiadas para tu deleite.</g:description>
-<g:link>https://arcanoespecias.com/p/citrus-balance.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>citrus-gin</g:id>
@@ -313,8 +274,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>costela-brasileira</g:id>
@@ -326,8 +287,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Brasil</g:google_product_category>
-<g:product_type>Comidas · Brasil</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>curry-madras</g:id>
@@ -339,8 +300,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · india</g:google_product_category>
-<g:product_type>Comidas · india</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>dulces-suenos</g:id>
@@ -352,8 +313,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>energia-andina</g:id>
@@ -365,8 +326,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones · LOS ANDES</g:google_product_category>
-<g:product_type>Infusiones · LOS ANDES</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>garam-masala-clasico</g:id>
@@ -378,8 +339,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>gaucho-picante</g:id>
@@ -391,8 +352,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>gin-botanicals-classic</g:id>
@@ -404,8 +365,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>golden-wellness</g:id>
@@ -417,8 +378,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>herbes-de-provence</g:id>
@@ -430,8 +391,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Francia</g:google_product_category>
-<g:product_type>Comidas · Francia</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>inca-grill</g:id>
@@ -443,8 +404,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>italiano-clasico</g:id>
@@ -456,8 +417,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>korean-bbq</g:id>
@@ -469,60 +430,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-</item>
-<item>
-<g:id>limon</g:id>
-<g:title>Limón</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/limon.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
-</item>
-<item>
-<g:id>mango-deshidratado</g:id>
-<g:title>Mango deshidratado</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/mango-deshidratado.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
-</item>
-<item>
-<g:id>mango</g:id>
-<g:title>Mango</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/mango.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
-</item>
-<item>
-<g:id>manzana</g:id>
-<g:title>Manzana</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/manzana.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>moscow-mule</g:id>
@@ -534,8 +443,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria · Rusia</g:google_product_category>
-<g:product_type>Cocteleria · Rusia</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>noche-azul</g:id>
@@ -547,8 +456,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones · ARCANO</g:google_product_category>
-<g:product_type>Infusiones · ARCANO</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>noche-serena</g:id>
@@ -560,8 +469,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones · Europa</g:google_product_category>
-<g:product_type>Infusiones · Europa</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>patagonico-ahumado</g:id>
@@ -573,34 +482,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Argentina</g:google_product_category>
-<g:product_type>Comidas · Argentina</g:product_type>
-</item>
-<item>
-<g:id>pimienta-sichuan</g:id>
-<g:title>Pimienta sichuan</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/pimienta-sichuan.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
-</item>
-<item>
-<g:id>pina</g:id>
-<g:title>Piña</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/pina.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>piri-piri</g:id>
@@ -612,8 +495,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>pizza-napoletana</g:id>
@@ -625,8 +508,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>ras-el-hanout</g:id>
@@ -638,8 +521,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Marruecos</g:google_product_category>
-<g:product_type>Comidas · Marruecos</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>respirar</g:id>
@@ -651,8 +534,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>sabor-paisa</g:id>
@@ -664,8 +547,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>shichimi-arcano</g:id>
@@ -677,8 +560,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Japón</g:google_product_category>
-<g:product_type>Comidas · Japón</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>smokehouse-classic</g:id>
@@ -690,8 +573,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>sobremesa-arcano</g:id>
@@ -703,8 +586,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Infusiones</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>spiced-mojito</g:id>
@@ -716,8 +599,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>tandoori-premium</g:id>
@@ -729,8 +612,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>tokyo-yakitori</g:id>
@@ -742,21 +625,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Japón</g:google_product_category>
-<g:product_type>Comidas · Japón</g:product_type>
-</item>
-<item>
-<g:id>tomate</g:id>
-<g:title>Tomate</g:title>
-<g:description>Especia artesanal de Arcano Especias. Descubri su sabor unico.</g:description>
-<g:link>https://arcanoespecias.com/p/tomate.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Comidas, Infusiones, Cocteleria</g:google_product_category>
-<g:product_type>Comidas, Infusiones, Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>vermu-botanico</g:id>
@@ -768,8 +638,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>whisky-oak-spice</g:id>
@@ -781,8 +651,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Cocteleria</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 <item>
 <g:id>za-atar</g:id>
@@ -794,8 +664,8 @@
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Comidas · Líbano</g:google_product_category>
-<g:product_type>Comidas · Líbano</g:product_type>
+<g:google_product_category>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:google_product_category>
+<g:product_type>Food, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices</g:product_type>
 </item>
 </channel>
 </rss>
