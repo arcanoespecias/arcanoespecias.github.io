@@ -10605,12 +10605,13 @@ Pages._renderMakingBlends = function() {
 
   var h = '<div class="mb-container">';
 
-  // Step indicator
+  // Step indicator (5 pasos ahora)
   h += '<div class="mb-steps-indicator">';
-  h += '<div class="mb-step-dot ' + (mb.step === 1 ? 'active' : (mb.step > 1 ? 'done' : '')) + '">1</div><div class="mb-step-line"></div>';
-  h += '<div class="mb-step-dot ' + (mb.step === 2 ? 'active' : (mb.step > 2 ? 'done' : '')) + '">2</div><div class="mb-step-line"></div>';
-  h += '<div class="mb-step-dot ' + (mb.step === 3 ? 'active' : (mb.step > 3 ? 'done' : '')) + '">3</div><div class="mb-step-line"></div>';
-  h += '<div class="mb-step-dot ' + (mb.step === 4 ? 'active' : '') + '">4</div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 1 ? 'active' : (mb.step > 1 ? 'done' : '')) + '" title="Elegir blend">1</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 2 ? 'active' : (mb.step > 2 ? 'done' : '')) + '" title="Configurar">2</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 3 ? 'active' : (mb.step > 3 ? 'done' : '')) + '" title="Producir">3</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 4 ? 'active' : (mb.step > 4 ? 'done' : '')) + '" title="Recuento">4</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 5 ? 'active' : '') + '" title="Completado">5</div>';
   h += '</div>';
 
   if (mb.step === 1) {
@@ -10640,6 +10641,10 @@ Pages._renderMakingBlends = function() {
 
   if (mb.step === 4) {
     h += self._mbRenderStep4();
+  }
+
+  if (mb.step === 5) {
+    h += self._mbRenderStep5();
   }
 
   h += '</div>';
@@ -10921,7 +10926,7 @@ Pages._mbRenderStep3 = function() {
 
   h += '<div class="mb-prod-actions">';
   h += '<button class="btn btn-outline" onclick="Pages._mbResetProduction()">Reiniciar</button>';
-  h += '<button class="btn btn-gold" id="mb-complete-btn" onclick="Pages._mbCompleteProduction()" ' + (addedCount === recipe.length ? '' : 'disabled') + '>Completar blend</button>';
+  h += '<button class="btn btn-gold" id="mb-complete-btn" onclick="Pages._mbGoToRecuento()" ' + (addedCount === recipe.length ? '' : 'disabled') + '>Ver recuento →</button>';
   h += '</div>';
 
   h += '</div></div></div>';
@@ -11056,27 +11061,159 @@ Pages._mbResetProduction = function() {
   Pages._mbStartProduction();
 };
 
-Pages._mbCompleteProduction = function() {
+// Al confirmar el paso 3, va al recuento (no produce directamente)
+Pages._mbGoToRecuento = function() {
   var self = Pages;
   var mb = self._mb;
-  var blend = mb.selectedBlend;
-  var size = mb.size;
-  var qty = mb.qty;
   var recipe = mb.recipe;
-
-  // Llamar a ArcanoDB.producirBlend que ya valida y descuenta stock
-  try {
-    var result = ArcanoDB.producirBlend(blend.id, size, qty);
-    mb.lastProduccion = result.produccion;
-    mb.step = 4;
-    App.renderPage('produccion');
-    toast('✓ Producción guardada. Stock actualizado.');
-  } catch (err) {
-    alert('Error al guardar la producción: ' + err.message);
+  var addedCount = 0;
+  for (var i = 0; i < recipe.length; i++) if (recipe[i].added) addedCount++;
+  if (addedCount !== recipe.length) {
+    toast('Te faltan especias por agregar (' + (recipe.length - addedCount) + ')', 'error');
+    return;
   }
+  mb.step = 4;
+  App.renderPage('produccion');
+};
+
+Pages._mbCompleteProduction = function() {
+  // Mantenido por compatibilidad — redirige al recuento
+  Pages._mbGoToRecuento();
 };
 
 Pages._mbRenderStep4 = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var recipe = mb.recipe;
+  var size = mb.size;
+  var qty = mb.qty;
+
+  var costos = ArcanoDB.getCostosInsumos();
+  var db = ArcanoDB.getDB();
+  var envases = db.stockEnvases || { chico: 0, grande: 0 };
+  var bolsas = db.stockBolsas || { chico: 0, grande: 0 };
+  var cintas = db.stockCintas || 0;
+  var stk = null;
+  var stkKeys = Object.keys(db.stickers || {});
+  for (var j = 0; j < stkKeys.length; j++) {
+    if (db.stickers[stkKeys[j]].nombre === blend.nombre) { stk = db.stickers[stkKeys[j]]; break; }
+  }
+  var stkStock = stk ? (size === 'grande' ? (stk.stockGrande || 0) : (stk.stockChico || 0)) : 0;
+  var envasesDisp = size === 'grande' ? envases.grande : envases.chico;
+  var bolsasDisp = size === 'grande' ? bolsas.grande : bolsas.chico;
+
+  // Costos unitarios
+  var costoEnvase = size === 'grande' ? (costos.envaseGrande || 0) : (costos.envaseChico || 0);
+  var costoBolsa = size === 'grande' ? (costos.bolsaGrande || 0) : (costos.bolsaChica || 0);
+  var costoCinta = costos.cinta || 0;
+  var costoSticker = size === 'grande' ? (costos.stickerGrande || 0) : (costos.stickerChico || 0);
+
+  var h = '<div class="mb-section">';
+  h += '<div class="mb-step-header"><h3 class="mb-section-title">Recuento y verificación</h3>';
+  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(3)">← Volver</button></div>';
+
+  h += '<div class="mb-recuento-card">';
+  h += '<div class="mb-blend-selected"><div class="mb-blend-selected-name">' + esc(blend.nombre) + '</div><div class="mb-blend-selected-cat">' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos pequeños') + '</div></div>';
+
+  // Tabla de especias con pesos objetivo vs real + costos
+  h += '<h4 class="mb-recuento-title">Especias utilizadas</h4>';
+  h += '<div class="table-wrap"><table class="table mb-recuento-table"><thead><tr>';
+  h += '<th>Especia</th><th class="text-center">Objetivo</th><th class="text-center">Real</th><th class="text-center">Δ</th><th class="text-center">Costo/g</th><th class="text-center">Costo total</th><th class="text-center">Stock</th>';
+  h += '</tr></thead><tbody>';
+
+  var totalCostoEspecias = 0;
+  var totalObjetivo = 0;
+  var totalReal = 0;
+  var allStockOk = true;
+
+  for (var i = 0; i < recipe.length; i++) {
+    var r = recipe[i];
+    var esp = ArcanoDB.getEspecia(r.especiaId);
+    var stockDisp = esp ? (esp.stockBolsa || 0) : 0;
+    var cpg = (costos.especias && costos.especias[r.especiaId]) || 0;
+    var costoReal = (r.actualGramos || 0) * cpg;
+    var delta = (r.actualGramos || 0) - r.gramosTotal;
+    var stockSuficiente = stockDisp >= (r.actualGramos || 0);
+    if (!stockSuficiente) allStockOk = false;
+
+    totalCostoEspecias += costoReal;
+    totalObjetivo += r.gramosTotal;
+    totalReal += r.actualGramos || 0;
+
+    var deltaColor = Math.abs(delta) < 1 ? 'var(--green)' : (Math.abs(delta) > r.gramosTotal * 0.05 ? 'var(--red)' : 'var(--gold)');
+    var deltaTxt = delta > 0 ? '+' + delta.toFixed(1) + 'g' : delta.toFixed(1) + 'g';
+    var stockColor = stockSuficiente ? 'var(--green)' : 'var(--red)';
+    var stockIcon = stockSuficiente ? '✓' : '⚠';
+
+    h += '<tr>' +
+      '<td class="fw7">' + esc(r.nombre) + '</td>' +
+      '<td class="text-center">' + r.gramosTotal.toLocaleString() + 'g</td>' +
+      '<td class="text-center fw7" style="color:var(--gold)">' + (r.actualGramos || 0).toLocaleString() + 'g</td>' +
+      '<td class="text-center" style="color:' + deltaColor + '">' + deltaTxt + '</td>' +
+      '<td class="text-center">$' + cpg.toFixed(2) + '</td>' +
+      '<td class="text-center fw7" style="color:var(--gold)">$' + costoReal.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>' +
+      '<td class="text-center" style="color:' + stockColor + '">' + stockIcon + ' ' + stockDisp.toLocaleString() + 'g</td>' +
+    '</tr>';
+  }
+  h += '</tbody><tfoot><tr class="fw7" style="background:var(--bg3)">' +
+    '<td>TOTAL</td>' +
+    '<td class="text-center">' + totalObjetivo.toLocaleString() + 'g</td>' +
+    '<td class="text-center" style="color:var(--gold)">' + totalReal.toLocaleString() + 'g</td>' +
+    '<td class="text-center" style="color:' + (Math.abs(totalReal - totalObjetivo) < 5 ? 'var(--green)' : 'var(--red)') + '">' + (totalReal - totalObjetivo > 0 ? '+' : '') + (totalReal - totalObjetivo).toFixed(1) + 'g</td>' +
+    '<td></td>' +
+    '<td class="text-center" style="color:var(--gold)">$' + totalCostoEspecias.toLocaleString(undefined, {maximumFractionDigits:0}) + '</td>' +
+    '<td></td>' +
+  '</tr></tfoot></table></div>';
+
+  // Otros insumos
+  h += '<h4 class="mb-recuento-title mt-16">Otros insumos</h4>';
+  h += '<div class="table-wrap"><table class="table"><thead><tr><th>Insumo</th><th class="text-center">Cantidad</th><th class="text-center">Costo unit.</th><th class="text-center">Costo total</th><th class="text-center">Stock disp.</th></tr></thead><tbody>';
+  var costoEnvasesTotal = costoEnvase * qty;
+  var costoBolsasTotal = costoBolsa * qty;
+  var costoCintasTotal = costoCinta * qty;
+  var costoStickersTotal = costoSticker * qty;
+  h += '<tr><td class="fw7">Envases ' + size + '</td><td class="text-center">' + qty + '</td><td class="text-center">$' + costoEnvase.toLocaleString() + '</td><td class="text-center fw7" style="color:var(--gold)">$' + costoEnvasesTotal.toLocaleString() + '</td><td class="text-center" style="color:' + (envasesDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + envasesDisp + '</td></tr>';
+  h += '<tr><td class="fw7">Bolsas ' + size + '</td><td class="text-center">' + qty + '</td><td class="text-center">$' + costoBolsa.toLocaleString() + '</td><td class="text-center fw7" style="color:var(--gold)">$' + costoBolsasTotal.toLocaleString() + '</td><td class="text-center" style="color:' + (bolsasDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + bolsasDisp + '</td></tr>';
+  h += '<tr><td class="fw7">Stickers</td><td class="text-center">' + qty + '</td><td class="text-center">$' + costoSticker.toLocaleString() + '</td><td class="text-center fw7" style="color:var(--gold)">$' + costoStickersTotal.toLocaleString() + '</td><td class="text-center" style="color:' + (stkStock >= qty ? 'var(--green)' : 'var(--red)') + '">' + stkStock + '</td></tr>';
+  h += '<tr><td class="fw7">Cintas</td><td class="text-center">' + qty + '</td><td class="text-center">$' + costoCinta.toLocaleString() + '</td><td class="text-center fw7" style="color:var(--gold)">$' + costoCintasTotal.toLocaleString() + '</td><td class="text-center" style="color:' + (cintas >= qty ? 'var(--green)' : 'var(--red)') + '">' + cintas + '</td></tr>';
+  h += '</tbody></table></div>';
+
+  // Resumen de costos
+  var costoTotal = totalCostoEspecias + costoEnvasesTotal + costoBolsasTotal + costoCintasTotal + costoStickersTotal;
+  var costoPorFrasco = qty > 0 ? costoTotal / qty : 0;
+  var precioVenta = size === 'grande' ? (blend.precioGrande || 0) : (blend.precioChico || 0);
+  var margen = precioVenta - costoPorFrasco;
+  var margenPct = precioVenta > 0 ? (margen / precioVenta) * 100 : 0;
+
+  h += '<div class="mb-costos-resumen">';
+  h += '<div class="mb-resumen-item"><div class="mb-resumen-label">Costo especias</div><div class="mb-resumen-value">$' + totalCostoEspecias.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div></div>';
+  h += '<div class="mb-resumen-item"><div class="mb-resumen-label">Costo insumos</div><div class="mb-resumen-value">$' + (costoEnvasesTotal + costoBolsasTotal + costoCintasTotal + costoStickersTotal).toLocaleString(undefined, {maximumFractionDigits:0}) + '</div></div>';
+  h += '<div class="mb-resumen-item mb-resumen-highlight"><div class="mb-resumen-label">Costo TOTAL</div><div class="mb-resumen-value">$' + costoTotal.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div></div>';
+  h += '<div class="mb-resumen-item"><div class="mb-resumen-label">Costo por frasco</div><div class="mb-resumen-value">$' + costoPorFrasco.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div></div>';
+  h += '<div class="mb-resumen-item"><div class="mb-resumen-label">Precio venta</div><div class="mb-resumen-value">$' + precioVenta.toLocaleString() + '</div></div>';
+  h += '<div class="mb-resumen-item" style="color:' + (margen > 0 ? 'var(--green)' : 'var(--red)') + '"><div class="mb-resumen-label">Margen (' + margenPct.toFixed(0) + '%)</div><div class="mb-resumen-value">$' + margen.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div></div>';
+  h += '</div>';
+
+  // Estado de verificación
+  if (!allStockOk || envasesDisp < qty || bolsasDisp < qty || stkStock < qty || cintas < qty) {
+    h += '<div class="mb-warn-box">⚠ Stock insuficiente para completar la producción. Reabastecé los insumos marcados en rojo antes de continuar.</div>';
+  } else {
+    h += '<div class="mb-ok-box">✓ Todo el stock necesario está disponible. Al confirmar se descontarán los insumos y se sumarán ' + qty + ' frascos al stock del blend.</div>';
+  }
+
+  h += '<div class="mb-actions mt-16">';
+  h += '<button class="btn btn-outline" onclick="Pages._mbGoStep(3)">← Volver a producir</button>';
+  h += '<button class="btn btn-gold btn-lg" onclick="Pages._mbConfirmProduction()" ' + (allStockOk && envasesDisp >= qty && bolsasDisp >= qty && stkStock >= qty && cintas >= qty ? '' : 'disabled') + '>✓ Confirmar y producir</button>';
+  h += '</div>';
+
+  h += '</div>';
+  h += '</div>';
+  return h;
+};
+
+// Step 5: Éxito final
+Pages._mbRenderStep5 = function() {
   var self = Pages;
   var mb = self._mb;
   var blend = mb.selectedBlend;
@@ -11091,23 +11228,50 @@ Pages._mbRenderStep4 = function() {
   var h = '<div class="mb-section">';
   h += '<div class="mb-completion-screen">';
   h += '<div class="mb-completion-check">✓</div>';
-  h += '<h3 class="mb-completion-title">¡Blend completado!</h3>';
+  h += '<h3 class="mb-completion-title">¡Producción completada!</h3>';
   h += '<div class="mb-completion-blend">' + esc(blend.nombre) + ' · ' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos pequeños') + '</div>';
   h += '<div class="mb-completion-summary">';
-  h += '<div class="mb-summary-item"><div class="mb-summary-label">Especias usadas</div><div class="mb-summary-value">' + recipe.length + '</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Especias</div><div class="mb-summary-value">' + recipe.length + '</div></div>';
   h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso total</div><div class="mb-summary-value">' + totalActual.toLocaleString() + 'g</div></div>';
   h += '<div class="mb-summary-item"><div class="mb-summary-label">Frascos</div><div class="mb-summary-value">' + qty + '</div></div>';
   h += '</div>';
   if (prod.id) {
-    h += '<p class="text-xs text-muted mt-8">Producción #' + prod.id + ' · ' + (prod.fecha || '') + ' · Se descontaron ' + (qty) + ' envases, bolsas y stickers + ' + (prod.gramosTotal || 0) + 'g de especias.</p>';
+    h += '<div class="mb-prod-info">';
+    h += '<div>📋 Producción #' + prod.id + '</div>';
+    h += '<div>📅 ' + (prod.fecha || '') + '</div>';
+    h += '<div>✓ Se descontaron ' + (prod.gramosTotal || 0) + 'g de especias</div>';
+    h += '<div>✓ Se sumaron ' + qty + ' frascos al stock del blend</div>';
+    h += '</div>';
   }
   h += '<div class="mb-completion-actions">';
   h += '<button class="btn btn-outline" onclick="Pages._mbGoStep(1)">Hacer otro blend</button>';
-  h += '<button class="btn btn-gold" onclick="Pages._mbPrintRecipe()">🖨️ Imprimir receta</button>';
+  h += '<button class="btn btn-outline" onclick="Pages._mbPrintRecipe()">🖨️ Imprimir receta</button>';
+  h += '<button class="btn btn-gold" onclick="App.renderPage(\'produccion\')">Ver historial →</button>';
   h += '</div>';
   h += '</div>';
   h += '</div>';
   return h;
+};
+
+// Confirmación final: descuenta stock y guarda producción
+Pages._mbConfirmProduction = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var size = mb.size;
+  var qty = mb.qty;
+
+  if (!confirm('Confirmar producción de ' + qty + ' frascos ' + (size === 'grande' ? 'grandes' : 'pequeños') + ' de "' + blend.nombre + '"?\n\nSe van a descontar los insumos y sumar al stock del blend.')) return;
+
+  try {
+    var result = ArcanoDB.producirBlend(blend.id, size, qty);
+    mb.lastProduccion = result.produccion;
+    mb.step = 5;
+    App.renderPage('produccion');
+    toast('✓ Producción #' + result.produccion.id + ' guardada. Stock actualizado.');
+  } catch (err) {
+    alert('Error al guardar la producción: ' + err.message);
+  }
 };
 
 Pages._mbPrintRecipe = function() {
