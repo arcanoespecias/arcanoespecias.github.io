@@ -5,380 +5,44 @@
 <link>https://arcanoespecias.com/</link>
 <description>Feed de productos de Arcano Especias para Google Merchant Center</description>
 <item>
-<g:id>adobo-colombiano</g:id>
-<g:title>Adobo Colombiano</g:title>
-<g:description>Equilibrio perfecto de notas botánicas locales que transforman sopas y guisos cotidianos en platos memorables.</g:description>
-<g:link>https://arcanoespecias.com/p/adobo-colombiano.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/adobo-colombiano.webp</g:image_link>
+<g:id>chimichurri-argentino</g:id>
+<g:title>Chimichurri Argentino</g:title>
+<g:description>Explosión herbal y ahumada con ajo penetrante, pimentón y ají picante para elevar carnes a la parrilla.</g:description>
+<g:link>https://arcanoespecias.com/blends/chimichurri-argentino/</g:link>
+<g:image_link>https://arcanoespecias.com/img/chimichurri-argentino.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas, Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>aji-andino</g:id>
-<g:title>Ají Andino</g:title>
-<g:description>Mezcla picante y aromática de raíces sudamericanas con matices ahumados para realzar salsas y carnes.</g:description>
-<g:link>https://arcanoespecias.com/p/aji-andino.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/aji-andino.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Perú</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>amazonia-verde</g:id>
-<g:title>Amazonia Verde</g:title>
-<g:description>Blend herbal y vibrante de notas silvestres que aporta un matiz fresco y verde a marinados y platos ligeros.</g:description>
-<g:link>https://arcanoespecias.com/p/amazonia-verde.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/amazonia-verde.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Amazonía</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>andean-fire</g:id>
-<g:title>Andean Fire</g:title>
-<g:description>Fuego andino con ají molido, comino, ajo y orégano. Selección de especias autóctonas que transmiten calidez, fuerza y placer culinario.</g:description>
-<g:link>https://arcanoespecias.com/p/andean-fire.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/andean-fire.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>arcano-signature</g:id>
-<g:title>Arcano Signature</g:title>
-<g:description>Botánicos de alta selección que liberan aceites esenciales para perfumar copas, cócteles e infusiones de autor.</g:description>
-<g:link>https://arcanoespecias.com/p/arcano-signature.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/arcano-signature.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
 <g:id>asado-pampeano</g:id>
 <g:title>Asado Pampeano</g:title>
 <g:description>Mezcla robusta concebida para la parrilla que resalta la jugosidad de grandes cortes de carne con hierbas secas.</g:description>
-<g:link>https://arcanoespecias.com/p/asado-pampeano.html</g:link>
+<g:link>https://arcanoespecias.com/blends/asado-pampeano/</g:link>
 <g:image_link>https://arcanoespecias.com/img/asado-pampeano.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>baharat</g:id>
-<g:title>Baharat</g:title>
-<g:description>Compleja mezcla del Medio Oriente con notas dulzonas y toque especiado ideal para cordero, arroces y vegetales.</g:description>
-<g:link>https://arcanoespecias.com/p/baharat.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/baharat.webp</g:image_link>
+<g:id>patagonico-ahumado</g:id>
+<g:title>Patagónico Ahumado</g:title>
+<g:description>Especial combinación de pimentón ahumado, romero y laurel. Cuidado artesanal que ofrece un perfume envolvente y notas de leña pura para el paladar.</g:description>
+<g:link>https://arcanoespecias.com/blends/patagonico-ahumado/</g:link>
+<g:image_link>https://arcanoespecias.com/img/patagonico-ahumado.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>balkan-grill</g:id>
-<g:title>Balkan Grill</g:title>
-<g:description>Tradición de los Balcanes con ajo, pimentón ahumado y orégano. Secado natural para brindar una experiencia rústica, aromática y llena de vigor.</g:description>
-<g:link>https://arcanoespecias.com/p/balkan-grill.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/balkan-grill.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>bangkok-curry</g:id>
-<g:title>Bangkok Curry</g:title>
-<g:description>Fusiona notas cítricas, picantes y dulzonas que envuelven salteados, sopas y curries de leche de coco.</g:description>
-<g:link>https://arcanoespecias.com/p/bangkok-curry.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/bangkok-curry.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>bavarian-roast</g:id>
-<g:title>Bavarian Roast</g:title>
-<g:description>Toque bávaro con mejorana, mostaza, comino y ajo. Botánicos cuidadosamente tratados para impartir un sabor especiado, noble y equilibrado.</g:description>
-<g:link>https://arcanoespecias.com/p/bavarian-roast.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/bavarian-roast.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>bbq-kansas</g:id>
-<g:title>BBQ Kansas</g:title>
-<g:description>Blend dulce y ahumado que aporta un color rojizo caramelo y un sabor rústico e irresistible a tus asados.</g:description>
-<g:link>https://arcanoespecias.com/p/bbq-kansas.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/bbq-kansas.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>berbere</g:id>
-<g:title>Berbere</g:title>
-<g:description>Pasión picante etíope de tono rojizo que añade una capa de calor estructurado y aromas tostados a legumbres.</g:description>
-<g:link>https://arcanoespecias.com/p/berbere.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/berbere.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>bourbon-bbq</g:id>
-<g:title>Bourbon BBQ</g:title>
-<g:description>Toque ahumado y dulce con pimentón, canela, mostaza y ajo. Un matiz sofisticado y cálido diseñado para deslumbrar en la parrilla.</g:description>
-<g:link>https://arcanoespecias.com/p/bourbon-bbq.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/bourbon-bbq.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>cajun-lousiana</g:id>
-<g:title>Cajún Lousiana</g:title>
-<g:description>Sazón intensa del sur de EE. UU. que da una corteza dorada y especiada a mariscos, pollo y arroz jambalaya.</g:description>
-<g:link>https://arcanoespecias.com/p/cajun-lousiana.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/cajun-lousiana.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>caribbean-citrus</g:id>
-<g:title>Caribbean Citrus</g:title>
-<g:description>Frescura caribeña con limón, manzana deshidratada y tomillo. Contraste de dulzor y acidez secados con esmero para un paladar exigente.</g:description>
-<g:link>https://arcanoespecias.com/p/caribbean-citrus.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/caribbean-citrus.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>caribbean-rum</g:id>
-<g:title>Caribbean Rum</g:title>
-<g:description>Selección de especias dulces y notas cítricas tostadas formulada para infusionar complejidad en tragos de ron.</g:description>
-<g:link>https://arcanoespecias.com/p/caribbean-rum.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/caribbean-rum.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>caribe-costeno</g:id>
-<g:title>Caribe Costeño</g:title>
-<g:description>Frescura marina con limón deshidratado, ajo, tomillo y orégano. Un perfil citrico e hierbal de alta calidad para momentos de puro deleite culinario.</g:description>
-<g:link>https://arcanoespecias.com/p/caribe-costeno.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/caribe-costeno.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; COLOMBIA</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>chai-imperial</g:id>
-<g:title>Chai Imperial</g:title>
-<g:description>Té negro especiado con canela, cardamomo y jengibre de aroma estimulante, perfecto solo o con leche.</g:description>
-<g:link>https://arcanoespecias.com/p/chai-imperial.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/chai-imperial.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>chimichurri-argentino</g:id>
-<g:title>Chimichurri Argentino</g:title>
-<g:description>Explosión herbal y ahumada con ajo penetrante, pimentón y ají picante para elevar carnes a la parrilla.</g:description>
-<g:link>https://arcanoespecias.com/p/chimichurri-argentino.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/chimichurri-argentino.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Buenos Aires, Argentina</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>chinese-five</g:id>
-<g:title>Chinese Five</g:title>
-<g:description>Armonía ancestral con anís estrellado, canela, hinojo y clavo. Equilibrada selección oriental para un bouquet dulce, especiado y enigmático.</g:description>
-<g:link>https://arcanoespecias.com/p/chinese-five.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/chinese-five.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; China</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>citrus-balance</g:id>
-<g:title>Citrus Balance</g:title>
-<g:description>Equilibrio cítrico con manzana, limón, jengibre y cardamomo. Secado perfecto que conjuga notas refrescantes y especiadas para tu deleite.</g:description>
-<g:link>https://arcanoespecias.com/p/citrus-balance.html</g:link>
-<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>citrus-gin</g:id>
-<g:title>Citrus Gin</g:title>
-<g:description>Botánicos cítricos y bayas de enebro que realzan el perfil herbal de la ginebra con un perfume vibrante.</g:description>
-<g:link>https://arcanoespecias.com/p/citrus-gin.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/citrus-gin.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>costela-brasileira</g:id>
-<g:title>Costela Brasileira</g:title>
-<g:description>Blend especiado y ahumado de cuerpo denso que penetra cortes de carne en cocciones lentas creando jugosidad.</g:description>
-<g:link>https://arcanoespecias.com/p/costela-brasileira.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/costela-brasileira.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Brasil</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>curry-madras</g:id>
-<g:title>Curry Madrás</g:title>
-<g:description>Espectáculo sensorial de especias doradas aromáticas que envuelven curries en un baño de textura sedosa.</g:description>
-<g:link>https://arcanoespecias.com/p/curry-madras.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/curry-madras.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; india</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>dulces-suenos</g:id>
-<g:title>Dulces Sueños</g:title>
-<g:description>Infusión herbal con manzanilla, toronjil y flores suaves pensada para calmar sentidos y lograr un buen descanso.</g:description>
-<g:link>https://arcanoespecias.com/p/dulces-suenos.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/dulces-suenos.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>energia-andina</g:id>
-<g:title>Energía Andina</g:title>
-<g:description>Selección de hierbas y especias estimulantes que aportan frescura, vitalidad y un perfume reconfortante.</g:description>
-<g:link>https://arcanoespecias.com/p/energia-andina.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/energia-andina.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones &amp;middot; LOS ANDES</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>garam-masala-clasico</g:id>
-<g:title>Garam Masala Clásico</g:title>
-<g:description>Mezcla cálida de la India que suelta notas penetrantes de cardamomo, clavo y canela en legumbres y guisos.</g:description>
-<g:link>https://arcanoespecias.com/p/garam-masala-clasico.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/garam-masala-clasico.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
@@ -386,181 +50,237 @@
 <g:id>gaucho-picante</g:id>
 <g:title>Gaucho Picante</g:title>
 <g:description>Sensación picante y vibrante con ají molido, ajo y pimentón. Blend de granos escogidos que despierta los sentidos con calor, sabor y distinción.</g:description>
-<g:link>https://arcanoespecias.com/p/gaucho-picante.html</g:link>
+<g:link>https://arcanoespecias.com/blends/gaucho-picante/</g:link>
 <g:image_link>https://arcanoespecias.com/img/gaucho-picante.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>gin-botanicals-classic</g:id>
-<g:title>Gin Botanicals Classic</g:title>
-<g:description>Botánicos de autor para ginebra con enebro, cardamomo y limón. Selección premium que potencia el aroma y la elegancia de tu cóctel.</g:description>
-<g:link>https://arcanoespecias.com/p/gin-botanicals-classic.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/gin-botanicals-classic.webp</g:image_link>
+<g:id>adobo-colombiano</g:id>
+<g:title>Adobo Colombiano</g:title>
+<g:description>Equilibrio perfecto de notas botánicas locales que transforman sopas y guisos cotidianos en platos memorables.</g:description>
+<g:link>https://arcanoespecias.com/blends/adobo-colombiano/</g:link>
+<g:image_link>https://arcanoespecias.com/img/adobo-colombiano.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>golden-wellness</g:id>
-<g:title>Golden Wellness</g:title>
-<g:description>Bienestar dorado con cúrcuma, jengibre, canela y pimienta. Selección de alta calidad con propiedades revitalizantes y sabor reconfortante.</g:description>
-<g:link>https://arcanoespecias.com/p/golden-wellness.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/golden-wellness.webp</g:image_link>
+<g:id>sabor-paisa</g:id>
+<g:title>Sabor Paisa</g:title>
+<g:description>Inspiración regional con comino, cilantro y pimentón. Granos seleccionados y secados a la perfección para llenar tus platillos de tradición y sazón.</g:description>
+<g:link>https://arcanoespecias.com/blends/sabor-paisa/</g:link>
+<g:image_link>https://arcanoespecias.com/img/sabor-paisa.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>herbes-de-provence</g:id>
-<g:title>Herbes de Provence</g:title>
-<g:description>Elegancia provenzal con tomillo, romero, albahaca y mejorana. Secado natural que conserva aceites esenciales para un bouquet aromático sublime.</g:description>
-<g:link>https://arcanoespecias.com/p/herbes-de-provence.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/herbes-de-provence.webp</g:image_link>
+<g:id>caribe-costeno</g:id>
+<g:title>Caribe Costeño</g:title>
+<g:description>Frescura marina con limón deshidratado, ajo, tomillo y orégano. Un perfil citrico e hierbal de alta calidad para momentos de puro deleite culinario.</g:description>
+<g:link>https://arcanoespecias.com/blends/caribe-costeno/</g:link>
+<g:image_link>https://arcanoespecias.com/img/caribe-costeno.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Francia</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>aji-andino</g:id>
+<g:title>Ají Andino</g:title>
+<g:description>Mezcla picante y aromática de raíces sudamericanas con matices ahumados para realzar salsas y carnes.</g:description>
+<g:link>https://arcanoespecias.com/blends/aji-andino/</g:link>
+<g:image_link>https://arcanoespecias.com/img/aji-andino.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
 <g:id>inca-grill</g:id>
 <g:title>Inca Grill</g:title>
 <g:description>Potencia ahumada de ajo, comino y pimentón. Selección premium que garantiza un dorado irresistible, sabor ahumado e intenso placer gastronómico.</g:description>
-<g:link>https://arcanoespecias.com/p/inca-grill.html</g:link>
+<g:link>https://arcanoespecias.com/blends/inca-grill/</g:link>
 <g:image_link>https://arcanoespecias.com/img/inca-grill.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>italiano-clasico</g:id>
-<g:title>Italiano Clásico</g:title>
-<g:description>Esencia mediterránea de albahaca, orégano, tomillo y ajo. Proceso de secado cuidadoso que preserva el aroma de la huerta e inspira buen gusto.</g:description>
-<g:link>https://arcanoespecias.com/p/italiano-clasico.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/italiano-clasico.webp</g:image_link>
+<g:id>merquen-patagonico</g:id>
+<g:title>Merquén Patagónico</g:title>
+<g:description>Ají cacho de cabra tostado con cilantro que ofrece picor sutil, notas leñosas y un profundo color rojizo.</g:description>
+<g:link>https://arcanoespecias.com/blends/merquen-patagonico/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>korean-bbq</g:id>
-<g:title>Korean BBQ</g:title>
-<g:description>Combinación dulce, salada y picante de perfil umami irresistible para marinar cortes finos de carne y salteados.</g:description>
-<g:link>https://arcanoespecias.com/p/korean-bbq.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/korean-bbq.webp</g:image_link>
+<g:id>mapuche-ahumado</g:id>
+<g:title>Mapuche Ahumado</g:title>
+<g:description>Carácter ancestral con merquén, pimentón ahumado y ajo. Mezcla cuidadosa que transforma tus preparaciones con profundidad aromática y gran sazón.</g:description>
+<g:link>https://arcanoespecias.com/blends/mapuche-ahumado/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>moscow-mule</g:id>
-<g:title>Moscow Mule</g:title>
-<g:description>Mezcla para Moscow Mule con jengibre, limón, pimienta rosa y cardamomo. Perfume picante y citrico que despierta la coctelería de autor.</g:description>
-<g:link>https://arcanoespecias.com/p/moscow-mule.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/moscow-mule.webp</g:image_link>
+<g:id>taco-mexicano</g:id>
+<g:title>Taco Mexicano</g:title>
+<g:description>Chiles suaves, comino, ajo y orégano para aportar el sazón clásico, color vivo y aroma festivo a tus tacos.</g:description>
+<g:link>https://arcanoespecias.com/blends/taco-mexicano/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria &amp;middot; Rusia</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>noche-azul</g:id>
-<g:title>Noche Azul</g:title>
-<g:description>Toronjil, manzanilla y lavanda con clitoreana, la flor que tiñe la taza de un azul natural relajante.</g:description>
-<g:link>https://arcanoespecias.com/p/noche-azul.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/noche-azul.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones &amp;middot; ARCANO</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>noche-serena</g:id>
-<g:title>Noche Serena</g:title>
-<g:description>Infusión herbal de perfil sutil que mezcla flores blancas y hojas aromáticas para aligerar la mente al descansar.</g:description>
-<g:link>https://arcanoespecias.com/p/noche-serena.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/noche-serena.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones &amp;middot; Europa</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>patagonico-ahumado</g:id>
-<g:title>Patagónico Ahumado</g:title>
-<g:description>Especial combinación de pimentón ahumado, romero y laurel. Cuidado artesanal que ofrece un perfume envolvente y notas de leña pura para el paladar.</g:description>
-<g:link>https://arcanoespecias.com/p/patagonico-ahumado.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/patagonico-ahumado.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Argentina</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>piri-piri</g:id>
-<g:title>Piri Piri</g:title>
-<g:description>Toque cítrico-picante y color vivo que despierta tus sentidos y realza la jugosidad de aves y pescados.</g:description>
-<g:link>https://arcanoespecias.com/p/piri-piri.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/piri-piri.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>pizza-napoletana</g:id>
-<g:title>Pizza Napoletana</g:title>
-<g:description>Sabor napolitano auténtico con orégano, albahaca y ajo. Secado artesanal que despierta la frescura y la devoción por la buena cocina.</g:description>
-<g:link>https://arcanoespecias.com/p/pizza-napoletana.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/pizza-napoletana.webp</g:image_link>
+<g:id>fajita-tex-mex</g:id>
+<g:title>Fajita Tex Mex</g:title>
+<g:description>Fusión Tex-Mex con pimentón ahumado, ajo y pimienta blanca. Aroma especiado e irresistible que brinda a tus fajitas una textura y sabor superior.</g:description>
+<g:link>https://arcanoespecias.com/blends/fajita-tex-mex/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>mole-seco</g:id>
+<g:title>Mole Seco</g:title>
+<g:description>Chiles, cacao y especias secas que aportan una profundidad de sabor ahumada y refinada a salsas y marinados.</g:description>
+<g:link>https://arcanoespecias.com/blends/mole-seco/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>cajun-lousiana</g:id>
+<g:title>Cajún Lousiana</g:title>
+<g:description>Sazón intensa del sur de EE. UU. que da una corteza dorada y especiada a mariscos, pollo y arroz jambalaya.</g:description>
+<g:link>https://arcanoespecias.com/blends/cajun-lousiana/</g:link>
+<g:image_link>https://arcanoespecias.com/img/cajun-lousiana.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>bbq-kansas</g:id>
+<g:title>BBQ Kansas</g:title>
+<g:description>Blend dulce y ahumado que aporta un color rojizo caramelo y un sabor rústico e irresistible a tus asados.</g:description>
+<g:link>https://arcanoespecias.com/blends/bbq-kansas/</g:link>
+<g:image_link>https://arcanoespecias.com/img/bbq-kansas.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>montreal-steak</g:id>
+<g:title>Montreal Steak</g:title>
+<g:description>Fuerza y elegancia con pimienta blanca, mostaza y cilantro. Granos procesados con delicadeza para ofrecer un sabor robusto e intenso en parrilla.</g:description>
+<g:link>https://arcanoespecias.com/blends/montreal-steak/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>herbes-de-provence</g:id>
+<g:title>Herbes de Provence</g:title>
+<g:description>Elegancia provenzal con tomillo, romero, albahaca y mejorana. Secado natural que conserva aceites esenciales para un bouquet aromático sublime.</g:description>
+<g:link>https://arcanoespecias.com/blends/herbes-de-provence/</g:link>
+<g:image_link>https://arcanoespecias.com/img/herbes-de-provence.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>garam-masala-clasico</g:id>
+<g:title>Garam Masala Clásico</g:title>
+<g:description>Mezcla cálida de la India que suelta notas penetrantes de cardamomo, clavo y canela en legumbres y guisos.</g:description>
+<g:link>https://arcanoespecias.com/blends/garam-masala-clasico/</g:link>
+<g:image_link>https://arcanoespecias.com/img/garam-masala-clasico.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>tandoori-premium</g:id>
+<g:title>Tandoori Premium</g:title>
+<g:description>Mezcla vibrante de cúrcuma, comino, ajo y pimentón. Granos de pulcritud absoluta que aportan un color dorado deslumbrante y sabor exótico.</g:description>
+<g:link>https://arcanoespecias.com/blends/tandoori-premium/</g:link>
+<g:image_link>https://arcanoespecias.com/img/tandoori-premium.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
@@ -568,111 +288,139 @@
 <g:id>ras-el-hanout</g:id>
 <g:title>Ras el Hanout</g:title>
 <g:description>Joya ancestral del norte de África que aporta elegancia, color cálido y perfume exótico a guisos y arroces.</g:description>
-<g:link>https://arcanoespecias.com/p/ras-el-hanout.html</g:link>
+<g:link>https://arcanoespecias.com/blends/ras-el-hanout/</g:link>
 <g:image_link>https://arcanoespecias.com/img/ras-el-hanout.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Marruecos</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>respirar</g:id>
-<g:title>Respirar</g:title>
-<g:description>Blend balsámico con notas de eucalipto y menta que brinda frescura inmediata en garganta y vías respiratorias.</g:description>
-<g:link>https://arcanoespecias.com/p/respirar.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/respirar.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>sabor-paisa</g:id>
-<g:title>Sabor Paisa</g:title>
-<g:description>Inspiración regional con comino, cilantro y pimentón. Granos seleccionados y secados a la perfección para llenar tus platillos de tradición y sazón.</g:description>
-<g:link>https://arcanoespecias.com/p/sabor-paisa.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/sabor-paisa.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>shichimi-arcano</g:id>
-<g:title>Shichimi Arcano</g:title>
-<g:description>Siete aromas tradicionales con ají, sésamo, naranja y alga nori. Un viaje sensorial con notas cítricas, picantes y una armonía inolvidable.</g:description>
-<g:link>https://arcanoespecias.com/p/shichimi-arcano.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/shichimi-arcano.webp</g:image_link>
+<g:id>shawarma</g:id>
+<g:title>Shawarma</g:title>
+<g:description>Perfume oriente con comino, canela, cardamomo y ajo. Equilibrado tueste y secado que otorgan un bouquet envolvente e intenso a tus preparaciones.</g:description>
+<g:link>https://arcanoespecias.com/blends/shawarma/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Japón</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-</item>
-<item>
-<g:id>smokehouse-classic</g:id>
-<g:title>Smokehouse Classic</g:title>
-<g:description>Ahumado clásico de pimentón, mostaza, ajo y comino. Selección maestra de ARCANO para envolver tus asados en notas de leña y buen gusto.</g:description>
-<g:link>https://arcanoespecias.com/p/smokehouse-classic.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/smokehouse-classic.webp</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>sobremesa-arcano</g:id>
-<g:title>Sobremesa Arcano</g:title>
-<g:description>Mezcla digestiva con anís estrellado, hinojo, jengibre y cardamomo. Selección botánica que armoniza la digestión con confort y buen gusto.</g:description>
-<g:link>https://arcanoespecias.com/p/sobremesa-arcano.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/sobremesa-arcano.webp</g:image_link>
+<g:id>zaatar</g:id>
+<g:title>Za'atar</g:title>
+<g:description>Blend herbal de tomillo, sésamo y sumac con matiz cítrico y crujiente para rociar sobre panes, labneh y vegetales.</g:description>
+<g:link>https://arcanoespecias.com/blends/zaatar/</g:link>
+<g:image_link>https://arcanoespecias.com/img/zaatar.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>spiced-mojito</g:id>
-<g:title>Spiced Mojito</g:title>
-<g:description>Mezcla de especias ligeras, menta seca y cítricos que aporta un giro aromático a cócteles refrescantes.</g:description>
-<g:link>https://arcanoespecias.com/p/spiced-mojito.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/spiced-mojito.webp</g:image_link>
+<g:id>baharat</g:id>
+<g:title>Baharat</g:title>
+<g:description>Compleja mezcla del Medio Oriente con notas dulzonas y toque especiado ideal para cordero, arroces y vegetales.</g:description>
+<g:link>https://arcanoespecias.com/blends/baharat/</g:link>
+<g:image_link>https://arcanoespecias.com/img/baharat.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>tandoori-premium</g:id>
-<g:title>Tandoori Premium</g:title>
-<g:description>Mezcla vibrante de cúrcuma, comino, ajo y pimentón. Granos de pulcritud absoluta que aportan un color dorado deslumbrante y sabor exótico.</g:description>
-<g:link>https://arcanoespecias.com/p/tandoori-premium.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/tandoori-premium.webp</g:image_link>
+<g:id>italiano-clasico</g:id>
+<g:title>Italiano Clásico</g:title>
+<g:description>Esencia mediterránea de albahaca, orégano, tomillo y ajo. Proceso de secado cuidadoso que preserva el aroma de la huerta e inspira buen gusto.</g:description>
+<g:link>https://arcanoespecias.com/blends/italiano-clasico/</g:link>
+<g:image_link>https://arcanoespecias.com/img/italiano-clasico.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>toscana-grill</g:id>
+<g:title>Toscana Grill</g:title>
+<g:description>Cultura toscana con romero, tomillo y ajo seleccionado. Mezcla herbal de perfil refinado para otorgar distinción y un perfume exquisito a tus cortes.</g:description>
+<g:link>https://arcanoespecias.com/blends/toscana-grill/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>pizza-napoletana</g:id>
+<g:title>Pizza Napoletana</g:title>
+<g:description>Sabor napolitano auténtico con orégano, albahaca y ajo. Secado artesanal que despierta la frescura y la devoción por la buena cocina.</g:description>
+<g:link>https://arcanoespecias.com/blends/pizza-napoletana/</g:link>
+<g:image_link>https://arcanoespecias.com/img/pizza-napoletana.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>chinese-five</g:id>
+<g:title>Chinese Five</g:title>
+<g:description>Armonía ancestral con anís estrellado, canela, hinojo y clavo. Equilibrada selección oriental para un bouquet dulce, especiado y enigmático.</g:description>
+<g:link>https://arcanoespecias.com/blends/chinese-five/</g:link>
+<g:image_link>https://arcanoespecias.com/img/chinese-five.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>pekin-roast</g:id>
+<g:title>Pekín Roast</g:title>
+<g:description>Estilo imperial con anís estrellado, jengibre y canela. Proceso cuidadoso que imparte un aroma deslumbrante y una sutileza gastronómica superior.</g:description>
+<g:link>https://arcanoespecias.com/blends/pekin-roast/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>sichuan-fire</g:id>
+<g:title>Sichuan Fire</g:title>
+<g:description>Fuego refinado con pimienta blanca, ají molido y jengibre. Botánicos seleccionados para brindar una calidez punzante, envolvente y placentera.</g:description>
+<g:link>https://arcanoespecias.com/blends/sichuan-fire/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
@@ -680,27 +428,503 @@
 <g:id>tokyo-yakitori</g:id>
 <g:title>Tokyo Yakitori</g:title>
 <g:description>Perfil oriental umami con notas aromáticas que caramelizan al fuego dando brillo apetitoso a brochetas.</g:description>
-<g:link>https://arcanoespecias.com/p/tokyo-yakitori.html</g:link>
+<g:link>https://arcanoespecias.com/blends/tokyo-yakitori/</g:link>
 <g:image_link>https://arcanoespecias.com/img/tokyo-yakitori.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Japón</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>vermu-botanico</g:id>
-<g:title>Vermú Botánico</g:title>
-<g:description>Esencia de vermú con cardamomo, canela, clavo y anís estrellado. Botánicos de noble origen para una infusión coctelera rica y sofisticada.</g:description>
-<g:link>https://arcanoespecias.com/p/vermu-botanico.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/vermu-botanico.webp</g:image_link>
+<g:id>shichimi-arcano</g:id>
+<g:title>Shichimi Arcano</g:title>
+<g:description>Siete aromas tradicionales con ají, sésamo, naranja y alga nori. Un viaje sensorial con notas cítricas, picantes y una armonía inolvidable.</g:description>
+<g:link>https://arcanoespecias.com/blends/shichimi-arcano/</g:link>
+<g:image_link>https://arcanoespecias.com/img/shichimi-arcano.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>korean-bbq</g:id>
+<g:title>Korean BBQ</g:title>
+<g:description>Combinación dulce, salada y picante de perfil umami irresistible para marinar cortes finos de carne y salteados.</g:description>
+<g:link>https://arcanoespecias.com/blends/korean-bbq/</g:link>
+<g:image_link>https://arcanoespecias.com/img/korean-bbq.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>seoul-fire</g:id>
+<g:title>Seoul Fire</g:title>
+<g:description>Fuerza de Seúl con ají, jengibre, ajo y sésamo. Tueste perfecto y secado riguroso que regala un picor brillante, lleno de vida y elegancia.</g:description>
+<g:link>https://arcanoespecias.com/blends/seoul-fire/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>thai-lemongrass</g:id>
+<g:title>Thai Lemongrass</g:title>
+<g:description>Frescura del sudeste asiático con lemongrass, jengibre y limón. Selección herbal de aroma vibrante que llena de luz y sol cada preparación.</g:description>
+<g:link>https://arcanoespecias.com/blends/thai-lemongrass/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>bangkok-curry</g:id>
+<g:title>Bangkok Curry</g:title>
+<g:description>Fusiona notas cítricas, picantes y dulzonas que envuelven salteados, sopas y curries de leche de coco.</g:description>
+<g:link>https://arcanoespecias.com/blends/bangkok-curry/</g:link>
+<g:image_link>https://arcanoespecias.com/img/bangkok-curry.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>vietnam-street</g:id>
+<g:title>Vietnam Street</g:title>
+<g:description>Aroma callejero de Vietnam con anís estrellado, canela y jengibre. Perfume profundo y cálido que acaricia los sentidos con delicado confort.</g:description>
+<g:link>https://arcanoespecias.com/blends/vietnam-street/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>balkan-grill</g:id>
+<g:title>Balkan Grill</g:title>
+<g:description>Tradición de los Balcanes con ajo, pimentón ahumado y orégano. Secado natural para brindar una experiencia rústica, aromática y llena de vigor.</g:description>
+<g:link>https://arcanoespecias.com/blends/balkan-grill/</g:link>
+<g:image_link>https://arcanoespecias.com/img/balkan-grill.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>polish-smoke</g:id>
+<g:title>Polish Smoke</g:title>
+<g:description>Aroma ahumado polaco con pimentón, mejorana y ajo. Combinación meticulosa para lograr un bouquet reconfortante, cálido y lleno de placer.</g:description>
+<g:link>https://arcanoespecias.com/blends/polish-smoke/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>bavarian-roast</g:id>
+<g:title>Bavarian Roast</g:title>
+<g:description>Toque bávaro con mejorana, mostaza, comino y ajo. Botánicos cuidadosamente tratados para impartir un sabor especiado, noble y equilibrado.</g:description>
+<g:link>https://arcanoespecias.com/blends/bavarian-roast/</g:link>
+<g:image_link>https://arcanoespecias.com/img/bavarian-roast.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>nordic-fish</g:id>
+<g:title>Nordic Fish</g:title>
+<g:description>Carácter nórdico con eneldo, limón deshidratado e hinojo. Selección refinada de notas cítricas e hierbales para realzar la sutileza del mar.</g:description>
+<g:link>https://arcanoespecias.com/blends/nordic-fish/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>dutch-spice-mix</g:id>
+<g:title>Dutch Spice Mix</g:title>
+<g:description>Tradición holandesa con mostaza, hinojo, tomillo y ajo. Granos seleccionados que liberan un perfume especiado y un gusto complejo y distinguido.</g:description>
+<g:link>https://arcanoespecias.com/blends/dutch-spice-mix/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>portuguese-seafood</g:id>
+<g:title>Portuguese Seafood</g:title>
+<g:description>Perfil atlántico con pimentón ahumado, limón y cilantro. Delicada integración de frescos botánicos que elevan mariscos con distinción.</g:description>
+<g:link>https://arcanoespecias.com/blends/portuguese-seafood/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>mediterranean-citrus</g:id>
+<g:title>Mediterranean Citrus</g:title>
+<g:description>Sol mediterráneo con limón deshidratado, orégano y romero. Cítricos y hierbas secadas con esmero para brindar frescura e intenso bienestar.</g:description>
+<g:link>https://arcanoespecias.com/blends/mediterranean-citrus/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>memphis-bbq</g:id>
+<g:title>Memphis BBQ</g:title>
+<g:description>Sello de Memphis con ajo, mostaza, comino y sésamo. Secado e integración precisa para otorgar dulzura, especias y un perfume irresistible.</g:description>
+<g:link>https://arcanoespecias.com/blends/memphis-bbq/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>smokehouse-classic</g:id>
+<g:title>Smokehouse Classic</g:title>
+<g:description>Ahumado clásico de pimentón, mostaza, ajo y comino. Selección maestra de ARCANO para envolver tus asados en notas de leña y buen gusto.</g:description>
+<g:link>https://arcanoespecias.com/blends/smokehouse-classic/</g:link>
+<g:image_link>https://arcanoespecias.com/img/smokehouse-classic.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>bourbon-bbq</g:id>
+<g:title>Bourbon BBQ</g:title>
+<g:description>Toque ahumado y dulce con pimentón, canela, mostaza y ajo. Un matiz sofisticado y cálido diseñado para deslumbrar en la parrilla.</g:description>
+<g:link>https://arcanoespecias.com/blends/bourbon-bbq/</g:link>
+<g:image_link>https://arcanoespecias.com/img/bourbon-bbq.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>andean-fire</g:id>
+<g:title>Andean Fire</g:title>
+<g:description>Fuego andino con ají molido, comino, ajo y orégano. Selección de especias autóctonas que transmiten calidez, fuerza y placer culinario.</g:description>
+<g:link>https://arcanoespecias.com/blends/andean-fire/</g:link>
+<g:image_link>https://arcanoespecias.com/img/andean-fire.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>caribbean-citrus</g:id>
+<g:title>Caribbean Citrus</g:title>
+<g:description>Frescura caribeña con limón, manzana deshidratada y tomillo. Contraste de dulzor y acidez secados con esmero para un paladar exigente.</g:description>
+<g:link>https://arcanoespecias.com/blends/caribbean-citrus/</g:link>
+<g:image_link>https://arcanoespecias.com/img/caribbean-citrus.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>amazonia-verde</g:id>
+<g:title>Amazonia Verde</g:title>
+<g:description>Blend herbal y vibrante de notas silvestres que aporta un matiz fresco y verde a marinados y platos ligeros.</g:description>
+<g:link>https://arcanoespecias.com/blends/amazonia-verde/</g:link>
+<g:image_link>https://arcanoespecias.com/img/amazonia-verde.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>noche-serena</g:id>
+<g:title>Noche Serena</g:title>
+<g:description>Infusión herbal de perfil sutil que mezcla flores blancas y hojas aromáticas para aligerar la mente al descansar.</g:description>
+<g:link>https://arcanoespecias.com/blends/noche-serena/</g:link>
+<g:image_link>https://arcanoespecias.com/img/noche-serena.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>dulces-suenos</g:id>
+<g:title>Dulces Sueños</g:title>
+<g:description>Infusión herbal con manzanilla, toronjil y flores suaves pensada para calmar sentidos y lograr un buen descanso.</g:description>
+<g:link>https://arcanoespecias.com/blends/dulces-suenos/</g:link>
+<g:image_link>https://arcanoespecias.com/img/dulces-suenos.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>sobremesa-arcano</g:id>
+<g:title>Sobremesa Arcano</g:title>
+<g:description>Mezcla digestiva con anís estrellado, hinojo, jengibre y cardamomo. Selección botánica que armoniza la digestión con confort y buen gusto.</g:description>
+<g:link>https://arcanoespecias.com/blends/sobremesa-arcano/</g:link>
+<g:image_link>https://arcanoespecias.com/img/sobremesa-arcano.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>energia-andina</g:id>
+<g:title>Energía Andina</g:title>
+<g:description>Selección de hierbas y especias estimulantes que aportan frescura, vitalidad y un perfume reconfortante.</g:description>
+<g:link>https://arcanoespecias.com/blends/energia-andina/</g:link>
+<g:image_link>https://arcanoespecias.com/img/energia-andina.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>chai-imperial</g:id>
+<g:title>Chai Imperial</g:title>
+<g:description>Té negro especiado con canela, cardamomo y jengibre de aroma estimulante, perfecto solo o con leche.</g:description>
+<g:link>https://arcanoespecias.com/blends/chai-imperial/</g:link>
+<g:image_link>https://arcanoespecias.com/img/chai-imperial.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>invierno-nordico</g:id>
+<g:title>Invierno Nórdico</g:title>
+<g:description>Mezcla reconfortante de frutos secos, especias dulces y cítricos que ofrece una taza cálida y envolvente.</g:description>
+<g:link>https://arcanoespecias.com/blends/invierno-nordico/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>citrus-balance</g:id>
+<g:title>Citrus Balance</g:title>
+<g:description>Equilibrio cítrico con manzana, limón, jengibre y cardamomo. Secado perfecto que conjuga notas refrescantes y especiadas para tu deleite.</g:description>
+<g:link>https://arcanoespecias.com/blends/citrus-balance/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>respirar</g:id>
+<g:title>Respirar</g:title>
+<g:description>Blend balsámico con notas de eucalipto y menta que brinda frescura inmediata en garganta y vías respiratorias.</g:description>
+<g:link>https://arcanoespecias.com/blends/respirar/</g:link>
+<g:image_link>https://arcanoespecias.com/img/respirar.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>mistica-oriental</g:id>
+<g:title>Mística Oriental</g:title>
+<g:description>Mística de Oriente con cardamomo, canela, anís y clavo. Una mezcla celestial que llena la estancia de perfume, calidez y meditación.</g:description>
+<g:link>https://arcanoespecias.com/blends/mistica-oriental/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>golden-wellness</g:id>
+<g:title>Golden Wellness</g:title>
+<g:description>Bienestar dorado con cúrcuma, jengibre, canela y pimienta. Selección de alta calidad con propiedades revitalizantes y sabor reconfortante.</g:description>
+<g:link>https://arcanoespecias.com/blends/golden-wellness/</g:link>
+<g:image_link>https://arcanoespecias.com/img/golden-wellness.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>manzana-ginger</g:id>
+<g:title>Manzana Ginger</g:title>
+<g:description>Pedazos de manzana con el picor fresco del jengibre en un perfil dulzón que reconforta la garganta.</g:description>
+<g:link>https://arcanoespecias.com/blends/manzana-ginger/</g:link>
+<g:image_link>https://arcanoespecias.com/icons/logo.png</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>gin-botanicals-classic</g:id>
+<g:title>Gin Botanicals Classic</g:title>
+<g:description>Botánicos de autor para ginebra con enebro, cardamomo y limón. Selección premium que potencia el aroma y la elegancia de tu cóctel.</g:description>
+<g:link>https://arcanoespecias.com/blends/gin-botanicals-classic/</g:link>
+<g:image_link>https://arcanoespecias.com/img/gin-botanicals-classic.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>citrus-gin</g:id>
+<g:title>Citrus Gin</g:title>
+<g:description>Botánicos cítricos y bayas de enebro que realzan el perfil herbal de la ginebra con un perfume vibrante.</g:description>
+<g:link>https://arcanoespecias.com/blends/citrus-gin/</g:link>
+<g:image_link>https://arcanoespecias.com/img/citrus-gin.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>caribbean-rum</g:id>
+<g:title>Caribbean Rum</g:title>
+<g:description>Selección de especias dulces y notas cítricas tostadas formulada para infusionar complejidad en tragos de ron.</g:description>
+<g:link>https://arcanoespecias.com/blends/caribbean-rum/</g:link>
+<g:image_link>https://arcanoespecias.com/img/caribbean-rum.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>spiced-mojito</g:id>
+<g:title>Spiced Mojito</g:title>
+<g:description>Mezcla de especias ligeras, menta seca y cítricos que aporta un giro aromático a cócteles refrescantes.</g:description>
+<g:link>https://arcanoespecias.com/blends/spiced-mojito/</g:link>
+<g:image_link>https://arcanoespecias.com/img/spiced-mojito.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>moscow-mule</g:id>
+<g:title>Moscow Mule</g:title>
+<g:description>Mezcla para Moscow Mule con jengibre, limón, pimienta rosa y cardamomo. Perfume picante y citrico que despierta la coctelería de autor.</g:description>
+<g:link>https://arcanoespecias.com/blends/moscow-mule/</g:link>
+<g:image_link>https://arcanoespecias.com/img/moscow-mule.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Cocteleria</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
@@ -708,28 +932,112 @@
 <g:id>whisky-oak-spice</g:id>
 <g:title>Whisky Oak Spice</g:title>
 <g:description>Botánicos de madera y especias ahumadas diseñados para potenciar el carácter envejecido del whisky.</g:description>
-<g:link>https://arcanoespecias.com/p/whisky-oak-spice.html</g:link>
+<g:link>https://arcanoespecias.com/blends/whisky-oak-spice/</g:link>
 <g:image_link>https://arcanoespecias.com/img/whisky-oak-spice.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
 <g:product_type>Cocteleria</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 <item>
-<g:id>za-atar</g:id>
-<g:title>Za'atar</g:title>
-<g:description>Blend herbal de tomillo, sésamo y sumac con matiz cítrico y crujiente para rociar sobre panes, labneh y vegetales.</g:description>
-<g:link>https://arcanoespecias.com/p/za-atar.html</g:link>
-<g:image_link>https://arcanoespecias.com/img/zaatar.webp</g:image_link>
+<g:id>vermu-botanico</g:id>
+<g:title>Vermú Botánico</g:title>
+<g:description>Esencia de vermú con cardamomo, canela, clavo y anís estrellado. Botánicos de noble origen para una infusión coctelera rica y sofisticada.</g:description>
+<g:link>https://arcanoespecias.com/blends/vermu-botanico/</g:link>
+<g:image_link>https://arcanoespecias.com/img/vermu-botanico.webp</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco > Food Items > Cooking &amp; Baking Ingredients > Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas &amp;middot; Líbano</g:product_type>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Cocteleria</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>arcano-signature</g:id>
+<g:title>Arcano Signature</g:title>
+<g:description>Botánicos de alta selección que liberan aceites esenciales para perfumar copas, cócteles e infusiones de autor.</g:description>
+<g:link>https://arcanoespecias.com/blends/arcano-signature/</g:link>
+<g:image_link>https://arcanoespecias.com/img/arcano-signature.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>noche-azul</g:id>
+<g:title>Noche Azul</g:title>
+<g:description>Toronjil, manzanilla y lavanda con clitoreana, la flor que tiñe la taza de un azul natural relajante.</g:description>
+<g:link>https://arcanoespecias.com/blends/noche-azul/</g:link>
+<g:image_link>https://arcanoespecias.com/img/noche-azul.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>curry-madras</g:id>
+<g:title>Curry Madrás</g:title>
+<g:description>Espectáculo sensorial de especias doradas aromáticas que envuelven curries en un baño de textura sedosa.</g:description>
+<g:link>https://arcanoespecias.com/blends/curry-madras/</g:link>
+<g:image_link>https://arcanoespecias.com/img/curry-madras.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>piri-piri</g:id>
+<g:title>Piri Piri</g:title>
+<g:description>Toque cítrico-picante y color vivo que despierta tus sentidos y realza la jugosidad de aves y pescados.</g:description>
+<g:link>https://arcanoespecias.com/blends/piri-piri/</g:link>
+<g:image_link>https://arcanoespecias.com/img/piri-piri.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>berbere</g:id>
+<g:title>Berbere</g:title>
+<g:description>Pasión picante etíope de tono rojizo que añade una capa de calor estructurado y aromas tostados a legumbres.</g:description>
+<g:link>https://arcanoespecias.com/blends/berbere/</g:link>
+<g:image_link>https://arcanoespecias.com/img/berbere.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+</item>
+<item>
+<g:id>costela-brasileira</g:id>
+<g:title>Costela Brasileira</g:title>
+<g:description>Blend especiado y ahumado de cuerpo denso que penetra cortes de carne en cocciones lentas creando jugosidad.</g:description>
+<g:link>https://arcanoespecias.com/blends/costela-brasileira/</g:link>
+<g:image_link>https://arcanoespecias.com/img/costela-brasileira.webp</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Comidas</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 </item>
 </channel>
