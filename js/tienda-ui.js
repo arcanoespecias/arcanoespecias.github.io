@@ -270,9 +270,7 @@ function showOrderForm() {
   h += '</div>';
   // QR
   var config = getTiendaConfig();
-  if (config && config.qrPagoImage) {
-    h += '<div class="qr-section"><p>Forma de pago</p><img src="' + config.qrPagoImage + '" alt="QR Pago"><small>Envía el comprobante por WhatsApp</small></div>';
-  }
+  // QR removido del checkout — el admin coordina el pago por WhatsApp
   body.innerHTML = h;
   body.scrollTop = 0;
   _cartSetFooterStep(2);
