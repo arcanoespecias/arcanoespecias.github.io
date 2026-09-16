@@ -181,65 +181,116 @@ function arcanoDebugEnvio(ciudadDestino, items, subtotal) {
 /* === FUNCIÓN PARA MOSTRAR EN EL DOM (reemplaza a updateShippingInfo) === */
 function arcanoActualizarShippingInfo() {
   var ciudadEl = document.getElementById('o-ciudad');
-  var infoEl = document.getElementById('shipping-info');
-  if (!infoEl) return;
-  var ciudad = ciudadEl ? ciudadEl.value : '';
+  if (!ciudadEl) return;
+  var ciudad = ciudadEl.value;
   var total = getCartTotal();
   var items = cart || [];
 
-  if (!ciudad) {
-    infoEl.style.display = 'none';
-    infoEl.innerHTML = '';
-    _arcanoActualizarTotalDrawer(total);
-    return;
-  }
-
-  infoEl.style.display = 'block';
-  var r = arcanoCalcularEnvio(ciudad, items, total);
-
-  if (!r.exito) {
-    infoEl.style.background = 'rgba(231,76,60,0.08)';
-    infoEl.style.border = '1px solid rgba(231,76,60,0.2)';
-    infoEl.style.color = '#c7553f';
-    infoEl.style.padding = '12px 16px';
-    infoEl.style.borderRadius = '8px';
-    infoEl.style.fontSize = '0.88rem';
-    infoEl.style.margin = '12px 0';
-    infoEl.innerHTML = '⚠ ' + r.mensaje;
-    _arcanoActualizarTotalDrawer(total);
-    return;
-  }
-
-  if (r.gratis) {
-    infoEl.style.background = 'rgba(107,142,78,0.15)';
-    infoEl.style.border = '1px solid rgba(107,142,78,0.3)';
-    infoEl.style.color = '#6b8e4e';
-    infoEl.style.padding = '12px 16px';
-    infoEl.style.borderRadius = '8px';
-    infoEl.style.fontSize = '0.88rem';
-    infoEl.style.margin = '12px 0';
-    infoEl.innerHTML = '✓ <strong>¡Envío gratis!</strong> Tu pedido supera los $60.000, el envío por Medellín es sin costo.';
-  } else {
-    infoEl.style.background = 'rgba(232,184,75,0.1)';
-    infoEl.style.border = '1px solid rgba(232,184,75,0.3)';
-    infoEl.style.color = '#c9a84c';
-    infoEl.style.padding = '12px 16px';
-    infoEl.style.borderRadius = '8px';
-    infoEl.style.fontSize = '0.88rem';
-    infoEl.style.margin = '12px 0';
-    var html = '<strong>Envío: $' + r.costo.toLocaleString('es-CO') + '</strong> (Servientrega, ' + Math.ceil(r.pesoGramos / 1000) + 'kg)';
-    if (r.mensaje) html += '<br><span style="font-size:0.82rem;opacity:0.9">' + r.mensaje + '</span>';
-    infoEl.innerHTML = html;
-  }
-
-  _arcanoActualizarTotalDrawer(total, r.gratis ? 0 : r.costo);
+  // Actualiza siempre subtotal y total
+  arcanoActualizarResumenCarrito(ciudad, items, total);
 }
 
-/* === ACTUALIZA EL TOTAL DEL DRAWER PARA INCLUIR EL ENVÍO === */
+/* === FUNCIÓN UNIFICADA: actualiza Subtotal + Envío + Total === */
+function arcanoActualizarResumenCarrito(ciudad, items, subtotal) {
+  var subtotalEl = document.getElementById('cart-drawer-subtotal-val');
+  var envioLine  = document.getElementById('cart-drawer-envio-line');
+  var envioVal    = document.getElementById('cart-drawer-envio-val');
+  var totalEl     = document.getElementById('cart-drawer-total-val');
+  var infoEl       = document.getElementById('shipping-info');
+
+  // Subtotal
+  if (subtotalEl) subtotalEl.textContent = '$' + subtotal.toLocaleString('es-CO');
+
+  // Cálculo de envío
+  var envioCosto = 0;
+  var envioGratis = false;
+  var envioExito = false;
+  var envioMensaje = null;
+  var envioCategoria = null;
+  var envioPesoGramos = 0;
+
+  if (ciudad) {
+    var r = arcanoCalcularEnvio(ciudad, items, subtotal);
+    envioExito = r.exito;
+    envioGratis = r.gratis;
+    envioCosto = r.gratis ? 0 : (r.exito ? r.costo : 0);
+    envioMensaje = r.mensaje;
+    envioCategoria = r.categoria;
+    envioPesoGramos = r.pesoGramos || 0;
+  }
+
+  // Bloque de Envío (debajo de Subtotal)
+  if (!envioLine) {
+    // No estamos en el drawer con líneas (puede ser paso 2 sin el drawer visible)
+  } else if (!ciudad) {
+    envioLine.style.display = 'none';
+  } else {
+    envioLine.style.display = 'flex';
+    if (envioGratis) {
+      envioVal.innerHTML = '<span class="envio-gratis">Gratis</span>';
+    } else if (envioExito) {
+      envioVal.innerHTML = '<span class="envio-costo">$' + envioCosto.toLocaleString('es-CO') + '</span>';
+    } else {
+      envioVal.innerHTML = '<span class="envio-calculando">Sin cobertura</span>';
+    }
+  }
+
+  // Total
+  if (totalEl) {
+    var totalFinal = subtotal + envioCosto;
+    totalEl.textContent = '$' + totalFinal.toLocaleString('es-CO');
+  }
+
+  // Bloque promo (envío gratis / te faltan $X) — solo si existe
+  if (infoEl) {
+    if (!ciudad) {
+      infoEl.style.display = 'none';
+      infoEl.innerHTML = '';
+    } else if (!envioExito) {
+      infoEl.style.display = 'block';
+      infoEl.style.background = 'rgba(231,76,60,0.08)';
+      infoEl.style.border = '1px solid rgba(231,76,60,0.2)';
+      infoEl.style.color = '#c7553f';
+      infoEl.style.padding = '10px 14px';
+      infoEl.style.borderRadius = '8px';
+      infoEl.style.fontSize = '0.85rem';
+      infoEl.style.margin = '8px 0 0';
+      infoEl.innerHTML = '⚠ Sin cobertura para ' + ciudad + '. Contáctanos para coordinar.';
+    } else if (envioGratis) {
+      infoEl.style.display = 'block';
+      infoEl.style.background = 'rgba(107,142,78,0.15)';
+      infoEl.style.border = '1px solid rgba(107,142,78,0.3)';
+      infoEl.style.color = '#6b8e4e';
+      infoEl.style.padding = '10px 14px';
+      infoEl.style.borderRadius = '8px';
+      infoEl.style.fontSize = '0.85rem';
+      infoEl.style.margin = '8px 0 0';
+      infoEl.innerHTML = '✓ <strong>¡Envío gratis!</strong> Tu pedido supera el mínimo para envío gratis en ' + ciudad + '.';
+    } else if (envioMensaje) {
+      infoEl.style.display = 'block';
+      infoEl.style.background = 'rgba(232,184,75,0.1)';
+      infoEl.style.border = '1px solid rgba(232,184,75,0.3)';
+      infoEl.style.color = '#c9a84c';
+      infoEl.style.padding = '10px 14px';
+      infoEl.style.borderRadius = '8px';
+      infoEl.style.fontSize = '0.85rem';
+      infoEl.style.margin = '8px 0 0';
+      infoEl.innerHTML = envioMensaje;
+    } else {
+      infoEl.style.display = 'none';
+      infoEl.innerHTML = '';
+    }
+  }
+}
+
+/* === Helper: actualiza solo Subtotal + Total cuando no hay ciudad elegida === */
 function _arcanoActualizarTotalDrawer(subtotal, envio) {
+  var subtotalEl = document.getElementById('cart-drawer-subtotal-val');
   var totalEl = document.getElementById('cart-drawer-total-val');
-  if (!totalEl) return;
-  var envioCosto = (typeof envio === 'number') ? envio : 0;
-  var totalFinal = subtotal + envioCosto;
-  totalEl.textContent = '$' + totalFinal.toLocaleString('es-CO');
+  if (subtotalEl) subtotalEl.textContent = '$' + subtotal.toLocaleString('es-CO');
+  if (totalEl) {
+    var envioCosto = (typeof envio === 'number') ? envio : 0;
+    var totalFinal = subtotal + envioCosto;
+    totalEl.textContent = '$' + totalFinal.toLocaleString('es-CO');
+  }
 }
