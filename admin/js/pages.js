@@ -1720,10 +1720,17 @@ const Pages = {
     h += '<div class="tabs mt-16" style="margin-bottom:0">';
     h += '<button class="tab-btn ' + (self._prodTab === 'historial' ? 'active' : '') + '" onclick="Pages._prodTab=\'historial\';App.renderPage(\'produccion\')">Historial</button>';
     h += '<button class="tab-btn ' + (self._prodTab === 'sugerencias' ? 'active' : '') + '" onclick="Pages._prodTab=\'sugerencias\';App.renderPage(\'produccion\')">Sugerencias de Producción</button>';
+    h += '<button class="tab-btn ' + (self._prodTab === 'making' ? 'active' : '') + '" onclick="Pages._prodTab=\'making\';App.renderPage(\'produccion\')">🎮 Making Blends</button>';
     h += '</div>';
 
     if (self._prodTab === 'sugerencias') {
       h += self._renderProduccionSugerencias();
+      container.innerHTML = h;
+      return;
+    }
+
+    if (self._prodTab === 'making') {
+      h += self._renderMakingBlends();
       container.innerHTML = h;
       return;
     }
@@ -10568,3 +10575,568 @@ function _arcanoEstadoPedidoLabel(estado) {
   var m = { nuevo: 'Nuevo', confirmado: 'Confirmado', enviado: 'Enviado', entregado: 'Entregado', cancelado: 'Cancelado' };
   return m[estado] || (estado || '?');
 }
+
+/* ============================================================
+   MAKING BLENDS — Panel interactivo de producción
+   Integrado en el admin, usa datos de ArcanoDB
+   ============================================================ */
+
+// Estado del "videojuego"
+Pages._mb = {
+  step: 1,
+  selectedBlend: null,
+  size: 'chico',
+  qty: 10,
+  recipe: [],
+  addedSpices: {},
+  totalWeight: 0,
+  targetWeight: 0,
+  currentSpiceIdx: null
+};
+
+Pages._renderMakingBlends = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blends = ArcanoDB.getBlends();
+  // Solo blends con ingredientes definidos
+  var blendsConIng = blends.filter(function(b) {
+    return b.ingredientes && b.ingredientes.length > 0;
+  });
+
+  var h = '<div class="mb-container">';
+
+  // Step indicator
+  h += '<div class="mb-steps-indicator">';
+  h += '<div class="mb-step-dot ' + (mb.step === 1 ? 'active' : (mb.step > 1 ? 'done' : '')) + '">1</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 2 ? 'active' : (mb.step > 2 ? 'done' : '')) + '">2</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 3 ? 'active' : (mb.step > 3 ? 'done' : '')) + '">3</div><div class="mb-step-line"></div>';
+  h += '<div class="mb-step-dot ' + (mb.step === 4 ? 'active' : '') + '">4</div>';
+  h += '</div>';
+
+  if (mb.step === 1) {
+    // ========== STEP 1: Selección de blend ==========
+    h += '<div class="mb-section">';
+    h += '<h3 class="mb-section-title">Elegí el blend a producir</h3>';
+    h += '<input type="text" class="input mb-search" id="mb-search" placeholder="🔍 Buscar blend..." oninput="Pages._mbFilterBlends()">';
+    h += '<div class="mb-blend-grid" id="mb-blend-grid">';
+    for (var i = 0; i < blendsConIng.length; i++) {
+      var b = blendsConIng[i];
+      h += self._mbBlendCard(b);
+    }
+    h += '</div>';
+    if (blendsConIng.length === 0) {
+      h += '<p class="text-muted text-center">No hay blends con ingredientes definidos. Primero editá un blend y agregale ingredientes.</p>';
+    }
+    h += '</div>';
+  }
+
+  if (mb.step === 2) {
+    h += self._mbRenderStep2();
+  }
+
+  if (mb.step === 3) {
+    h += self._mbRenderStep3();
+  }
+
+  if (mb.step === 4) {
+    h += self._mbRenderStep4();
+  }
+
+  h += '</div>';
+  return h;
+};
+
+Pages._mbBlendCard = function(b) {
+  var numIng = (b.ingredientes || []).length;
+  var stockChico = b.stockChico || 0;
+  var stockGrande = b.stockGrande || 0;
+  return '<div class="mb-blend-card" data-blend-name="' + esc((b.nombre || '').toLowerCase()) + '" onclick="Pages._mbSelectBlend(' + b.id + ')">' +
+    '<div class="mb-blend-name">' + esc(b.nombre) + '</div>' +
+    '<div class="mb-blend-cat">' + esc(b.categoria || (b.categorias && b.categorias[0]) || '') + '</div>' +
+    '<div class="mb-blend-meta">' +
+      '<span>' + numIng + ' especias</span>' +
+      '<span>Stock: ' + stockChico + ' ch / ' + stockGrande + ' gr</span>' +
+    '</div>' +
+  '</div>';
+};
+
+Pages._mbFilterBlends = function() {
+  var q = (document.getElementById('mb-search').value || '').toLowerCase();
+  var cards = document.querySelectorAll('#mb-blend-grid .mb-blend-card');
+  for (var i = 0; i < cards.length; i++) {
+    var name = cards[i].dataset.blendName || '';
+    cards[i].style.display = name.indexOf(q) !== -1 ? '' : 'none';
+  }
+};
+
+Pages._mbSelectBlend = function(blendId) {
+  var self = Pages;
+  var blend = ArcanoDB.getBlend(blendId);
+  if (!blend) return;
+  self._mb.selectedBlend = blend;
+  self._mb.step = 2;
+  App.renderPage('produccion');
+};
+
+Pages._mbRenderStep2 = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  if (!blend) { mb.step = 1; return self._renderMakingBlends(); }
+
+  var size = mb.size;
+  var qty = mb.qty;
+
+  // Peso por frasco
+  var pesoFrasco = 0;
+  var ingredientes = blend.ingredientes || [];
+  for (var i = 0; i < ingredientes.length; i++) {
+    var ing = ingredientes[i];
+    pesoFrasco += size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+  }
+  var pesoTotal = pesoFrasco * qty;
+
+  // Stock disponible de cada insumo
+  var db = ArcanoDB.getDB();
+  var envases = db.stockEnvases || { chico: 0, grande: 0 };
+  var bolsas = db.stockBolsas || { chico: 0, grande: 0 };
+  var cintas = db.stockCintas || 0;
+  var stk = null;
+  var stkKeys = Object.keys(db.stickers || {});
+  for (var j = 0; j < stkKeys.length; j++) {
+    if (db.stickers[stkKeys[j]].nombre === blend.nombre) { stk = db.stickers[stkKeys[j]]; break; }
+  }
+  var stkStock = stk ? (size === 'grande' ? (stk.stockGrande || 0) : (stk.stockChico || 0)) : 0;
+  var envasesDisp = size === 'grande' ? envases.grande : envases.chico;
+  var bolsasDisp = size === 'grande' ? bolsas.grande : bolsas.chico;
+
+  // Verificar stock de cada especia
+  var especiasOk = true;
+  var especiasDetalle = [];
+  for (var k = 0; k < ingredientes.length; k++) {
+    var ing = ingredientes[k];
+    var esp = ArcanoDB.getEspecia(ing.especiaId);
+    var gpf = size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+    var needed = gpf * qty;
+    var avail = esp ? (esp.stockBolsa || 0) : 0;
+    var ok = avail >= needed;
+    if (!ok) especiasOk = false;
+    especiasDetalle.push({ nombre: esp ? esp.nombre : ing.especiaNombre, needed: needed, avail: avail, ok: ok });
+  }
+
+  var allOk = especiasOk && envasesDisp >= qty && bolsasDisp >= qty && cintas >= qty && stkStock >= qty;
+
+  var h = '<div class="mb-section">';
+  h += '<div class="mb-step-header"><h3 class="mb-section-title">Configurá la producción</h3>';
+  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(1)">← Volver</button></div>';
+
+  h += '<div class="mb-config-card">';
+  h += '<div class="mb-blend-selected"><div class="mb-blend-selected-name">' + esc(blend.nombre) + '</div><div class="mb-blend-selected-cat">' + esc(blend.categoria || '') + '</div></div>';
+
+  // Tamaño + Cantidad
+  h += '<div class="mb-config-row">';
+  h += '<div class="form-group"><label>Tamaño del frasco</label>';
+  h += '<div class="mb-size-toggle">';
+  h += '<button class="mb-size-btn ' + (size === 'chico' ? 'active' : '') + '" onclick="Pages._mbSetSize(\'chico\')"><span class="mb-size-icon">🫙</span><span class="mb-size-name">Pequeño</span><span class="mb-size-weight">' + pesoFrasco + 'g</span></button>';
+  // Recalcular peso grande si está en chico
+  var pesoFrascoGrande = 0;
+  for (var i = 0; i < ingredientes.length; i++) {
+    pesoFrascoGrande += Number(ingredientes[i].gramosGrande) || 0;
+  }
+  h += '<button class="mb-size-btn ' + (size === 'grande' ? 'active' : '') + '" onclick="Pages._mbSetSize(\'grande\')"><span class="mb-size-icon">🫙</span><span class="mb-size-name">Grande</span><span class="mb-size-weight">' + (size === 'grande' ? pesoFrasco : pesoFrascoGrande) + 'g</span></button>';
+  h += '</div></div>';
+
+  h += '<div class="form-group"><label>Cantidad de frascos</label>';
+  h += '<div class="mb-qty-selector"><button onclick="Pages._mbAdjustQty(-1)">−</button>';
+  h += '<input type="number" id="mb-qty-input" value="' + qty + '" min="1" max="500" oninput="Pages._mbOnQtyChange()">';
+  h += '<button onclick="Pages._mbAdjustQty(1)">+</button></div>';
+  h += '<div class="mb-qty-presets"><button onclick="Pages._mbSetQty(5)">5</button><button onclick="Pages._mbSetQty(10)">10</button><button onclick="Pages._mbSetQty(25)">25</button><button onclick="Pages._mbSetQty(50)">50</button><button onclick="Pages._mbSetQty(100)">100</button></div>';
+  h += '</div>';
+  h += '</div>';
+
+  // Resumen
+  h += '<div class="mb-summary">';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso por frasco</div><div class="mb-summary-value">' + pesoFrasco + 'g</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Frascos a producir</div><div class="mb-summary-value">' + qty + '</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso total</div><div class="mb-summary-value">' + pesoTotal.toLocaleString() + 'g</div></div>';
+  h += '</div>';
+
+  // Verificación de stock
+  h += '<div class="mb-stock-check">';
+  h += '<h4>Verificación de stock</h4>';
+  h += '<div class="mb-stock-list">';
+  for (var i = 0; i < especiasDetalle.length; i++) {
+    var d = especiasDetalle[i];
+    var color = d.ok ? 'var(--green)' : 'var(--red)';
+    var icon = d.ok ? '✓' : '⚠';
+    h += '<div class="mb-stock-item"><span class="mb-stock-name">' + esc(d.nombre) + '</span><span class="mb-stock-detail" style="color:' + color + '">' + icon + ' necesita ' + d.needed + 'g · disponible ' + d.avail + 'g</span></div>';
+  }
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Envases ' + size + '</span><span class="mb-stock-detail" style="color:' + (envasesDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + (envasesDisp >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + envasesDisp + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Bolsas ' + size + '</span><span class="mb-stock-detail" style="color:' + (bolsasDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + (bolsasDisp >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + bolsasDisp + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Stickers</span><span class="mb-stock-detail" style="color:' + (stkStock >= qty ? 'var(--green)' : 'var(--red)') + '">' + (stkStock >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + stkStock + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Cintas</span><span class="mb-stock-detail" style="color:' + (cintas >= qty ? 'var(--green)' : 'var(--red)') + '">' + (cintas >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + cintas + '</span></div>';
+  h += '</div>';
+  h += '</div>';
+
+  if (!allOk) {
+    h += '<div class="mb-warn-box">⚠ Stock insuficiente para producir. Reabastecé antes de continuar o ajustá la cantidad.</div>';
+  }
+
+  h += '<div class="mb-actions"><button class="btn btn-outline" onclick="Pages._mbGoStep(1)">Volver</button>';
+  h += '<button class="btn btn-gold" onclick="Pages._mbStartProduction()" ' + (allOk ? '' : 'disabled') + '>Iniciar producción →</button></div>';
+
+  h += '</div>';
+  h += '</div>';
+  return h;
+};
+
+Pages._mbSetSize = function(size) {
+  Pages._mb.size = size;
+  App.renderPage('produccion');
+};
+
+Pages._mbAdjustQty = function(delta) {
+  var input = document.getElementById('mb-qty-input');
+  if (!input) return;
+  var v = parseInt(input.value, 10) || 0;
+  v = Math.max(1, Math.min(500, v + delta));
+  input.value = v;
+  Pages._mb.qty = v;
+  App.renderPage('produccion');
+};
+
+Pages._mbSetQty = function(v) {
+  Pages._mb.qty = v;
+  App.renderPage('produccion');
+};
+
+Pages._mbOnQtyChange = function() {
+  var input = document.getElementById('mb-qty-input');
+  if (!input) return;
+  var v = parseInt(input.value, 10) || 1;
+  Pages._mb.qty = Math.max(1, Math.min(500, v));
+  App.renderPage('produccion');
+};
+
+Pages._mbGoStep = function(n) {
+  Pages._mb.step = n;
+  App.renderPage('produccion');
+};
+
+Pages._mbStartProduction = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var size = mb.size;
+  var qty = mb.qty;
+  var ingredientes = blend.ingredientes || [];
+
+  var recipe = [];
+  var targetWeight = 0;
+  var totalGramosFrasco = 0;
+  for (var i = 0; i < ingredientes.length; i++) {
+    var ing = ingredientes[i];
+    var gpf = size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+    totalGramosFrasco += gpf;
+  }
+  for (var i = 0; i < ingredientes.length; i++) {
+    var ing = ingredientes[i];
+    var esp = ArcanoDB.getEspecia(ing.especiaId);
+    var gpf = size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+    var gramosTotal = gpf * qty;
+    var pct = totalGramosFrasco > 0 ? (gpf / totalGramosFrasco) * 100 : 0;
+    recipe.push({
+      especiaId: ing.especiaId,
+      nombre: esp ? esp.nombre : (ing.especiaNombre || 'Especia'),
+      gramosPorFrasco: gpf,
+      gramosTotal: gramosTotal,
+      porcentaje: pct,
+      added: false,
+      actualGramos: 0
+    });
+    targetWeight += gramosTotal;
+  }
+
+  mb.recipe = recipe;
+  mb.targetWeight = targetWeight;
+  mb.totalWeight = 0;
+  mb.addedSpices = {};
+  mb.step = 3;
+  App.renderPage('produccion');
+};
+
+Pages._mbRenderStep3 = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var size = mb.size;
+  var qty = mb.qty;
+  var recipe = mb.recipe;
+
+  var h = '<div class="mb-section">';
+  h += '<div class="mb-step-header"><h3 class="mb-section-title">Producción en curso</h3>';
+  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(2)">← Volver</button></div>';
+
+  h += '<div class="mb-production-layout">';
+  // Recipe panel (izquierda)
+  h += '<div class="mb-recipe-panel">';
+  h += '<h4 class="mb-recipe-title">Receta total</h4>';
+  h += '<div class="mb-recipe-meta">' + esc(blend.nombre) + ' · ' + (size === 'grande' ? 'Frascos grandes' : 'Frascos pequeños') + ' · ' + qty + ' unid.</div>';
+  h += '<div class="mb-recipe-list" id="mb-recipe-list">';
+  for (var i = 0; i < recipe.length; i++) {
+    var r = recipe[i];
+    h += '<div class="mb-recipe-item" id="mb-recipe-item-' + i + '">' +
+      '<div><div class="mb-recipe-item-name">' + esc(r.nombre) + '</div>' +
+      '<div class="mb-recipe-item-pct">' + r.porcentaje.toFixed(1) + '% · ' + r.gramosPorFrasco + 'g c/u</div></div>' +
+      '<div class="mb-recipe-item-weight">' + r.gramosTotal.toLocaleString() + 'g</div>' +
+    '</div>';
+  }
+  h += '</div>';
+  h += '<div class="mb-recipe-total"><span>Peso total</span><span>' + mb.targetWeight.toLocaleString() + 'g</span></div>';
+  h += '</div>';
+
+  // Mixing station (derecha)
+  h += '<div class="mb-mixing-station">';
+  h += '<div class="mb-bowl-container"><div class="mb-bowl' + (mb.totalWeight > 0 ? ' filling' : '') + '" id="mb-bowl"><div class="mb-bowl-content" id="mb-bowl-content"></div><div class="mb-bowl-shine"></div></div><div class="mb-bowl-label" id="mb-bowl-label">Tazón vacío</div></div>';
+
+  var addedCount = 0;
+  for (var i = 0; i < recipe.length; i++) if (recipe[i].added) addedCount++;
+  var fillPct = mb.targetWeight > 0 ? Math.min(100, (mb.totalWeight / mb.targetWeight) * 100) : 0;
+
+  h += '<div class="mb-progress-section">';
+  h += '<div class="mb-progress-bar"><div class="mb-progress-fill" id="mb-progress-fill" style="width:' + fillPct + '%"></div></div>';
+  h += '<div class="mb-progress-text" id="mb-progress-text">' + addedCount + ' / ' + recipe.length + ' especias agregadas</div>';
+  h += '</div>';
+
+  h += '<div class="mb-spices-rack" id="mb-spices-rack">';
+  for (var i = 0; i < recipe.length; i++) {
+    var r = recipe[i];
+    h += '<div class="mb-spice-jar' + (r.added ? ' added' : '') + '" id="mb-spice-jar-' + i + '" onclick="Pages._mbAddSpice(' + i + ')">' +
+      '<span class="mb-spice-jar-icon">🫙</span>' +
+      '<div class="mb-spice-jar-name">' + esc(r.nombre) + '</div>' +
+      '<div class="mb-spice-jar-weight">' + r.gramosTotal.toLocaleString() + 'g <small>(' + r.gramosPorFrasco + 'g c/u)</small></div>' +
+    '</div>';
+  }
+  h += '</div>';
+
+  h += '<div class="mb-prod-actions">';
+  h += '<button class="btn btn-outline" onclick="Pages._mbResetProduction()">Reiniciar</button>';
+  h += '<button class="btn btn-gold" id="mb-complete-btn" onclick="Pages._mbCompleteProduction()" ' + (addedCount === recipe.length ? '' : 'disabled') + '>Completar blend</button>';
+  h += '</div>';
+
+  h += '</div></div></div>';
+  return h;
+};
+
+// Llenar el bowl dinámicamente después del render
+Pages._mbUpdateBowlVisual = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var recipe = mb.recipe;
+  var addedCount = 0;
+  for (var i = 0; i < recipe.length; i++) if (recipe[i].added) addedCount++;
+  var fillPct = mb.targetWeight > 0 ? Math.min(100, (mb.totalWeight / mb.targetWeight) * 100) : 0;
+
+  var content = document.getElementById('mb-bowl-content');
+  if (content) content.style.height = fillPct + '%';
+
+  var label = document.getElementById('mb-bowl-label');
+  if (label) {
+    label.textContent = mb.totalWeight.toLocaleString() + 'g / ' + mb.targetWeight.toLocaleString() + 'g';
+  }
+
+  var bowl = document.getElementById('mb-bowl');
+  if (bowl) {
+    if (fillPct > 50) bowl.classList.add('filling');
+    else bowl.classList.remove('filling');
+  }
+
+  var progressFill = document.getElementById('mb-progress-fill');
+  if (progressFill) progressFill.style.width = fillPct + '%';
+
+  var progressText = document.getElementById('mb-progress-text');
+  if (progressText) progressText.textContent = addedCount + ' / ' + recipe.length + ' especias agregadas';
+
+  var completeBtn = document.getElementById('mb-complete-btn');
+  if (completeBtn) completeBtn.disabled = addedCount !== recipe.length;
+};
+
+Pages._mbAddSpice = function(idx) {
+  var self = Pages;
+  var mb = self._mb;
+  var recipe = mb.recipe;
+  var r = recipe[idx];
+  if (!r || r.added) return;
+
+  mb.currentSpiceIdx = idx;
+
+  var modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'mb-weight-modal';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = '<div class="modal" style="max-width:380px;text-align:center">' +
+    '<div class="modal-header"><h3>Agregar especia</h3><button class="btn btn-ghost" onclick="this.closest(\'.modal-overlay\').remove()">X</button></div>' +
+    '<div class="modal-body">' +
+      '<div class="mb-modal-spice">' + esc(r.nombre) + '</div>' +
+      '<div class="mb-modal-target">Objetivo: <strong>' + r.gramosTotal.toLocaleString() + 'g</strong></div>' +
+      '<input type="number" class="input mb-modal-input" id="mb-modal-input" value="' + r.gramosTotal + '" step="0.1" min="0" style="text-align:center;font-size:22px;font-weight:700">' +
+      '<div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-outline" style="flex:1" onclick="Pages._mbCloseWeightModal()">Cancelar</button>' +
+      '<button class="btn btn-gold" style="flex:1" onclick="Pages._mbConfirmWeight()">Confirmar</button></div>' +
+    '</div></div>';
+  document.body.appendChild(modal);
+  setTimeout(function() {
+    var inp = document.getElementById('mb-modal-input');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 50);
+};
+
+Pages._mbCloseWeightModal = function() {
+  var modal = document.getElementById('mb-weight-modal');
+  if (modal) modal.remove();
+  Pages._mb.currentSpiceIdx = null;
+};
+
+Pages._mbConfirmWeight = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var idx = mb.currentSpiceIdx;
+  if (idx === null) return;
+  var recipe = mb.recipe;
+  var r = recipe[idx];
+  if (!r) return;
+
+  var inputVal = parseFloat(document.getElementById('mb-modal-input').value);
+  if (isNaN(inputVal) || inputVal <= 0) {
+    toast('Ingresá un peso válido', 'error');
+    return;
+  }
+
+  r.added = true;
+  r.actualGramos = inputVal;
+  mb.totalWeight += inputVal;
+
+  // Actualizar UI sin recargar todo (más fluido)
+  var jar = document.getElementById('mb-spice-jar-' + idx);
+  if (jar) jar.classList.add('added');
+
+  var recipeItem = document.getElementById('mb-recipe-item-' + idx);
+  if (recipeItem) recipeItem.classList.add('done');
+
+  self._mbUpdateBowlVisual();
+
+  // Animación de tarro cayendo
+  var jarEl = document.getElementById('mb-spice-jar-' + idx);
+  var bowlEl = document.getElementById('mb-bowl');
+  if (jarEl && bowlEl) {
+    var drop = document.createElement('div');
+    drop.className = 'mb-spice-drop';
+    drop.textContent = '🫙';
+    var jarRect = jarEl.getBoundingClientRect();
+    var bowlRect = bowlEl.getBoundingClientRect();
+    drop.style.left = (bowlRect.left + bowlRect.width/2 - 12) + 'px';
+    drop.style.top = (bowlRect.top + 20) + 'px';
+    drop.style.position = 'fixed';
+    drop.style.zIndex = '500';
+    document.body.appendChild(drop);
+    setTimeout(function() { if (drop.parentNode) drop.parentNode.removeChild(drop); }, 900);
+  }
+
+  self._mbCloseWeightModal();
+  toast('✓ ' + r.nombre + ': ' + inputVal.toLocaleString() + 'g agregados');
+
+  var addedCount = 0;
+  for (var i = 0; i < recipe.length; i++) if (recipe[i].added) addedCount++;
+  if (addedCount === recipe.length) {
+    setTimeout(function() { toast('¡Receta completa! Ya podés finalizar.'); }, 600);
+  }
+};
+
+Pages._mbResetProduction = function() {
+  if (!confirm('¿Reiniciar la producción? Vas a perder el progreso actual.')) return;
+  Pages._mbStartProduction();
+};
+
+Pages._mbCompleteProduction = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var size = mb.size;
+  var qty = mb.qty;
+  var recipe = mb.recipe;
+
+  // Llamar a ArcanoDB.producirBlend que ya valida y descuenta stock
+  try {
+    var result = ArcanoDB.producirBlend(blend.id, size, qty);
+    mb.lastProduccion = result.produccion;
+    mb.step = 4;
+    App.renderPage('produccion');
+    toast('✓ Producción guardada. Stock actualizado.');
+  } catch (err) {
+    alert('Error al guardar la producción: ' + err.message);
+  }
+};
+
+Pages._mbRenderStep4 = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var recipe = mb.recipe;
+  var size = mb.size;
+  var qty = mb.qty;
+  var prod = mb.lastProduccion || {};
+
+  var totalActual = 0;
+  for (var i = 0; i < recipe.length; i++) totalActual += recipe[i].actualGramos || 0;
+
+  var h = '<div class="mb-section">';
+  h += '<div class="mb-completion-screen">';
+  h += '<div class="mb-completion-check">✓</div>';
+  h += '<h3 class="mb-completion-title">¡Blend completado!</h3>';
+  h += '<div class="mb-completion-blend">' + esc(blend.nombre) + ' · ' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos pequeños') + '</div>';
+  h += '<div class="mb-completion-summary">';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Especias usadas</div><div class="mb-summary-value">' + recipe.length + '</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso total</div><div class="mb-summary-value">' + totalActual.toLocaleString() + 'g</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Frascos</div><div class="mb-summary-value">' + qty + '</div></div>';
+  h += '</div>';
+  if (prod.id) {
+    h += '<p class="text-xs text-muted mt-8">Producción #' + prod.id + ' · ' + (prod.fecha || '') + ' · Se descontaron ' + (qty) + ' envases, bolsas y stickers + ' + (prod.gramosTotal || 0) + 'g de especias.</p>';
+  }
+  h += '<div class="mb-completion-actions">';
+  h += '<button class="btn btn-outline" onclick="Pages._mbGoStep(1)">Hacer otro blend</button>';
+  h += '<button class="btn btn-gold" onclick="Pages._mbPrintRecipe()">🖨️ Imprimir receta</button>';
+  h += '</div>';
+  h += '</div>';
+  h += '</div>';
+  return h;
+};
+
+Pages._mbPrintRecipe = function() {
+  var self = Pages;
+  var mb = self._mb;
+  var blend = mb.selectedBlend;
+  var recipe = mb.recipe;
+  var size = mb.size;
+  var qty = mb.qty;
+
+  var w = window.open('', '_blank');
+  var html = '<!DOCTYPE html><html><head><title>Receta — ' + esc(blend.nombre) + '</title>' +
+    '<style>body{font-family:sans-serif;padding:32px;max-width:600px;margin:auto;color:#333}' +
+    'h1{color:#c9a84c}table{width:100%;border-collapse:collapse;margin-top:16px}' +
+    'th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}' +
+    'th{background:#f5f5f5}.total{font-weight:bold;background:#fff8e1}' +
+    '</style></head><body>' +
+    '<h1>' + esc(blend.nombre) + '</h1>' +
+    '<p><strong>Tamaño:</strong> ' + (size === 'grande' ? 'Grande' : 'Pequeño') + ' · ' +
+    '<strong>Cantidad:</strong> ' + qty + ' frascos</p>' +
+    '<table><thead><tr><th>Especia</th><th>g por frasco</th><th>g totales</th><th>%</th></tr></thead><tbody>';
+  for (var i = 0; i < recipe.length; i++) {
+    var r = recipe[i];
+    html += '<tr><td>' + esc(r.nombre) + '</td><td>' + r.gramosPorFrasco + 'g</td><td>' + r.gramosTotal + 'g</td><td>' + r.porcentaje.toFixed(1) + '%</td></tr>';
+  }
+  html += '</tbody><tfoot><tr class="total"><td>Total</td><td>—</td><td>' + mb.targetWeight + 'g</td><td>100%</td></tr></tfoot></table>' +
+    '<p style="margin-top:24px;color:#888;font-size:12px">Generado por Making Blends · ' + new Date().toLocaleString('es-CO') + '</p>' +
+    '</body></html>';
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+};
