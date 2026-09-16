@@ -3,5 +3,6 @@ Allow: /
 Disallow: /admin/
 Disallow: /admin-exclude.html
 Disallow: /clear.html
+Disallow: /tienda/
 
 Sitemap: https://arcanoespecias.com/sitemap.xml
