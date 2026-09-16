@@ -1201,7 +1201,7 @@ function renderBlogList() {
         var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         fechaStr = parseInt(parts[2]) + ' ' + meses[parseInt(parts[1]) - 1] + ' ' + parts[0];
       }
-      var imgSrc = p.imagen_url || '';
+      var imgSrc = _fixImageUrl(p.imagen_url || '');
       h += '<div class="blog-card" onclick="openBlogPost(\'' + p._key + '\')">';
       if (imgSrc) h += '<div class="blog-card-img"><img src="' + imgSrc + '" alt="' + (p.titulo || '').replace(/"/g, '&quot;') + '" loading="lazy"></div>';
       h += '<div class="blog-card-body">';
@@ -1239,7 +1239,7 @@ function openBlogPost(key) {
     h += '</div>';
     h += '<h1 class="blog-detail-title">' + (post.titulo || '') + '</h1>';
     if (post.subtitulo) h += '<p class="blog-detail-sub">' + post.subtitulo + '</p>';
-    if (post.imagen_url) h += '<img class="blog-detail-img" src="' + post.imagen_url + '" alt="' + (post.titulo || '').replace(/"/g, '&quot;') + '">';
+    if (post.imagen_url) h += '<img class="blog-detail-img" src="' + _fixImageUrl(post.imagen_url) + '" alt="' + (post.titulo || '').replace(/"/g, '&quot;') + '">';
     if (post.contenido) h += '<div class="blog-detail-content">' + post.contenido + '</div>';
     h += '<button class="blog-back-btn" style="margin-top:32px" onclick="renderBlogList()">&larr; Volver al Blog</button>';
     h += '</div>';
@@ -1816,7 +1816,7 @@ function _showPopupLateral(popup) {
   var html = '';
   if (popup.imagen) {
     html += '<div class="popup-lateral-header">';
-    html += '<img class="popup-lateral-img" src="' + popup.imagen + '" alt="Promo">';
+    html += '<img class="popup-lateral-img" src="' + _fixImageUrl(popup.imagen) + '" alt="Promo">';
     html += '<button class="popup-lateral-close" onclick="_closePopupLateral()">&times;</button>';
     html += '</div>';
   } else {

@@ -629,6 +629,12 @@ function getTiendaConfig() {
   return _sDb.tiendaConfig || {};
 }
 
+/* === FIX DE URLs: reemplazar dominio viejo por nuevo en imágenes === */
+function _fixImageUrl(url) {
+  if (!url) return '';
+  return url.replace(/https?:\/\/arcanoespecias\.github\.io/g, 'https://arcanoespecias.com');
+}
+
 function getStoreProducts() {
   if (!_sDb) return [];
   var products = [];
@@ -641,7 +647,7 @@ function getStoreProducts() {
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
       precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
       stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0, stockPala: e.stockBolsa || 0, enBlend: e.enBlend !== false,
-      region: '', uso: e.uso || '', descripcion: e.descripcion || '', imagen: e.imagen || '', tags: e.tags || []
+      region: '', uso: e.uso || '', descripcion: e.descripcion || '', imagen: _fixImageUrl(e.imagen), tags: e.tags || []
     });
   }
   var bk = Object.keys(_sDb.blends || {});
@@ -653,7 +659,7 @@ function getStoreProducts() {
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
       stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
-      region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: b.imagen || '', tags: b.tags || [],
+      region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: _fixImageUrl(b.imagen), tags: b.tags || [],
       ingredientes: b.ingredientes || []
     });
   }
@@ -667,7 +673,7 @@ function getStoreProducts() {
       id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
       precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
       stockChico: 0, stockGrande: 0, stock: packStock,
-      region: '', uso: '', descripcion: pk.descripcion || '', imagen: pk.imagen || '', tags: pk.tags || [],
+      region: '', uso: '', descripcion: pk.descripcion || '', imagen: _fixImageUrl(pk.imagen), tags: pk.tags || [],
       blendItems: pk.blendItems || []
     });
   }
