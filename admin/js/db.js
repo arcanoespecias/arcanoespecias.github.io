@@ -717,6 +717,95 @@ function onOtpPendientesChange(fn) { _otpPendientesListeners.push(fn); }
 function updatePedidoEstado(pedidoKey, nuevoEstado) {
   if (!_pedidosRef) return;
   _pedidosRef.child(pedidoKey + '/estado').set(nuevoEstado);
+  // Si el pedido pasa a "entregado", descontar stock de los productos
+  // (solo si no fue descontado antes — flag stockDescontado)
+  if (nuevoEstado === 'entregado') {
+    _pedidosRef.child(pedidoKey).once('value', function(snap) {
+      var pedido = snap.val();
+      if (!pedido || pedido.stockDescontado) return;
+      _descontarStockPedido(pedido);
+      _pedidosRef.child(pedidoKey + '/stockDescontado').set(true);
+    });
+  } else {
+    // Si el pedido estaba entregado y vuelve a otro estado, revertir stock
+    _pedidosRef.child(pedidoKey).once('value', function(snap) {
+      var pedido = snap.val();
+      if (!pedido || !pedido.stockDescontado) return;
+      _revertirStockPedido(pedido);
+      _pedidosRef.child(pedidoKey + '/stockDescontado').set(false);
+    });
+  }
+}
+
+/* === Descontar stock de los productos de un pedido (al entregar) === */
+function _descontarStockPedido(pedido) {
+  try {
+    var items = pedido.items || [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var qty = Number(item.qty) || 0;
+      if (qty <= 0) continue;
+      var tipo = item.tipo || 'blend';
+      var talla = item.talla || 'chico';
+      var productId = item.productId;
+
+      if (tipo === 'blend' || tipo === 'especia') {
+        var collection = tipo === 'blend' ? _db.blends : _db.especias;
+        var prod = collection ? collection[productId] : null;
+        if (!prod) continue;
+        // Descontar stockChico o stockGrande según la talla
+        if (talla === 'grande') {
+          prod.stockGrande = Math.max(0, (Number(prod.stockGrande) || 0) - qty);
+        } else {
+          prod.stockChico = Math.max(0, (Number(prod.stockChico) || 0) - qty);
+        }
+      } else if (tipo === 'pack') {
+        if (_db.packs && _db.packs[productId]) {
+          _db.packs[productId].stock = Math.max(0, (Number(_db.packs[productId].stock) || 0) - qty);
+        }
+      }
+    }
+    _saveToFirebase();
+    _notify('update', 'blends', 'global');
+    console.log('[DB] Stock descontado por entrega de pedido');
+  } catch (e) {
+    console.error('[DB] Error descontando stock de pedido:', e);
+  }
+}
+
+/* === Revertir stock si un pedido entregado vuelve a otro estado === */
+function _revertirStockPedido(pedido) {
+  try {
+    var items = pedido.items || [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var qty = Number(item.qty) || 0;
+      if (qty <= 0) continue;
+      var tipo = item.tipo || 'blend';
+      var talla = item.talla || 'chico';
+      var productId = item.productId;
+
+      if (tipo === 'blend' || tipo === 'especia') {
+        var collection = tipo === 'blend' ? _db.blends : _db.especias;
+        var prod = collection ? collection[productId] : null;
+        if (!prod) continue;
+        if (talla === 'grande') {
+          prod.stockGrande = (Number(prod.stockGrande) || 0) + qty;
+        } else {
+          prod.stockChico = (Number(prod.stockChico) || 0) + qty;
+        }
+      } else if (tipo === 'pack') {
+        if (_db.packs && _db.packs[productId]) {
+          _db.packs[productId].stock = (Number(_db.packs[productId].stock) || 0) + qty;
+        }
+      }
+    }
+    _saveToFirebase();
+    _notify('update', 'blends', 'global');
+    console.log('[DB] Stock revertido por cambio de estado de pedido');
+  } catch (e) {
+    console.error('[DB] Error revirtiendo stock de pedido:', e);
+  }
 }
 
 function updatePedidoField(pedidoKey, field, value) {

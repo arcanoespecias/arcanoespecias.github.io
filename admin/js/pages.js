@@ -3365,13 +3365,31 @@ const Pages = {
           var pm = productosModificados[ids[j]];
           var prod = pm.tipo === 'blend' ? ArcanoDB.getBlend(pm.id) : ArcanoDB.getEspecia(pm.id);
           if (!prod) continue;
-          if (pm.pesoPala != null) prod.pesoPala = pm.pesoPala;
-          if (pm.precioPala != null) prod.precioPala = pm.precioPala;
+          // Construir objeto completo con los cambios
+          var updatedProd = Object.assign({}, prod);
+          if (pm.pesoPala != null) updatedProd.pesoPala = pm.pesoPala;
+          if (pm.precioPala != null) updatedProd.precioPala = pm.precioPala;
+          // Usar saveBlend/saveEspecia que garantizan persistencia
+          if (pm.tipo === 'blend') {
+            ArcanoDB.saveBlend(updatedProd);
+          } else {
+            ArcanoDB.saveEspecia(updatedProd);
+          }
           saved++;
         }
-        ArcanoDB.saveNow();
-        toast(saved + ' productos actualizados.');
-        App.renderPage('palas');
+        // Forzar save síncrono y mostrar confirmación
+        if (saved > 0) {
+          ArcanoDB.saveNow().then(function(success) {
+            if (success) {
+              toast(saved + ' productos actualizados.');
+              App.renderPage('palas');
+            } else {
+              toast('Error al guardar en Firebase', 'err');
+            }
+          });
+        } else {
+          toast('No hay cambios para guardar');
+        }
       });
     }
 
