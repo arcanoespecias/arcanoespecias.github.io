@@ -1,8 +1,9 @@
 /* ============================================================
-   Arcano — Efecto "Opening" (cortina bidireccional)
+   Arcano — Efecto "Opening" (cortina bidireccional, sin candado)
+   - Logo en tapa superior, texto en tapa inferior (encajan perfecto)
+   - Tapas estilo madera negra realista
    - Abre al scrollear abajo, cierra al scrollear arriba
-   - Cuando llega al 100%, libera el scroll y oculta el overlay
-   - La tienda es visible desde el inicio (las tapas se abren y se ve)
+   - Tienda visible desde el inicio (overlay transparente)
    - Sonido de click al abrir (Web Audio API)
    ============================================================ */
 
@@ -101,9 +102,7 @@
 
     var topLid = overlay.querySelector('.opening-lid-top');
     var bottomLid = overlay.querySelector('.opening-lid-bottom');
-    var content = overlay.querySelector('.opening-content');
     var hint = overlay.querySelector('.opening-hint');
-    var lock = overlay.querySelector('.opening-lock');
 
     if (!topLid || !bottomLid) {
       document.documentElement.classList.add('no-opening');
@@ -122,27 +121,18 @@
     function update() {
       var eased = easeInOutCubic(progress);
 
+      // Tapas: se desplazan hacia afuera
       var topTranslate = -eased * 105;
       var bottomTranslate = eased * 105;
       topLid.style.transform = 'translateY(' + topTranslate + '%)';
       bottomLid.style.transform = 'translateY(' + bottomTranslate + '%)';
 
+      // Opacidad: se mantienen opacas hasta el 80%, luego fade out
       var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
       topLid.style.opacity = lidOpacity;
       bottomLid.style.opacity = lidOpacity;
 
-      if (lock) {
-        lock.style.opacity = Math.max(0, 1 - eased * 3);
-        lock.style.transform = 'translateX(-50%) scale(' + (1 + eased * 0.3) + ')';
-      }
-
-      if (content) {
-        var contentScale = 1 + eased * 0.15;
-        var contentOpacity = Math.max(0, 1 - eased * 2.5);
-        content.style.transform = 'translate(-50%, -50%) scale(' + contentScale + ')';
-        content.style.opacity = contentOpacity;
-      }
-
+      // Hint: se desvanece al primer scroll
       if (hint) {
         hint.style.opacity = Math.max(0, 1 - progress * 8);
       }
