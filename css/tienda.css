@@ -1926,15 +1926,13 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* ============================================================
-   EFECTO OPENING — Tapa de cofre
+   EFECTO OPENING — Cortina de mitades
    ============================================================ */
 
-/* Mientras el efecto está activo, lockea el scroll del body */
 body.opening-active {
   overflow: hidden;
   height: 100vh;
 }
-/* Si no toca mostrarse, ocultar overlay */
 html.no-opening body.opening-active {
   overflow: auto;
   height: auto;
@@ -1947,74 +1945,115 @@ html.no-opening #opening-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  perspective: 1200px;
-  perspective-origin: center 20%;
   background: #0E0A07;
-}
-
-.opening-lid {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at center 60%, #2a1d12 0%, #1a0f08 70%, #0E0A07 100%);
-  transform-origin: top center;
-  transform-style: preserve-3d;
-  will-change: transform, opacity;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
-  backface-visibility: hidden;
 }
 
-.opening-lid::before {
+/* === Mitad superior === */
+.opening-lid-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background:
+    radial-gradient(ellipse at center bottom, #2a1d12 0%, #1a0f08 70%, #0E0A07 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0;
+  will-change: transform, opacity;
+  overflow: hidden;
+}
+
+.opening-lid-top::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(232,184,75,0.025) 3px, rgba(232,184,75,0.025) 4px),
-    radial-gradient(ellipse at top, rgba(232,184,75,0.1), transparent 60%);
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(232,184,75,0.02) 3px, rgba(232,184,75,0.02) 4px),
+    radial-gradient(ellipse at top, rgba(232,184,75,0.08), transparent 50%);
   pointer-events: none;
 }
 
-/* Borde inferior dorado (la "base" del cofre) */
-.opening-lid::after {
+/* Borde inferior dorado de la mitad superior (donde se une con la inferior) */
+.opening-lid-top::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 12px;
-  background: linear-gradient(180deg, #E8B84B 0%, #c9a84c 30%, #8a6f1e 100%);
-  box-shadow: 0 -4px 12px rgba(232,184,75,0.4), 0 4px 8px rgba(0,0,0,0.5);
+  height: 3px;
+  background: linear-gradient(180deg, transparent 0%, #E8B84B 30%, #c9a84c 70%, #8a6f1e 100%);
+  box-shadow: 0 2px 12px rgba(232,184,75,0.5);
 }
 
-/* Bisagras arriba */
-.opening-hinges {
+/* === Mitad inferior === */
+.opening-lid-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background:
+    radial-gradient(ellipse at center top, #2a1d12 0%, #1a0f08 70%, #0E0A07 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0;
+  will-change: transform, opacity;
+  overflow: hidden;
+}
+
+.opening-lid-bottom::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(232,184,75,0.02) 3px, rgba(232,184,75,0.02) 4px),
+    radial-gradient(ellipse at bottom, rgba(232,184,75,0.08), transparent 50%);
+  pointer-events: none;
+}
+
+/* Borde superior dorado de la mitad inferior */
+.opening-lid-bottom::after {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
+  height: 3px;
+  background: linear-gradient(0deg, transparent 0%, #E8B84B 30%, #c9a84c 70%, #8a6f1e 100%);
+  box-shadow: 0 -2px 12px rgba(232,184,75,0.5);
+}
+
+/* === Bisagras === */
+.opening-hinges {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
-  padding: 0 8%;
-  z-index: 3;
+  padding: 0 6%;
+  z-index: 5;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 .opening-hinge {
-  width: 70px;
-  height: 24px;
+  width: 60px;
+  height: 22px;
   background: linear-gradient(180deg, #E8B84B 0%, #c9a84c 50%, #8a6f1e 100%);
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(0,0,0,0.3);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
   position: relative;
 }
 .opening-hinge::after {
   content: '';
   position: absolute;
-  bottom: 5px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   width: 8px;
   height: 8px;
   background: #1a0f08;
@@ -2022,13 +2061,13 @@ html.no-opening #opening-overlay {
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
 }
 
-/* Esquinas decorativas */
+/* === Esquinas decorativas === */
 .opening-corner {
   position: absolute;
-  width: 70px;
-  height: 70px;
-  border: 2px solid rgba(232,184,75,0.35);
-  z-index: 1;
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(232,184,75,0.3);
+  z-index: 2;
   pointer-events: none;
 }
 .opening-corner-tl { top: 24px; left: 24px; border-right: none; border-bottom: none; border-top-left-radius: 8px; }
@@ -2036,13 +2075,18 @@ html.no-opening #opening-overlay {
 .opening-corner-bl { bottom: 24px; left: 24px; border-right: none; border-top: none; border-bottom-left-radius: 8px; }
 .opening-corner-br { bottom: 24px; right: 24px; border-left: none; border-top: none; border-bottom-right-radius: 8px; }
 
-/* Contenido central (logo + título) */
+/* === Contenido central === */
 .opening-content {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
   text-align: center;
   will-change: opacity, transform;
   padding: 0 24px;
+  /* Default para que JS pueda animar */
+  /* transform inicial lo setea init() */
 }
 
 .opening-logo {
@@ -2084,10 +2128,10 @@ html.no-opening #opening-overlay {
   font-weight: 500;
 }
 
-/* Hint "Scroll para abrir" */
+/* === Hint === */
 .opening-hint {
   position: absolute;
-  bottom: 8%;
+  bottom: 6%;
   left: 50%;
   transform: translateX(-50%);
   color: #c9a84c;
@@ -2095,7 +2139,7 @@ html.no-opening #opening-overlay {
   text-transform: uppercase;
   letter-spacing: 0.3em;
   font-weight: 600;
-  z-index: 2;
+  z-index: 7;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2111,13 +2155,13 @@ html.no-opening #opening-overlay {
   50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
 }
 
-/* Mobile */
 @media (max-width: 600px) {
-  .opening-hinge { width: 50px; height: 20px; }
+  .opening-hinge { width: 44px; height: 18px; }
   .opening-logo { width: 140px; height: 140px; margin-bottom: 24px; }
-  .opening-corner { width: 50px; height: 50px; }
+  .opening-corner { width: 44px; height: 44px; }
   .opening-corner-tl, .opening-corner-tr { top: 16px; }
   .opening-corner-tl, .opening-corner-bl { left: 16px; }
   .opening-corner-tr, .opening-corner-br { right: 16px; }
   .opening-corner-bl, .opening-corner-br { bottom: 16px; }
 }
+
