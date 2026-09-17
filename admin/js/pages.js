@@ -4729,7 +4729,7 @@ const Pages = {
     var h = '<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr)">' +
       '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">' + enTiendaCount + '</div><div class="stat-label">Productos en Tienda</div></div>' +
       '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value">' + productos.length + '</div><div class="stat-label">Disponibles (con stock)</div></div>' +
-      '<div class="stat-card"><div class="stat-value" style="font-size:0.85rem">arcanoespecias.github.io/arcano-v2/tienda.html</div><div class="stat-label">URL Publica</div></div>' +
+      '<div class="stat-card"><div class="stat-value" style="font-size:0.85rem">arcanoespecias.com</div><div class="stat-label">URL Publica</div></div>' +
       '</div>';
 
     // Boton Regenerar SEO (legacy — solo JSON-LD del index)
@@ -5028,7 +5028,7 @@ const Pages = {
     var GH_OWNER = 'arcanoespecias';
     var GH_REPO = 'arcanoespecias.github.io';
     var GH_BRANCH = 'main';
-    var SITE_URL = 'https://arcanoespecias.github.io/';
+    var SITE_URL = 'https://arcanoespecias.com/';
 
     function escH(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function escJ(s) { if (!s) return ''; return String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n'); }
@@ -5169,26 +5169,29 @@ const Pages = {
       }
       ns += '</ul>\n</div>\n</noscript>';
 
-      // SEO div content
+      // SEO div content — extractos cortos + enlace a /blends/ (sin duplicar contenido completo)
       var sd = '<h2>Catalogo de Especias y Blends Artesanales</h2>';
       sd += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y cocteleria, especias selectas y packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo. Envios a toda Colombia.</p>';
+      sd += '<ul>';
       for (var i = 0; i < products.length; i++) {
         var p = products[i];
-        var precio = p.precioChico > 0 ? p.precioChico : (p.precioGrande > 0 ? p.precioGrande : (p.precio || 0));
-        var tipoLabel = p.tipo === 'pack' ? 'Pack' : (p.tipo === 'blend' ? 'Blend' : 'Especia');
-        sd += '<article><h3>' + escH(p.nombre) + ' (' + tipoLabel + ')</h3>';
-        if (p.descripcion) sd += '<p>' + escH(p.descripcion) + '</p>';
-        sd += '<p>Categoria: ' + escH(p.categoria);
-        if (p.region) sd += ' | Origen: ' + escH(p.region);
-        if (p.tags && p.tags.length) sd += ' | Usos: ' + escH(p.tags.join(', '));
-        sd += '</p>';
-        if (precio > 0) sd += '<p>Precio desde $' + precio.toLocaleString('es-CO') + ' COP</p>';
-        if (p.ingredientes && p.ingredientes.length > 0) sd += '<p>Ingredientes: ' + escH(p.ingredientes.join(', ')) + '</p>';
-        sd += '</article>';
+        var slug = Pages._productSlug(p.nombre);
+        // Solo generar enlace si tenemos slug
+        var link = slug ? '<a href="https://arcanoespecias.com/blends/' + slug + '/">' + escH(p.nombre) + '</a>' : escH(p.nombre);
+        // Extracto corto: máximo 80 chars
+        var extracto = '';
+        if (p.descripcion) {
+          extracto = p.descripcion.substring(0, 80);
+          if (p.descripcion.length > 80) extracto = extracto.replace(/\s+\S*$/, '') + '...';
+        }
+        sd += '<li>' + link;
+        if (extracto) sd += ' — ' + escH(extracto);
+        sd += '</li>';
       }
+      sd += '</ul>';
 
       // BreadcrumbList JSON-LD
-      var bcJsonLd = '<!-- SEO: BreadcrumbList estatico -->\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "BreadcrumbList",\n  "itemListElement": [\n    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://arcanoespecias.github.io/" },\n    { "@type": "ListItem", "position": 2, "name": "Catalogo de Especias y Blends", "item": "https://arcanoespecias.github.io/" }\n  ]\n}\n</script>'
+      var bcJsonLd = '<!-- SEO: BreadcrumbList estatico -->\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "BreadcrumbList",\n  "itemListElement": [\n    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://arcanoespecias.com/" },\n    { "@type": "ListItem", "position": 2, "name": "Catalogo de Especias y Blends", "item": "https://arcanoespecias.com/" }\n  ]\n}\n</script>'
 
       // FAQ JSON-LD
       var faqQ = [
@@ -6640,7 +6643,7 @@ const Pages = {
       var path = 'img/recetas/' + slug + '.jpg';
       return Pages._uploadToGitHub(path, base64Data).then(function(result) {
         if (result.content && result.content.download_url) return result.content.download_url;
-        return 'https://arcanoespecias.github.io/' + path;
+        return 'https://arcanoespecias.com/' + path;
       });
     });
   },
@@ -7398,7 +7401,7 @@ const Pages = {
       var path = 'img/blog/' + slug + '.jpg';
       return Pages._uploadToGitHub(path, base64Data).then(function(result) {
         if (result.content && result.content.download_url) return result.content.download_url;
-        return 'https://arcanoespecias.github.io/' + path;
+        return 'https://arcanoespecias.com/' + path;
       });
     });
   },
@@ -7449,7 +7452,7 @@ const Pages = {
   _publishBlogSEO: function(post) {
     var slug = Pages._titleToSlug(post.titulo);
     if (!slug) return;
-    var BASE = 'https://arcanoespecias.github.io';
+    var BASE = 'https://arcanoespecias.com';
     var descripcion = post.subtitulo || post.titulo || '';
     var url = BASE + '/blog/' + slug + '.html';
     var imagen = post.imagen_url || BASE + '/icons/logo.png';
@@ -7483,12 +7486,13 @@ const Pages = {
     if (!product || !product.nombre) return;
     var slug = Pages._productSlug(product.nombre);
     if (!slug) return;
-    var BASE = 'https://arcanoespecias.github.io';
-    var pageUrl = BASE + '/p/' + slug + '.html';
+    var BASE = 'https://arcanoespecias.com';
+    var pageUrl = BASE + '/blends/' + slug + '/';
     var nombre = product.nombre;
     var descripcion = product.descripcion || (type + ' artesanal de Arcano Especias. Descubri su sabor unico.');
     var imagen = product.imagen || BASE + '/icons/logo.png';
     if (imagen.indexOf('data:') === 0) imagen = BASE + '/icons/logo.png';
+    if (imagen.indexOf('arcanoespecias.github.io') >= 0) imagen = imagen.replace('arcanoespecias.github.io', 'arcanoespecias.com');
     var cats = product.categorias || [];
     if (typeof cats === 'string') cats = [cats];
     var catStr = cats.join(', ');
@@ -7539,7 +7543,7 @@ const Pages = {
     if (!recipe || !recipe.titulo) return;
     var slug = Pages._titleToSlug(recipe.titulo);
     if (!slug) return;
-    var BASE = 'https://arcanoespecias.github.io';
+    var BASE = 'https://arcanoespecias.com';
     var pageUrl = BASE + '/recetas/' + slug + '.html';
     var titulo = recipe.titulo;
     var descripcion = recipe.descripcion || ('Receta de ' + titulo + ' con especias Arcano');
@@ -7601,20 +7605,30 @@ const Pages = {
   },
 
   _doUpdateSitemap: function() {
-    var BASE = 'https://arcanoespecias.github.io';
+    // DESHABILITADO: este método generaba el sitemap con URLs /p/*.html (legacy)
+    // y con el dominio antiguo arcanoespecias.github.io.
+    // Ahora el sitemap lo genera 'Regenerar SEO Completo' correctamente con
+    // URLs /blends/<slug>/ y arcanoespecias.com.
+    // Si se necesita regenerar el sitemap, usar 'Regenerar SEO Completo' en Tienda.
+    console.warn('[SEO] _doUpdateSitemap deshabilitado. Usar "Regenerar SEO Completo" en su lugar.');
+    return;
+  },
+
+  _doUpdateSitemapLegacy: function() {
+    var BASE = 'https://arcanoespecias.com';
     var today = new Date().toISOString().slice(0, 10);
     var urls = ['<url><loc>' + BASE + '/</loc><lastmod>' + today + '</lastmod><priority>1.0</priority><changefreq>weekly</changefreq></url>'];
     var productos = ArcanoDB.getTiendaProductos();
     for (var i = 0; i < productos.length; i++) {
       var p = productos[i];
       var slug = Pages._productSlug(p.nombre);
-      if (slug) urls.push('<url><loc>' + BASE + '/p/' + slug + '.html</loc><lastmod>' + today + '</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>');
+      if (slug) urls.push('<url><loc>' + BASE + '/blends/' + slug + '/</loc><lastmod>' + today + '</lastmod><priority>0.8</priority><changefreq>monthly</changefreq></url>');
     }
     var pending = 2;
     function onDone() {
       pending--;
       if (pending > 0) return;
-      var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls.join('\n') + '\n</urlset>';
+      var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls.join('\n') + '\n</urlset>\n';
       var b64 = btoa(unescape(encodeURIComponent(xml)));
       Pages._uploadToGitHub('sitemap.xml', b64, 'sitemap actualizado').then(function() {
         console.log('Sitemap updated: ' + urls.length + ' URLs');
