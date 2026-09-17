@@ -283,11 +283,34 @@ function saveNow() {
       if (!resolved) { resolved = true; _localDirty = false; console.warn('[DB] saveNow timeout - resolving false'); resolve(false); }
     }, 10000);
     try {
-      _firebaseRef.update(_db, function(error) {
+      // En vez de update(_db) que sube TODO (con campos internos que no queremos),
+      // subimos solo las colecciones de datos relevantes
+      var dataToSave = {
+        especias: _db.especias || {},
+        blends: _db.blends || {},
+        packs: _db.packs || {},
+        entradas: _db.entradas || {},
+        producciones: _db.producciones || {},
+        stockEnvases: _db.stockEnvases || {},
+        stockBolsas: _db.stockBolsas || {},
+        stockCintas: _db.stockCintas || 0,
+        costales: _db.costales || {},
+        stickers: _db.stickers || {},
+        ventas: _db.ventas || {},
+        gastos: _db.gastos || {},
+        gastosCategorias: _db.gastosCategorias || [],
+        ajustes: _db.ajustes || {},
+        usuarios: _db.usuarios || {},
+        puntosdeventa: _db.puntosdeventa || {},
+        meta: _db.meta || {}
+      };
+      _firebaseRef.update(dataToSave, function(error) {
         if (resolved) return;
         resolved = true;
         clearTimeout(safetyTimer);
-        _localDirty = false;
+        // Mantener _localDirty = true por 2 segundos más para que el listener
+        // no sobreescriba _db con datos viejos antes de que Firebase confirme
+        setTimeout(function() { _localDirty = false; }, 2000);
         if (error) { console.error('[DB] Firebase save error:', error); resolve(false); }
         else resolve(true);
       });

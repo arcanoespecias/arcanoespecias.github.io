@@ -3365,19 +3365,13 @@ const Pages = {
           var pm = productosModificados[ids[j]];
           var prod = pm.tipo === 'blend' ? ArcanoDB.getBlend(pm.id) : ArcanoDB.getEspecia(pm.id);
           if (!prod) continue;
-          // Construir objeto completo con los cambios
-          var updatedProd = Object.assign({}, prod);
-          if (pm.pesoPala != null) updatedProd.pesoPala = pm.pesoPala;
-          if (pm.precioPala != null) updatedProd.precioPala = pm.precioPala;
-          // Usar saveBlend/saveEspecia que garantizan persistencia
-          if (pm.tipo === 'blend') {
-            ArcanoDB.saveBlend(updatedProd);
-          } else {
-            ArcanoDB.saveEspecia(updatedProd);
-          }
+          // Modificar directamente el objeto en _db (referencia directa)
+          // Esto evita race conditions con el listener de Firebase
+          if (pm.pesoPala != null) prod.pesoPala = pm.pesoPala;
+          if (pm.precioPala != null) prod.precioPala = pm.precioPala;
           saved++;
         }
-        // Forzar save síncrono y mostrar confirmación
+        // saveNow sube _db entero a Firebase (con los cambios ya aplicados)
         if (saved > 0) {
           ArcanoDB.saveNow().then(function(success) {
             if (success) {
