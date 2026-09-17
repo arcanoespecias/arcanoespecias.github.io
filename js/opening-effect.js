@@ -1,7 +1,9 @@
 /* ============================================================
    Arcano — Efecto "Opening" (cortina bidireccional)
-   Abre al scrollear abajo, cierra al scrollear arriba.
-   Logo grande plano (sin animación). Cofre 3D negro realista.
+   - Abre al scrollear abajo, cierra al scrollear arriba
+   - Cuando llega al 100%, libera el scroll y oculta el overlay
+   - Una vez liberado, NO reaparece en la sesión
+   - Sonido de click al abrir (Web Audio API)
    ============================================================ */
 
 (function() {
@@ -25,6 +27,78 @@
 
   sessionStorage.setItem(SESSION_KEY, '1');
 
+  // === Audio context para el sonido del click ===
+  var audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        audioCtx = null;
+      }
+    }
+    return audioCtx;
+  }
+
+  // Sonido metálico de cofre abriéndose
+  var lastClickTime = 0;
+  function playClickSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    var now = ctx.currentTime;
+    // Throttle: no más de 1 click cada 100ms
+    if (now - lastClickTime < 0.1) return;
+    lastClickTime = now;
+
+    // Click metálico: dos osciladores rápidos con filtro pasa-bajos
+    // 1. "Click" agudo (like a lock snapping)
+    var osc1 = ctx.createOscillator();
+    var gain1 = ctx.createGain();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(2400, now);
+    osc1.frequency.exponentialRampToValueAtTime(800, now + 0.04);
+    gain1.gain.setValueAtTime(0.15, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    osc1.connect(gain1).connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.08);
+
+    // 2. "Creak" grave (madera/metal moviéndose)
+    var osc2 = ctx.createOscillator();
+    var gain2 = ctx.createGain();
+    var filter2 = ctx.createBiquadFilter();
+    filter2.type = 'lowpass';
+    filter2.frequency.value = 600;
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(180, now);
+    osc2.frequency.exponentialRampToValueAtTime(120, now + 0.15);
+    gain2.gain.setValueAtTime(0.08, now);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc2.connect(filter2).connect(gain2).connect(ctx.destination);
+    osc2.start(now);
+    osc2.stop(now + 0.2);
+  }
+
+  // Sonido al cierre completo (cuando vuelve a 0)
+  function playCloseSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    var now = ctx.currentTime;
+
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.16);
+  }
+
   function init() {
     var overlay = document.getElementById('opening-overlay');
     if (!overlay) {
@@ -43,9 +117,10 @@
       return;
     }
 
-    var progress = 0; // 0 = cerrado, 1 = totalmente abierto
+    var progress = 0;
+    var unlocked = false;
     var SCROLL_THRESHOLD = 500;
-    var wheelAccum = 0;
+    var lastProgress = 0;
 
     function easeInOutCubic(t) {
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -54,25 +129,20 @@
     function update() {
       var eased = easeInOutCubic(progress);
 
-      // Mitades: se desplazan hacia afuera (110% del tamaño)
-      // BIDIRECCIONAL: si progress baja, las mitades vuelven
       var topTranslate = -eased * 105;
       var bottomTranslate = eased * 105;
       topLid.style.transform = 'translateY(' + topTranslate + '%)';
       bottomLid.style.transform = 'translateY(' + bottomTranslate + '%)';
 
-      // Opacidad: se mantienen opacas hasta el 80%, luego fade out
       var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
       topLid.style.opacity = lidOpacity;
       bottomLid.style.opacity = lidOpacity;
 
-      // Lock central: se desvanece temprano (más fluido)
       if (lock) {
         lock.style.opacity = Math.max(0, 1 - eased * 3);
         lock.style.transform = 'translateX(-50%) scale(' + (1 + eased * 0.3) + ')';
       }
 
-      // Logo + título: escalan sutilmente y desvanecen
       if (content) {
         var contentScale = 1 + eased * 0.15;
         var contentOpacity = Math.max(0, 1 - eased * 2.5);
@@ -80,25 +150,66 @@
         content.style.opacity = contentOpacity;
       }
 
-      // Hint: se desvanece rápido al primer scroll
       if (hint) {
         hint.style.opacity = Math.max(0, 1 - progress * 8);
       }
     }
 
     function setProgress(newProgress) {
-      progress = Math.max(0, Math.min(1, newProgress));
+      newProgress = Math.max(0, Math.min(1, newProgress));
+      var wasOpening = lastProgress < newProgress;
+      var wasClosing = lastProgress > newProgress;
+      var crossedHalf = (lastProgress < 0.5 && newProgress >= 0.5) || (lastProgress >= 0.5 && newProgress < 0.5);
+      var reachedFull = lastProgress < 1 && newProgress >= 1;
+      var returnedToZero = lastProgress > 0 && newProgress === 0;
+
+      progress = newProgress;
       update();
+
+      // Sonidos en puntos clave
+      if (wasOpening && crossedHalf) {
+        playClickSound(); // click metálico al pasar la mitad
+      }
+      if (returnedToZero && lastProgress > 0.05) {
+        playCloseSound(); // thud al cerrar completo
+      }
+
+      lastProgress = progress;
+
+      // Cuando llega a 100% — liberar scroll y ocultar overlay
+      if (progress >= 1 && !unlocked) {
+        // Pequeño delay para que se vea el final de la animación
+        setTimeout(function() {
+          if (progress >= 1) unlock();
+        }, 300);
+      }
+    }
+
+    function unlock() {
+      if (unlocked) return;
+      unlocked = true;
+      // Click final al abrir completo
+      playClickSound();
+      document.body.classList.remove('opening-active');
+      overlay.style.transition = 'opacity 0.4s ease';
+      overlay.style.opacity = '0';
+      setTimeout(function() {
+        overlay.style.display = 'none';
+      }, 400);
+      window.removeEventListener('wheel', onWheel, { passive: false });
+      window.removeEventListener('touchstart', onTouchStart, { passive: false });
+      window.removeEventListener('touchmove', onTouchMove, { passive: false });
+      window.removeEventListener('keydown', onKey);
     }
 
     function addProgress(delta) {
+      if (unlocked) return;
       setProgress(progress + delta / SCROLL_THRESHOLD);
     }
 
     function onWheel(e) {
+      if (unlocked) return;
       e.preventDefault();
-      // delta positivo = scroll abajo = abre
-      // delta negativo = scroll arriba = cierra
       addProgress(e.deltaY);
     }
 
@@ -109,16 +220,18 @@
       }
     }
     function onTouchMove(e) {
+      if (unlocked) return;
       e.preventDefault();
       if (e.touches.length > 0) {
         var touchY = e.touches[0].clientY;
-        var delta = touchLastY - touchY; // positivo = scroll abajo
+        var delta = touchLastY - touchY;
         addProgress(delta);
         touchLastY = touchY;
       }
     }
 
     function onKey(e) {
+      if (unlocked) return;
       var keys = ['ArrowDown', 'PageDown', ' ', 'Enter', 'ArrowUp', 'PageUp'];
       if (keys.indexOf(e.key) >= 0) {
         e.preventDefault();
@@ -135,7 +248,18 @@
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('keydown', onKey);
 
-    // Estado inicial: cofre cerrado
+    // Primer toque del usuario (cualquier interacción) — resume audio context
+    function unlockAudio() {
+      var ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    }
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+
     update();
   }
 
