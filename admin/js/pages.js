@@ -4732,16 +4732,16 @@ const Pages = {
       '<div class="stat-card"><div class="stat-value" style="font-size:0.85rem">arcanoespecias.github.io/arcano-v2/tienda.html</div><div class="stat-label">URL Publica</div></div>' +
       '</div>';
 
-    // Boton Regenerar SEO
-    h += '<div class="card mt-16"><div class="card-header"><h3>SEO Tienda</h3></div><div class="card-body">' +
-      '<p class="text-sm text-muted mb-12">Actualiza el HTML estatico de la tienda para que los buscadores puedan leer los productos sin ejecutar JavaScript. Ejecuta despues de agregar, eliminar o modificar productos en tienda.</p>' +
-      '<button class="btn btn-gold" id="btn-regenerar-seo" onclick="Pages.regenerarSEO()">Regenerar SEO Tienda</button>' +
+    // Boton Regenerar SEO (legacy — solo JSON-LD del index)
+    h += '<div class="card mt-16"><div class="card-header"><h3>SEO Tienda (JSON-LD Home) — Legacy</h3></div><div class="card-body">' +
+      '<p class="text-sm text-muted mb-12"><strong>⚠ No usar este botón.</strong> Actualiza solo el JSON-LD del index.html. Puede romper la estructura del index. <strong>Usá \"Regenerar SEO Completo\" abajo en su lugar</strong> — ese regenera las páginas /blends/ y /blends-para/ sin tocar el index.html.</p>' +
+      '<button class="btn btn-outline" id="btn-regenerar-seo" onclick="Pages.regenerarSEO()">Regenerar SEO Tienda (no recomendado)</button>' +
       '<span id="seo-status" class="ml-8 text-sm"></span>' +
       '</div></div>';
 
-    // Botón Regenerar SEO Completo (páginas /blends/ + /blends-para/)
-    h += '<div class="card mt-16"><div class="card-header"><h3>SEO Completo (páginas /blends/ y /blends-para/)</h3></div><div class="card-body">' +
-      '<p class="text-sm text-muted mb-12">Genera las páginas individuales de cada producto (/blends/slug/) y las páginas de categorías SEO (/blends-para/categoria/). También actualiza sitemap.xml, merchant_feed.xml/tsv y los canonicals de /p/*.html. <strong>Ejecutá esto después de agregar, modificar o eliminar productos.</strong></p>' +
+    // Botón Regenerar SEO Completo (recomendado)
+    h += '<div class="card mt-16"><div class="card-header"><h3>✓ SEO Completo — Recomendado</h3></div><div class="card-body">' +
+      '<p class="text-sm text-muted mb-12">Genera las páginas individuales de cada producto (/blends/slug/) y las páginas de categorías SEO (/blends-para/categoria/). También actualiza sitemap.xml, merchant_feed.xml/tsv y los canonicals de /p/*.html. <strong>Ejecutá esto después de agregar, modificar o eliminar productos.</strong> No toca el index.html.</p>' +
       '<button class="btn btn-gold" id="btn-regenerar-seo-completo" onclick="Pages.regenerarSEOCompleto()">Regenerar SEO Completo</button>' +
       '<span id="seo-completo-status" class="ml-8 text-sm"></span>' +
       '<div id="seo-completo-log" class="mt-12" style="max-height:300px;overflow-y:auto;background:var(--bg3);padding:12px;border-radius:8px;font-size:12px;font-family:monospace;display:none"></div>' +
@@ -5222,6 +5222,18 @@ const Pages = {
       .then(function(fileData) {
         if (!fileData.sha) throw new Error('No se pudo obtener el archivo');
         var content = atob(fileData.content);
+
+        // === SAFETY CHECK: si no tiene la estructura esperada, abortar sin tocar ===
+        // El index.html debe tener </head>, </body>, <main> o .main-content
+        // Si no los tiene, es un index roto y no debemos seguir
+        if (content.indexOf('</head>') === -1 || content.indexOf('</body>') === -1) {
+          throw new Error('index.html no tiene estructura válida (falta </head> o </body>). No se modificará para no romperlo. Usá "Regenerar SEO Completo" en su lugar.');
+        }
+        // Verificar que tenga el body con class="opening-active" (estructura Arcano)
+        if (content.indexOf('class="opening-active"') === -1 && content.indexOf('id="page-tienda"') === -1) {
+          throw new Error('index.html no parece ser la tienda Arcano. No se modificará. Usá "Regenerar SEO Completo" en su lugar.');
+        }
+
         if (statusEl) statusEl.innerHTML = '<span class="text-muted">Generando SEO para ' + products.length + ' productos...</span>';
 
         var seo = generateSeoContent(products);
@@ -5265,7 +5277,7 @@ const Pages = {
           if (_ghHead !== -1) content = content.substring(0, _ghHead) + '\n  <meta name="google-site-verification" content="wxrzz6ncgVEJHMcS7-vx3uj3VUM8abPdlYoDw93P4ek">\n' + content.substring(_ghHead);
         }
 
-        // Remover bloque noscript anterior
+        // Remover bloque noscript anterior (si existe)
         var marker2 = '<!-- SEO: Pre-rendered noscript (regenerar con deploy-seo-prerender.js) -->';
         if (content.indexOf(marker2) !== -1) {
           var ns = content.indexOf(marker2);
@@ -5273,20 +5285,52 @@ const Pages = {
           if (ne !== -1) content = content.substring(0, ns) + content.substring(ne + '</noscript>'.length + 1);
         }
 
-        // Inyectar noscript antes del div seo-content
+        // Inyectar noscript antes del div seo-content (si existe)
+        // Soporta tanto <div id="seo-content"> como <div class="seo-products">
         var dm = '<div id="seo-content"';
         var di = content.indexOf(dm);
+        if (di === -1) {
+          dm = '<div class="seo-products"';
+          di = content.indexOf(dm);
+        }
         if (di !== -1) {
           content = content.substring(0, di) + marker2 + '\n' + seo.noscript + '\n\n' + content.substring(di);
         }
+        // Si no encuentra ninguno, no inyecta noscript (no rompe nada)
 
-        // Actualizar contenido del div seo-content
-        var do2 = '<div id="seo-content"';
-        var doe = content.indexOf('>', content.indexOf(do2));
-        var dc = content.indexOf('</div>', doe);
-        if (doe !== -1 && dc !== -1) {
-          content = content.substring(0, doe + 1) + '\n' + seo.seoDiv + '\n' + content.substring(dc);
+        // Actualizar contenido del div seo-content o seo-products (si existe)
+        // Soporta divs anidados: cuenta apertura/cierre para encontrar el cierre correcto
+        var divSelectors = ['<div id="seo-content"', '<div class="seo-products"'];
+        var updated = false;
+        for (var si = 0; si < divSelectors.length && !updated; si++) {
+          var sel = divSelectors[si];
+          var startIdx = content.indexOf(sel);
+          if (startIdx === -1) continue;
+          var openTagEnd = content.indexOf('>', startIdx);
+          if (openTagEnd === -1) continue;
+          // Contar divs anidados para encontrar el cierre correcto
+          var depth = 1;
+          var pos = openTagEnd + 1;
+          while (pos < content.length && depth > 0) {
+            var nextOpen = content.indexOf('<div', pos);
+            var nextClose = content.indexOf('</div>', pos);
+            if (nextClose === -1) { pos = -1; break; }
+            if (nextOpen !== -1 && nextOpen < nextClose) {
+              depth++;
+              pos = nextOpen + 4;
+            } else {
+              depth--;
+              pos = nextClose + 6;
+            }
+          }
+          if (pos > 0) {
+            // pos ahora apunta justo después del </div> que cierra el seo-content/products
+            var closeIdx = pos - 6; // inicio del </div>
+            content = content.substring(0, openTagEnd + 1) + '\n' + seo.seoDiv + '\n' + content.substring(closeIdx);
+            updated = true;
+          }
         }
+        // Si no encontró ninguno de los dos selectores, no toca el contenido (no rompe)
 
         if (statusEl) statusEl.innerHTML = '<span class="text-muted">Subiendo a GitHub...</span>';
 
