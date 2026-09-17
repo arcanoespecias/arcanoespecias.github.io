@@ -1926,7 +1926,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* ============================================================
-   EFECTO OPENING — Cortina de mitades
+   EFECTO OPENING — Cofre 3D negro realista (cortina bidireccional)
    ============================================================ */
 
 body.opening-active {
@@ -1945,7 +1945,7 @@ html.no-opening #opening-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #0E0A07;
+  background: #000;
   overflow: hidden;
 }
 
@@ -1957,35 +1957,55 @@ html.no-opening #opening-overlay {
   right: 0;
   height: 50%;
   background:
-    radial-gradient(ellipse at center bottom, #2a1d12 0%, #1a0f08 70%, #0E0A07 100%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 0;
+    radial-gradient(ellipse 80% 100% at 50% 100%, #1a0f08 0%, #0a0604 70%, #000 100%),
+    linear-gradient(180deg, #1a0f08 0%, #0a0604 100%);
+  display: block;
   will-change: transform, opacity;
   overflow: hidden;
+  box-shadow: inset 0 -30px 60px rgba(0,0,0,0.9);
 }
 
+/* Vetas de madera (repetición sutil) */
 .opening-lid-top::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(232,184,75,0.02) 3px, rgba(232,184,75,0.02) 4px),
-    radial-gradient(ellipse at top, rgba(232,184,75,0.08), transparent 50%);
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 4px,
+      rgba(232,184,75,0.015) 4px, rgba(232,184,75,0.015) 5px,
+      transparent 5px, transparent 12px,
+      rgba(80,55,30,0.04) 12px, rgba(80,55,30,0.04) 13px,
+      transparent 13px, transparent 28px,
+      rgba(60,40,20,0.05) 28px, rgba(60,40,20,0.05) 30px
+    );
   pointer-events: none;
 }
 
-/* Borde inferior dorado de la mitad superior (donde se une con la inferior) */
+/* Borde inferior dorado (donde se une con la mitad inferior) - línea de apertura */
 .opening-lid-top::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(180deg, transparent 0%, #E8B84B 30%, #c9a84c 70%, #8a6f1e 100%);
-  box-shadow: 0 2px 12px rgba(232,184,75,0.5);
+  height: 2px;
+  background: linear-gradient(180deg, transparent 0%, #E8B84B 40%, #8a6f1e 100%);
+  box-shadow:
+    0 2px 16px rgba(232,184,75,0.6),
+    0 -8px 24px rgba(0,0,0,0.8);
+}
+
+/* Reflejo de la luz en la tapa superior (brillo sutil arriba) */
+.opening-shine-top {
+  position: absolute;
+  top: 5%;
+  left: 20%;
+  right: 20%;
+  height: 30%;
+  background: radial-gradient(ellipse at center top, rgba(232,184,75,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* === Mitad inferior === */
@@ -1996,13 +2016,12 @@ html.no-opening #opening-overlay {
   right: 0;
   height: 50%;
   background:
-    radial-gradient(ellipse at center top, #2a1d12 0%, #1a0f08 70%, #0E0A07 100%);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 0;
+    radial-gradient(ellipse 80% 100% at 50% 0%, #1a0f08 0%, #0a0604 70%, #000 100%),
+    linear-gradient(0deg, #1a0f08 0%, #0a0604 100%);
+  display: block;
   will-change: transform, opacity;
   overflow: hidden;
+  box-shadow: inset 0 30px 60px rgba(0,0,0,0.9);
 }
 
 .opening-lid-bottom::before {
@@ -2010,119 +2029,184 @@ html.no-opening #opening-overlay {
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(232,184,75,0.02) 3px, rgba(232,184,75,0.02) 4px),
-    radial-gradient(ellipse at bottom, rgba(232,184,75,0.08), transparent 50%);
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 4px,
+      rgba(232,184,75,0.015) 4px, rgba(232,184,75,0.015) 5px,
+      transparent 5px, transparent 12px,
+      rgba(80,55,30,0.04) 12px, rgba(80,55,30,0.04) 13px,
+      transparent 13px, transparent 28px,
+      rgba(60,40,20,0.05) 28px, rgba(60,40,20,0.05) 30px
+    );
   pointer-events: none;
 }
 
-/* Borde superior dorado de la mitad inferior */
 .opening-lid-bottom::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(0deg, transparent 0%, #E8B84B 30%, #c9a84c 70%, #8a6f1e 100%);
-  box-shadow: 0 -2px 12px rgba(232,184,75,0.5);
+  height: 2px;
+  background: linear-gradient(0deg, transparent 0%, #E8B84B 40%, #8a6f1e 100%);
+  box-shadow:
+    0 -2px 16px rgba(232,184,75,0.6),
+    0 8px 24px rgba(0,0,0,0.8);
 }
 
-/* === Bisagras === */
-.opening-hinges {
+.opening-shine-bottom {
+  position: absolute;
+  bottom: 5%;
+  left: 20%;
+  right: 20%;
+  height: 30%;
+  background: radial-gradient(ellipse at center bottom, rgba(232,184,75,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* === Lock central (cerradura) === */
+.opening-lock {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 6%;
-  z-index: 5;
-  transform: translateY(-50%);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 110px;
+  z-index: 10;
   pointer-events: none;
+  will-change: opacity, transform;
 }
-.opening-hinge {
-  width: 60px;
-  height: 22px;
-  background: linear-gradient(180deg, #E8B84B 0%, #c9a84c 50%, #8a6f1e 100%);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
-  position: relative;
+
+.opening-lock-body {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #3a2a1c 0%, #1a0f08 50%, #0a0604 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(232,184,75,0.3);
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.9),
+    inset 0 2px 4px rgba(232,184,75,0.15),
+    inset 0 -2px 8px rgba(0,0,0,0.6);
+  position: absolute;
 }
-.opening-hinge::after {
+
+.opening-lock-body::before {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
-  background: #1a0f08;
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #E8B84B 0%, #8a6f1e 70%, #1a0f08 100%);
   border-radius: 50%;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 0 12px rgba(232,184,75,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
 }
 
-/* === Esquinas decorativas === */
+.opening-lock-body::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 6px;
+  background: linear-gradient(180deg, #E8B84B 0%, #8a6f1e 100%);
+  border-radius: 3px;
+}
+
+.opening-lock-shackle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  border: 6px solid;
+  border-color: #E8B84B #E8B84B transparent transparent;
+  border-radius: 25px 25px 0 0;
+  background: transparent;
+  box-shadow:
+    0 0 12px rgba(232,184,75,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* === Esquinas decorativas (refuerzos metálicos) === */
 .opening-corner {
   position: absolute;
-  width: 60px;
-  height: 60px;
-  border: 2px solid rgba(232,184,75,0.3);
+  width: 80px;
+  height: 80px;
   z-index: 2;
   pointer-events: none;
 }
-.opening-corner-tl { top: 24px; left: 24px; border-right: none; border-bottom: none; border-top-left-radius: 8px; }
-.opening-corner-tr { top: 24px; right: 24px; border-left: none; border-bottom: none; border-top-right-radius: 8px; }
-.opening-corner-bl { bottom: 24px; left: 24px; border-right: none; border-top: none; border-bottom-left-radius: 8px; }
-.opening-corner-br { bottom: 24px; right: 24px; border-left: none; border-top: none; border-bottom-right-radius: 8px; }
+.opening-corner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(232,184,75,0.4) 0%, rgba(138,111,30,0.2) 50%, transparent 100%);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.opening-corner-tl { top: 24px; left: 24px; }
+.opening-corner-tr { top: 24px; right: 24px; transform: scaleX(-1); }
+.opening-corner-bl { bottom: 24px; left: 24px; transform: scaleY(-1); }
+.opening-corner-br { bottom: 24px; right: 24px; transform: scale(-1, -1); }
 
-/* === Contenido central === */
+/* Tornillos en las esquinas */
+.opening-corner::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #E8B84B 30%, #1a0f08 100%);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* === Contenido central: logo + título === */
 .opening-content {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 6;
+  z-index: 8;
   text-align: center;
   will-change: opacity, transform;
   padding: 0 24px;
-  /* Default para que JS pueda animar */
-  /* transform inicial lo setea init() */
 }
 
 .opening-logo {
-  width: 180px;
-  height: 180px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
-  margin: 0 auto 32px;
+  margin: 0 auto 24px;
   display: block;
-  filter: drop-shadow(0 8px 32px rgba(232,184,75,0.5)) drop-shadow(0 0 16px rgba(232,184,75,0.2));
-  animation: openingLogoGlow 3s ease-in-out infinite;
-}
-
-@keyframes openingLogoGlow {
-  0%, 100% {
-    filter: drop-shadow(0 8px 32px rgba(232,184,75,0.5)) drop-shadow(0 0 16px rgba(232,184,75,0.2));
-  }
-  50% {
-    filter: drop-shadow(0 8px 48px rgba(232,184,75,0.75)) drop-shadow(0 0 32px rgba(232,184,75,0.4));
-  }
+  /* Sin animación, sin glow */
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,0.9));
 }
 
 .opening-title {
   font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-size: clamp(2.8rem, 9vw, 5rem);
   font-weight: 800;
   color: #E8B84B;
-  letter-spacing: 0.08em;
-  text-shadow: 0 4px 16px rgba(0,0,0,0.8), 0 0 32px rgba(232,184,75,0.3);
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 4px 16px rgba(0,0,0,0.9),
+    0 0 24px rgba(232,184,75,0.15);
   margin: 0;
   line-height: 1;
 }
 
 .opening-subtitle {
-  color: #a08b6e;
+  color: #8a7a5c;
   font-size: clamp(0.7rem, 2vw, 0.95rem);
-  letter-spacing: 0.3em;
+  letter-spacing: 0.4em;
   text-transform: uppercase;
   margin-top: 16px;
   font-weight: 500;
@@ -2131,37 +2215,40 @@ html.no-opening #opening-overlay {
 /* === Hint === */
 .opening-hint {
   position: absolute;
-  bottom: 6%;
+  bottom: 5%;
   left: 50%;
   transform: translateX(-50%);
-  color: #c9a84c;
-  font-size: 0.8rem;
+  color: #8a7a5c;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.35em;
   font-weight: 600;
-  z-index: 7;
+  z-index: 9;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   animation: openingHintBounce 2s ease-in-out infinite;
 }
 .opening-hint-arrow {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   line-height: 1;
+  color: #c9a84c;
 }
 @keyframes openingHintBounce {
-  0%, 100% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
-  50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.9; transform: translateX(-50%) translateY(4px); }
 }
 
 @media (max-width: 600px) {
-  .opening-hinge { width: 44px; height: 18px; }
-  .opening-logo { width: 140px; height: 140px; margin-bottom: 24px; }
-  .opening-corner { width: 44px; height: 44px; }
+  .opening-logo { width: 160px; height: 160px; margin-bottom: 16px; }
+  .opening-corner { width: 56px; height: 56px; }
   .opening-corner-tl, .opening-corner-tr { top: 16px; }
   .opening-corner-tl, .opening-corner-bl { left: 16px; }
   .opening-corner-tr, .opening-corner-br { right: 16px; }
   .opening-corner-bl, .opening-corner-br { bottom: 16px; }
+  .opening-lock { width: 70px; height: 90px; }
+  .opening-lock-body { width: 64px; height: 64px; top: 26px; }
+  .opening-lock-shackle { width: 40px; height: 40px; }
 }
 

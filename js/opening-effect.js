@@ -1,8 +1,7 @@
 /* ============================================================
-   Arcano — Efecto "Opening" (cortina mitades)
-   La tapa se abre en 2 mitades: arriba y abajo.
-   La tienda aparece desde el fondo del movimiento.
-   Primera vez por sesión. No se puede saltar.
+   Arcano — Efecto "Opening" (cortina bidireccional)
+   Abre al scrollear abajo, cierra al scrollear arriba.
+   Logo grande plano (sin animación). Cofre 3D negro realista.
    ============================================================ */
 
 (function() {
@@ -37,15 +36,16 @@
     var bottomLid = overlay.querySelector('.opening-lid-bottom');
     var content = overlay.querySelector('.opening-content');
     var hint = overlay.querySelector('.opening-hint');
+    var lock = overlay.querySelector('.opening-lock');
 
     if (!topLid || !bottomLid) {
       document.documentElement.classList.add('no-opening');
       return;
     }
 
-    var progress = 0;
-    var unlocked = false;
-    var SCROLL_THRESHOLD = 400; // más bajo = más fluido
+    var progress = 0; // 0 = cerrado, 1 = totalmente abierto
+    var SCROLL_THRESHOLD = 500;
+    var wheelAccum = 0;
 
     function easeInOutCubic(t) {
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -54,63 +54,52 @@
     function update() {
       var eased = easeInOutCubic(progress);
 
-      // Top lid: sube (translateY negativo) + fade out en última etapa
-      var topTranslate = -eased * 110; // 110% hacia arriba (sale de pantalla)
+      // Mitades: se desplazan hacia afuera (110% del tamaño)
+      // BIDIRECCIONAL: si progress baja, las mitades vuelven
+      var topTranslate = -eased * 105;
+      var bottomTranslate = eased * 105;
       topLid.style.transform = 'translateY(' + topTranslate + '%)';
-      topLid.style.opacity = eased < 0.85 ? 1 : Math.max(0, 1 - (eased - 0.85) / 0.15);
-
-      // Bottom lid: baja (translateY positivo) + fade out
-      var bottomTranslate = eased * 110;
       bottomLid.style.transform = 'translateY(' + bottomTranslate + '%)';
-      bottomLid.style.opacity = eased < 0.85 ? 1 : Math.max(0, 1 - (eased - 0.85) / 0.15);
 
-      // Contenido (logo + título): escala + fade rápido
+      // Opacidad: se mantienen opacas hasta el 80%, luego fade out
+      var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
+      topLid.style.opacity = lidOpacity;
+      bottomLid.style.opacity = lidOpacity;
+
+      // Lock central: se desvanece temprano (más fluido)
+      if (lock) {
+        lock.style.opacity = Math.max(0, 1 - eased * 3);
+        lock.style.transform = 'translateX(-50%) scale(' + (1 + eased * 0.3) + ')';
+      }
+
+      // Logo + título: escalan sutilmente y desvanecen
       if (content) {
-        var contentScale = 1 + eased * 0.2;
-        var contentOpacity = Math.max(0, 1 - eased * 2.2);
-        content.style.transform = 'scale(' + contentScale + ')';
+        var contentScale = 1 + eased * 0.15;
+        var contentOpacity = Math.max(0, 1 - eased * 2.5);
+        content.style.transform = 'translate(-50%, -50%) scale(' + contentScale + ')';
         content.style.opacity = contentOpacity;
       }
 
-      // Hint: desaparece al primer toque
+      // Hint: se desvanece rápido al primer scroll
       if (hint) {
         hint.style.opacity = Math.max(0, 1 - progress * 8);
       }
-
-      // Overlay: fade out al final
-      if (progress >= 1 && !unlocked) {
-        unlock();
-      }
     }
 
-    function unlock() {
-      if (unlocked) return;
-      unlocked = true;
-      document.body.classList.remove('opening-active');
-      overlay.style.transition = 'opacity 0.4s ease';
-      overlay.style.opacity = '0';
-      setTimeout(function() {
-        overlay.style.display = 'none';
-      }, 400);
-      window.removeEventListener('wheel', onWheel, { passive: false });
-      window.removeEventListener('touchstart', onTouchStart, { passive: false });
-      window.removeEventListener('touchmove', onTouchMove, { passive: false });
-      window.removeEventListener('keydown', onKey);
-    }
-
-    function addProgress(delta) {
-      if (unlocked) return;
-      // Suavizado: incrementa con factor para más fluidez
-      progress = Math.min(1, progress + Math.max(0, delta) / SCROLL_THRESHOLD);
+    function setProgress(newProgress) {
+      progress = Math.max(0, Math.min(1, newProgress));
       update();
     }
 
+    function addProgress(delta) {
+      setProgress(progress + delta / SCROLL_THRESHOLD);
+    }
+
     function onWheel(e) {
-      if (unlocked) return;
       e.preventDefault();
-      if (e.deltaY > 0) {
-        addProgress(e.deltaY);
-      }
+      // delta positivo = scroll abajo = abre
+      // delta negativo = scroll arriba = cierra
+      addProgress(e.deltaY);
     }
 
     var touchLastY = 0;
@@ -120,23 +109,24 @@
       }
     }
     function onTouchMove(e) {
-      if (unlocked) return;
       e.preventDefault();
       if (e.touches.length > 0) {
         var touchY = e.touches[0].clientY;
-        var delta = touchLastY - touchY;
-        if (delta > 0) {
-          addProgress(delta);
-        }
+        var delta = touchLastY - touchY; // positivo = scroll abajo
+        addProgress(delta);
         touchLastY = touchY;
       }
     }
 
     function onKey(e) {
-      if (unlocked) return;
-      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ' || e.key === 'Enter') {
+      var keys = ['ArrowDown', 'PageDown', ' ', 'Enter', 'ArrowUp', 'PageUp'];
+      if (keys.indexOf(e.key) >= 0) {
         e.preventDefault();
-        addProgress(60);
+        if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+          addProgress(-60);
+        } else {
+          addProgress(60);
+        }
       }
     }
 
@@ -145,6 +135,7 @@
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('keydown', onKey);
 
+    // Estado inicial: cofre cerrado
     update();
   }
 
