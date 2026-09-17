@@ -596,15 +596,29 @@ def category_page_html(cat_slug, blends_in_cat, all_blends):
     }
     for i, b in enumerate(blends_in_cat, 1):
         slug = b.get('_slug') or slugify(b.get('nombre', ''))
+        precio_chico = float(b.get('precioChico') or 0)
+        precio_grande = float(b.get('precioGrande') or 0)
+        # Cada Product DEBE tener offers (Google requiere offers, review o aggregateRating)
+        product_obj = {
+            '@type': 'Product',
+            'name': b.get('nombre', ''),
+            'url': BASE_URL + '/blends/' + slug + '/',
+            'image': b.get('imagen', '').replace('arcanoespecias.github.io', 'arcanoespecias.com'),
+            'brand': {'@type': 'Brand', 'name': 'Arcano Especias'}
+        }
+        # Agregar offers con precio si existe
+        if precio_chico > 0 or precio_grande > 0:
+            product_obj['offers'] = {
+                '@type': 'Offer',
+                'priceCurrency': 'COP',
+                'price': str(int(precio_chico if precio_chico > 0 else precio_grande)),
+                'availability': 'https://schema.org/InStock',
+                'url': BASE_URL + '/blends/' + slug + '/'
+            }
         itemlist_jsonld['itemListElement'].append({
             '@type': 'ListItem',
             'position': i,
-            'item': {
-                '@type': 'Product',
-                'name': b.get('nombre', ''),
-                'url': BASE_URL + '/blends/' + slug + '/',
-                'image': b.get('imagen', '').replace('arcanoespecias.github.io', 'arcanoespecias.com')
-            }
+            'item': product_obj
         })
 
     # Breadcrumb JSON-LD

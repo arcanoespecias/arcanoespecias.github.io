@@ -393,9 +393,29 @@ var ArcanoSEO = (function() {
     for (var i = 0; i < products.length; i++) {
       var b = products[i];
       var slug = b._slug || slugify(b.nombre);
+      var precioChico = Number(b.precioChico) || 0;
+      var precioGrande = Number(b.precioGrande) || 0;
+      // Cada Product DEBE tener offers (Google requiere offers, review o aggregateRating)
+      var productObj = {
+        '@type': 'Product',
+        name: b.nombre,
+        url: BASE_URL + '/blends/' + slug + '/',
+        image: fixImageUrl(b.imagen),
+        brand: {'@type': 'Brand', name: 'Arcano Especias'}
+      };
+      // Agregar offers con precio si existe
+      if (precioChico > 0 || precioGrande > 0) {
+        productObj.offers = {
+          '@type': 'Offer',
+          priceCurrency: 'COP',
+          price: String(precioChico > 0 ? precioChico : precioGrande),
+          availability: 'https://schema.org/InStock',
+          url: BASE_URL + '/blends/' + slug + '/'
+        };
+      }
       itemList.itemListElement.push({
         '@type':'ListItem', position:i+1,
-        item: {'@type':'Product', name:b.nombre, url:BASE_URL+'/blends/'+slug+'/', image:fixImageUrl(b.imagen)}
+        item: productObj
       });
     }
 
