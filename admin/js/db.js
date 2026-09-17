@@ -1584,6 +1584,8 @@ function saveVenta(data) {
     data.items = data.items || [];
     data.total = Number(data.total) || 0;
   }
+  // Separar costo de envío del total de productos (envío NO es venta)
+  // El total siempre es SOLO productos. El envío va aparte en envioCosto.
   if (isNew) {
     for (var i = 0; i < data.items.length; i++) {
       var item = data.items[i];
@@ -1665,8 +1667,12 @@ function saveVenta(data) {
       item.precioUnitario = Number(item.precioUnitario) || 0;
       item.subtotal = item.precioUnitario * cant;
     }
-    // Recalculate total
+    // Recalculate total (SOLO productos, sin envío)
     data.total = data.items.reduce(function(s, it) { return s + (it.subtotal || 0); }, 0);
+    // envioCosto se guarda aparte (no se suma al total)
+    // Si la venta viene con envioCosto ya seteado (de un pedido online), se respeta
+    if (data.envioCosto == null) data.envioCosto = 0;
+    if (data.envioGratis == null) data.envioGratis = false;
   }
   _db.ventas[data.id] = data;
   _saveToFirebase(); _cacheLocal();

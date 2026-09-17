@@ -4623,7 +4623,32 @@ const Pages = {
       }
     }
     h += '</tbody></table></div>';
-    h += '<div style="text-align:right;margin-top:12px;font-size:1.2rem" class="fw7">Total: $' + (p.total || 0).toLocaleString() + '</div>';
+
+    // Mostrar subtotal (productos) + envío + total separados
+    var envio = p.envio || {};
+    var envioCosto = p.envio ? (p.envio.costo || 0) : 0;
+    var envioGratis = p.envio ? p.envio.gratis : false;
+    var subtotal = (p.subtotal != null) ? p.subtotal : (p.total || 0) - envioCosto;
+
+    h += '<div style="text-align:right;margin-top:12px;font-size:1rem">';
+    h += '<div style="color:var(--text-sec)">Subtotal productos: <strong>$' + subtotal.toLocaleString() + '</strong></div>';
+    if (envioGratis) {
+      h += '<div style="color:var(--green)">Envío: <strong>GRATIS</strong></div>';
+    } else if (envioCosto > 0) {
+      h += '<div style="color:var(--text-sec)">Envío: <strong>$' + envioCosto.toLocaleString() + '</strong></div>';
+    }
+    h += '<div style="font-size:1.2rem;margin-top:4px" class="fw7 text-gold">Total: $' + (p.total || 0).toLocaleString() + '</div>';
+    h += '</div>';
+
+    // Botón "Envío sin cargo"
+    if (!envioGratis) {
+      h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center">';
+      h += '<button class="btn btn-sm btn-outline" style="border-color:var(--green);color:var(--green)" onclick="Pages.marcarEnvioSinCargo(\'' + pedidoKey + '\')">🎁 Envío sin cargo</button>';
+      h += '<span class="text-xs text-muted">Quita el costo de envío y lo marca como gratis</span>';
+      h += '</div>';
+    } else {
+      h += '<div class="mt-8"><span class="badge" style="background:rgba(107,142,78,0.15);color:var(--green);padding:6px 12px;border-radius:8px;font-size:.85rem">✓ Envío sin cargo aplicado</span></div>';
+    }
 
     // Estado buttons
     h += '<div class="mt-16"><h4>Cambiar Estado</h4><div class="mt-8" style="display:flex;gap:8px;flex-wrap:wrap">';
@@ -8163,10 +8188,17 @@ const Pages = {
   _renderVentas: function(data, el) {
     if (!el) return;
     var totalIngresos = 0, totalOps = 0, totalUnidades = 0;
+    var totalEnvios = 0, totalEnviosGratis = 0;
     var prodMap = {}, tipoMap = {}, tallaMap = {}, diaMap = {}, monthMap = {}, ciudadMap = {}, sourceMap = {};
     for (var d = 0; d < data.length; d++) {
       var s = data[d];
       totalIngresos += (s.total || 0);
+      // Envío se cuenta separado (no es venta)
+      if (s.envioGratis) {
+        totalEnviosGratis++;
+      } else {
+        totalEnvios += (s.envioCosto || 0);
+      }
       totalOps++;
       sourceMap[s.source] = (sourceMap[s.source] || 0) + 1;
       var opUnidades = 0;
@@ -8220,7 +8252,8 @@ const Pages = {
     var h = '';
     // KPIs
     h += '<div class="est-kpi-grid">';
-    h += '<div class="est-kpi"><div class="est-kpi-value">$' + totalIngresos.toLocaleString() + '</div><div class="est-kpi-label">Ingresos Totales</div><div class="est-kpi-sub">' + totalOps + ' operaciones</div></div>';
+    h += '<div class="est-kpi"><div class="est-kpi-value">$' + totalIngresos.toLocaleString() + '</div><div class="est-kpi-label">Ingresos por Ventas</div><div class="est-kpi-sub">' + totalOps + ' operaciones</div></div>';
+    h += '<div class="est-kpi"><div class="est-kpi-value">$' + totalEnvios.toLocaleString() + '</div><div class="est-kpi-label">Ingresos por Envíos</div><div class="est-kpi-sub">' + totalEnviosGratis + ' envíos gratis</div></div>';
     h += '<div class="est-kpi"><div class="est-kpi-value">' + totalUnidades + '</div><div class="est-kpi-label">Unidades Vendidas</div><div class="est-kpi-sub">' + prodArr.length + ' productos distintos</div></div>';
     h += '<div class="est-kpi"><div class="est-kpi-value">$' + (totalOps > 0 ? Math.round(totalIngresos / totalOps) : 0).toLocaleString() + '</div><div class="est-kpi-label">Ticket Promedio</div><div class="est-kpi-sub">por operacion</div></div>';
     h += '<div class="est-kpi ' + (tendenciaDiaria >= 0 ? 'up' : 'down') + '"><div class="est-kpi-value">' + tendSign + tendenciaDiaria + '%</div><div class="est-kpi-label">Tendencia Dia</div><div class="est-kpi-sub">vs dia anterior</div></div>';
@@ -11676,4 +11709,61 @@ Pages.regenerarSEOCompleto = function() {
       toast('Error: ' + err.message, 'err');
       if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
     });
+};
+
+/* ============================================================
+   Marcar envío como "sin cargo" en un pedido
+   Quita el costo de envío, lo marca como gratis, recalcula total
+   ============================================================ */
+Pages.marcarEnvioSinCargo = function(pedidoKey) {
+  if (!confirm('¿Marcar envío como sin cargo?\n\nSe quitará el costo de envío y el total se recalculará solo con productos.')) return;
+
+  var pedidos = ArcanoDB.getPedidos();
+  var p = null;
+  for (var i = 0; i < pedidos.length; i++) {
+    if (pedidos[i]._key === pedidoKey) { p = pedidos[i]; break; }
+  }
+  if (!p) { toast('Pedido no encontrado', 'err'); return; }
+
+  // Guardar el costo original por si el admin quiere revertir
+  var envio = p.envio || {};
+  var costoOriginal = envio.costo || 0;
+
+  // Actualizar en Firebase directamente
+  var updates = {};
+  updates[pedidoKey + '/envio/costo'] = 0;
+  updates[pedidoKey + '/envio/gratis'] = true;
+  updates[pedidoKey + '/envio/costoOriginal'] = costoOriginal;
+  updates[pedidoKey + '/envioGratis'] = true;
+  updates[pedidoKey + '/envioCosto'] = 0;
+
+  // Recalcular total = subtotal (productos) + 0 (envío gratis)
+  var subtotal = p.subtotal;
+  if (subtotal == null) {
+    // Si no hay subtotal explícito, calcularlo desde items
+    subtotal = 0;
+    if (p.items) {
+      for (var i = 0; i < p.items.length; i++) {
+        subtotal += (p.items[i].subtotal || 0);
+      }
+    }
+    // Si no hay items con subtotal, el subtotal era total - envío
+    if (subtotal === 0 && p.total) subtotal = p.total - costoOriginal;
+  }
+  updates[pedidoKey + '/subtotal'] = subtotal;
+  updates[pedidoKey + '/total'] = subtotal; // Total = solo productos, sin envío
+
+  // Enviar a Firebase
+  var _pedidosRef = firebase.database().ref('arcano/db/pedidos');
+  _pedidosRef.update(updates, function(error) {
+    if (error) {
+      toast('Error al actualizar envío: ' + error.message, 'err');
+    } else {
+      toast('✓ Envío marcado como sin cargo. Total: $' + subtotal.toLocaleString(), 'ok');
+      // Cerrar modal y recargar
+      var modal = document.getElementById('pedido-modal');
+      if (modal) modal.remove();
+      App.renderPage(App.currentPage);
+    }
+  });
 };
