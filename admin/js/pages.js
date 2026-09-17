@@ -3350,23 +3350,24 @@ const Pages = {
       btnSavePalasConfig.addEventListener('click', function() {
         var inputs = container.querySelectorAll('.pala-peso-input, .pala-precio-input');
         var saved = 0;
-        var productosModificados = {};  // {id: {pesoPala, precioPala}}
+        var productosModificados = {};  // {tipo-id: {pesoPala, precioPala}}
         for (var i = 0; i < inputs.length; i++) {
           var inp = inputs[i];
           var prodTipo = inp.getAttribute('data-prod-tipo');
           var prodId = Number(inp.getAttribute('data-prod-id'));
           var campo = inp.getAttribute('data-campo');
           var val = Number(inp.value) || 0;
-          if (!productosModificados[prodId]) productosModificados[prodId] = { tipo: prodTipo, id: prodId };
-          productosModificados[prodId][campo] = val;
+          // Usar tipo+id como key para evitar colisiones entre especias y blends con mismo ID
+          var key = prodTipo + '-' + prodId;
+          if (!productosModificados[key]) productosModificados[key] = { tipo: prodTipo, id: prodId };
+          productosModificados[key][campo] = val;
         }
-        var ids = Object.keys(productosModificados);
-        for (var j = 0; j < ids.length; j++) {
-          var pm = productosModificados[ids[j]];
+        var keys = Object.keys(productosModificados);
+        for (var j = 0; j < keys.length; j++) {
+          var pm = productosModificados[keys[j]];
           var prod = pm.tipo === 'blend' ? ArcanoDB.getBlend(pm.id) : ArcanoDB.getEspecia(pm.id);
           if (!prod) continue;
           // Modificar directamente el objeto en _db (referencia directa)
-          // Esto evita race conditions con el listener de Firebase
           if (pm.pesoPala != null) prod.pesoPala = pm.pesoPala;
           if (pm.precioPala != null) prod.precioPala = pm.precioPala;
           saved++;
