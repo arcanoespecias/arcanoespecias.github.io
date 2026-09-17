@@ -4739,6 +4739,14 @@ const Pages = {
       '<span id="seo-status" class="ml-8 text-sm"></span>' +
       '</div></div>';
 
+    // Botón Regenerar SEO Completo (páginas /blends/ + /blends-para/)
+    h += '<div class="card mt-16"><div class="card-header"><h3>SEO Completo (páginas /blends/ y /blends-para/)</h3></div><div class="card-body">' +
+      '<p class="text-sm text-muted mb-12">Genera las páginas individuales de cada producto (/blends/slug/) y las páginas de categorías SEO (/blends-para/categoria/). También actualiza sitemap.xml, merchant_feed.xml/tsv y los canonicals de /p/*.html. <strong>Ejecutá esto después de agregar, modificar o eliminar productos.</strong></p>' +
+      '<button class="btn btn-gold" id="btn-regenerar-seo-completo" onclick="Pages.regenerarSEOCompleto()">Regenerar SEO Completo</button>' +
+      '<span id="seo-completo-status" class="ml-8 text-sm"></span>' +
+      '<div id="seo-completo-log" class="mt-12" style="max-height:300px;overflow-y:auto;background:var(--bg3);padding:12px;border-radius:8px;font-size:12px;font-family:monospace;display:none"></div>' +
+      '</div></div>';
+
     h += '<div class="card mt-16"><div class="card-header"><h3>Productos visibles en la tienda</h3></div><div class="card-body">';
     if (productos.length === 0) {
       h += '<p class="text-muted text-center">No hay productos visibles. Activa "Tienda" en Productos > Editar.</p>';
@@ -11303,4 +11311,293 @@ Pages._mbPrintRecipe = function() {
   w.document.write(html);
   w.document.close();
   setTimeout(function() { w.print(); }, 300);
+};
+
+/* ============================================================
+   REGENERAR SEO COMPLETO
+   Genera todas las páginas /blends/, /blends-para/, sitemap,
+   merchant feed y actualiza /p/*.html — todo desde el navegador
+   Sube todo a GitHub en un solo commit usando Git Data API
+   ============================================================ */
+
+Pages.regenerarSEOCompleto = function() {
+  var statusEl = document.getElementById('seo-completo-status');
+  var logEl = document.getElementById('seo-completo-log');
+  var btn = document.getElementById('btn-regenerar-seo-completo');
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
+  if (statusEl) statusEl.innerHTML = '<span class="text-muted">Iniciando...</span>';
+  if (logEl) { logEl.style.display = 'block'; logEl.innerHTML = ''; }
+
+  function log(msg, type) {
+    if (!logEl) return;
+    var color = type === 'error' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : type === 'warn' ? 'var(--gold)' : 'var(--text3)';
+    var time = new Date().toLocaleTimeString('es-CO');
+    logEl.innerHTML += '<div style="color:' + color + '">[' + time + '] ' + msg + '</div>';
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setStatus(msg, color) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:' + (color || 'var(--text3)') + '">' + msg + '</span>';
+  }
+
+  log('Iniciando regeneración SEO completa...');
+
+  // Token y config (mismos que regenerarSEO)
+  var _gt='jksbZrZsYRI8E5<phRNgs]7wPot<M{yd;W63t6ZP';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+  var GH_OWNER = 'arcanoespecias';
+  var GH_REPO = 'arcanoespecias.github.io';
+  var GH_BRANCH = 'main';
+
+  function ghFetch(method, path, body) {
+    var opts = {
+      method: method,
+      headers: {
+        'Authorization': 'token ' + GH_TOKEN,
+        'User-Agent': 'ArcanoAdmin',
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github+json'
+      }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch('https://api.github.com' + path, opts).then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(err) {
+          throw new Error('GitHub API ' + r.status + ': ' + (err.message || r.statusText));
+        });
+      }
+      return r.json();
+    });
+  }
+
+  // Convertir string a base64 (UTF-8 safe)
+  function toBase64(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  // Paso 1: Generar todos los archivos en memoria
+  log('Leyendo catálogo desde Firebase (en memoria)...');
+  var db = ArcanoDB.getDB();
+
+  // Obtener URLs existentes del sitemap actual (para preservar recetas, blog)
+  var existingUrls = [];
+  // Las leemos del sitemap actual del repositorio
+  log('Obteniendo sitemap actual del repo...');
+  ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/sitemap.xml')
+    .then(function(file) {
+      var content = decodeURIComponent(escape(atob(file.content)));
+      var urlRegex = /<loc>([^<]+)<\/loc>/g;
+      var m;
+      while ((m = urlRegex.exec(content)) !== null) {
+        existingUrls.push(m[1]);
+      }
+      log('Sitemap actual: ' + existingUrls.length + ' URLs preservadas', 'ok');
+      return file;
+    })
+    .catch(function(err) {
+      log('No se pudo leer sitemap actual: ' + err.message + ' (continuando sin URLs extra)', 'warn');
+    })
+    .then(function() {
+      // Generar archivos con ArcanoSEO
+      log('Generando páginas SEO...');
+      var result = ArcanoSEO.generateAll(db, existingUrls, []);
+      log('Generadas: ' + result.blendsPages.length + ' páginas /blends/, ' + result.categoryPages.length + ' categorías, sitemap, feeds', 'ok');
+
+      // Reportar productos incompletos
+      if (result.stats.incompletos && result.stats.incompletos.length) {
+        log('⚠ ' + result.stats.incompletos.length + ' productos con info incompleta:', 'warn');
+        for (var i = 0; i < Math.min(5, result.stats.incompletos.length); i++) {
+          var inc = result.stats.incompletos[i];
+          log('  - [' + inc.id + '] ' + inc.nombre + ': ' + inc.issues.join(', '), 'warn');
+        }
+        if (result.stats.incompletos.length > 5) {
+          log('  ... y ' + (result.stats.incompletos.length - 5) + ' más', 'warn');
+        }
+      }
+
+      // Paso 2: Listar archivos /p/*.html actuales para actualizar canonicals
+      log('Listando /p/*.html para actualizar canonicals...');
+      return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/p').then(function(files) {
+        var pFiles = [];
+        for (var i = 0; i < files.length; i++) {
+          if (files[i].name.endsWith('.html')) {
+            pFiles.push({path: 'p/' + files[i].name, sha: files[i].sha, url: files[i].download_url});
+          }
+        }
+        log('Encontrados ' + pFiles.length + ' archivos /p/*.html', 'ok');
+        return pFiles;
+      });
+    })
+    .then(function(pFiles) {
+      // Descargar contenido de /p/*.html (en paralelo, lotes de 10)
+      log('Descargando contenido de /p/*.html...');
+      var batches = [];
+      for (var i = 0; i < pFiles.length; i += 10) {
+        batches.push(pFiles.slice(i, i + 10));
+      }
+      var allPFiles = [];
+      var batchProm = Promise.resolve();
+      batches.forEach(function(batch) {
+        batchProm = batchProm.then(function() {
+          var proms = batch.map(function(pf) {
+            return fetch(pf.url).then(function(r) { return r.text(); }).then(function(content) {
+              return {path: pf.path, content: content, sha: pf.sha};
+            });
+          });
+          return Promise.all(proms).then(function(results) {
+            allPFiles = allPFiles.concat(results);
+            log('  Descargados ' + allPFiles.length + '/' + pFiles.length + ' archivos');
+          });
+        });
+      });
+      return batchProm.then(function() { return allPFiles; });
+    })
+    .then(function(pFiles) {
+      // Generar archivos finales con canonicals actualizados
+      var db2 = ArcanoDB.getDB();
+      var result = ArcanoSEO.generateAll(db2, [], pFiles);
+
+      log('Archivos a subir:', 'ok');
+      log('  - ' + result.blendsPages.length + ' páginas /blends/<slug>/index.html');
+      log('  - ' + result.categoryPages.length + ' páginas /blends-para/<cat>/index.html');
+      log('  - 1 índice /blends-para/index.html');
+      log('  - ' + result.pHtmlUpdates.length + ' archivos /p/*.html actualizados');
+      log('  - sitemap.xml, merchant_feed.xml, merchant_feed.tsv');
+
+      // Paso 3: Crear blobs para todos los archivos
+      log('Creando blobs en GitHub...');
+
+      var allFiles = [];
+      allFiles = allFiles.concat(result.blendsPages);
+      allFiles = allFiles.concat(result.categoryPages);
+      allFiles.push(result.blendsParaIndex);
+      allFiles.push(result.sitemap);
+      allFiles.push(result.merchantFeedXml);
+      allFiles.push(result.merchantFeedTsv);
+      // /p/*.html updates requieren SHA para PUT, no se pueden subir como blobs nuevos
+      // los subimos con PUT /contents/ individualmente al final
+
+      var blobProms = allFiles.map(function(f) {
+        return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/blobs', {
+          content: toBase64(f.content),
+          encoding: 'base64'
+        }).then(function(blob) {
+          return {path: f.path, sha: blob.sha};
+        });
+      });
+
+      // Subir en lotes de 5 para no saturar
+      var allBlobs = [];
+      var batches = [];
+      for (var i = 0; i < blobProms.length; i += 5) {
+        batches.push(blobProms.slice(i, i + 5));
+      }
+      var seqProm = Promise.resolve();
+      batches.forEach(function(batch, idx) {
+        seqProm = seqProm.then(function() {
+          return Promise.all(batch).then(function(results) {
+            allBlobs = allBlobs.concat(results);
+            log('  Blobs creados: ' + allBlobs.length + '/' + blobProms.length);
+          });
+        });
+      });
+      return seqProm.then(function() { return {allBlobs: allBlobs, pUpdates: result.pHtmlUpdates}; });
+    })
+    .then(function(data) {
+      // Paso 4: Crear tree con todos los blobs
+      log('Creando tree en GitHub...');
+      var treeItems = data.allBlobs.map(function(b) {
+        return {path: b.path, mode: '100644', type: 'blob', sha: b.sha};
+      });
+
+      // Obtener el SHA del último commit y su tree base
+      return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/refs/heads/' + GH_BRANCH)
+        .then(function(ref) {
+          var commitSha = ref.object.sha;
+          return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/commits/' + commitSha)
+            .then(function(commit) {
+              var baseTreeSha = commit.tree.sha;
+              return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/trees', {
+                base_tree: baseTreeSha,
+                tree: treeItems
+              });
+            })
+            .then(function(newTree) {
+              log('Tree creado con ' + treeItems.length + ' archivos', 'ok');
+              return {commitSha: commitSha, treeSha: newTree.sha, pUpdates: data.pUpdates};
+            });
+        });
+    })
+    .then(function(data) {
+      // Paso 5: Crear commit
+      log('Creando commit...');
+      var today = new Date().toISOString().substring(0, 10);
+      return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/commits', {
+        message: 'SEO: regenerar páginas /blends/ y /blends-para/ (' + today + ')\n\nGenerado automáticamente desde el admin.',
+        tree: data.treeSha,
+        parents: [data.commitSha]
+      }).then(function(newCommit) {
+        log('Commit creado: ' + newCommit.sha.substring(0, 7), 'ok');
+        return {commitSha: newCommit.sha, pUpdates: data.pUpdates};
+      });
+    })
+    .then(function(data) {
+      // Paso 6: Actualizar la rama main
+      log('Actualizando rama main...');
+      return ghFetch('PATCH', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/refs/heads/' + GH_BRANCH, {
+        sha: data.commitSha
+      }).then(function() {
+        log('Rama main actualizada', 'ok');
+        return data;
+      });
+    })
+    .then(function(data) {
+      // Paso 7: Subir /p/*.html updates (PUT individual, requiere SHA)
+      if (!data.pUpdates.length) {
+        log('No hay /p/*.html para actualizar', 'ok');
+        return;
+      }
+      log('Subiendo ' + data.pUpdates.length + ' actualizaciones de /p/*.html...');
+
+      // Subir en lotes de 3 (PUT es más lento)
+      var batches = [];
+      for (var i = 0; i < data.pUpdates.length; i += 3) {
+        batches.push(data.pUpdates.slice(i, i + 3));
+      }
+      var seqProm = Promise.resolve();
+      var uploaded = 0;
+      batches.forEach(function(batch) {
+        seqProm = seqProm.then(function() {
+          var proms = batch.map(function(pf) {
+            return ghFetch('PUT', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + pf.path, {
+              message: 'SEO: actualizar canonical /p/ → /blends/',
+              content: toBase64(pf.content),
+              sha: pf.sha,
+              branch: GH_BRANCH
+            }).then(function() {
+              uploaded++;
+              log('  Actualizado ' + uploaded + '/' + data.pUpdates.length + ': ' + pf.path);
+            }).catch(function(err) {
+              log('  Error en ' + pf.path + ': ' + err.message, 'error');
+            });
+          });
+          return Promise.all(proms);
+        });
+      });
+      return seqProm;
+    })
+    .then(function() {
+      log('========================================', 'ok');
+      log('✓ SEO COMPLETO REGENERADO', 'ok');
+      log('GitHub Pages publicará en 1-2 minutos', 'ok');
+      setStatus('✓ Completado — GitHub Pages actualizando', 'var(--green)');
+      toast('✓ SEO regenerado correctamente', 'ok');
+      if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
+    })
+    .catch(function(err) {
+      log('ERROR: ' + err.message, 'error');
+      setStatus('✗ Error: ' + err.message, 'var(--red)');
+      toast('Error: ' + err.message, 'err');
+      if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
+    });
 };
