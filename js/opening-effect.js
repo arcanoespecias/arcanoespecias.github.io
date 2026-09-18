@@ -2,7 +2,6 @@
    Arcano — Efecto "Opening"
    - Top: cofre cerrado → se abre al scrollear
    - Medio: overlay oculto
-   - Bottom: cofre aparece ABIERTO y se cierra con animación JS
    ============================================================ */
 
 (function() {
@@ -51,23 +50,6 @@
     osc2.start(now); osc2.stop(now + 0.2);
   }
 
-  function playCloseSound() {
-    var ctx = getAudioCtx();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    var now = ctx.currentTime;
-    if (now - lastClickTime < 0.15) return;
-    lastClickTime = now;
-    var osc = ctx.createOscillator(), gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(now); osc.stop(now + 0.16);
-  }
-
   function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
@@ -90,17 +72,10 @@
     }
 
     var OPEN_THRESHOLD = 600;
-    var phase = 'opening';
     var prevProgress = 0;
-    var isClosing = false;
-    var closeAnimId = null;
+    var overlayVisible = true;
 
-    function setLids(progress) {
-      // Sin transition, seteo directo
-      topLid.style.transition = 'none';
-      bottomLid.style.transition = 'none';
-      if (content) content.style.transition = 'none';
-
+    function update(progress) {
       var eased = easeInOutCubic(progress);
       topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
       bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
@@ -116,117 +91,38 @@
       if (hint) hint.style.opacity = Math.max(0, 1 - progress * 8);
     }
 
-    // Animación de cierre frame-by-frame con JS (NO CSS transition)
-    function animateClose() {
-      if (isClosing) return;
-      isClosing = true;
-
-      var duration = 2000;
-      var startTime = performance.now();
-
-      playClickSound();
-
-      function frame(now) {
-        var elapsed = now - startTime;
-        var progress = Math.min(1, elapsed / duration);
-        // progress va de 1 (abierto) a 0 (cerrado)
-        var closeProgress = 1 - progress;
-
-        var eased = easeInOutCubic(closeProgress);
-        topLid.style.transition = 'none';
-        bottomLid.style.transition = 'none';
-
-        topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
-        bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
-
-        var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
-        topLid.style.opacity = lidOpacity;
-        bottomLid.style.opacity = lidOpacity;
-
-        if (content) {
-          content.style.transform = 'translate(-50%, -50%) scale(' + (1 + eased * 0.15) + ')';
-          content.style.opacity = Math.max(0, 1 - eased * 2.5);
-        }
-
-        if (progress < 1) {
-          closeAnimId = requestAnimationFrame(frame);
-        } else {
-          // Terminó
-          playCloseSound();
-          isClosing = false;
-        }
-      }
-
-      closeAnimId = requestAnimationFrame(frame);
-    }
-
-    function showOverlay(withFade) {
-      overlay.style.display = 'block';
-      if (withFade) {
-        overlay.style.transition = 'opacity 0.5s ease';
-        overlay.style.opacity = '0';
-        overlay.offsetHeight;
-        overlay.style.opacity = '1';
-      } else {
+    function showOverlay() {
+      if (!overlayVisible) {
         overlay.style.transition = '';
+        overlay.style.display = 'block';
         overlay.style.opacity = '1';
+        overlayVisible = true;
       }
     }
 
     function hideOverlay() {
-      overlay.style.transition = 'opacity 0.3s ease';
-      overlay.style.opacity = '0';
-      setTimeout(function() {
-        if (phase === 'browsing') overlay.style.display = 'none';
-      }, 300);
+      if (overlayVisible) {
+        overlay.style.transition = 'opacity 0.3s ease';
+        overlay.style.opacity = '0';
+        overlayVisible = false;
+        setTimeout(function() {
+          if (!overlayVisible) overlay.style.display = 'none';
+        }, 300);
+      }
     }
 
     function onScroll() {
-      if (isClosing) return;
-
       var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-      var docHeight = document.documentElement.scrollHeight;
-      var winHeight = window.innerHeight;
-      var maxScroll = docHeight - winHeight;
-      var scrollBottom = maxScroll - scrollY;
 
-      var BOTTOM_TRIGGER = 300;
-
-      // === FASE 3: Bottom ===
-      if (scrollBottom < BOTTOM_TRIGGER && maxScroll > OPEN_THRESHOLD + BOTTOM_TRIGGER) {
-        if (phase !== 'closing') {
-          phase = 'closing';
-          // Mostrar cofre ABIERTO
-          showOverlay(true);
-          setLids(1);
-
-          // Esperar fade in, luego animar cierre frame-by-frame
-          setTimeout(function() {
-            if (phase === 'closing' && !isClosing) {
-              animateClose();
-            }
-          }, 700);
-        }
-        return;
-      }
-
-      // === FASE 1: Top ===
       if (scrollY < OPEN_THRESHOLD) {
         var progress = Math.min(1, scrollY / OPEN_THRESHOLD);
-        phase = 'opening';
-        showOverlay(false);
-        setLids(progress);
-
+        showOverlay();
+        update(progress);
         if (prevProgress < 0.5 && progress >= 0.5) {
           playClickSound();
         }
         prevProgress = progress;
-        return;
-      }
-
-      // === FASE 2: Medio ===
-      if (phase !== 'browsing') {
-        phase = 'browsing';
+      } else {
         hideOverlay();
       }
     }
@@ -255,7 +151,7 @@
     window.addEventListener('touchstart', unlockAudio);
     window.addEventListener('keydown', unlockAudio);
 
-    setLids(0);
+    update(0);
     setTimeout(onScroll, 100);
   }
 
