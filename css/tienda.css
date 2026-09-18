@@ -373,7 +373,7 @@ main {
 /* === HERO LANDING — Full screen, fondo negro, especias flotando === */
 .hero-section {
   position: relative;
-  min-height: 100vh;
+  min-height: 250vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -413,10 +413,13 @@ main {
 
 /* Contenido del hero */
 .hero-content-landing {
-  position: relative;
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 2;
   text-align: center;
   max-width: 800px;
+  margin: 0 auto;
   will-change: opacity, transform;
   transition: opacity 0.3s ease;
 }
