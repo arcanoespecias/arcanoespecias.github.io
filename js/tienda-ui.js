@@ -1929,3 +1929,54 @@ function _usosHtml(p) {
   html += '</div></div>';
   return html;
 }
+
+/* === Hero Landing: partículas + fade on scroll === */
+(function() {
+  // Crear partículas de especias flotando
+  var particlesContainer = document.getElementById('hero-particles');
+  if (!particlesContainer) return;
+
+  var colors = ['#c7553f', '#E8B84B', '#8a5a2c', '#6b8e4e', '#2a1a0a', '#d4a574', '#a0522d', '#f0e6d3'];
+  var particleCount = 25;
+
+  for (var i = 0; i < particleCount; i++) {
+    var p = document.createElement('div');
+    p.className = 'hero-particle';
+    var size = 3 + Math.random() * 6;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    p.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+    particlesContainer.appendChild(p);
+  }
+
+  // Fade del contenido al hacer scroll
+  var heroContent = document.getElementById('hero-content-landing');
+  var heroSection = document.getElementById('hero-landing');
+  if (!heroContent || !heroSection) return;
+
+  var ticking = false;
+  function onScroll() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var heroHeight = heroSection.offsetHeight;
+    // Fade out: empieza en 0px, termina en heroHeight
+    var progress = Math.min(1, scrollY / (heroHeight * 0.7));
+    var opacity = 1 - (progress * 1.5);
+    var translateY = progress * -60;
+
+    heroContent.style.opacity = Math.max(0, opacity);
+    heroContent.style.transform = 'translateY(' + translateY + 'px)';
+
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      requestAnimationFrame(onScroll);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
