@@ -4,7 +4,6 @@ Disallow: /admin/
 Disallow: /admin-exclude.html
 Disallow: /clear.html
 Disallow: /tienda/
-Disallow: /p/
 
 Sitemap: https://arcanoespecias.com/sitemap.xml
 
@@ -22,3 +21,6 @@ Allow: /productos/
 
 User-agent: AdsBot-Google
 Allow: /
+
+# Sitemap de imágenes
+Sitemap: https://arcanoespecias.com/sitemap-images.xml
