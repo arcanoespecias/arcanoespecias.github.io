@@ -1,8 +1,8 @@
 /* ============================================================
-   Arcano — Efecto "Opening" (cortina bidireccional con scroll)
+   Arcano — Efecto "Opening"
    - Top: cofre cerrado → se abre al scrollear abajo
    - Medio: cofre abierto, overlay oculto
-   - Bottom: cofre aparece ABIERTO y se CIERRA al seguir scrolleando
+   - Bottom: cofre aparece ABIERTO y se cierra con animación CSS
    ============================================================ */
 
 (function() {
@@ -94,12 +94,9 @@
       return;
     }
 
-    var OPEN_THRESHOLD = 600;     // px para abrir desde el top
-    var CLOSE_ZONE = 1500;        // px de zona de cierre en el bottom (GRANDE)
+    var OPEN_THRESHOLD = 600;
+    var phase = 'opening';  // 'opening' | 'browsing' | 'closing'
     var prevProgress = 0;
-    var overlayVisible = true;
-    var phase = 'opening';        // 'opening' | 'browsing' | 'closing'
-    var closingScrollStart = 0;  // scrollY donde empezó el cierre
 
     function easeInOutCubic(t) {
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -107,6 +104,9 @@
 
     function update(progress) {
       var eased = easeInOutCubic(progress);
+
+      topLid.style.transition = 'none';
+      bottomLid.style.transition = 'none';
 
       var topTranslate = -eased * 105;
       var bottomTranslate = eased * 105;
@@ -129,31 +129,66 @@
       }
     }
 
+    // Cierre con CSS transition (no depende del scroll)
+    function animateClose() {
+      var duration = 1800; // 1.8 segundos
+      var startTime = performance.now();
+
+      topLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1), opacity ' + duration + 'ms ease';
+      bottomLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1), opacity ' + duration + 'ms ease';
+      if (content) {
+        content.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1), opacity ' + duration + 'ms ease';
+      }
+
+      // Estado: ABIERTO (progress=1)
+      topLid.style.transform = 'translateY(-105%)';
+      bottomLid.style.transform = 'translateY(105%)';
+      topLid.style.opacity = '1';
+      bottomLid.style.opacity = '1';
+      if (content) {
+        content.style.transform = 'translate(-50%, -50%) scale(1.15)';
+        content.style.opacity = '0';
+      }
+
+      // Forzar reflow para que la transición arranque
+      overlay.offsetHeight;
+
+      // Animar hacia CERRADO (progress=0)
+      topLid.style.transform = 'translateY(0%)';
+      bottomLid.style.transform = 'translateY(0%)';
+      if (content) {
+        content.style.transform = 'translate(-50%, -50%) scale(1)';
+        content.style.opacity = '1';
+      }
+      if (hint) hint.style.opacity = '0';
+
+      // Sonido de click al empezar a cerrar
+      playClickSound();
+
+      // Sonido de thud al terminar
+      setTimeout(function() {
+        playCloseSound();
+      }, duration - 200);
+    }
+
     function showOverlay(withFade) {
-      if (!overlayVisible) {
-        overlay.style.display = 'block';
-        if (withFade) {
-          overlay.style.transition = 'opacity 0.5s ease';
-          overlay.style.opacity = '0';
-          overlay.offsetHeight; // forzar reflow
-          overlay.style.opacity = '1';
-        } else {
-          overlay.style.transition = '';
-          overlay.style.opacity = '1';
-        }
-        overlayVisible = true;
+      overlay.style.transition = withFade ? 'opacity 0.5s ease' : 'none';
+      overlay.style.display = 'block';
+      if (withFade) {
+        overlay.style.opacity = '0';
+        overlay.offsetHeight;
+        overlay.style.opacity = '1';
+      } else {
+        overlay.style.opacity = '1';
       }
     }
 
     function hideOverlay() {
-      if (overlayVisible) {
-        overlay.style.transition = 'opacity 0.3s ease';
-        overlay.style.opacity = '0';
-        overlayVisible = false;
-        setTimeout(function() {
-          if (!overlayVisible) overlay.style.display = 'none';
-        }, 300);
-      }
+      overlay.style.transition = 'opacity 0.3s ease';
+      overlay.style.opacity = '0';
+      setTimeout(function() {
+        if (phase === 'browsing') overlay.style.display = 'none';
+      }, 300);
     }
 
     function onScroll() {
@@ -163,61 +198,46 @@
       var maxScroll = docHeight - winHeight;
       var scrollBottom = maxScroll - scrollY;
 
-      // ¿Hay suficiente altura para zona de cierre?
-      var hasClosingZone = maxScroll > (OPEN_THRESHOLD + CLOSE_ZONE);
+      // Zona de cierre: últimos 300px de la página
+      var BOTTOM_TRIGGER = 300;
 
-      var progress;
+      // === FASE 3: Bottom — animación de cierre ===
+      if (scrollBottom < BOTTOM_TRIGGER && maxScroll > OPEN_THRESHOLD + BOTTOM_TRIGGER) {
+        if (phase !== 'closing') {
+          phase = 'closing';
+          // Mostrar cofre ABIERTO
+          showOverlay(true);
+          update(1); // cofre abierto
 
-      // === FASE 1: Top — abrir (0 → 1) ===
+          // Esperar 500ms (fade in) y luego animar cierre
+          setTimeout(function() {
+            if (phase === 'closing') {
+              animateClose();
+            }
+          }, 500);
+        }
+        return;
+      }
+
+      // === FASE 1: Top — abrir con scroll ===
       if (scrollY < OPEN_THRESHOLD) {
-        progress = Math.min(1, scrollY / OPEN_THRESHOLD);
+        var progress = Math.min(1, scrollY / OPEN_THRESHOLD);
         phase = 'opening';
         showOverlay(false);
-      }
-      // === FASE 2: Bottom — cerrar (1 → 0) ===
-      else if (hasClosingZone && scrollBottom < CLOSE_ZONE) {
+        update(progress);
 
-        if (phase !== 'closing') {
-          // PRIMERA VEZ entrando en zona de cierre
-          // Marcar dónde empezó el scroll de cierre
-          closingScrollStart = scrollY;
-          phase = 'closing';
-          // Mostrar el cofre ABIERTO (progress=1) con fade in
-          showOverlay(true);
-          update(1);
+        if (prevProgress < 0.5 && progress >= 0.5) {
           playClickSound();
-          prevProgress = 1;
-          return; // este frame solo muestra el cofre abierto, el siguiente empieza a cerrar
         }
-
-        // Calcular cuánto scrolleó desde que empezó el cierre
-        var closingDistance = scrollY - closingScrollStart;
-        progress = Math.max(0, 1 - (closingDistance / CLOSE_ZONE));
-        showOverlay(false);
-
-        // Mantener en 1 si aún no empezó a scrollear dentro de la zona
-        if (closingDistance < 50) {
-          progress = 1;
-        }
+        prevProgress = progress;
+        return;
       }
-      // === FASE 3: Medio — abierto, overlay oculto ===
-      else {
-        progress = 1;
+
+      // === FASE 2: Medio — abierto, overlay oculto ===
+      if (phase !== 'browsing') {
         phase = 'browsing';
         hideOverlay();
       }
-
-      update(progress);
-
-      // === Sonidos ===
-      if (prevProgress < 0.5 && progress >= 0.5 && phase === 'opening') {
-        playClickSound();
-      }
-      if (prevProgress > 0.05 && progress <= 0.05 && phase === 'closing') {
-        playCloseSound();
-      }
-
-      prevProgress = progress;
     }
 
     // === Scroll listener throttled ===
