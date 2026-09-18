@@ -2,7 +2,7 @@
    Arcano — Efecto "Opening"
    - Top: cofre cerrado → se abre al scrollear
    - Medio: overlay oculto
-   - Bottom: cofre aparece ABIERTO y se cierra con animación CSS
+   - Bottom: cofre aparece ABIERTO y se cierra con animación JS
    ============================================================ */
 
 (function() {
@@ -92,14 +92,16 @@
     var OPEN_THRESHOLD = 600;
     var phase = 'opening';
     var prevProgress = 0;
-    var isAnimating = false; // bloquear scroll durante animación de cierre
+    var isClosing = false;
+    var closeAnimId = null;
 
-    function update(progress) {
-      var eased = easeInOutCubic(progress);
+    function setLids(progress) {
+      // Sin transition, seteo directo
       topLid.style.transition = 'none';
       bottomLid.style.transition = 'none';
       if (content) content.style.transition = 'none';
 
+      var eased = easeInOutCubic(progress);
       topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
       bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
 
@@ -114,55 +116,48 @@
       if (hint) hint.style.opacity = Math.max(0, 1 - progress * 8);
     }
 
+    // Animación de cierre frame-by-frame con JS (NO CSS transition)
     function animateClose() {
-      if (isAnimating) return;
-      isAnimating = true;
+      if (isClosing) return;
+      isClosing = true;
 
-      var duration = 2000; // 2 segundos para que se vea bien
+      var duration = 2000;
+      var startTime = performance.now();
 
-      // Quitar transitions previas
-      topLid.style.transition = 'none';
-      bottomLid.style.transition = 'none';
-      if (content) content.style.transition = 'none';
+      playClickSound();
 
-      // Estado ABIERTO (sin transition, instantáneo)
-      topLid.style.transform = 'translateY(-105%)';
-      bottomLid.style.transform = 'translateY(105%)';
-      topLid.style.opacity = '1';
-      bottomLid.style.opacity = '1';
-      if (content) {
-        content.style.transform = 'translate(-50%, -50%) scale(1.15)';
-        content.style.opacity = '0';
+      function frame(now) {
+        var elapsed = now - startTime;
+        var progress = Math.min(1, elapsed / duration);
+        // progress va de 1 (abierto) a 0 (cerrado)
+        var closeProgress = 1 - progress;
+
+        var eased = easeInOutCubic(closeProgress);
+        topLid.style.transition = 'none';
+        bottomLid.style.transition = 'none';
+
+        topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
+        bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
+
+        var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
+        topLid.style.opacity = lidOpacity;
+        bottomLid.style.opacity = lidOpacity;
+
+        if (content) {
+          content.style.transform = 'translate(-50%, -50%) scale(' + (1 + eased * 0.15) + ')';
+          content.style.opacity = Math.max(0, 1 - eased * 2.5);
+        }
+
+        if (progress < 1) {
+          closeAnimId = requestAnimationFrame(frame);
+        } else {
+          // Terminó
+          playCloseSound();
+          isClosing = false;
+        }
       }
 
-      // Doble requestAnimationFrame para forzar al navegador a procesar
-      // el estado "abierto" ANTES de cambiar al "cerrado"
-      requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
-          // Ahora SÍ poner las transitions y animar a cerrado
-          topLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.65, 0, 0.35, 1), opacity ' + duration + 'ms ease';
-          bottomLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.65, 0, 0.35, 1), opacity ' + duration + 'ms ease';
-          if (content) {
-            content.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.65, 0, 0.35, 1), opacity ' + duration + 'ms ease';
-          }
-
-          // Animar a CERRADO
-          topLid.style.transform = 'translateY(0%)';
-          bottomLid.style.transform = 'translateY(0%)';
-          if (content) {
-            content.style.transform = 'translate(-50%, -50%) scale(1)';
-            content.style.opacity = '1';
-          }
-
-          playClickSound();
-
-          // Thud al terminar
-          setTimeout(function() {
-            playCloseSound();
-            isAnimating = false;
-          }, duration - 200);
-        });
-      });
+      closeAnimId = requestAnimationFrame(frame);
     }
 
     function showOverlay(withFade) {
@@ -187,8 +182,7 @@
     }
 
     function onScroll() {
-      // Si la animación de cierre está corriendo, no hacer nada
-      if (isAnimating) return;
+      if (isClosing) return;
 
       var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       var docHeight = document.documentElement.scrollHeight;
@@ -198,31 +192,30 @@
 
       var BOTTOM_TRIGGER = 300;
 
-      // === FASE 3: Bottom — animación de cierre ===
+      // === FASE 3: Bottom ===
       if (scrollBottom < BOTTOM_TRIGGER && maxScroll > OPEN_THRESHOLD + BOTTOM_TRIGGER) {
         if (phase !== 'closing') {
           phase = 'closing';
-          // Mostrar cofre ABIERTO con fade
+          // Mostrar cofre ABIERTO
           showOverlay(true);
-          // Poner cofre en estado abierto SIN transition
-          update(1);
+          setLids(1);
 
-          // Esperar 600ms al fade in, luego animar cierre
+          // Esperar fade in, luego animar cierre frame-by-frame
           setTimeout(function() {
-            if (phase === 'closing' && !isAnimating) {
+            if (phase === 'closing' && !isClosing) {
               animateClose();
             }
-          }, 600);
+          }, 700);
         }
         return;
       }
 
-      // === FASE 1: Top — abrir con scroll ===
+      // === FASE 1: Top ===
       if (scrollY < OPEN_THRESHOLD) {
         var progress = Math.min(1, scrollY / OPEN_THRESHOLD);
         phase = 'opening';
         showOverlay(false);
-        update(progress);
+        setLids(progress);
 
         if (prevProgress < 0.5 && progress >= 0.5) {
           playClickSound();
@@ -231,7 +224,7 @@
         return;
       }
 
-      // === FASE 2: Medio — overlay oculto ===
+      // === FASE 2: Medio ===
       if (phase !== 'browsing') {
         phase = 'browsing';
         hideOverlay();
@@ -262,7 +255,7 @@
     window.addEventListener('touchstart', unlockAudio);
     window.addEventListener('keydown', unlockAudio);
 
-    update(0);
+    setLids(0);
     setTimeout(onScroll, 100);
   }
 
