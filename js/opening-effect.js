@@ -2,9 +2,7 @@
    Arcano — Efecto "Opening" (cortina bidireccional con scroll)
    - Top: cofre cerrado → se abre al scrollear abajo
    - Medio: cofre abierto, overlay oculto
-   - Bottom: cofre se CIERRA (efecto inverso) al llegar al final
-   - Logo en tapa superior, texto en tapa inferior
-   - Sonido de click al abrir y al cerrar
+   - Bottom: cofre se CIERRA progresivamente (efecto inverso)
    ============================================================ */
 
 (function() {
@@ -96,11 +94,11 @@
       return;
     }
 
-    var SCROLL_THRESHOLD = 500;   // px para abrir/cerrar completo
-    var prevProgress = 0;         // 0 = cerrado, 1 = abierto
+    var OPEN_THRESHOLD = 600;    // px para abrir (top)
+    var CLOSE_THRESHOLD = 1200;  // px para cerrar (bottom) — MÁS GRANDE para que se note
+    var prevProgress = 0;
     var overlayVisible = true;
-    var wasFullyClosed = true;    // para sonido al abrir
-    var wasFullyOpen = false;     // para sonido al cerrar
+    var wasInBrowsing = false;   // para detectar transición browsing → closing
 
     function easeInOutCubic(t) {
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -109,7 +107,6 @@
     function update(progress) {
       var eased = easeInOutCubic(progress);
 
-      // Tapas: progress 0 = cerradas, progress 1 = abiertas (separadas)
       var topTranslate = -eased * 105;
       var bottomTranslate = eased * 105;
       topLid.style.transform = 'translateY(' + topTranslate + '%)';
@@ -131,23 +128,32 @@
       }
     }
 
-    function showOverlay() {
+    function showOverlay(fadeIn) {
       if (!overlayVisible) {
-        overlay.style.transition = '';
         overlay.style.display = 'block';
-        overlay.style.opacity = '1';
+        if (fadeIn) {
+          // Fade in suave
+          overlay.style.transition = 'opacity 0.4s ease';
+          overlay.style.opacity = '0';
+          // Forzar reflow para que la transición funcione
+          overlay.offsetHeight;
+          overlay.style.opacity = '1';
+        } else {
+          overlay.style.transition = '';
+          overlay.style.opacity = '1';
+        }
         overlayVisible = true;
       }
     }
 
     function hideOverlay() {
       if (overlayVisible) {
-        overlay.style.transition = 'opacity 0.3s ease';
+        overlay.style.transition = 'opacity 0.4s ease';
         overlay.style.opacity = '0';
         overlayVisible = false;
         setTimeout(function() {
           if (!overlayVisible) overlay.style.display = 'none';
-        }, 300);
+        }, 400);
       }
     }
 
@@ -161,30 +167,51 @@
       var progress;
 
       // === FASE 1: Top — cofre cerrado abriéndose (0 → 1) ===
-      if (scrollY < SCROLL_THRESHOLD) {
-        progress = Math.min(1, scrollY / SCROLL_THRESHOLD);
-        showOverlay();
+      if (scrollY < OPEN_THRESHOLD) {
+        progress = Math.min(1, scrollY / OPEN_THRESHOLD);
+        wasInBrowsing = false;
+        showOverlay(false);
       }
       // === FASE 2: Bottom — cofre cerrándose (1 → 0) ===
-      else if (scrollBottom < SCROLL_THRESHOLD && maxScroll > SCROLL_THRESHOLD * 2) {
-        // En el bottom: progress va de 1 (cuando empieza a cerrarse) a 0 (totalmente cerrado)
-        progress = Math.max(0, scrollBottom / SCROLL_THRESHOLD);
-        showOverlay();
+      // Solo si hay suficiente altura para que ambas zonas no se solapen
+      else if (scrollBottom < CLOSE_THRESHOLD && maxScroll > (OPEN_THRESHOLD + CLOSE_THRESHOLD)) {
+        progress = Math.max(0, scrollBottom / CLOSE_THRESHOLD);
+
+        if (wasInBrowsing) {
+          // Transición de browsing → closing: fade in del overlay
+          // Empezar con el cofre ABIERTO (progress=1) y animar hacia el cierre
+          wasInBrowsing = false;
+          showOverlay(true);
+          // Forzar progress=1 primero para que el cofre aparezca abierto
+          // y luego se cierre con el scroll
+          update(1);
+          // Pequeño delay para que el fade in se vea
+          setTimeout(function() {
+            update(progress);
+          }, 50);
+          playClickSound();
+        } else {
+          showOverlay(false);
+          update(progress);
+        }
       }
       // === FASE 3: Medio — cofre abierto, overlay oculto ===
       else {
         progress = 1;
+        wasInBrowsing = true;
         hideOverlay();
       }
 
-      update(progress);
+      if (scrollY >= OPEN_THRESHOLD && scrollBottom >= CLOSE_THRESHOLD) {
+        update(1);
+      } else if (scrollY < OPEN_THRESHOLD || (scrollBottom < CLOSE_THRESHOLD && maxScroll > (OPEN_THRESHOLD + CLOSE_THRESHOLD))) {
+        // ya se actualizó arriba
+      }
 
       // === Sonidos en puntos clave ===
-      // Sonido al abrir (cruza 50% subiendo)
       if (prevProgress < 0.5 && progress >= 0.5) {
         playClickSound();
       }
-      // Sonido al cerrar completo (llega a 0)
       if (prevProgress > 0.05 && progress <= 0.05) {
         playCloseSound();
       }
@@ -218,10 +245,8 @@
     window.addEventListener('touchstart', unlockAudio);
     window.addEventListener('keydown', unlockAudio);
 
-    // === Estado inicial: cofre cerrado en el top ===
+    // === Estado inicial ===
     update(0);
-
-    // Verificar posición inicial
     setTimeout(onScroll, 100);
   }
 
