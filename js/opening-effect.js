@@ -1,7 +1,7 @@
 /* ============================================================
    Arcano — Efecto "Opening"
-   - Top: cofre cerrado → se abre al scrollear abajo
-   - Medio: cofre abierto, overlay oculto
+   - Top: cofre cerrado → se abre al scrollear
+   - Medio: overlay oculto
    - Bottom: cofre aparece ABIERTO y se cierra con animación CSS
    ============================================================ */
 
@@ -15,7 +15,6 @@
     return;
   }
 
-  // === Audio ===
   var audioCtx = null;
   function getAudioCtx() {
     if (!audioCtx) {
@@ -33,9 +32,7 @@
     var now = ctx.currentTime;
     if (now - lastClickTime < 0.15) return;
     lastClickTime = now;
-
-    var osc1 = ctx.createOscillator();
-    var gain1 = ctx.createGain();
+    var osc1 = ctx.createOscillator(), gain1 = ctx.createGain();
     osc1.type = 'triangle';
     osc1.frequency.setValueAtTime(2400, now);
     osc1.frequency.exponentialRampToValueAtTime(800, now + 0.04);
@@ -43,10 +40,7 @@
     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
     osc1.connect(gain1).connect(ctx.destination);
     osc1.start(now); osc1.stop(now + 0.08);
-
-    var osc2 = ctx.createOscillator();
-    var gain2 = ctx.createGain();
-    var filter2 = ctx.createBiquadFilter();
+    var osc2 = ctx.createOscillator(), gain2 = ctx.createGain(), filter2 = ctx.createBiquadFilter();
     filter2.type = 'lowpass'; filter2.frequency.value = 600;
     osc2.type = 'sawtooth';
     osc2.frequency.setValueAtTime(180, now);
@@ -64,9 +58,7 @@
     var now = ctx.currentTime;
     if (now - lastClickTime < 0.15) return;
     lastClickTime = now;
-
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
+    var osc = ctx.createOscillator(), gain = ctx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(400, now);
     osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
@@ -76,7 +68,10 @@
     osc.start(now); osc.stop(now + 0.16);
   }
 
-  // === Init ===
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
   function init() {
     var overlay = document.getElementById('opening-overlay');
     if (!overlay) {
@@ -95,52 +90,42 @@
     }
 
     var OPEN_THRESHOLD = 600;
-    var phase = 'opening';  // 'opening' | 'browsing' | 'closing'
+    var phase = 'opening';
     var prevProgress = 0;
-
-    function easeInOutCubic(t) {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    }
+    var isAnimating = false; // bloquear scroll durante animación de cierre
 
     function update(progress) {
       var eased = easeInOutCubic(progress);
-
       topLid.style.transition = 'none';
       bottomLid.style.transition = 'none';
+      if (content) content.style.transition = 'none';
 
-      var topTranslate = -eased * 105;
-      var bottomTranslate = eased * 105;
-      topLid.style.transform = 'translateY(' + topTranslate + '%)';
-      bottomLid.style.transform = 'translateY(' + bottomTranslate + '%)';
+      topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
+      bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
 
       var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
       topLid.style.opacity = lidOpacity;
       bottomLid.style.opacity = lidOpacity;
 
       if (content) {
-        var contentScale = 1 + eased * 0.15;
-        var contentOpacity = Math.max(0, 1 - eased * 2.5);
-        content.style.transform = 'translate(-50%, -50%) scale(' + contentScale + ')';
-        content.style.opacity = contentOpacity;
+        content.style.transform = 'translate(-50%, -50%) scale(' + (1 + eased * 0.15) + ')';
+        content.style.opacity = Math.max(0, 1 - eased * 2.5);
       }
-
-      if (hint) {
-        hint.style.opacity = Math.max(0, 1 - progress * 8);
-      }
+      if (hint) hint.style.opacity = Math.max(0, 1 - progress * 8);
     }
 
-    // Cierre con CSS transition (no depende del scroll)
     function animateClose() {
-      var duration = 1800; // 1.8 segundos
-      var startTime = performance.now();
+      if (isAnimating) return;
+      isAnimating = true;
 
-      topLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1), opacity ' + duration + 'ms ease';
-      bottomLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1), opacity ' + duration + 'ms ease';
-      if (content) {
-        content.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.4, 0, 0.2, 1), opacity ' + duration + 'ms ease';
-      }
+      var duration = 2000; // 2 segundos para que se vea bien
 
-      // Estado: ABIERTO (progress=1)
+      // Quitar transitions previas
+      topLid.style.transition = 'none';
+      bottomLid.style.transition = 'none';
+      if (content) content.style.transition = 'none';
+
+      // Estado ABIERTO (sin transition, instantáneo)
       topLid.style.transform = 'translateY(-105%)';
       bottomLid.style.transform = 'translateY(105%)';
       topLid.style.opacity = '1';
@@ -150,35 +135,45 @@
         content.style.opacity = '0';
       }
 
-      // Forzar reflow para que la transición arranque
-      overlay.offsetHeight;
+      // Doble requestAnimationFrame para forzar al navegador a procesar
+      // el estado "abierto" ANTES de cambiar al "cerrado"
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          // Ahora SÍ poner las transitions y animar a cerrado
+          topLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.65, 0, 0.35, 1), opacity ' + duration + 'ms ease';
+          bottomLid.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.65, 0, 0.35, 1), opacity ' + duration + 'ms ease';
+          if (content) {
+            content.style.transition = 'transform ' + duration + 'ms cubic-bezier(0.65, 0, 0.35, 1), opacity ' + duration + 'ms ease';
+          }
 
-      // Animar hacia CERRADO (progress=0)
-      topLid.style.transform = 'translateY(0%)';
-      bottomLid.style.transform = 'translateY(0%)';
-      if (content) {
-        content.style.transform = 'translate(-50%, -50%) scale(1)';
-        content.style.opacity = '1';
-      }
-      if (hint) hint.style.opacity = '0';
+          // Animar a CERRADO
+          topLid.style.transform = 'translateY(0%)';
+          bottomLid.style.transform = 'translateY(0%)';
+          if (content) {
+            content.style.transform = 'translate(-50%, -50%) scale(1)';
+            content.style.opacity = '1';
+          }
 
-      // Sonido de click al empezar a cerrar
-      playClickSound();
+          playClickSound();
 
-      // Sonido de thud al terminar
-      setTimeout(function() {
-        playCloseSound();
-      }, duration - 200);
+          // Thud al terminar
+          setTimeout(function() {
+            playCloseSound();
+            isAnimating = false;
+          }, duration - 200);
+        });
+      });
     }
 
     function showOverlay(withFade) {
-      overlay.style.transition = withFade ? 'opacity 0.5s ease' : 'none';
       overlay.style.display = 'block';
       if (withFade) {
+        overlay.style.transition = 'opacity 0.5s ease';
         overlay.style.opacity = '0';
         overlay.offsetHeight;
         overlay.style.opacity = '1';
       } else {
+        overlay.style.transition = '';
         overlay.style.opacity = '1';
       }
     }
@@ -192,29 +187,32 @@
     }
 
     function onScroll() {
+      // Si la animación de cierre está corriendo, no hacer nada
+      if (isAnimating) return;
+
       var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
       var docHeight = document.documentElement.scrollHeight;
       var winHeight = window.innerHeight;
       var maxScroll = docHeight - winHeight;
       var scrollBottom = maxScroll - scrollY;
 
-      // Zona de cierre: últimos 300px de la página
       var BOTTOM_TRIGGER = 300;
 
       // === FASE 3: Bottom — animación de cierre ===
       if (scrollBottom < BOTTOM_TRIGGER && maxScroll > OPEN_THRESHOLD + BOTTOM_TRIGGER) {
         if (phase !== 'closing') {
           phase = 'closing';
-          // Mostrar cofre ABIERTO
+          // Mostrar cofre ABIERTO con fade
           showOverlay(true);
-          update(1); // cofre abierto
+          // Poner cofre en estado abierto SIN transition
+          update(1);
 
-          // Esperar 500ms (fade in) y luego animar cierre
+          // Esperar 600ms al fade in, luego animar cierre
           setTimeout(function() {
-            if (phase === 'closing') {
+            if (phase === 'closing' && !isAnimating) {
               animateClose();
             }
-          }, 500);
+          }, 600);
         }
         return;
       }
@@ -233,14 +231,13 @@
         return;
       }
 
-      // === FASE 2: Medio — abierto, overlay oculto ===
+      // === FASE 2: Medio — overlay oculto ===
       if (phase !== 'browsing') {
         phase = 'browsing';
         hideOverlay();
       }
     }
 
-    // === Scroll listener throttled ===
     var ticking = false;
     function onScrollThrottled() {
       if (!ticking) {
@@ -254,7 +251,6 @@
 
     window.addEventListener('scroll', onScrollThrottled, { passive: true });
 
-    // === Unlock audio ===
     function unlockAudio() {
       var ctx = getAudioCtx();
       if (ctx && ctx.state === 'suspended') ctx.resume();
@@ -266,7 +262,6 @@
     window.addEventListener('touchstart', unlockAudio);
     window.addEventListener('keydown', unlockAudio);
 
-    // === Estado inicial ===
     update(0);
     setTimeout(onScroll, 100);
   }
