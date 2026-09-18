@@ -48,25 +48,25 @@ var ArcanoSEO = (function() {
   };
 
   var CATEGORIA_LABELS = {
-    'carnes': 'Blends para Carnes',
-    'pollo': 'Blends para Pollo',
-    'pescados-mariscos': 'Blends para Pescados y Mariscos',
-    'guisos': 'Blends para Guisos',
-    'infusiones': 'Blends para Infusiones',
-    'cocteleria': 'Blends para Coctelería',
-    'arroces-pastas': 'Blends para Arroces y Pastas',
-    'adobos-marinadas': 'Blends para Adobos y Marinadas'
+    'carnes': 'Comprar Especias para Carnes y Asados',
+    'pollo': 'Comprar Especias para Pollo',
+    'pescados-mariscos': 'Comprar Especias para Pescados y Mariscos',
+    'guisos': 'Comprar Especias para Guisos y Estofados',
+    'infusiones': 'Comprar Infusiones Artesanales y Tés',
+    'cocteleria': 'Comprar Botánicos para Coctelería',
+    'arroces-pastas': 'Comprar Especias para Arroces y Pastas',
+    'adobos-marinadas': 'Comprar Adobos y Marinadas Artesanales'
   };
 
   var CATEGORIA_INTROS = {
-    'carnes': 'Blends artesanales de especias seleccionados para realzar el sabor de carnes a la parrilla, asados, cortes premium y preparaciones a fuego lento. Ingredientes 100% naturales.',
-    'pollo': 'Blends pensados para marinados, adobos y preparaciones de pollo. Cada mezcla aporta carácter y profundidad sin enmascarar el sabor natural del pollo.',
-    'pescados-mariscos': 'Mezclas equilibradas de especias para pescados, mariscos y ceviches. Notas cítricas, herbales y suaves que complementan sin dominar.',
-    'guisos': 'Blends para guisos, estofados, sopas y preparaciones de cocción lenta. Mezclas que aportan profundidad, calidez y complejidad aromática.',
-    'infusiones': 'Blends para infusiones, tés y bebidas calientes. Hierbas, flores y especias seleccionadas para momentos de descanso y bienestar.',
-    'cocteleria': 'Blends botánicos para coctelería de autor. Mezclas para infundir ginebra, whisky, ron y otras bebidas, además de cócteles directamente.',
-    'arroces-pastas': 'Blends para arroces, pastas, risottos y preparaciones mediterráneas. Mezclas que aportan carácter sin dominar el plato.',
-    'adobos-marinadas': 'Blends ideales como adobo, marinada o sazón previa a la cocción. Cada mezcla penetra y realza el sabor natural del ingrediente base.'
+    'carnes': 'Descubre nuestra selección de especias artesanales para carnes y asados en Colombia. Sazonadores sin conservantes para parrilla, cortes premium y preparaciones a fuego lento. Compra online con envíos a todo el país y transforma cada corte en una experiencia gastronómica memorable. Ingredientes 100% naturales seleccionados de cada rincón del mundo.',
+    'pollo': 'Especias artesanales para pollo sin conservantes. Marinados y adobos que penetran y realzan el sabor natural sin enmascararlo. Compra online en Colombia con envíos a todo el país. Mezclas pensadas para asados, grill y preparaciones de cocción lenta que elevan cada bocado.',
+    'pescados-mariscos': 'Mezclas de especias artesanales para pescados, mariscos y ceviches. Notas cítricas y herbales que complementan sin dominar. Sin conservantes, ingredientes 100% naturales. Compra online en Colombia con envío a toda el país. Sazonadores gourmet para pescado al horno, a la plancha o crudo.',
+    'guisos': 'Especias para guisos, estofados, sopas y preparaciones de cocción lenta. Mezclas artesanales que aportan profundidad, calidez y complejidad aromática. Sin conservantes, 100% naturales. Compra online en Colombia con envíos a todo el país. Sazonadores gourmet para elevar tus recetas tradicionales.',
+    'infusiones': 'Infusiones artesanales y tés de especias para momentos de descanso y bienestar. Hierbas, flores y especias seleccionadas a mano, sin conservantes. Compra online en Colombia con envíos a todo el país. Mezclas relajantes, digestivas y energizantes que transforman tu rutina diaria.',
+    'cocteleria': 'Botánicos para coctelería de autor. Mezclas artesanales para infundir ginebra, whisky, ron y crear cócteles únicos. Sin conservantes, ingredientes 100% naturales. Compra online en Colombia con envío a todo el país. Eleva tus tragos con especias seleccionadas de cada rincón del mundo.',
+    'arroces-pastas': 'Especias artesanales para arroces, pastas, risottos y preparaciones mediterráneas. Mezclas que aportan carácter sin dominar el plato. Sin conservantes, ingredientes 100% naturales. Compra online en Colombia con envíos a todo el país. Sazonadores gourmet para la cocina de todos los días.',
+    'adobos-marinadas': 'Adobos y marinadas artesanales sin conservantes. Sazonadores que penetran y realzan el sabor natural de carnes, pollo y pescados. Compra online en Colombia con envíos a todo el país. Mezclas 100% naturales listas para transformar tus preparaciones culinarias.'
   };
 
   function deriveCategoriasSEO(blend) {
@@ -164,10 +164,22 @@ var ArcanoSEO = (function() {
     var urlCanonical = BASE_URL + '/blends/' + slug + '/';
     var urlImagen = imagen;
 
-    var title = nombre + ' | Blend de Especias | Arcano Especias';
+    // Title variado según categoría (no todos dicen "Blend de Especias")
+    var catLower = (categoria || '').toLowerCase();
+    var titleSuffix;
+    if (catLower.indexOf('coctel') >= 0) {
+      titleSuffix = 'Botánicos para Coctelería';
+    } else if (catLower.indexOf('infusion') >= 0) {
+      titleSuffix = 'Infusión Artesanal';
+    } else if (catLower.indexOf('comida') >= 0) {
+      titleSuffix = 'Sazonador Artesanal';
+    } else {
+      titleSuffix = 'Mezcla de Especias';
+    }
+    var title = nombre + ' | ' + titleSuffix + ' | Arcano Colombia';
     var metaDesc = descripcion;
-    if (metaDesc.length > 160) metaDesc = metaDesc.substring(0, 157).replace(/\s+\S*$/, '') + '...';
-    if (!metaDesc) metaDesc = nombre + ' — blend artesanal de especias de Arcano Especias. Envíos a toda Colombia.';
+    if (metaDesc.length > 155) metaDesc = metaDesc.substring(0, 152).replace(/\s+\S*$/, '') + '...';
+    if (!metaDesc) metaDesc = nombre + ' — mezcla de especias artesanal sin conservantes. Compra online con envíos a toda Colombia.';
 
     var h1 = nombre;
     var breadcrumbs = [
@@ -384,7 +396,7 @@ var ArcanoSEO = (function() {
       [label, urlCanonical]
     ];
 
-    var title = label + ' | Arcano Especias';
+    var title = label + ' | Arcano Colombia';
     var metaDesc = intro.substring(0, 155);
     if (intro.length < 130) metaDesc += ' Envíos a toda Colombia.';
 
@@ -509,7 +521,7 @@ var ArcanoSEO = (function() {
   /* === Página índice /blends-para/index.html === */
   function blendsParaIndexHtml(allCats) {
     var urlCanonical = BASE_URL + '/blends-para/';
-    var title = 'Blends para cada uso | Arcano Especias';
+    var title = 'Comprar Especias Artesanales según su Uso | Arcano Colombia';
     var metaDesc = 'Explora nuestros blends de especias según su uso: carnes, pollo, pescados, guisos, infusiones, coctelería y más. Envíos a toda Colombia.';
 
     var html = [];
