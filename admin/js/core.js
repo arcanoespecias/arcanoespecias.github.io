@@ -325,7 +325,14 @@ const App = {
     setTimeout(function() { _updateGCBadge(ArcanoDB.getGrandesClientes(), false); }, 2500);
 
     this.renderShell(user);
+    // Render dashboard immediately with cached data, then re-render
+    // after a short delay to pick up fresh Firebase data
     this.renderPage('dashboard');
+    setTimeout(function() {
+      if (App.currentPage === 'dashboard') {
+        App.renderPage('dashboard');
+      }
+    }, 2000);
   },
 
   renderShell(user) {
