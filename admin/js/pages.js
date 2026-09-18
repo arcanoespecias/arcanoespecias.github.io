@@ -174,6 +174,38 @@ const Pages = {
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'estadisticas\')" title="Ver estadisticas"><div class="dash-mini-val" style="color:' + (gananciaNeta >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + gananciaNeta.toLocaleString() + '</div><div class="dash-mini-lbl">Ganancia Neta</div><div class="dash-mini-sub">ingresos - compras - gastos</div></div>';
     h += '</div>';
 
+    // === VALOR DE INVENTARIO ===
+    var valorBlendsStock = 0, valorEspeciasBolsa = 0, valorTotalInventario = 0;
+    var valorVentaTotal = 0;
+
+    for (var vi2 = 0; vi2 < blends.length; vi2++) {
+      var b = blends[vi2];
+      // Valor de blends en stock (precio de venta)
+      valorBlendsStock += (b.stockChico || 0) * (b.precioChico || 0);
+      valorBlendsStock += (b.stockGrande || 0) * (b.precioGrande || 0);
+    }
+    for (var ei2 = 0; ei2 < especias.length; ei2++) {
+      var e = especias[ei2];
+      // Valor de especias en bolsas (precio de venta de frascos)
+      valorEspeciasBolsa += (e.stockChico || 0) * (e.precioChico || 0);
+      valorEspeciasBolsa += (e.stockGrande || 0) * (e.precioGrande || 0);
+    }
+    // Packs
+    var packs = (db.packs) ? Object.values(db.packs) : [];
+    for (var pi2 = 0; pi2 < packs.length; pi2++) {
+      var pk = packs[pi2];
+      if (!pk) continue;
+      valorVentaTotal += (pk.stock || 0) * (pk.precio || 0);
+    }
+    valorTotalInventario = valorBlendsStock + valorEspeciasBolsa + valorVentaTotal;
+
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--green)"></span>Valor de Inventario</div>';
+    h += '<div class="dash-kpi-row dash-kpi-sm">';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorBlendsStock.toLocaleString() + '</div><div class="dash-mini-lbl">Blends en Stock</div><div class="dash-mini-sub">frascos producidos</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorEspeciasBolsa.toLocaleString() + '</div><div class="dash-mini-lbl">Especias en Stock</div><div class="dash-mini-sub">frascos + bolsas</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--green)">$' + valorTotalInventario.toLocaleString() + '</div><div class="dash-mini-lbl">Valor Total Inventario</div><div class="dash-mini-sub">si se vende todo</div></div>';
+    h += '</div>';
+
     // Canal de venta + Composicion
     h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--blue)"></span>Analisis de Ventas</div>';
     h += '<div class="dash-grid-2">';
