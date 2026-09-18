@@ -175,35 +175,68 @@ const Pages = {
     h += '</div>';
 
     // === VALOR DE INVENTARIO ===
-    var valorBlendsStock = 0, valorEspeciasBolsa = 0, valorTotalInventario = 0;
-    var valorVentaTotal = 0;
+    // Modelo: Especias en bolsa (insumos) → Blends/Costales/Palas (productos)
+    var costos = ArcanoDB.getCostosInsumos();
+    var valorBlendsStock = 0;      // Blends producidos (frascos) al precio de venta
+    var valorEspeciasBolsaCosto = 0; // Especias en bolsa (gramos) al costo de compra
+    var valorEspeciasBolsaVenta = 0; // Especias en bolsa (gramos) convertidas a palas al precio de venta
+    var valorCostales = 0;        // Costales abiertos/vacíos
+    var valorPacks = 0;
+    var gramosBolsaTotal = 0;
 
+    // 1. Blends en stock (frascos producidos) → valor de venta
     for (var vi2 = 0; vi2 < blends.length; vi2++) {
       var b = blends[vi2];
-      // Valor de blends en stock (precio de venta)
       valorBlendsStock += (b.stockChico || 0) * (b.precioChico || 0);
       valorBlendsStock += (b.stockGrande || 0) * (b.precioGrande || 0);
     }
+
+    // 2. Especias en bolsa (insumos en gramos)
     for (var ei2 = 0; ei2 < especias.length; ei2++) {
       var e = especias[ei2];
-      // Valor de especias en bolsas (precio de venta de frascos)
-      valorEspeciasBolsa += (e.stockChico || 0) * (e.precioChico || 0);
-      valorEspeciasBolsa += (e.stockGrande || 0) * (e.precioGrande || 0);
+      var gramosBolsa = e.stockBolsa || 0;
+      gramosBolsaTotal += gramosBolsa;
+      // Valor al costo (cuánto costó comprar estos gramos)
+      var costoPorGramo = (costos.especias && costos.especias[e.id]) || 0;
+      valorEspeciasBolsaCosto += gramosBolsa * costoPorGramo;
+      // Valor de venta potencial (convertir a palas y vender)
+      var pesoPala = e.pesoPala || 20;
+      var precioPala = e.precioPala || 0;
+      if (pesoPala > 0 && precioPala > 0) {
+        var palasPosibles = Math.floor(gramosBolsa / pesoPala);
+        valorEspeciasBolsaVenta += palasPosibles * precioPala;
+      }
     }
-    // Packs
+
+    // 3. Costales (gramos en costales abiertos)
+    var costales = db.costales ? Object.values(db.costales) : [];
+    for (var ci2 = 0; ci2 < costales.length; ci2++) {
+      var c = costales[ci2];
+      if (!c) continue;
+      var grsRest = c.gramosRestantes || 0;
+      var precioPalaCostal = c.precioPala || 0;
+      var pesoPalaCostal = c.pesoPala || 20;
+      if (pesoPalaCostal > 0 && precioPalaCostal > 0) {
+        valorCostales += Math.floor(grsRest / pesoPalaCostal) * precioPalaCostal;
+      }
+    }
+
+    // 4. Packs
     var packs = (db.packs) ? Object.values(db.packs) : [];
     for (var pi2 = 0; pi2 < packs.length; pi2++) {
       var pk = packs[pi2];
       if (!pk) continue;
-      valorVentaTotal += (pk.stock || 0) * (pk.precio || 0);
+      valorPacks += (pk.stock || 0) * (pk.precio || 0);
     }
-    valorTotalInventario = valorBlendsStock + valorEspeciasBolsa + valorVentaTotal;
+
+    var valorVentaTotal = valorBlendsStock + valorEspeciasBolsaVenta + valorCostales + valorPacks;
 
     h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--green)"></span>Valor de Inventario</div>';
     h += '<div class="dash-kpi-row dash-kpi-sm">';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorBlendsStock.toLocaleString() + '</div><div class="dash-mini-lbl">Blends en Stock</div><div class="dash-mini-sub">frascos producidos</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorEspeciasBolsa.toLocaleString() + '</div><div class="dash-mini-lbl">Especias en Stock</div><div class="dash-mini-sub">frascos + bolsas</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--green)">$' + valorTotalInventario.toLocaleString() + '</div><div class="dash-mini-lbl">Valor Total Inventario</div><div class="dash-mini-sub">si se vende todo</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">' + gramosBolsaTotal.toLocaleString() + 'g</div><div class="dash-mini-lbl">Especias en Bolsa</div><div class="dash-mini-sub">insumos — costo $' + valorEspeciasBolsaCosto.toLocaleString() + '</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorCostales.toLocaleString() + '</div><div class="dash-mini-lbl">Costales (PDV)</div><div class="dash-mini-sub">palas potenciales</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--green)">$' + valorVentaTotal.toLocaleString() + '</div><div class="dash-mini-lbl">Valor Venta Total</div><div class="dash-mini-sub">si se vende todo</div></div>';
     h += '</div>';
 
     // Canal de venta + Composicion
