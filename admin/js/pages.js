@@ -351,7 +351,7 @@ const Pages = {
         `<button class="tab${tab==='especias' ? ' active' : ''}" onclick="window._prodTab='especias';window._prodSearch='';App.renderPage('productos')">Especias<span class="tab-count">${especias.length}</span></button>` +
         `<button class="tab${tab==='blends' ? ' active' : ''}" onclick="window._prodTab='blends';window._prodSearch='';App.renderPage('productos')">Blends<span class="tab-count">${blends.length}</span></button>` +
         `<button class="tab${tab==='packs' ? ' active' : ''}" onclick="window._prodTab='packs';window._prodSearch='';App.renderPage('productos')">Packs<span class="tab-count">${packs.length}</span></button>` +
-        `<button class="tab${tab==='uso' ? ' active' : ''}" onclick="window._prodTab='uso';window._prodSearch='';App.renderPage('productos')">Etiquetas de uso</button>` +
+        `<button class="tab${tab==='uso' ? ' active' : ''}" onclick="window._prodTab='uso';window._prodSearch='';App.renderPage('productos')" style="display:none">Etiquetas de uso</button>` +
       '</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
         (tab==='especias' ? '<button class="btn btn-gold" onclick="Pages.formEspecia()">+ Especia</button><button class="btn btn-outline" style="border-color:var(--green);color:var(--green)" onclick="Pages.formImportarExcel()">Importar Recetas</button><button class="btn btn-outline" style="border-color:var(--blue);color:var(--blue)" onclick="Pages.exportarProductosExcel()">Exportar Excel</button><button class="btn btn-outline" style="border-color:var(--gold);color:var(--gold)" onclick="Pages.importarProductosExcel()">Importar Datos</button>' : '') +
@@ -544,7 +544,6 @@ const Pages = {
         (isEdit && esp.imagen ? '<img src="' + esp.imagen + '" class="img-preview" id="img-preview-esp"><button class="btn btn-sm btn-red" style="margin-top:6px" onclick="Pages.removeImage(\'img-area-esp\',\'f-esp-img\')">Quitar imagen</button>' : '') +
         '<div class="img-upload-placeholder" onclick="document.getElementById(\'f-esp-img\').click()"><span>+ Click para subir imagen</span></div></div></div>' +
         '</div></div>' +
-        '<div class="form-group"><label>Etiquetas de uso</label><div id="tag-area-esp">' + Pages.buildTagSelectorHtml(isEdit && (esp.categorias || []).length ? esp.categorias[0] : 'Comidas', isEdit ? (esp.tags || []) : []) + '</div></div>' +
         '<div class="form-group"><label>Descripcion (opcional)</label><textarea class="input" id="f-esp-desc" rows="2" placeholder="Breve descripcion del producto para la tienda...">' + (isEdit ? (esp.descripcion||'') : '') + '</textarea></div>' +
         '<div class="form-group"><label>Uso / Preparaciones (opcional)</label><div id="uso-area-esp">' + Pages.buildUsoSelectorHtml(isEdit ? (esp.uso||'') : '') + '</div></div>' +
         (isEdit ? '<p class="text-xs text-muted mt-8">Stock: ' + (esp.stockBolsa||0) + 'g pala, ' + (esp.stockChico||0) + ' fr pequeño, ' + (esp.stockGrande||0) + ' fr grande</p>' : '') +
@@ -627,7 +626,7 @@ const Pages = {
         '</div></div>' +
           '<div class="form-group"><label>Region (opcional)</label><input type="text" class="input" id="f-bl-region" value="' + (isEdit ? (bl.region||'') : '') + '" placeholder="Ej: India"></div>' +
         '</div>' +
-        '<div class="form-group"><label>Uso (opcional)</label><div id="uso-area-bl">' + Pages.buildUsoSelectorHtml(isEdit ? (bl.uso||'') : '') + '</div></div>' +
+        '<div class="form-group"><label>Uso / Preparaciones (opcional)</label><div id="uso-area-bl">' + Pages.buildUsoSelectorHtml(isEdit ? (bl.uso||'') : '') + '</div></div>' +
         '<div class="card" style="border-color:var(--gold)"><div class="card-header"><h3>Precios de Venta</h3></div><div class="card-body">' +
         '<div class="g2"><div class="form-group"><label>Precio Pequeño ($)</label><input type="number" class="input" id="f-bl-pc" value="' + (isEdit ? bl.precioChico : '') + '" placeholder="Ej: 8000" min="0"></div>' +
         '<div class="form-group"><label>Precio Grande ($)</label><input type="number" class="input" id="f-bl-pg" value="' + (isEdit ? bl.precioGrande : '') + '" placeholder="Ej: 18000" min="0"></div></div>' +
@@ -644,7 +643,7 @@ const Pages = {
         (isEdit && bl.imagen ? '<img src="' + bl.imagen + '" class="img-preview" id="img-preview-bl"><button class="btn btn-sm btn-red" style="margin-top:6px" onclick="Pages.removeImage(\'img-area-bl\',\'f-bl-img\')">Quitar imagen</button>' : '') +
         '<div class="img-upload-placeholder" onclick="document.getElementById(\'f-bl-img\').click()"><span>+ Click para subir imagen</span></div></div></div>' +
         '</div></div>' +
-        '<div class="form-group"><label>Etiquetas de uso</label><div id="tag-area-bl">' + Pages.buildTagSelectorHtml(isEdit && (bl.categorias || []).length ? bl.categorias[0] : 'Comidas', isEdit ? (bl.tags || []) : []) + '</div></div>' +
+
         '<div class="form-group"><label>Descripcion (opcional)</label><textarea class="input" id="f-bl-desc" rows="2" placeholder="Breve descripcion del blend para la tienda...">' + (isEdit ? (bl.descripcion||'') : '') + '</textarea></div>' +
         (isEdit ? '<p class="text-xs text-muted mt-8">Stock: ' + (bl.stockChico||0) + ' fr pequeño, ' + (bl.stockGrande||0) + ' fr grande</p>' : '') +
       '</div><div class="modal-footer">' +
@@ -5830,6 +5829,7 @@ const Pages = {
                 precioChico: Number(row[4]) || 0,
                 precioGrande: Number(row[5]) || 0,
                 enTienda: String(row[9] || '').toLowerCase() === 'si',
+                uso: String(row[10] || '').trim(),
                 isNew: !rawId || !ArcanoDB.getEspecia(rawId)
               });
             }
@@ -5980,7 +5980,8 @@ const Pages = {
                     categoria: u.categoria || existing.categoria,
                     precioChico: u.precioChico,
                     precioGrande: u.precioGrande,
-                    enTienda: u.enTienda
+                    enTienda: u.enTienda,
+                    uso: u.uso || existing.uso || ''
                   });
                 } else {
                   var byName = ArcanoDB.findEspeciaByName(u.nombre);
@@ -5992,7 +5993,8 @@ const Pages = {
                       categoria: u.categoria,
                       precioChico: u.precioChico,
                       precioGrande: u.precioGrande,
-                      enTienda: u.enTienda
+                      enTienda: u.enTienda,
+                      uso: u.uso || ''
                     });
                   } else {
                     saved = ArcanoDB.saveEspecia({
@@ -6001,7 +6003,8 @@ const Pages = {
                       categoria: u.categoria,
                       precioChico: u.precioChico,
                       precioGrande: u.precioGrande,
-                      enTienda: u.enTienda
+                      enTienda: u.enTienda,
+                      uso: u.uso || ''
                     });
                   }
                 }
@@ -6205,14 +6208,66 @@ const Pages = {
   buildUsoSelectorHtml(selectedUsos) {
     var opciones = ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'];
     var sel = selectedUsos || '';
-    var selArr = typeof sel === 'string' ? sel.split(', ') : (sel || []);
+    var selArr = typeof sel === 'string' ? sel.split(',').map(function(s){return s.trim();}).filter(function(s){return s;}) : (sel || []);
+
+    // Cargar opciones custom guardadas en Firebase (tiendaConfig.usosCustom)
+    var customUsos = [];
+    try {
+      var cfg = ArcanoDB.getTiendaConfig();
+      if (cfg && cfg.usosCustom && Array.isArray(cfg.usosCustom)) {
+        customUsos = cfg.usosCustom;
+      }
+    } catch(e) {}
+
+    // Combinar opciones base + custom (sin duplicar)
+    var allOpciones = opciones.slice();
+    for (var ci = 0; ci < customUsos.length; ci++) {
+      if (allOpciones.indexOf(customUsos[ci]) < 0) allOpciones.push(customUsos[ci]);
+    }
+    // Agregar opciones que están en selArr pero no en allOpciones (datos viejos)
+    for (var si = 0; si < selArr.length; si++) {
+      if (allOpciones.indexOf(selArr[si]) < 0) allOpciones.push(selArr[si]);
+    }
+
     var h = '<div class="tag-selector" id="uso-selector">';
-    for (var i = 0; i < opciones.length; i++) {
-      var checked = selArr.indexOf(opciones[i]) >= 0 ? ' checked' : '';
-      h += '<label class="tag-chip"><input type="checkbox" value="' + opciones[i] + '"' + checked + '><span>' + opciones[i] + '</span></label>';
+    for (var i = 0; i < allOpciones.length; i++) {
+      var checked = selArr.indexOf(allOpciones[i]) >= 0 ? ' checked' : '';
+      h += '<label class="tag-chip"><input type="checkbox" value="' + allOpciones[i] + '"' + checked + '><span>' + allOpciones[i] + '</span></label>';
     }
     h += '</div>';
+    // Input para agregar nuevos usos
+    h += '<div style="display:flex;gap:6px;margin-top:8px;align-items:center">';
+    h += '<input type="text" class="input" id="uso-custom-input" placeholder="Agregar nuevo uso..." style="flex:1;padding:6px 10px;font-size:.85rem">';
+    h += '<button class="btn btn-sm btn-outline" onclick="Pages.addCustomUso()">+ Agregar</button>';
+    h += '</div>';
     return h;
+  },
+
+  addCustomUso: function() {
+    var input = document.getElementById('uso-custom-input');
+    if (!input || !input.value.trim()) return;
+    var val = input.value.trim();
+
+    // Guardar en tiendaConfig.usosCustom
+    try {
+      var cfg = ArcanoDB.getTiendaConfig();
+      var usosCustom = cfg.usosCustom || [];
+      if (usosCustom.indexOf(val) < 0) {
+        usosCustom.push(val);
+        ArcanoDB.saveTiendaConfig({ usosCustom: usosCustom });
+      }
+    } catch(e) {}
+
+    // Agregar al selector visualmente
+    var selector = document.getElementById('uso-selector');
+    if (selector) {
+      var label = document.createElement('label');
+      label.className = 'tag-chip';
+      label.innerHTML = '<input type="checkbox" value="' + val + '" checked><span>' + val + '</span>';
+      selector.appendChild(label);
+    }
+    input.value = '';
+    toast('Uso agregado: ' + val);
   },
 
   getSelectedUsos() {
