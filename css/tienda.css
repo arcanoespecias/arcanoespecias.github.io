@@ -1929,13 +1929,9 @@ textarea.form-input { min-height: 70px; resize: vertical; }
    EFECTO OPENING — Cofre madera negra (cortina bidireccional)
    ============================================================ */
 
-body.opening-active {
-  overflow: hidden;
-  height: 100vh;
-}
-html.no-opening body.opening-active {
-  overflow: auto;
-  height: auto;
+/* El overlay ahora sigue el scroll, no lo bloquea */
+#opening-overlay {
+  pointer-events: none;
 }
 html.no-opening #opening-overlay {
   display: none !important;

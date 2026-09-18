@@ -1,32 +1,24 @@
 /* ============================================================
-   Arcano — Efecto "Opening" (cortina bidireccional, sin candado)
-   - Logo en tapa superior, texto en tapa inferior (encajan perfecto)
+   Arcano — Efecto "Opening" (cortina bidireccional con scroll)
+   - Aparece al inicio (top de la página)
+   - Se abre al scrollear abajo
+   - Se cierra al volver al top
+   - Aparece también al llegar al final del sitio
+   - Logo en tapa superior, texto en tapa inferior
    - Tapas estilo madera negra realista
-   - Abre al scrollear abajo, cierra al scrollear arriba
-   - Tienda visible desde el inicio (overlay transparente)
    - Sonido de click al abrir (Web Audio API)
    ============================================================ */
 
 (function() {
   'use strict';
 
-  var SESSION_KEY = 'arcano_opening_seen';
-
-  function shouldRun() {
-    if (sessionStorage.getItem(SESSION_KEY)) return false;
-    var path = window.location.pathname;
-    var isHome = path === '/' || path === '/index.html' || path === '';
-    if (!isHome) return false;
-    if (window.location.hash) return false;
-    return true;
-  }
-
-  if (!shouldRun()) {
+  // Solo en la home
+  var path = window.location.pathname;
+  var isHome = path === '/' || path === '/index.html' || path === '';
+  if (!isHome || window.location.hash) {
     document.documentElement.classList.add('no-opening');
     return;
   }
-
-  sessionStorage.setItem(SESSION_KEY, '1');
 
   // === Audio ===
   var audioCtx = null;
@@ -34,9 +26,7 @@
     if (!audioCtx) {
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      } catch (e) {
-        audioCtx = null;
-      }
+      } catch (e) { audioCtx = null; }
     }
     return audioCtx;
   }
@@ -58,22 +48,19 @@
     gain1.gain.setValueAtTime(0.15, now);
     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
     osc1.connect(gain1).connect(ctx.destination);
-    osc1.start(now);
-    osc1.stop(now + 0.08);
+    osc1.start(now); osc1.stop(now + 0.08);
 
     var osc2 = ctx.createOscillator();
     var gain2 = ctx.createGain();
     var filter2 = ctx.createBiquadFilter();
-    filter2.type = 'lowpass';
-    filter2.frequency.value = 600;
+    filter2.type = 'lowpass'; filter2.frequency.value = 600;
     osc2.type = 'sawtooth';
     osc2.frequency.setValueAtTime(180, now);
     osc2.frequency.exponentialRampToValueAtTime(120, now + 0.15);
     gain2.gain.setValueAtTime(0.08, now);
     gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
     osc2.connect(filter2).connect(gain2).connect(ctx.destination);
-    osc2.start(now);
-    osc2.stop(now + 0.2);
+    osc2.start(now); osc2.stop(now + 0.2);
   }
 
   function playCloseSound() {
@@ -89,9 +76,14 @@
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
     osc.connect(gain).connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.16);
+    osc.start(now); osc.stop(now + 0.16);
   }
+
+  // === Configuración ===
+  var SCROLL_THRESHOLD = 500;     // px para abrir completo
+  var TOP_TRIGGER = 5;            // px desde el top para reactivar
+  var BOTTOM_TRIGGER = 100;       // px desde el bottom para activar
+  var OPENING_PHASE = 'opening';  // 'opening' | 'browsing' | 'bottom'
 
   function init() {
     var overlay = document.getElementById('opening-overlay');
@@ -102,6 +94,7 @@
 
     var topLid = overlay.querySelector('.opening-lid-top');
     var bottomLid = overlay.querySelector('.opening-lid-bottom');
+    var content = overlay.querySelector('.opening-content');
     var hint = overlay.querySelector('.opening-hint');
 
     if (!topLid || !bottomLid) {
@@ -110,121 +103,120 @@
     }
 
     var progress = 0;
-    var unlocked = false;
-    var SCROLL_THRESHOLD = 500;
     var lastProgress = 0;
+    var isAtBottom = false;
+    var wasOpening = false;
 
     function easeInOutCubic(t) {
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
-    function update() {
-      var eased = easeInOutCubic(progress);
+    function update(openProgress, mode) {
+      var eased = easeInOutCubic(openProgress);
 
-      // Tapas: se desplazan hacia afuera
       var topTranslate = -eased * 105;
       var bottomTranslate = eased * 105;
       topLid.style.transform = 'translateY(' + topTranslate + '%)';
       bottomLid.style.transform = 'translateY(' + bottomTranslate + '%)';
 
-      // Opacidad: se mantienen opacas hasta el 80%, luego fade out
       var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
       topLid.style.opacity = lidOpacity;
       bottomLid.style.opacity = lidOpacity;
 
-      // Hint: se desvanece al primer scroll
+      if (content) {
+        var contentScale = 1 + eased * 0.15;
+        var contentOpacity = Math.max(0, 1 - eased * 2.5);
+        content.style.transform = 'translate(-50%, -50%) scale(' + contentScale + ')';
+        content.style.opacity = contentOpacity;
+      }
+
       if (hint) {
-        hint.style.opacity = Math.max(0, 1 - progress * 8);
+        hint.style.opacity = Math.max(0, 1 - openProgress * 8);
       }
     }
 
-    function setProgress(newProgress) {
-      newProgress = Math.max(0, Math.min(1, newProgress));
-      var wasOpening = lastProgress < newProgress;
-      var crossedHalf = (lastProgress < 0.5 && newProgress >= 0.5) || (lastProgress >= 0.5 && newProgress < 0.5);
-      var returnedToZero = lastProgress > 0 && newProgress === 0;
-
-      progress = newProgress;
-      update();
-
-      if (wasOpening && crossedHalf) {
-        playClickSound();
-      }
-      if (returnedToZero && lastProgress > 0.05) {
-        playCloseSound();
-      }
-
-      lastProgress = progress;
-
-      if (progress >= 1 && !unlocked) {
-        setTimeout(function() {
-          if (progress >= 1) unlock();
-        }, 400);
-      }
+    function showOverlay() {
+      overlay.style.display = 'block';
+      overlay.style.opacity = '1';
+      overlay.style.transition = '';
     }
 
-    function unlock() {
-      if (unlocked) return;
-      unlocked = true;
-      playClickSound();
-      document.body.classList.remove('opening-active');
-      overlay.style.transition = 'opacity 0.4s ease';
+    function hideOverlay() {
+      overlay.style.transition = 'opacity 0.3s ease';
       overlay.style.opacity = '0';
       setTimeout(function() {
-        overlay.style.display = 'none';
-      }, 400);
-      window.removeEventListener('wheel', onWheel, { passive: false });
-      window.removeEventListener('touchstart', onTouchStart, { passive: false });
-      window.removeEventListener('touchmove', onTouchMove, { passive: false });
-      window.removeEventListener('keydown', onKey);
+        if (OPENING_PHASE !== 'opening' && OPENING_PHASE !== 'bottom') {
+          overlay.style.display = 'none';
+        }
+      }, 300);
     }
 
-    function addProgress(delta) {
-      if (unlocked) return;
-      setProgress(progress + delta / SCROLL_THRESHOLD);
-    }
+    function onScroll() {
+      var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+      var docHeight = document.documentElement.scrollHeight;
+      var winHeight = window.innerHeight;
+      var scrollBottom = docHeight - winHeight - scrollY;
 
-    function onWheel(e) {
-      if (unlocked) return;
-      e.preventDefault();
-      addProgress(e.deltaY);
-    }
-
-    var touchLastY = 0;
-    function onTouchStart(e) {
-      if (e.touches.length > 0) {
-        touchLastY = e.touches[0].clientY;
+      // === Detectar si está en el bottom ===
+      if (scrollBottom < BOTTOM_TRIGGER && scrollY > winHeight) {
+        if (OPENING_PHASE !== 'bottom') {
+          OPENING_PHASE = 'bottom';
+          showOverlay();
+          update(0, 'bottom');
+          playClickSound();
+        }
+        // El cofre se abre con scroll en el bottom también
+        // Pero como ya estamos abajo, mostramos el cofre cerrado
+        // y permite "cerrar" scrolleando hacia arriba
+        return;
       }
-    }
-    function onTouchMove(e) {
-      if (unlocked) return;
-      e.preventDefault();
-      if (e.touches.length > 0) {
-        var touchY = e.touches[0].clientY;
-        var delta = touchLastY - touchY;
-        addProgress(delta);
-        touchLastY = touchY;
-      }
-    }
 
-    function onKey(e) {
-      if (unlocked) return;
-      var keys = ['ArrowDown', 'PageDown', ' ', 'Enter', 'ArrowUp', 'PageUp'];
-      if (keys.indexOf(e.key) >= 0) {
-        e.preventDefault();
-        if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-          addProgress(-60);
+      // === Detectar si está en el top ===
+      if (scrollY <= TOP_TRIGGER) {
+        if (OPENING_PHASE !== 'opening') {
+          OPENING_PHASE = 'opening';
+          showOverlay();
+          update(0, 'opening');
+          playCloseSound();
+        }
+        return;
+      }
+
+      // === En el medio: cofre abierto ===
+      if (OPENING_PHASE === 'opening' || OPENING_PHASE === 'bottom') {
+        // Calcular progreso de apertura basado en scroll
+        var p = Math.min(1, scrollY / SCROLL_THRESHOLD);
+        if (p >= 0.95) {
+          // Cofre totalmente abierto
+          if (OPENING_PHASE !== 'browsing') {
+            OPENING_PHASE = 'browsing';
+            update(1, 'browsing');
+            playClickSound();
+            setTimeout(function() {
+              if (OPENING_PHASE === 'browsing') hideOverlay();
+            }, 400);
+          }
         } else {
-          addProgress(60);
+          update(p, 'opening');
         }
       }
     }
 
-    window.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('touchstart', onTouchStart, { passive: false });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('keydown', onKey);
+    // === Listener de scroll (throttled con requestAnimationFrame) ===
+    var ticking = false;
+    function onScrollThrottled() {
+      if (!ticking) {
+        requestAnimationFrame(function() {
+          onScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
 
+    window.addEventListener('scroll', onScrollThrottled, { passive: true });
+
+    // === Unlock audio en primera interacción ===
     function unlockAudio() {
       var ctx = getAudioCtx();
       if (ctx && ctx.state === 'suspended') ctx.resume();
@@ -236,7 +228,17 @@
     window.addEventListener('touchstart', unlockAudio);
     window.addEventListener('keydown', unlockAudio);
 
-    update();
+    // === Estado inicial: cofre cerrado en el top ===
+    OPENING_PHASE = 'opening';
+    document.body.classList.add('opening-active');
+    update(0, 'opening');
+
+    // No bloquear scroll (el usuario puede scrollear libremente)
+    // El efecto sigue el scroll en vez de bloquearlo
+    document.body.classList.remove('opening-active');
+
+    // Verificar posición inicial
+    setTimeout(onScroll, 100);
   }
 
   if (document.readyState === 'loading') {
