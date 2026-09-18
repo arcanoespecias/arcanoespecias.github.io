@@ -6212,6 +6212,7 @@ const Pages = {
 
     // Cargar opciones custom guardadas en Firebase (tiendaConfig.usosCustom)
     var customUsos = [];
+    var needSave = false;
     try {
       var cfg = ArcanoDB.getTiendaConfig();
       if (cfg && cfg.usosCustom && Array.isArray(cfg.usosCustom)) {
@@ -6224,9 +6225,23 @@ const Pages = {
     for (var ci = 0; ci < customUsos.length; ci++) {
       if (allOpciones.indexOf(customUsos[ci]) < 0) allOpciones.push(customUsos[ci]);
     }
-    // Agregar opciones que están en selArr pero no en allOpciones (datos viejos)
+
+    // Agregar opciones que están en selArr pero no en allOpciones
+    // (pueden venir del Excel o ser datos viejos)
     for (var si = 0; si < selArr.length; si++) {
-      if (allOpciones.indexOf(selArr[si]) < 0) allOpciones.push(selArr[si]);
+      if (allOpciones.indexOf(selArr[si]) < 0) {
+        allOpciones.push(selArr[si]);
+        // Auto-guardar en usosCustom para que aparezca en TODOS los productos
+        if (customUsos.indexOf(selArr[si]) < 0) {
+          customUsos.push(selArr[si]);
+          needSave = true;
+        }
+      }
+    }
+
+    // Si se encontraron usos nuevos, guardarlos en Firebase automáticamente
+    if (needSave) {
+      try { ArcanoDB.saveTiendaConfig({ usosCustom: customUsos }); } catch(e) {}
     }
 
     var h = '<div class="tag-selector" id="uso-selector">';
