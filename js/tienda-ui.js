@@ -576,7 +576,7 @@ function _renderDetail(products, idx) {
   html += '<span class="detail-type-tag ' + typeClass + '">' + typeLabel + '</span>';
   html += '<h2>' + p.nombre + '</h2>';
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
-  html += descHtml + ingsHtml;
+  html += descHtml + ingsHtml + _usosHtml(p);
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
   html += '</div></div>';
   overlay.innerHTML = html;
@@ -679,7 +679,7 @@ function _updateDetailContent(overlay, products, idx) {
   html += '<span class="detail-type-tag ' + typeClass + '">' + typeLabel + '</span>';
   html += '<h2>' + p.nombre + '</h2>';
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
-  html += descHtml + ingsHtml;
+  html += descHtml + ingsHtml + _usosHtml(p);
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
   html += '</div></div>';
   // Actualizar el contenido del overlay
@@ -1906,4 +1906,26 @@ function _closePopupLateral() {
       if (el.parentNode) el.parentNode.removeChild(el);
     }, 700);
   }
+}
+
+/* === Helper: generar HTML de modos de uso === */
+function _usosHtml(p) {
+  if (!p.uso) return '';
+  var usos = p.uso.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+  if (!usos.length) return '';
+  var iconos = {
+    'Carnes': '🥩', 'Pollo': '🍗', 'Pescados y Mariscos': '🐟', 'Cerdo': '🐖',
+    'Arroces': '🍚', 'Pastas': '🍝', 'Sopas y Cremas': '🍲', 'Ensaladas': '🥗',
+    'Guisos y Estofados': '🍲', 'Salsas': '🥫', 'Marinadas y Adobos': '🌿',
+    'Panaderia': '🍞', 'Postres': '🍰', 'Bebidas': '🥤', 'Vegetales': '🥕',
+    'Ceviches': '🐠', 'Currys': '🍛', 'Tacos y Burritos': '🌮',
+    'Hamburguesas': '🍔', 'Pizzas': '🍕'
+  };
+  var html = '<div class="detail-usos"><div class="detail-usos-label">✨ Ideal para</div><div class="detail-usos-list">';
+  for (var i = 0; i < usos.length; i++) {
+    var icon = iconos[usos[i]] || '▪';
+    html += '<span class="detail-uso-chip">' + icon + ' ' + usos[i] + '</span>';
+  }
+  html += '</div></div>';
+  return html;
 }
