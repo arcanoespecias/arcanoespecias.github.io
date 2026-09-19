@@ -1953,30 +1953,5 @@ function _usosHtml(p) {
     particlesContainer.appendChild(p);
   }
 
-  // Fade del contenido al hacer scroll
-  var heroContent = document.getElementById('hero-content-landing');
-  var heroSection = document.getElementById('hero-landing');
-  if (!heroContent || !heroSection) return;
-
-  var ticking = false;
-  function onScroll() {
-    var scrollY = window.scrollY || window.pageYOffset;
-    var heroHeight = heroSection.offsetHeight;
-    // Fade out: empieza en 0px, termina en heroHeight
-    var progress = Math.min(1, scrollY / (heroHeight * 0.85));
-    var opacity = 1 - (progress * 0.9);
-    var translateY = progress * -20;
-
-    heroContent.style.opacity = Math.max(0, opacity);
-    heroContent.style.transform = 'translateY(' + translateY + 'px)';
-
-    ticking = false;
-  }
-
-  window.addEventListener('scroll', function() {
-    if (!ticking) {
-      requestAnimationFrame(onScroll);
-      ticking = true;
-    }
-  }, { passive: true });
+  // Sin fade on scroll — el texto se queda fijo
 })();
