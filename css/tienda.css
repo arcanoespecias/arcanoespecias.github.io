@@ -373,9 +373,9 @@ main {
 /* === HERO LANDING — Full screen, fondo negro, especias flotando === */
 .hero-section {
   position: relative;
-  min-height: 300vh;
+  min-height: 180vh;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   background: #0a0604;
   overflow: hidden;
@@ -414,8 +414,8 @@ main {
 /* Contenido del hero */
 .hero-content-landing {
   position: sticky;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 30%;
+  transform: translateY(0);
   z-index: 2;
   text-align: center;
   max-width: 800px;
@@ -456,7 +456,7 @@ main {
   font-size: clamp(1rem, 3vw, 1.35rem);
   color: #a08b6e;
   max-width: 600px;
-  margin: 0 auto 48px;
+  margin: 0 auto 24px;
   line-height: 1.7;
   font-weight: 400;
 }
@@ -498,7 +498,7 @@ main {
 /* === FILTER BAR === */
 .filter-bar {
   display: flex; gap: 8px; justify-content: center;
-  flex-wrap: wrap; margin-bottom: 32px;
+  flex-wrap: wrap; margin-bottom: 16px;
   position: sticky; top: var(--nav-h);
   z-index: 50;
   padding: 12px 0;
