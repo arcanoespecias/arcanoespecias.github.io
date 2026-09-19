@@ -1963,9 +1963,9 @@ function _usosHtml(p) {
     var scrollY = window.scrollY || window.pageYOffset;
     var heroHeight = heroSection.offsetHeight;
     // Fade out: empieza en 0px, termina en heroHeight
-    var progress = Math.min(1, scrollY / (heroHeight * 0.8));
-    var opacity = 1 - (progress * 1.1);
-    var translateY = progress * -30;
+    var progress = Math.min(1, scrollY / (heroHeight * 0.85));
+    var opacity = 1 - (progress * 0.9);
+    var translateY = progress * -20;
 
     heroContent.style.opacity = Math.max(0, opacity);
     heroContent.style.transform = 'translateY(' + translateY + 'px)';
