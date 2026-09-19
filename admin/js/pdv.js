@@ -238,6 +238,81 @@ var PDV = {
       h += '</tbody></table></div>';
     }
 
+    // === RESUMEN EN TIEMPO REAL ===
+    var totalProductos = 0, totalCostales = 0;
+    var costoProductos = 0, costoCostales = 0;
+    var ventaProyectadaProductos = 0, ventaProyectadaCostales = 0;
+    var costos = ArcanoDB.getCostosInsumos();
+
+    // Calcular productos
+    for (var pi = 0; pi < keys.length; pi++) {
+      var k2 = keys[pi];
+      var parts2 = k2.split('_');
+      var tipo2 = parts2[0], prodId2 = Number(parts2[1]), talla2 = parts2[2];
+      var cant = stock[k2];
+      totalProductos += cant;
+      var prod2;
+      if (tipo2 === 'pack') { var allPks = ArcanoDB.getPacks ? ArcanoDB.getPacks() : []; for (var pp = 0; pp < allPks.length; pp++) { if (allPks[pp].id === prodId2) { prod2 = allPks[pp]; break; } } }
+      else { prod2 = tipo2 === 'especia' ? ArcanoDB.getEspecia(prodId2) : ArcanoDB.getBlend(prodId2); }
+      if (!prod2) continue;
+      // Precio de venta
+      var precioVenta = 0;
+      if (tipo2 === 'pack') { precioVenta = prod2.precio || 0; }
+      else { precioVenta = talla2 === 'grande' ? (prod2.precioGrande || 0) : (prod2.precioChico || 0); }
+      ventaProyectadaProductos += cant * precioVenta;
+      // Costo (aproximado: para blends usamos costo de ingredientes, para especias costo por gramo × gramos)
+      if (tipo2 === 'blend' && prod2.ingredientes) {
+        var gramosTalla = talla2 === 'grande' ? 0 : 0;
+        var costoIngreds = 0;
+        for (var ii2 = 0; ii2 < prod2.ingredientes.length; ii2++) {
+          var ing2 = prod2.ingredientes[ii2];
+          var g = talla2 === 'grande' ? (ing2.gramosGrande || 0) : (ing2.gramosChico || 0);
+          var cpg = (costos.especias && costos.especias[ing2.especiaId]) || 0;
+          costoIngreds += g * cpg;
+        }
+        costoProductos += cant * costoIngreds;
+      }
+    }
+
+    // Calcular costales
+    for (var ci3 = 0; ci3 < costalesKeys.length; ci3++) {
+      var ck = costalesKeys[ci3];
+      var grs = stockCostales[ck] || 0;
+      var costal3 = ArcanoDB.getCostal(parseInt(ck, 10));
+      if (!costal3) continue;
+      totalCostales++;
+      // Costo del costal: gramos × costo promedio de especias
+      var costoPromedio = 0;
+      if (costal3.items && costal3.items.length > 0) {
+        var costoTotal = 0, gramosTotal = 0;
+        for (var iti = 0; iti < costal3.items.length; iti++) {
+          var ci_item = costal3.items[iti];
+          var cpg = (costos.especias && costos.especias[ci_item.especiaId]) || 0;
+          costoTotal += (ci_item.gramos || 0) * cpg;
+          gramosTotal += (ci_item.gramos || 0);
+        }
+        if (gramosTotal > 0) costoPromedio = costoTotal / gramosTotal;
+      }
+      costoCostales += grs * costoPromedio;
+      // Venta proyectada: palas que se pueden vender
+      var pesoPala = costal3.gramosPorPala || 50;
+      var precioPala = costal3.precioPala || 0;
+      if (pesoPala > 0 && precioPala > 0) {
+        var palas = Math.floor(grs / pesoPala);
+        ventaProyectadaCostales += palas * precioPala;
+      }
+    }
+
+    var ventaProyectadaTotal = ventaProyectadaProductos + ventaProyectadaCostales;
+    var costoTotal = costoProductos + costoCostales;
+
+    h += '<div style="border-top:2px solid var(--border);margin:20px 0 12px"></div>';
+    h += '<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">';
+    h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">' + (totalProductos + totalCostales) + '</div><div class="stat-label">Productos + Costales</div><div class="stat-sub">' + totalProductos + ' frascos / ' + totalCostales + ' costales</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-value">$' + costoTotal.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Costo Total</div><div class="stat-sub">productos $' + costoProductos.toLocaleString(undefined,{maximumFractionDigits:0}) + ' / costales $' + costoCostales.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value">$' + ventaProyectadaTotal.toLocaleString() + '</div><div class="stat-label">Venta Proyectada</div><div class="stat-sub">productos $' + ventaProyectadaProductos.toLocaleString() + ' / palas $' + ventaProyectadaCostales.toLocaleString() + '</div></div>';
+    h += '</div>';
+
     container.innerHTML = h;
   },
 
