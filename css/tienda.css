@@ -2362,3 +2362,23 @@ html.no-opening #opening-overlay {
   border-color: rgba(232,184,75,0.3);
   color: var(--gold);
 }
+
+/* Mobile: filtros en una sola fila con scroll horizontal */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 8px 12px !important;
+    margin: 0 -24px 20px !important;
+    gap: 6px !important;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+  }
+}
