@@ -2981,7 +2981,8 @@ function armarCostalDesdeBodega(productoTipo, productoId, gramos, nombreCostal) 
     productoNombre: prod.nombre,
     gramosTotal: gramos,
     gramosRestantes: gramos,
-    pesoPala: Number(prod.pesoPala) || 50,  // peso de cada pala configurable en el producto
+    gramosPorPala: Number(prod.pesoPala) || 50,  // peso de cada pala (unificado)
+    precioPala: Number(prod.precioPala) || 0,     // precio de venta por pala (del producto)
     estado: 'abierto',
     creado: new Date().toISOString()
   };

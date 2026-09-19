@@ -215,7 +215,7 @@ const Pages = {
       if (!c) continue;
       var grsRest = c.gramosRestantes || 0;
       var precioPalaCostal = c.precioPala || 0;
-      var pesoPalaCostal = c.pesoPala || 20;
+      var pesoPalaCostal = c.gramosPorPala || c.pesoPala || 20;
       if (pesoPalaCostal > 0 && precioPalaCostal > 0) {
         valorCostales += Math.floor(grsRest / pesoPalaCostal) * precioPalaCostal;
       }
