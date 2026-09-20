@@ -1196,89 +1196,164 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
 }
+
+/* Stage: contenedor del frasco + sombra base */
 .alq-jar-stage {
   position: relative;
-  width: 160px; height: 280px;
+  width: 110px; height: 360px;
   display: flex; flex-direction: column; align-items: center;
+  padding-top: 6px;
 }
-/* Tapa */
+/* Sombra elíptica bajo el frasco */
+.alq-jar-stage::after {
+  content: ''; position: absolute; bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 12px;
+  background: radial-gradient(ellipse 50% 50% at center, rgba(0,0,0,0.55), rgba(0,0,0,0.0) 70%);
+  pointer-events: none;
+}
+
+/* === Tapa metálica plateada con estrías === */
 .alq-jar-lid {
-  width: 120px; height: 22px;
-  background: linear-gradient(180deg, #8B6B3A 0%, #5C4626 60%, #3A2C18 100%);
-  border-radius: 8px 8px 4px 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,200,120,0.3);
+  width: 60px; height: 28px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.30) 0px,
+      rgba(0,0,0,0.30) 1px,
+      rgba(255,255,255,0.20) 1px,
+      rgba(255,255,255,0.20) 2px,
+      rgba(0,0,0,0.30) 2px,
+      rgba(0,0,0,0.30) 3px
+    ),
+    linear-gradient(180deg,
+      #E8E8EC 0%,
+      #FFFFFF 25%,
+      #B8B8C0 55%,
+      #888892 85%,
+      #5C5C66 100%
+    );
+  border-radius: 8px 8px 3px 3px;
+  border: 1px solid rgba(0,0,0,0.4);
+  border-top-color: rgba(255,255,255,0.6);
+  box-shadow:
+    0 3px 8px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -2px 0 rgba(0,0,0,0.3);
   position: relative; z-index: 3;
 }
 .alq-jar-lid::before {
-  content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
-  width: 28px; height: 10px; background: linear-gradient(180deg, #A8823E, #6B5028);
-  border-radius: 4px 4px 0 0;
+  content: ''; position: absolute;
+  top: -3px; left: 4px; right: 4px; height: 6px;
+  background: linear-gradient(180deg, #F4F4F8 0%, #B0B0B8 100%);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  border: 1px solid rgba(0,0,0,0.3);
+  border-bottom: none;
 }
-/* Cuello */
+
+/* === Cuello estrecho === */
 .alq-jar-neck {
-  width: 100px; height: 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border-left: 1px solid rgba(255,255,255,0.1);
-  border-right: 1px solid rgba(255,255,255,0.1);
+  width: 44px; height: 12px;
+  background: linear-gradient(90deg,
+    rgba(180,200,180,0.15) 0%,
+    rgba(220,240,220,0.35) 35%,
+    rgba(180,200,180,0.15) 65%,
+    rgba(120,140,120,0.25) 100%
+  );
   position: relative; z-index: 2;
+  border-left: 1px solid rgba(255,255,255,0.25);
+  border-right: 1px solid rgba(0,0,0,0.3);
 }
-/* Cuerpo del frasco */
+
+/* === Hombros (transición cuello → cuerpo) === */
+.alq-jar-shoulders {
+  width: 90px; height: 22px;
+  background: linear-gradient(180deg,
+    rgba(180,200,180,0.12),
+    rgba(150,180,150,0.22)
+  );
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  position: relative; z-index: 1;
+  margin-top: -2px;
+}
+
+/* === Cuerpo del frasco (cilindro transparente) === */
 .alq-jar-body {
-  width: 160px; height: 220px;
-  background: linear-gradient(180deg, rgba(20,15,10,0.5), rgba(40,30,20,0.6));
-  border: 2px solid rgba(201,169,97,0.35);
-  border-radius: 14px 14px 22px 22px;
+  width: 90px; height: 290px;
+  background: linear-gradient(90deg,
+    rgba(200,220,200,0.10) 0%,
+    rgba(240,250,240,0.04) 30%,
+    rgba(240,250,240,0.02) 50%,
+    rgba(240,250,240,0.04) 70%,
+    rgba(150,180,150,0.18) 100%
+  );
+  border-left: 1.5px solid rgba(255,255,255,0.35);
+  border-right: 1.5px solid rgba(120,140,120,0.4);
+  border-radius: 0 0 10px 10px / 0 0 30px 30px;
   position: relative; overflow: hidden;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,0.4),
+    inset 0 -8px 20px rgba(0,0,0,0.25),
+    inset 0 2px 0 rgba(255,255,255,0.15);
   z-index: 1;
+  margin-top: -1px;
 }
 .alq-jar-body::after {
-  /* brillo de cristal */
-  content: ''; position: absolute; top: 0; left: 8px; width: 18px; height: 100%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.0) 100%);
+  content: ''; position: absolute;
+  top: 6px; bottom: 8px; left: 8px; width: 10px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.55) 0%,
+    rgba(255,255,255,0.25) 30%,
+    rgba(255,255,255,0.1) 60%,
+    rgba(255,255,255,0.0) 100%
+  );
+  border-radius: 50%;
   pointer-events: none;
+  z-index: 3;
 }
 .alq-jar-body::before {
-  /* segundo brillo más sutil */
-  content: ''; position: absolute; top: 0; right: 18px; width: 4px; height: 60%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.1), transparent);
+  content: ''; position: absolute;
+  top: 14px; bottom: 30px; right: 10px; width: 4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.25),
+    rgba(255,255,255,0.05)
+  );
+  border-radius: 50%;
   pointer-events: none;
+  z-index: 3;
 }
 
 /* Capas de especias (llenado dinámico) */
 .alq-jar-layers {
-  position: absolute; bottom: 0; left: 0; right: 0;
+  position: absolute; top: 0; bottom: 0; left: 0; right: 0;
   display: flex; flex-direction: column-reverse;
-  transition: all 0.4s var(--ease);
+  z-index: 2;
+  pointer-events: none;
 }
 .alq-layer {
   width: 100%;
-  transition: height 0.45s cubic-bezier(0.34, 1.36, 0.64, 1), opacity 0.3s var(--ease);
+  transition: height 0.5s cubic-bezier(0.34, 1.36, 0.64, 1), opacity 0.3s var(--ease);
   position: relative;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.25);
-  animation: alqLayerDrop 0.5s var(--ease);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 rgba(0,0,0,0.3);
+  animation: alqLayerDrop 0.55s var(--ease);
 }
 @keyframes alqLayerDrop {
-  0%   { transform: translateY(-30px); opacity: 0; }
-  60%  { transform: translateY(2px); opacity: 1; }
+  0%   { transform: translateY(-40px); opacity: 0; }
+  50%  { transform: translateY(4px); opacity: 0.85; }
+  75%  { transform: translateY(-2px); opacity: 1; }
   100% { transform: translateY(0); opacity: 1; }
 }
 .alq-layer.alq-empty-fill {
-  /* capa virtual para mostrar el frasco vacío */
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04));
+  background: linear-gradient(180deg,
+    rgba(120,100,80,0.25) 0%,
+    rgba(80,60,40,0.4) 100%
+  );
+  border-radius: 0 0 8px 8px;
   animation: none;
-}
-
-/* Etiqueta ARCANO dorada sobre el frasco */
-.alq-jar-label {
-  position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
-  font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 0.18em;
-  color: rgba(201,169,97,0.95); padding: 4px 10px;
-  border: 1px solid rgba(201,169,97,0.4); border-radius: 2px;
-  background: rgba(0,0,0,0.25); backdrop-filter: blur(2px);
-  text-transform: uppercase; pointer-events: none;
-  z-index: 4;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.4),
+    inset 0 -1px 0 rgba(0,0,0,0.5);
 }
 
 .alq-jar-info {
@@ -1372,6 +1447,19 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   box-shadow: 0 0 0 2px var(--gold);
 }
 .alq-spice-card.disabled { opacity: 0.3; pointer-events: none; }
+.alq-spice-card.out-of-stock {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.85);
+}
+.alq-spice-card.out-of-stock .alq-spice-swatch {
+  background: #6B6B6B !important;
+}
+.alq-spice-stock {
+  font-size: 0.6rem; color: #b85; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-top: -2px;
+}
 .alq-spice-swatch {
   width: 28px; height: 28px; border-radius: 50%;
   background: var(--swatch-color, var(--gold));
@@ -1551,25 +1639,33 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     align-items: center;
   }
   .alq-jar-stage {
-    width: 110px; height: 200px;
+    width: 75px; height: 250px;
     flex-shrink: 0;
+    padding-top: 4px;
   }
-  .alq-jar-lid { width: 84px; height: 16px; }
-  .alq-jar-lid::before { width: 20px; height: 7px; }
-  .alq-jar-neck { width: 70px; height: 10px; }
-  .alq-jar-body { width: 110px; height: 160px; border-radius: 10px 10px 16px 16px; }
-  .alq-jar-label { font-size: 0.6rem; bottom: 28px; padding: 3px 7px; }
+  .alq-jar-stage::after { width: 65px; height: 9px; bottom: -4px; }
+  .alq-jar-lid { width: 42px; height: 20px; }
+  .alq-jar-lid::before { top: -2px; height: 4px; left: 3px; right: 3px; }
+  .alq-jar-neck { width: 32px; height: 9px; }
+  .alq-jar-shoulders { width: 64px; height: 16px; }
+  .alq-jar-body { width: 64px; height: 200px; }
+  .alq-jar-body::after { left: 5px; width: 7px; }
+  .alq-jar-body::before { right: 7px; width: 3px; }
   .alq-jar-info { text-align: left; flex: 1; }
   .alq-jar-name { font-size: 0.95rem; }
   .alq-jar-price { font-size: 1rem; }
 }
 @media (max-width: 480px) {
   .alq-jar-panel { padding: 12px; gap: 12px; }
-  .alq-jar-stage { width: 90px; height: 170px; }
-  .alq-jar-lid { width: 70px; height: 14px; }
-  .alq-jar-neck { width: 58px; height: 8px; }
-  .alq-jar-body { width: 90px; height: 138px; }
-  .alq-jar-label { font-size: 0.55rem; padding: 2px 5px; bottom: 22px; }
+  .alq-jar-stage { width: 60px; height: 210px; padding-top: 3px; }
+  .alq-jar-stage::after { width: 52px; height: 7px; bottom: -3px; }
+  .alq-jar-lid { width: 36px; height: 17px; }
+  .alq-jar-lid::before { top: -2px; height: 3px; }
+  .alq-jar-neck { width: 28px; height: 8px; }
+  .alq-jar-shoulders { width: 56px; height: 14px; }
+  .alq-jar-body { width: 56px; height: 170px; }
+  .alq-jar-body::after { left: 4px; width: 6px; }
+  .alq-jar-body::before { right: 6px; width: 2px; }
   .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
   .alq-spice-card { padding: 8px 4px 6px; }
   .alq-spice-name { font-size: 0.72rem; }

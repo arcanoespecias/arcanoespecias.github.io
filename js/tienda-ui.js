@@ -860,7 +860,9 @@ function _getEspeciasDisponibles() {
   var especias = []; var items = _sDb.especias;
   for (var i = 0; i < items.length; i++) {
     var e = items[i]; if (!e || !e.nombre) continue;
-    if ((e.stockBolsa || 0) > 0) especias.push({ nombre: e.nombre, stockPala: e.stockBolsa || 0, id: e.id });
+    var stock = e.stockBolsa || 0;
+    /* Mostrar todas las especias; las agotadas con flag outOfStock=true */
+    especias.push({ nombre: e.nombre, stockPala: stock, id: e.id, outOfStock: stock <= 0 });
   }
   especias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
   return especias;
@@ -1086,9 +1088,9 @@ function renderBlendBuilder() {
   h += '  <div class="alq-jar-stage">';
   h += '    <div class="alq-jar-lid"></div>';
   h += '    <div class="alq-jar-neck"></div>';
+  h += '    <div class="alq-jar-shoulders"></div>';
   h += '    <div class="alq-jar-body">';
   h += '      <div class="alq-jar-layers" id="alq-layers"></div>';
-  h += '      <div class="alq-jar-label">ARCANO</div>';
   h += '    </div>';
   h += '  </div>';
   h += '  <div class="alq-jar-info">';
@@ -1137,10 +1139,17 @@ function renderBlendBuilder() {
     }
     var color = _alqGetSpiceColor(especias[e].nombre);
     var safeName = especias[e].nombre.replace(/'/g, "\'");
-    var cls = 'alq-spice-card' + (isSelected ? ' selected' : '') + (!isSelected && state.especias.length >= 5 ? ' disabled' : '');
-    h += '<button class="' + cls + '" onclick="_alqToggleSpice(\'' + safeName + '\')" style="--swatch-color:' + color + '">';
+    var outOfStock = especias[e].outOfStock === true;
+    var cls = 'alq-spice-card';
+    if (isSelected) cls += ' selected';
+    if (outOfStock) cls += ' out-of-stock';
+    else if (!isSelected && state.especias.length >= 5) cls += ' disabled';
+    var onclickAttr = outOfStock ? '' : ' onclick="_alqToggleSpice(\'' + safeName + '\')"';
+    var disabledAttr = outOfStock ? ' disabled' : '';
+    h += '<button class="' + cls + '"' + onclickAttr + disabledAttr + ' style="--swatch-color:' + color + '">';
     h += '  <div class="alq-spice-swatch"></div>';
     h += '  <div class="alq-spice-name">' + esc(especias[e].nombre) + '</div>';
+    if (outOfStock) h += '  <div class="alq-spice-stock">Agotada</div>';
     h += '</button>';
   }
   h += '  </div>';
@@ -1171,19 +1180,30 @@ function renderBlendBuilder() {
   _alqUpdateMixBar();
 }
 
-/* === Actualizar el frasco (capas de especias) === */
+/* === Actualizar el frasco (capas de especias) ===
+   El frasco se llena según el número de especias seleccionadas:
+   - 0 especias: frasco vacío (solo fondo transparente)
+   - 1-5 especias: fill = n/5 * 100% del cuerpo del frasco
+   Dentro del área llenada, cada capa se dimensiona por su porcentaje del blend.
+=== */
 function _alqUpdateJar() {
   var layersEl = document.getElementById('alq-layers');
   if (!layersEl) return;
   var state = _blendBuilderState;
   var h = '';
   if (state.especias.length === 0) {
-    h += '<div class="alq-layer alq-empty-fill" style="height:100%"></div>';
+    /* Frasco vacío: capa fantasma al fondo para dar sensación de "polvo" */
+    h += '<div class="alq-layer alq-empty-fill" style="height:8%"></div>';
   } else {
+    /* Calcular el nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% */
+    var fillLevel = Math.min(100, state.especias.length / 5 * 100);
+    var totalPct = _bbGetTotal() || 100;
     for (var i = 0; i < state.especias.length; i++) {
       var sp = state.especias[i];
       var color = _alqGetSpiceColor(sp.nombre);
-      h += '<div class="alq-layer" style="height:' + sp.porcentaje + '%;background:' + color + '"></div>';
+      /* La altura de la capa es proporcional a su % del blend, dentro del fillLevel */
+      var layerHeight = (sp.porcentaje / totalPct) * fillLevel;
+      h += '<div class="alq-layer" style="height:' + layerHeight.toFixed(2) + '%;background:' + color + '"></div>';
     }
   }
   layersEl.innerHTML = h;
