@@ -3,6 +3,10 @@ var cart = JSON.parse(localStorage.getItem('arcano_cart') || '[]');
 var _currentPage = 'tienda';
 var _currentRecetaCat = 'Comida';
 var _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
+/* Flag: ¿el usuario ya navegó fuera de Tienda en esta sesión de página?
+   - false → primera entrada a Tienda (mostrar cofre desde el top)
+   - true  → ya navegó a Recetas/Blog/etc., al volver a Tienda scrollear a filtros */
+var _hasNavigatedAway = false;
 
 /* === UTIL: escapar HTML para evitar inyección XSS === */
 function esc(s) {
@@ -121,7 +125,27 @@ function goTo(page) {
       page_location: 'https://arcanoespecias.github.io/#' + page
     });
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  /* === Scroll: si volvemos a Tienda después de haber navegado a otra página,
+        scrollear a los filtros de categoría (saltando el hero/cofre).
+        Si es primera entrada a Tienda, ir al top para mostrar el cofre. === */
+  if (page === 'tienda') {
+    if (_hasNavigatedAway) {
+      var filtersEl = document.getElementById('filters');
+      if (filtersEl) {
+        var targetTop = filtersEl.getBoundingClientRect().top + (window.scrollY || window.pageYOffset) - 90;
+        if (targetTop < 0) targetTop = 0;
+        window.scrollTo({ top: targetTop, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  } else {
+    _hasNavigatedAway = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 

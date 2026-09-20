@@ -62,9 +62,6 @@
   var overlayVisible = true;
   var disabled = false;   /* Cuando es true (ej. en otras páginas SPA) el overlay queda oculto */
   var ticking = false;
-  /* Flag en memoria: el cofre se muestra solo la primera vez por sesión de página.
-     No se persiste en localStorage/sessionStorage para que al refrescar vuelva a aparecer. */
-  var hasBeenSeen = false;
 
   function update(progress) {
     var eased = easeInOutCubic(progress);
@@ -84,7 +81,6 @@
 
   function showOverlay() {
     if (disabled) return;
-    if (hasBeenSeen) return;   /* Ya se vio una vez: no volver a mostrar */
     if (!overlayVisible) {
       overlay.style.transition = '';
       overlay.style.display = 'block';
@@ -117,9 +113,7 @@
       }
       prevProgress = progress;
     } else {
-      /* Al superar el umbral, el cofre termina de abrirse y se marca como visto. */
       hideOverlay();
-      hasBeenSeen = true;
     }
   }
 
@@ -135,8 +129,7 @@
 
   /* === API pública: permite a la SPA activar/desactivar el overlay === */
   window.ArcanoOpening = {
-    /* Desactiva el overlay (cuando se navega a Recetas, Blog, Tu Blend, etc.).
-       Marcar como "visto" para que al volver a Tienda no vuelva a aparecer (solo refrescando). */
+    /* Desactiva el overlay (cuando se navega a Recetas, Blog, Tu Blend, etc.) */
     disable: function() {
       disabled = true;
       if (overlay) {
@@ -145,21 +138,14 @@
         overlay.style.display = 'none';
       }
       overlayVisible = false;
-      /* Si el overlay estaba visible o parcialmente abierto, se considera visto. */
-      hasBeenSeen = true;
     },
     /* Reactiva el overlay y reevalúa según el scroll actual (al volver a Tienda).
-       Pero si ya fue visto en esta sesión de página, NO se vuelve a mostrar. */
+       El overlay se muestra solo si scrollY < OPEN_THRESHOLD (si el usuario está en el top).
+       Si volvió a Tienda vía menú y está scrolleando a filtros, el overlay queda oculto;
+       al hacer scroll up hacia el top, el onScroll lo mostrará naturalmente. */
     enable: function() {
       disabled = false;
       if (overlay) {
-        if (hasBeenSeen) {
-          /* Ya se vio: mantener oculto */
-          overlay.style.display = 'none';
-          overlay.style.opacity = '0';
-          overlayVisible = false;
-          return;
-        }
         var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
         if (scrollY < OPEN_THRESHOLD) {
           overlay.style.transition = '';
@@ -175,8 +161,7 @@
         }
       }
     },
-    isDisabled: function() { return disabled; },
-    hasBeenSeen: function() { return hasBeenSeen; }
+    isDisabled: function() { return disabled; }
   };
 
   function init() {
