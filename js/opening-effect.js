@@ -54,88 +54,130 @@
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
 
+  /* === Estado interno === */
+  var overlay = null;
+  var topLid = null, bottomLid = null, content = null, hint = null;
+  var OPEN_THRESHOLD = 600;
+  var prevProgress = 0;
+  var overlayVisible = true;
+  var disabled = false;   /* Cuando es true (ej. en otras páginas SPA) el overlay queda oculto */
+  var scrollListenerAttached = false;
+  var ticking = false;
+
+  function update(progress) {
+    var eased = easeInOutCubic(progress);
+    topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
+    bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
+
+    var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
+    topLid.style.opacity = lidOpacity;
+    bottomLid.style.opacity = lidOpacity;
+
+    if (content) {
+      content.style.transform = 'translate(-50%, -50%) scale(' + (1 + eased * 0.15) + ')';
+      content.style.opacity = Math.max(0, 1 - eased * 2.5);
+    }
+    if (hint) hint.style.opacity = Math.max(0, 1 - progress * 8);
+  }
+
+  function showOverlay() {
+    if (disabled) return;
+    if (!overlayVisible) {
+      overlay.style.transition = '';
+      overlay.style.display = 'block';
+      overlay.style.opacity = '1';
+      overlayVisible = true;
+    }
+  }
+
+  function hideOverlay() {
+    if (overlayVisible) {
+      overlay.style.transition = 'opacity 0.3s ease';
+      overlay.style.opacity = '0';
+      overlayVisible = false;
+      setTimeout(function() {
+        if (!overlayVisible) overlay.style.display = 'none';
+      }, 300);
+    }
+  }
+
+  function onScroll() {
+    if (disabled) return;
+    var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+
+    if (scrollY < OPEN_THRESHOLD) {
+      var progress = Math.min(1, scrollY / OPEN_THRESHOLD);
+      showOverlay();
+      update(progress);
+      if (prevProgress < 0.5 && progress >= 0.5) {
+        playClickSound();
+      }
+      prevProgress = progress;
+    } else {
+      hideOverlay();
+    }
+  }
+
+  function onScrollThrottled() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        onScroll();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  /* === API pública: permite a la SPA activar/desactivar el overlay === */
+  window.ArcanoOpening = {
+    /* Desactiva el overlay (cuando se navega a Recetas, Blog, Tu Blend, etc.) */
+    disable: function() {
+      disabled = true;
+      if (overlay) {
+        overlay.style.transition = 'opacity 0.2s ease';
+        overlay.style.opacity = '0';
+        overlay.style.display = 'none';
+      }
+      overlayVisible = false;
+    },
+    /* Reactiva el overlay y reevalúa según el scroll actual (al volver a Tienda) */
+    enable: function() {
+      disabled = false;
+      if (overlay) {
+        /* Forzar display block para que el próximo onScroll pueda decidir */
+        var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollY < OPEN_THRESHOLD) {
+          overlay.style.transition = '';
+          overlay.style.display = 'block';
+          overlay.style.opacity = '1';
+          overlayVisible = true;
+          update(Math.min(1, scrollY / OPEN_THRESHOLD));
+          prevProgress = Math.min(1, scrollY / OPEN_THRESHOLD);
+        } else {
+          overlay.style.display = 'none';
+          overlay.style.opacity = '0';
+          overlayVisible = false;
+        }
+      }
+    },
+    isDisabled: function() { return disabled; }
+  };
+
   function init() {
-    var overlay = document.getElementById('opening-overlay');
+    overlay = document.getElementById('opening-overlay');
     if (!overlay) {
       document.documentElement.classList.add('no-opening');
       return;
     }
 
-    var topLid = overlay.querySelector('.opening-lid-top');
-    var bottomLid = overlay.querySelector('.opening-lid-bottom');
-    var content = overlay.querySelector('.opening-content');
-    var hint = overlay.querySelector('.opening-hint');
+    topLid = overlay.querySelector('.opening-lid-top');
+    bottomLid = overlay.querySelector('.opening-lid-bottom');
+    content = overlay.querySelector('.opening-content');
+    hint = overlay.querySelector('.opening-hint');
 
     if (!topLid || !bottomLid) {
       document.documentElement.classList.add('no-opening');
       return;
-    }
-
-    var OPEN_THRESHOLD = 600;
-    var prevProgress = 0;
-    var overlayVisible = true;
-
-    function update(progress) {
-      var eased = easeInOutCubic(progress);
-      topLid.style.transform = 'translateY(' + (-eased * 105) + '%)';
-      bottomLid.style.transform = 'translateY(' + (eased * 105) + '%)';
-
-      var lidOpacity = eased < 0.8 ? 1 : Math.max(0, 1 - (eased - 0.8) / 0.2);
-      topLid.style.opacity = lidOpacity;
-      bottomLid.style.opacity = lidOpacity;
-
-      if (content) {
-        content.style.transform = 'translate(-50%, -50%) scale(' + (1 + eased * 0.15) + ')';
-        content.style.opacity = Math.max(0, 1 - eased * 2.5);
-      }
-      if (hint) hint.style.opacity = Math.max(0, 1 - progress * 8);
-    }
-
-    function showOverlay() {
-      if (!overlayVisible) {
-        overlay.style.transition = '';
-        overlay.style.display = 'block';
-        overlay.style.opacity = '1';
-        overlayVisible = true;
-      }
-    }
-
-    function hideOverlay() {
-      if (overlayVisible) {
-        overlay.style.transition = 'opacity 0.3s ease';
-        overlay.style.opacity = '0';
-        overlayVisible = false;
-        setTimeout(function() {
-          if (!overlayVisible) overlay.style.display = 'none';
-        }, 300);
-      }
-    }
-
-    function onScroll() {
-      var scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-
-      if (scrollY < OPEN_THRESHOLD) {
-        var progress = Math.min(1, scrollY / OPEN_THRESHOLD);
-        showOverlay();
-        update(progress);
-        if (prevProgress < 0.5 && progress >= 0.5) {
-          playClickSound();
-        }
-        prevProgress = progress;
-      } else {
-        hideOverlay();
-      }
-    }
-
-    var ticking = false;
-    function onScrollThrottled() {
-      if (!ticking) {
-        requestAnimationFrame(function() {
-          onScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
     }
 
     window.addEventListener('scroll', onScrollThrottled, { passive: true });

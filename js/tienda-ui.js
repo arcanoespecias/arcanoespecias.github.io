@@ -87,6 +87,12 @@ function goTo(page) {
   var mmItems = document.querySelectorAll('.mm-nav-item');
   for (var i = 0; i < mmItems.length; i++) mmItems[i].classList.toggle('active', mmItems[i].dataset.page === page);
 
+  /* === Efecto del cofre: solo visible en Tienda (home) === */
+  if (window.ArcanoOpening) {
+    if (page === 'tienda') window.ArcanoOpening.enable();
+    else window.ArcanoOpening.disable();
+  }
+
   if (page === 'tienda') {
     _updateTitle('tienda');
     renderProducts(currentFilter);
