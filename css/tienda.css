@@ -1173,6 +1173,409 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .bb-success-btns .bb-nav-btn { width: 100%; justify-content: center; padding: 14px; font-size: 0.95rem; }
 .bb-empty { text-align: center; padding: 28px 16px; color: var(--text-muted); font-size: 0.88rem; }
 
+/* ============================================================
+   ALQUIMISTA — Rediseño "Arma tu Blend"
+   Una sola pantalla con frasco interactivo + barra drag.
+   ============================================================ */
+.alq-container {
+  display: grid; gap: 32px;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  max-width: 1080px; margin: 0 auto;
+  padding: 24px 0 0;
+  align-items: start;
+  animation: alqFadeIn 0.45s var(--ease);
+}
+@keyframes alqFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Panel izquierdo: Frasco ---------- */
+.alq-jar-panel {
+  position: sticky; top: 90px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  padding: 24px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+.alq-jar-stage {
+  position: relative;
+  width: 160px; height: 280px;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* Tapa */
+.alq-jar-lid {
+  width: 120px; height: 22px;
+  background: linear-gradient(180deg, #8B6B3A 0%, #5C4626 60%, #3A2C18 100%);
+  border-radius: 8px 8px 4px 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,200,120,0.3);
+  position: relative; z-index: 3;
+}
+.alq-jar-lid::before {
+  content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 10px; background: linear-gradient(180deg, #A8823E, #6B5028);
+  border-radius: 4px 4px 0 0;
+}
+/* Cuello */
+.alq-jar-neck {
+  width: 100px; height: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border-left: 1px solid rgba(255,255,255,0.1);
+  border-right: 1px solid rgba(255,255,255,0.1);
+  position: relative; z-index: 2;
+}
+/* Cuerpo del frasco */
+.alq-jar-body {
+  width: 160px; height: 220px;
+  background: linear-gradient(180deg, rgba(20,15,10,0.5), rgba(40,30,20,0.6));
+  border: 2px solid rgba(201,169,97,0.35);
+  border-radius: 14px 14px 22px 22px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  z-index: 1;
+}
+.alq-jar-body::after {
+  /* brillo de cristal */
+  content: ''; position: absolute; top: 0; left: 8px; width: 18px; height: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.0) 100%);
+  pointer-events: none;
+}
+.alq-jar-body::before {
+  /* segundo brillo más sutil */
+  content: ''; position: absolute; top: 0; right: 18px; width: 4px; height: 60%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1), transparent);
+  pointer-events: none;
+}
+
+/* Capas de especias (llenado dinámico) */
+.alq-jar-layers {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: flex; flex-direction: column-reverse;
+  transition: all 0.4s var(--ease);
+}
+.alq-layer {
+  width: 100%;
+  transition: height 0.45s cubic-bezier(0.34, 1.36, 0.64, 1), opacity 0.3s var(--ease);
+  position: relative;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.25);
+  animation: alqLayerDrop 0.5s var(--ease);
+}
+@keyframes alqLayerDrop {
+  0%   { transform: translateY(-30px); opacity: 0; }
+  60%  { transform: translateY(2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.alq-layer.alq-empty-fill {
+  /* capa virtual para mostrar el frasco vacío */
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04));
+  animation: none;
+}
+
+/* Etiqueta ARCANO dorada sobre el frasco */
+.alq-jar-label {
+  position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
+  font-family: var(--font-display); font-size: 0.7rem; letter-spacing: 0.18em;
+  color: rgba(201,169,97,0.95); padding: 4px 10px;
+  border: 1px solid rgba(201,169,97,0.4); border-radius: 2px;
+  background: rgba(0,0,0,0.25); backdrop-filter: blur(2px);
+  text-transform: uppercase; pointer-events: none;
+  z-index: 4;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+
+.alq-jar-info {
+  text-align: center;
+}
+.alq-jar-name {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text);
+  letter-spacing: 0.02em; margin-bottom: 2px;
+  min-height: 1.2em;
+}
+.alq-jar-name:empty::before {
+  content: 'Tu Blend'; color: var(--text-muted); font-style: italic; font-weight: 400;
+}
+.alq-jar-size {
+  font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.alq-jar-price {
+  font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ---------- Panel derecho: Controles ---------- */
+.alq-controls-panel {
+  display: flex; flex-direction: column; gap: 24px;
+}
+.alq-section {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.alq-label {
+  font-size: 0.75rem; font-weight: 600; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.alq-counter {
+  color: var(--gold); font-weight: 700; letter-spacing: 0;
+  background: var(--gold-light); padding: 1px 8px; border-radius: 8px;
+  font-size: 0.72rem;
+}
+
+/* Step 1: Nombre */
+.alq-name-input {
+  width: 100%; padding: 12px 0;
+  border: none; border-bottom: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 500;
+  color: var(--text); outline: none;
+  transition: border-color 0.3s var(--ease);
+}
+.alq-name-input:focus { border-color: var(--gold); }
+.alq-name-input::placeholder { color: var(--text-muted); font-weight: 300; font-style: italic; }
+
+/* Step 2: Tamaño */
+.alq-size-row { display: flex; gap: 12px; }
+.alq-size-btn {
+  flex: 1; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; transition: all 0.25s var(--ease);
+  font-family: inherit;
+}
+.alq-size-btn:hover { border-color: var(--gold); }
+.alq-size-btn.selected {
+  border-color: var(--gold); background: var(--gold-light);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+.alq-size-btn-icon { font-size: 1.4rem; line-height: 1; }
+.alq-size-btn-label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.alq-size-btn-price { font-size: 0.72rem; color: var(--gold); font-weight: 700; font-family: var(--font-display); }
+
+/* Step 3: Grid de especias */
+.alq-spice-grid {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+}
+.alq-spice-card {
+  position: relative;
+  padding: 12px 8px 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xs);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; transition: all 0.2s var(--ease);
+  overflow: hidden;
+  font-family: inherit;
+}
+.alq-spice-card:hover {
+  border-color: var(--gold); transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201,169,97,0.18);
+}
+.alq-spice-card.selected {
+  border-color: var(--gold); background: var(--gold-light);
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.alq-spice-card.disabled { opacity: 0.3; pointer-events: none; }
+.alq-spice-swatch {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--swatch-color, var(--gold));
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2);
+  border: 1px solid rgba(0,0,0,0.3);
+  position: relative;
+}
+.alq-spice-card.selected .alq-spice-swatch::after {
+  content: '✓';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 0.85rem; font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.alq-spice-name {
+  font-size: 0.78rem; font-weight: 500; color: var(--text);
+  text-align: center; line-height: 1.2;
+}
+
+/* Step 4: Barra de proporciones drag-to-resize */
+.alq-proportions {
+  opacity: 0; pointer-events: none; max-height: 0; overflow: hidden;
+  transition: opacity 0.3s var(--ease), max-height 0.4s var(--ease);
+}
+.alq-proportions.visible {
+  opacity: 1; pointer-events: auto; max-height: 600px;
+}
+
+.alq-mix-bar {
+  position: relative;
+  height: 56px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  user-select: none; -webkit-user-select: none;
+  touch-action: none;
+}
+.alq-mix-segment {
+  position: relative;
+  height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  transition: width 0.05s linear;
+  background: var(--seg-color, var(--gold));
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.18);
+}
+.alq-mix-segment-label {
+  font-size: 0.72rem; font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  pointer-events: none;
+  white-space: nowrap; overflow: hidden;
+  padding: 0 4px;
+}
+.alq-mix-divider {
+  position: absolute; top: 0; bottom: 0;
+  width: 14px; margin-left: -7px;
+  cursor: ew-resize;
+  z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+}
+.alq-mix-divider::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px;
+  background: rgba(255,255,255,0.85); box-shadow: 0 0 4px rgba(0,0,0,0.6);
+  transition: background 0.2s var(--ease);
+}
+.alq-mix-divider:hover::before,
+.alq-mix-divider.dragging::before {
+  background: var(--gold); width: 3px; left: 5px;
+}
+.alq-mix-divider::after {
+  content: ''; width: 8px; height: 22px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+.alq-legend {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-top: 8px;
+}
+.alq-legend-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface); border-radius: var(--radius-xs);
+  font-size: 0.85rem;
+}
+.alq-legend-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--legend-color, var(--gold));
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+.alq-legend-name { flex: 1; color: var(--text); font-weight: 500; }
+.alq-legend-pct { color: var(--gold); font-weight: 700; font-family: var(--font-display); }
+
+.alq-total-pill {
+  font-size: 0.72rem; font-weight: 700; padding: 1px 8px; border-radius: 8px;
+  background: var(--gold-light); color: var(--gold); letter-spacing: 0;
+}
+.alq-total-pill.warning { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.alq-total-pill.danger { background: rgba(220,38,38,0.15); color: #dc2626; }
+
+/* Step 5: CTA */
+.alq-cta {
+  margin-top: 8px;
+  padding: 16px 24px;
+  background: var(--gold); color: var(--bg);
+  border: none; border-radius: var(--radius-sm);
+  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer; transition: all 0.2s var(--ease);
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  box-shadow: 0 6px 18px rgba(201,169,97,0.35);
+}
+.alq-cta:hover:not(:disabled) {
+  background: var(--gold-hover); transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(201,169,97,0.45);
+}
+.alq-cta:disabled {
+  opacity: 0.4; cursor: not-allowed; box-shadow: none;
+}
+.alq-cta-price {
+  font-size: 0.9rem; opacity: 0.9;
+}
+
+/* === Vista Success (al agregar al carrito) === */
+.alq-success {
+  text-align: center; padding: 40px 20px;
+  animation: alqFadeIn 0.4s var(--ease);
+}
+.alq-success-img {
+  width: 110px; height: auto; margin: 0 auto 16px;
+  display: block;
+}
+.alq-success-title {
+  font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;
+  color: var(--text); margin: 0 0 8px;
+}
+.alq-success-desc { font-size: 1rem; color: var(--text-sec); margin: 0 0 28px; }
+.alq-success-btns {
+  display: flex; flex-direction: column; gap: 10px;
+  max-width: 280px; margin: 0 auto;
+}
+.alq-success-btn {
+  padding: 14px; border-radius: var(--radius-sm);
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s var(--ease);
+  font-family: inherit;
+}
+.alq-success-btn.primary {
+  background: var(--gold); color: var(--bg); border: none;
+}
+.alq-success-btn.primary:hover { background: var(--gold-hover); }
+.alq-success-btn.secondary {
+  background: var(--gold-hover); color: var(--bg); border: none;
+}
+.alq-success-btn.secondary:hover { opacity: 0.9; }
+.alq-success-btn.tertiary {
+  background: transparent; color: var(--text-sec); border: 1px solid var(--border);
+}
+.alq-success-btn.tertiary:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .alq-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding-top: 8px;
+  }
+  .alq-jar-panel {
+    position: static;
+    flex-direction: row;
+    padding: 16px;
+    gap: 20px;
+    align-items: center;
+  }
+  .alq-jar-stage {
+    width: 110px; height: 200px;
+    flex-shrink: 0;
+  }
+  .alq-jar-lid { width: 84px; height: 16px; }
+  .alq-jar-lid::before { width: 20px; height: 7px; }
+  .alq-jar-neck { width: 70px; height: 10px; }
+  .alq-jar-body { width: 110px; height: 160px; border-radius: 10px 10px 16px 16px; }
+  .alq-jar-label { font-size: 0.6rem; bottom: 28px; padding: 3px 7px; }
+  .alq-jar-info { text-align: left; flex: 1; }
+  .alq-jar-name { font-size: 0.95rem; }
+  .alq-jar-price { font-size: 1rem; }
+}
+@media (max-width: 480px) {
+  .alq-jar-panel { padding: 12px; gap: 12px; }
+  .alq-jar-stage { width: 90px; height: 170px; }
+  .alq-jar-lid { width: 70px; height: 14px; }
+  .alq-jar-neck { width: 58px; height: 8px; }
+  .alq-jar-body { width: 90px; height: 138px; }
+  .alq-jar-label { font-size: 0.55rem; padding: 2px 5px; bottom: 22px; }
+  .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
+  .alq-spice-card { padding: 8px 4px 6px; }
+  .alq-spice-name { font-size: 0.72rem; }
+}
+/* === END ALQUIMISTA === */
+
 /* === FAQ === */
 .faq-container {
   max-width: 720px; margin: 0 auto;
