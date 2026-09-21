@@ -1086,12 +1086,18 @@ function renderBlendBuilder() {
   /* === Panel izquierdo: Frasco === */
   h += '<div class="alq-jar-panel">';
   h += '  <div class="alq-jar-stage">';
-  /* SVG: frasco redibujado basado en la referencia
-     Estructura: tapa metálica corta + cuello largo estrecho + hombros curvos + cuerpo cilíndrico alto transparente
-     viewBox 100x350 (ratio 3.5:1) */
+  /* SVG: frasco redibujado con coordenadas exactas medidas del original
+     Estructura (viewBox 100x350, ratio 3.5:1):
+     - Tapa: y=0-31.5, x=35-65 (ancho 30, ~9% del alto)
+     - Anillo base tapa: y=31.5-42, x=33-67 (ancho 34, ~3% del alto)
+     - Cuello recto: y=42-77, x=33-67 (ancho 34, ~10% del alto)
+     - Cuello inferior (transición): y=77-98 (se expande de 33-67% a 38-62%)
+     - Hombros (curva convexa): y=98-140 (expande de 38-62% a 22-78%)
+     - Cuerpo: y=140-308, x=22-78 (ancho 56, ~48% del alto)
+     - Base curva: y=308-336 (se contrae a 28-72%)
+     - Fondo: y=336-346, x=28-72 */
   h += '    <svg class="alq-jar-svg" viewBox="0 0 100 350" preserveAspectRatio="xMidYMid meet" aria-label="Frasco Arcano">';
   h += '      <defs>';
-  /* Gradiente metálico para la tapa */
   h += '        <linearGradient id="alq-metal" x1="0" y1="0" x2="0" y2="1">';
   h += '          <stop offset="0%" stop-color="#9C9CA4"/>';
   h += '          <stop offset="15%" stop-color="#FAFAFC"/>';
@@ -1099,64 +1105,63 @@ function renderBlendBuilder() {
   h += '          <stop offset="65%" stop-color="#84848C"/>';
   h += '          <stop offset="100%" stop-color="#34343C"/>';
   h += '        </linearGradient>';
-  /* Gradiente del vidrio (para bordes y reflejos) */
   h += '        <linearGradient id="alq-glass" x1="0" y1="0" x2="1" y2="0">';
   h += '          <stop offset="0%" stop-color="rgba(255,255,255,0.7)"/>';
   h += '          <stop offset="30%" stop-color="rgba(220,240,230,0.25)"/>';
   h += '          <stop offset="70%" stop-color="rgba(200,220,200,0.18)"/>';
   h += '          <stop offset="100%" stop-color="rgba(80,100,90,0.55)"/>';
   h += '        </linearGradient>';
-  /* Brillo vertical del vidrio (franja lateral) */
   h += '        <linearGradient id="alq-shine" x1="0" y1="0" x2="0" y2="1">';
   h += '          <stop offset="0%" stop-color="rgba(255,255,255,0.55)"/>';
   h += '          <stop offset="40%" stop-color="rgba(255,255,255,0.2)"/>';
   h += '          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>';
   h += '        </linearGradient>';
-  h += '        <linearGradient id="alq-shine-right" x1="0" y1="0" x2="0" y2="1">';
-  h += '          <stop offset="0%" stop-color="rgba(255,255,255,0.3)"/>';
-  h += '          <stop offset="60%" stop-color="rgba(255,255,255,0.05)"/>';
-  h += '          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>';
-  h += '        </linearGradient>';
   h += '      </defs>';
   /* Sombra elíptica bajo el frasco */
-  h += '      <ellipse cx="50" cy="345" rx="40" ry="3.5" fill="rgba(0,0,0,0.45)"/>';
-  /* === TAPA metálica (corta, en la parte superior) === */
-  h += '      <rect x="34" y="6" width="32" height="22" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.65)" stroke-width="0.7" rx="1.5"/>';
-  /* Estrías verticales en la tapa */
-  h += '      <g stroke="rgba(0,0,0,0.4)" stroke-width="0.5">';
-  for (var se = 0; se < 11; se++) {
-    var xPos = 36 + se * 2.7;
-    h += '<line x1="' + xPos.toFixed(1) + '" y1="8" x2="' + xPos.toFixed(1) + '" y2="26"/>';
+  h += '      <ellipse cx="50" cy="345" rx="38" ry="3" fill="rgba(0,0,0,0.45)"/>';
+  /* === TAPA metálica (y=0-31.5, x=35-65) con 2 surcos horizontales === */
+  h += '      <rect x="35" y="0" width="30" height="31.5" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.65)" stroke-width="0.7" rx="1.5"/>';
+  /* Estrías verticales (rosca) */
+  h += '      <g stroke="rgba(0,0,0,0.4)" stroke-width="0.45">';
+  for (var se = 0; se < 10; se++) {
+    var xPos = 37 + se * 2.7;
+    h += '<line x1="' + xPos.toFixed(1) + '" y1="2" x2="' + xPos.toFixed(1) + '" y2="30"/>';
   }
   h += '      </g>';
   /* Brillo metálico izquierdo */
-  h += '      <rect x="36.5" y="9" width="1.8" height="16" rx="0.9" fill="rgba(255,255,255,0.65)"/>';
-  /* Cúpula superior convexa de la tapa */
-  h += '      <path d="M 35 8 Q 50 1 65 8" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.5)" stroke-width="0.6"/>';
-  /* === CUELLO largo y estrecho (mismo ancho que la tapa) === */
-  h += '      <rect x="34" y="28" width="32" height="42" fill="url(#alq-glass)" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>';
+  h += '      <rect x="37" y="3" width="1.8" height="26" rx="0.9" fill="rgba(255,255,255,0.65)"/>';
+  /* === ANILLO base de la tapa (y=31.5-42, x=33-67) — ligeramente más ancho === */
+  h += '      <rect x="33" y="31.5" width="34" height="10.5" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.6)" stroke-width="0.5" rx="1"/>';
+  /* === CUELLO recto (y=42-77, x=33-67) — rectángulo vertical === */
+  h += '      <rect x="33" y="42" width="34" height="35" fill="url(#alq-glass)" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>';
   /* Brillo del cuello (franja vertical) */
-  h += '      <rect x="37" y="31" width="3" height="36" rx="1.5" fill="url(#alq-shine)"/>';
-  /* Brillo derecho sutil del cuello */
-  h += '      <rect x="60" y="35" width="1.5" height="28" rx="0.75" fill="rgba(255,255,255,0.3)"/>';
-  /* === HOMBROS curvos (transición suave cuello estrecho → cuerpo ancho) === */
-  h += '      <path d="M 34 70 Q 12 84 12 100 L 88 100 Q 88 84 66 70 Z" fill="url(#alq-glass)" stroke="rgba(255,255,255,0.45)" stroke-width="0.6"/>';
+  h += '      <rect x="36" y="45" width="3" height="29" rx="1.5" fill="url(#alq-shine)"/>';
+  h += '      <rect x="60" y="48" width="1.5" height="23" rx="0.75" fill="rgba(255,255,255,0.3)"/>';
+  /* === CUELLO INFERIOR + HOMBROS (path único con curva convexa) ===';
+     Desde (33,77) curva hasta (38,98) — cuello inferior (trapecio sutil)
+     Desde (38,98) curva convexa hasta (22,140) — hombros
+     En el lado derecho: (67,77) → (62,98) → (78,140) */
+  h += '      <path d="M 33 77 Q 34 88 38 98 Q 38 120 22 140 L 78 140 Q 62 120 62 98 Q 66 88 67 77 Z" fill="url(#alq-glass)" stroke="rgba(255,255,255,0.45)" stroke-width="0.6"/>';
   /* === CUERPO (solo bordes, transparente en el medio) ===';
-     El cuerpo va de y=100 a y=340, x=12-88 (76 unidades de ancho, 240 de alto) */
-  /* Borde izquierdo del cuerpo (línea vertical con gradiente de vidrio) */
-  h += '      <line x1="12" y1="98" x2="12" y2="328" stroke="url(#alq-glass)" stroke-width="2"/>';
+     Cuerpo: y=140-308, x=22-78 (rectángulo vertical perfecto)
+     Base: y=308-336 (curva cóncava que se contrae a 28-72%)
+     Fondo: y=336-346, x=28-72 */
+  /* Borde izquierdo del cuerpo */
+  h += '      <line x1="22" y1="140" x2="22" y2="308" stroke="url(#alq-glass)" stroke-width="2"/>';
   /* Borde derecho del cuerpo */
-  h += '      <line x1="88" y1="98" x2="88" y2="328" stroke="url(#alq-glass)" stroke-width="2"/>';
-  /* Curva inferior del cuerpo (base redondeada) */
-  h += '      <path d="M 12 328 Q 12 340 24 340 L 76 340 Q 88 340 88 328" fill="none" stroke="url(#alq-glass)" stroke-width="2"/>';
-  /* Brillo principal izquierdo (franja vertical dentro del cuerpo, encima de las capas) */
-  h += '      <rect x="16" y="105" width="5" height="220" rx="2.5" fill="url(#alq-shine)" opacity="0.6"/>';
-  /* Brillo derecho secundario (más tenue) */
-  h += '      <rect x="80" y="115" width="2.5" height="200" rx="1.25" fill="url(#alq-shine-right)"/>';
-  /* Pequeño reflejo horizontal en la base del cuello */
-  h += '      <ellipse cx="50" cy="100" rx="36" ry="1.5" fill="rgba(255,255,255,0.25)"/>';
+  h += '      <line x1="78" y1="140" x2="78" y2="308" stroke="url(#alq-glass)" stroke-width="2"/>';
+  /* Curva inferior cóncava del cuerpo (base que se contrae) + fondo plano */
+  h += '      <path d="M 22 308 Q 22 325 28 336 L 72 336 Q 78 325 78 308" fill="none" stroke="url(#alq-glass)" stroke-width="2"/>';
+  /* Fondo plano del frasco */
+  h += '      <line x1="28" y1="336" x2="72" y2="336" stroke="url(#alq-glass)" stroke-width="2"/>';
+  /* Brillo principal izquierdo (franja vertical dentro del cuerpo) */
+  h += '      <rect x="26" y="146" width="5" height="155" rx="2.5" fill="url(#alq-shine)" opacity="0.6"/>';
+  /* Brillo derecho secundario */
+  h += '      <rect x="71" y="155" width="2.5" height="140" rx="1.25" fill="rgba(255,255,255,0.18)"/>';
+  /* Reflejo horizontal en la base del cuello (separación) */
+  h += '      <ellipse cx="50" cy="140" rx="28" ry="1.2" fill="rgba(255,255,255,0.2)"/>';
   h += '    </svg>';
-  /* Capas de especias — se posicionan dentro del área del cuerpo (detrás del SVG) */
+  /* Capas de especias — se posicionan dentro del cuerpo (detrás del SVG) */
   h += '    <div class="alq-jar-layers" id="alq-layers"></div>';
   h += '  </div>';
   h += '  <div class="alq-jar-info">';
