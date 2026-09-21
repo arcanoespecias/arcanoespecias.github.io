@@ -1086,64 +1086,7 @@ function renderBlendBuilder() {
   /* === Panel izquierdo: Frasco === */
   h += '<div class="alq-jar-panel">';
   h += '  <div class="alq-jar-stage">';
-  /* SVG: contorno del frasco (tapa, cuello, hombros, bordes del cuerpo) — cuerpo transparente */
-  h += '    <svg class="alq-jar-svg" viewBox="0 0 100 320" preserveAspectRatio="xMidYMid meet" aria-label="Frasco Arcano">';
-  h += '      <defs>';
-  /* Gradiente metálico para la tapa */
-  h += '        <linearGradient id="alq-metal" x1="0" y1="0" x2="0" y2="1">';
-  h += '          <stop offset="0%" stop-color="#A8A8B0"/>';
-  h += '          <stop offset="20%" stop-color="#FAFAFC"/>';
-  h += '          <stop offset="45%" stop-color="#C8C8D0"/>';
-  h += '          <stop offset="75%" stop-color="#7878800"/>';
-  h += '          <stop offset="100%" stop-color="#383840"/>';
-  h += '        </linearGradient>';
-  /* Gradiente del vidrio (bordes laterales) */
-  h += '        <linearGradient id="alq-glass-edge" x1="0" y1="0" x2="1" y2="0">';
-  h += '          <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>';
-  h += '          <stop offset="50%" stop-color="rgba(200,220,200,0.15)"/>';
-  h += '          <stop offset="100%" stop-color="rgba(80,100,80,0.45)"/>';
-  h += '        </linearGradient>';
-  /* Brillo vertical del vidrio */
-  h += '        <linearGradient id="alq-shine" x1="0" y1="0" x2="0" y2="1">';
-  h += '          <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>';
-  h += '          <stop offset="50%" stop-color="rgba(255,255,255,0.15)"/>';
-  h += '          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>';
-  h += '        </linearGradient>';
-  h += '      </defs>';
-  /* === TAPA metálica con estrías === */ 
-  h += '      <rect x="32" y="8" width="36" height="32" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.6)" stroke-width="0.8" rx="2"/>';
-  /* Estrías verticales */
-  h += '      <g stroke="rgba(0,0,0,0.35)" stroke-width="0.5">';
-  for (var se = 0; se < 12; se++) {
-    var xPos = 34 + se * 2.7;
-    h += '<line x1="' + xPos.toFixed(1) + '" y1="10" x2="' + xPos.toFixed(1) + '" y2="38"/>';
-  }
-  h += '      </g>';
-  /* Brillo metálico izquierdo */
-  h += '      <rect x="35" y="11" width="2" height="26" rx="1" fill="rgba(255,255,255,0.65)"/>';
-  /* Cúpula superior */
-  h += '      <path d="M 33 10 Q 50 2 67 10" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.4)" stroke-width="0.6"/>';
-  /* === CUELLO estrecho (mismo ancho que la tapa) === */
-  h += '      <rect x="32" y="40" width="36" height="20" fill="url(#alq-glass-edge)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>';
-  /* Brillo del cuello */
-  h += '      <rect x="35" y="43" width="2.5" height="14" rx="1" fill="rgba(255,255,255,0.5)"/>';
-  /* === HOMBROS curvos (transición cuello → cuerpo) === */
-  h += '      <path d="M 32 60 Q 18 70 18 80 L 82 80 Q 82 70 68 60 Z" fill="url(#alq-glass-edge)" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>';
-  /* === BORDES DEL CUERPO (silueta del vidrio, sin relleno) === */ 
-  /* Borde izquierdo */
-  h += '      <line x1="18" y1="78" x2="18" y2="295" stroke="url(#alq-glass-edge)" stroke-width="2"/>';
-  /* Borde derecho */
-  h += '      <line x1="82" y1="78" x2="82" y2="295" stroke="url(#alq-glass-edge)" stroke-width="2"/>';
-  /* Curva inferior del cuerpo (base redondeada) */
-  h += '      <path d="M 18 295 Q 18 308 30 308 L 70 308 Q 82 308 82 295" fill="none" stroke="url(#alq-glass-edge)" stroke-width="2"/>';
-  /* Brillo principal izquierdo (franja vertical dentro del cuerpo) */
-  h += '      <rect x="22" y="85" width="4" height="200" rx="2" fill="url(#alq-shine)" opacity="0.7"/>';
-  /* Brillo derecho secundario */
-  h += '      <rect x="74" y="95" width="2" height="170" rx="1" fill="rgba(255,255,255,0.25)"/>';
-  /* Sombra inferior interna (para dar profundidad) */
-  h += '      <ellipse cx="50" cy="306" rx="28" ry="3" fill="rgba(0,0,0,0.3)"/>';
-  h += '    </svg>';
-  /* Capas de especias — se posicionan dentro del área del cuerpo */
+  h += '    <img src="icons/jar.png?v=2" alt="Frasco Arcano" class="alq-jar-img">';
   h += '    <div class="alq-jar-layers" id="alq-layers"></div>';
   h += '  </div>';
   h += '  <div class="alq-jar-info">';
