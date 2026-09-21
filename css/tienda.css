@@ -1198,12 +1198,12 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* Stage: contenedor del frasco + sombra base
-   Ratio 100/350 (3.5:1) igual que el viewBox del SVG */
+   Ratio 100/380 (3.8:1) igual que el viewBox del SVG tipo Bordeaux */
 .alq-jar-stage {
   position: relative;
   width: 100%;
-  max-width: 180px;
-  aspect-ratio: 100 / 350;
+  max-width: 170px;
+  aspect-ratio: 100 / 380;
   display: block;
   filter: drop-shadow(0 12px 20px rgba(0,0,0,0.4));
   margin: 0 auto;
@@ -1218,17 +1218,17 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* Capas de especias (DETRÁS del SVG, dentro del área del cuerpo)
-   En el SVG (viewBox 100x350), el cuerpo va de y=140 a y=308, x=22-78:
-   - top: 140/350 = 40%
-   - height: 168/350 = 48%
+   En el SVG (viewBox 100x380), el cuerpo va de y=171 a y=334, x=22-78:
+   - top: 171/380 = 45%
+   - height: 163/380 = 43%
    - left: 22/100 = 22%
    - width: 56/100 = 56% */
 .alq-jar-layers {
   position: absolute;
   left: 22%;
-  top: 40%;
+  top: 45%;
   width: 56%;
-  height: 48%;
+  height: 43%;
   display: flex; flex-direction: column-reverse;
   z-index: 1; /* Detrás del SVG */
   pointer-events: none;
