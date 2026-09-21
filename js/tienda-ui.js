@@ -1074,7 +1074,7 @@ function renderBlendBuilder() {
   var total = _bbGetTotal();
   var canAddToCart = state.nombre.trim().length > 0 &&
                      (state.talla === 'chico' || state.talla === 'grande') &&
-                     state.especias.length >= 2 &&
+                     state.especias.length >= 3 &&
                      total === 100;
 
   var tallaLabel = state.talla === 'grande' ? 'Grande' : (state.talla === 'chico' ? 'Pequeño' : '');
@@ -1083,25 +1083,72 @@ function renderBlendBuilder() {
 
   var h = '';
   h += '<div class="alq-container">';
-  /* === Panel izquierdo: Tarjeta de Capas (vista previa del blend) === */
-  h += '<div class="alq-preview-panel">';
-  /* Encabezado: nombre + tamaño + precio */
-  h += '  <div class="alq-preview-header">';
-  h += '    <div class="alq-preview-name" id="alq-jar-name">' + (state.nombre ? esc(state.nombre) : 'Tu Blend') + '</div>';
-  h += '    <div class="alq-preview-meta">';
-  h += '      <span class="alq-preview-size">' + (tallaLabel || 'Elige tamaño') + '</span>';
+  /* === Panel izquierdo: Mortero Alquímico === */
+  h += '<div class="alq-mortar-panel">';
+  /* Header: nombre + tamaño + precio */
+  h += '  <div class="alq-mortar-header">';
+  h += '    <div class="alq-mortar-name" id="alq-jar-name">' + (state.nombre ? esc(state.nombre) : 'Tu Blend') + '</div>';
+  h += '    <div class="alq-mortar-meta">';
+  h += '      <span class="alq-mortar-size">' + (tallaLabel || 'Elige tamaño') + '</span>';
   if (precio > 0) {
-    h += '      <span class="alq-preview-price">$' + precio.toLocaleString() + '</span>';
+    h += '      <span class="alq-mortar-price">$' + precio.toLocaleString() + '</span>';
   }
   h += '    </div>';
   h += '  </div>';
-  /* Tarjeta de capas: barras horizontales apiladas */
-  h += '  <div class="alq-layers-card" id="alq-layers"></div>';
+  /* Mortero: SVG del bowl semicircular con capas dentro */
+  h += '  <div class="alq-mortar-stage">';
+  h += '    <svg class="alq-mortar-svg" viewBox="0 0 200 160" preserveAspectRatio="xMidYMid meet" aria-label="Mortero">';
+  h += '      <defs>';
+  h += '        <linearGradient id="alq-stone" x1="0" y1="0" x2="0" y2="1">';
+  h += '          <stop offset="0%" stop-color="#3A3028"/>';
+  h += '          <stop offset="30%" stop-color="#4A3E32"/>';
+  h += '          <stop offset="60%" stop-color="#2A2018"/>';
+  h += '          <stop offset="100%" stop-color="#1A1410"/>';
+  h += '        </linearGradient>';
+  h += '        <linearGradient id="alq-stone-outer" x1="0" y1="0" x2="0" y2="1">';
+  h += '          <stop offset="0%" stop-color="#5C4E40"/>';
+  h += '          <stop offset="50%" stop-color="#3A3028"/>';
+  h += '          <stop offset="100%" stop-color="#1A1410"/>';
+  h += '        </linearGradient>';
+  h += '        <linearGradient id="alq-stone-inner" x1="0" y1="0" x2="0" y2="1">';
+  h += '          <stop offset="0%" stop-color="#0F0A07"/>';
+  h += '          <stop offset="50%" stop-color="#1F1810"/>';
+  h += '          <stop offset="100%" stop-color="#0F0A07"/>';
+  h += '        </linearGradient>';
+  h += '        <clipPath id="alq-mortar-clip">';
+  h += '          <path d="M 25 50 Q 25 145 100 150 Q 175 145 175 50 Z"/>';
+  h += '        </clipPath>';
+  h += '      </defs>';
+  /* Sombra elíptica bajo el mortero */
+  h += '      <ellipse cx="100" cy="155" rx="80" ry="5" fill="rgba(0,0,0,0.45)"/>';
+  /* === Interior del mortero (oscuro, donde van las capas) ===';
+     El interior es un bowl cóncavo: semicírculo con recorte */
+  h += '      <path d="M 25 50 Q 25 145 100 150 Q 175 145 175 50 Z" fill="url(#alq-stone-inner)"/>';
+  /* Capas de especias dentro del mortero (clip-path al interior) */
+  h += '      <g clip-path="url(#alq-mortar-clip)" id="alq-layers"></g>';
+  /* === Borde exterior del mortero (piedra gruesa) ===';
+     El borde exterior es un anillo grueso de piedra */
+  h += '      <path d="M 18 45 Q 18 152 100 158 Q 182 152 182 45 L 175 50 Q 175 145 100 150 Q 25 145 25 50 Z" fill="url(#alq-stone-outer)" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>';
+  /* === Borde superior del mortero (labio grueso) ===';
+     El labio superior es un anillo ovalado que define la boca del mortero */
+  h += '      <ellipse cx="100" cy="50" rx="82" ry="14" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
+  h += '      <ellipse cx="100" cy="50" rx="75" ry="10" fill="url(#alq-stone-inner)"/>';
+  /* Brillo del labio superior (reflejo de luz) */
+  h += '      <ellipse cx="100" cy="46" rx="60" ry="3" fill="rgba(255,255,255,0.08)"/>';
+  /* === Maja (pistilo) del mortero — apoyado al lado derecho ===';
+     Es una varilla de piedra con cabeza redonda */
+  h += '      <g transform="rotate(15 100 100)">';
+  h += '        <rect x="155" y="-30" width="6" height="120" fill="url(#alq-stone)" rx="3" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
+  h += '        <ellipse cx="158" cy="-30" rx="10" ry="12" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
+  h += '        <ellipse cx="156" cy="-33" rx="5" ry="3" fill="rgba(255,255,255,0.15)"/>';
+  h += '      </g>';
+  h += '    </svg>';
+  h += '  </div>';
   /* Contador de especias seleccionadas */
-  h += '  <div class="alq-preview-footer">';
-  h += '    <span class="alq-preview-count">' + state.especias.length + ' de 5 especias</span>';
+  h += '  <div class="alq-mortar-footer">';
+  h += '    <span class="alq-mortar-count">' + state.especias.length + ' de 5 especias (mín. 3)</span>';
   if (state.especias.length > 0) {
-    h += '    <span class="alq-preview-total">Total: ' + _bbGetTotal() + '%</span>';
+    h += '    <span class="alq-mortar-total">Total: ' + _bbGetTotal() + '%</span>';
   }
   h += '  </div>';
   h += '</div>';
@@ -1160,7 +1207,7 @@ function renderBlendBuilder() {
   h += '</div>';
 
   /* Step 4: Proporciones (visible solo si 2+ especias) */
-  var visible = state.especias.length >= 2;
+  var visible = state.especias.length >= 3;
   h += '<div class="alq-section alq-proportions' + (visible ? ' visible' : '') + '">';
   var totalCls = total === 100 ? '' : (total > 100 ? ' danger' : ' warning');
   h += '  <label class="alq-label">Proporciones <span class="alq-total-pill' + totalCls + '">Total: ' + total + '%</span></label>';
@@ -1184,43 +1231,50 @@ function renderBlendBuilder() {
   _alqUpdateMixBar();
 }
 
-/* === Actualizar la tarjeta de capas ===
-   Cada especia es una fila con:
-   - Color swatch
-   - Nombre de la especia
-   - Barra horizontal coloreada (proporcional al %)
-   - Porcentaje numérico
-   Si no hay especias, se muestra un placeholder elegante.
+/* === Actualizar el mortero (capas de especias dentro del bowl) ===
+   Las capas se apilan verticalmente dentro del interior del mortero.
+   El interior del mortero va de y=50 (boca) a y=150 (fondo), x=25-175.
+   Cada capa es un rect con altura proporcional al porcentaje del blend.
+   Nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% de la profundidad del mortero.
 === */
 function _alqUpdateJar() {
   var layersEl = document.getElementById('alq-layers');
   if (!layersEl) return;
   var state = _blendBuilderState;
-  var h = '';
+  /* Coordenadas del interior del mortero (en viewBox 200x160) */
+  var MORTAR_TOP = 50;
+  var MORTAR_BOTTOM = 150;
+  var MORTAR_HEIGHT = MORTAR_BOTTOM - MORTAR_TOP; /* 100 unidades */
+  var MORTAR_LEFT = 25;
+  var MORTAR_RIGHT = 175;
+  var MORTAR_WIDTH = MORTAR_RIGHT - MORTAR_LEFT;
+
+  var svgContent = '';
   if (state.especias.length === 0) {
-    /* Estado vacío: placeholder elegante */
-    h += '<div class="alq-layers-empty">';
-    h += '  <div class="alq-layers-empty-icon">○</div>';
-    h += '  <div class="alq-layers-empty-text">Selecciona especias para ver tu blend</div>';
-    h += '</div>';
+    /* Mortero vacío: textura sutil de polvo residual al fondo */
+    svgContent += '<ellipse cx="100" cy="145" rx="65" ry="6" fill="rgba(60,50,40,0.5)"/>';
   } else {
-    /* Cada especia = una fila con barra horizontal */
+    /* Calcular el nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% */
+    var fillLevel = Math.min(100, state.especias.length / 5 * 100);
+    var totalPct = _bbGetTotal() || 100;
+    var filledHeight = MORTAR_HEIGHT * (fillLevel / 100);
+    var currentY = MORTAR_BOTTOM;
     for (var i = 0; i < state.especias.length; i++) {
       var sp = state.especias[i];
       var color = _alqGetSpiceColor(sp.nombre);
-      h += '<div class="alq-layer-row">';
-      h += '  <div class="alq-layer-info">';
-      h += '    <span class="alq-layer-swatch" style="background:' + color + '"></span>';
-      h += '    <span class="alq-layer-name">' + esc(sp.nombre) + '</span>';
-      h += '  </div>';
-      h += '  <div class="alq-layer-bar-wrap">';
-      h += '    <div class="alq-layer-bar" style="width:' + sp.porcentaje + '%;background:' + color + '"></div>';
-      h += '  </div>';
-      h += '  <div class="alq-layer-pct">' + sp.porcentaje + '%</div>';
-      h += '</div>';
+      /* La altura de la capa es proporcional a su % del blend, dentro del fillLevel */
+      var layerHeight = (sp.porcentaje / totalPct) * filledHeight;
+      var layerY = currentY - layerHeight;
+      /* Rectángulo de la capa (con leve curva inferior para seguir la forma del mortero) */
+      svgContent += '<rect x="' + MORTAR_LEFT + '" y="' + layerY.toFixed(2) + '" width="' + MORTAR_WIDTH + '" height="' + layerHeight.toFixed(2) + '" fill="' + color + '" opacity="0.92"/>';
+      /* Línea superior sutil para separar capas */
+      if (i < state.especias.length - 1) {
+        svgContent += '<line x1="' + MORTAR_LEFT + '" y1="' + layerY.toFixed(2) + '" x2="' + MORTAR_RIGHT + '" y2="' + layerY.toFixed(2) + '" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+      }
+      currentY = layerY;
     }
   }
-  layersEl.innerHTML = h;
+  layersEl.innerHTML = svgContent;
 }
 
 /* === Actualizar la barra de proporciones === */
@@ -1327,7 +1381,7 @@ function _alqRefreshCTA() {
   var total = _bbGetTotal();
   var canAddToCart = state.nombre.trim().length > 0 &&
                      (state.talla === 'chico' || state.talla === 'grande') &&
-                     state.especias.length >= 2 &&
+                     state.especias.length >= 3 &&
                      total === 100;
   var cta = document.querySelector('.alq-cta');
   if (cta) {
@@ -1386,7 +1440,7 @@ function _bbCanNext(step) {
   var s = _blendBuilderState;
   if (step === 1) return s.nombre.trim().length > 0;
   if (step === 2) return s.talla === 'chico' || s.talla === 'grande';
-  if (step === 3) return s.especias.length >= 2;
+  if (step === 3) return s.especias.length >= 3;
   if (step === 4) return _bbGetTotal() === 100;
   return false;
 }
@@ -1430,7 +1484,7 @@ function addCustomBlendToCart() {
   if (!nombre) { alert('Dale un nombre a tu blend'); return; }
   var total = _bbGetTotal();
   if (total !== 100) { alert('Las proporciones deben sumar 100%'); return; }
-  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
+  if (_blendBuilderState.especias.length < 3) { alert('Selecciona al menos 3 especias'); return; }
   if (_blendBuilderState.talla !== 'chico' && _blendBuilderState.talla !== 'grande') {
     alert('Elige el tama\u00F1o del frasco'); return;
   }

@@ -1187,8 +1187,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 @keyframes alqFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-/* ---------- Panel izquierdo: Tarjeta de Capas (preview del blend) ---------- */
-.alq-preview-panel {
+/* ---------- Panel izquierdo: Mortero Alquímico ---------- */
+.alq-mortar-panel {
   position: sticky; top: 90px;
   display: flex; flex-direction: column; gap: 16px;
   padding: 24px;
@@ -1199,112 +1199,53 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* Header: nombre + tamaño + precio */
-.alq-preview-header {
+.alq-mortar-header {
   display: flex; flex-direction: column; gap: 6px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-light);
 }
-.alq-preview-name {
+.alq-mortar-name {
   font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--text);
   letter-spacing: 0.02em; min-height: 1.3em;
   word-break: break-word;
 }
-.alq-preview-meta {
+.alq-mortar-meta {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.alq-preview-size {
+.alq-mortar-size {
   font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.08em;
   text-transform: uppercase; font-weight: 500;
 }
-.alq-preview-price {
+.alq-mortar-price {
   font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); font-weight: 700;
 }
 
-/* Tarjeta de capas: barras horizontales apiladas */
-.alq-layers-card {
-  display: flex; flex-direction: column; gap: 10px;
-  min-height: 200px;
+/* Stage: contenedor del mortero */
+.alq-mortar-stage {
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 200 / 160;
+  margin: 0 auto;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
 }
-
-/* Estado vacío */
-.alq-layers-empty {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 40px 20px; gap: 12px;
-  text-align: center;
-}
-.alq-layers-empty-icon {
-  font-size: 2rem; color: var(--text-muted); opacity: 0.4;
-  width: 56px; height: 56px;
-  border: 2px dashed var(--border);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-}
-.alq-layers-empty-text {
-  font-size: 0.85rem; color: var(--text-muted); font-style: italic;
-}
-
-/* Cada fila de capa */
-.alq-layer-row {
-  display: grid;
-  grid-template-columns: minmax(110px, 1.2fr) 2fr auto;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  animation: alqLayerRowFadeIn 0.4s var(--ease);
-}
-@keyframes alqLayerRowFadeIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: none; }
-}
-
-.alq-layer-info {
-  display: flex; align-items: center; gap: 8px;
-  min-width: 0;
-}
-.alq-layer-swatch {
-  width: 14px; height: 14px; border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
-  border: 1px solid rgba(0,0,0,0.25);
-}
-.alq-layer-name {
-  font-size: 0.82rem; font-weight: 500; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.alq-layer-bar-wrap {
-  height: 10px;
-  background: var(--bg);
-  border-radius: 5px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.alq-layer-bar {
+.alq-mortar-svg {
+  width: 100%;
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.4s var(--ease);
-  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
-}
-
-.alq-layer-pct {
-  font-family: var(--font-display); font-size: 0.82rem; font-weight: 700;
-  color: var(--gold);
-  min-width: 36px; text-align: right;
+  display: block;
 }
 
 /* Footer: contador de especias */
-.alq-preview-footer {
+.alq-mortar-footer {
   display: flex; align-items: center; justify-content: space-between;
   padding-top: 16px;
   border-top: 1px solid var(--border-light);
   font-size: 0.78rem;
 }
-.alq-preview-count {
+.alq-mortar-count {
   color: var(--text-muted); font-weight: 500;
 }
-.alq-preview-total {
+.alq-mortar-total {
   color: var(--gold); font-weight: 700; font-family: var(--font-display);
 }
 
@@ -1563,20 +1504,19 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     gap: 20px;
     padding-top: 8px;
   }
-  .alq-preview-panel {
+  .alq-mortar-panel {
     position: static;
     padding: 16px;
   }
-  .alq-preview-name { font-size: 1.05rem; }
-  .alq-preview-price { font-size: 1rem; }
+  .alq-mortar-name { font-size: 1.05rem; }
+  .alq-mortar-price { font-size: 1rem; }
+  .alq-mortar-stage { max-width: 200px; }
 }
 @media (max-width: 480px) {
-  .alq-preview-panel { padding: 14px; gap: 12px; }
-  .alq-preview-header { padding-bottom: 12px; }
-  .alq-preview-name { font-size: 1rem; }
-  .alq-layer-row { grid-template-columns: 1fr 1.5fr auto; gap: 8px; }
-  .alq-layer-name { font-size: 0.78rem; }
-  .alq-layer-pct { font-size: 0.78rem; }
+  .alq-mortar-panel { padding: 14px; gap: 12px; }
+  .alq-mortar-header { padding-bottom: 12px; }
+  .alq-mortar-name { font-size: 1rem; }
+  .alq-mortar-stage { max-width: 180px; }
   .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
   .alq-spice-card { padding: 8px 4px 6px; }
   .alq-spice-name { font-size: 0.72rem; }
