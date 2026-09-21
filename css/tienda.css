@@ -1187,108 +1187,125 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 @keyframes alqFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-/* ---------- Panel izquierdo: Frasco ---------- */
-.alq-jar-panel {
+/* ---------- Panel izquierdo: Tarjeta de Capas (preview del blend) ---------- */
+.alq-preview-panel {
   position: sticky; top: 90px;
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
-  padding: 24px 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 24px;
+  background: var(--surface);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
-/* Stage: contenedor del frasco + sombra base
-   Ratio 100/380 (3.8:1) igual que el viewBox del SVG tipo Bordeaux */
-.alq-jar-stage {
-  position: relative;
-  width: 100%;
-  max-width: 170px;
-  aspect-ratio: 100 / 380;
-  display: block;
-  filter: drop-shadow(0 12px 20px rgba(0,0,0,0.4));
-  margin: 0 auto;
+/* Header: nombre + tamaño + precio */
+.alq-preview-header {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
 }
-.alq-jar-svg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  z-index: 2; /* SVG delante: tapa, cuello, hombros y bordes del cuerpo visibles */
+.alq-preview-name {
+  font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--text);
+  letter-spacing: 0.02em; min-height: 1.3em;
+  word-break: break-word;
 }
-
-/* Capas de especias (DETRÁS del SVG, dentro del área del cuerpo)
-   En el SVG (viewBox 100x380), el cuerpo va de y=171 a y=334, x=22-78:
-   - top: 171/380 = 45%
-   - height: 163/380 = 43%
-   - left: 22/100 = 22%
-   - width: 56/100 = 56% */
-.alq-jar-layers {
-  position: absolute;
-  left: 22%;
-  top: 45%;
-  width: 56%;
-  height: 43%;
-  display: flex; flex-direction: column-reverse;
-  z-index: 1; /* Detrás del SVG */
-  pointer-events: none;
-  overflow: hidden;
-  /* clip-path: forma del cuerpo (cilindro con esquinas inferiores redondeadas) */
-  clip-path: polygon(
-    0% 0%,
-    100% 0%,
-    100% 88%,
-    90% 96%,
-    80% 100%,
-    20% 100%,
-    10% 96%,
-    0% 88%
-  );
+.alq-preview-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.alq-layer {
-  width: 100%;
-  transition: height 0.5s cubic-bezier(0.34, 1.36, 0.64, 1), opacity 0.3s var(--ease);
-  position: relative;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.25),
-    inset 0 -1px 0 rgba(0,0,0,0.3);
-  animation: alqLayerDrop 0.55s var(--ease);
+.alq-preview-size {
+  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.08em;
+  text-transform: uppercase; font-weight: 500;
 }
-@keyframes alqLayerDrop {
-  0%   { transform: translateY(-30px); opacity: 0; }
-  50%  { transform: translateY(3px); opacity: 0.85; }
-  75%  { transform: translateY(-1px); opacity: 1; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-.alq-layer.alq-empty-fill {
-  background: linear-gradient(180deg,
-    rgba(120,100,80,0.25) 0%,
-    rgba(80,60,40,0.4) 100%
-  );
-  animation: none;
-  box-shadow:
-    inset 0 2px 4px rgba(0,0,0,0.4),
-    inset 0 -1px 0 rgba(0,0,0,0.5);
+.alq-preview-price {
+  font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); font-weight: 700;
 }
 
-.alq-jar-info {
+/* Tarjeta de capas: barras horizontales apiladas */
+.alq-layers-card {
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 200px;
+}
+
+/* Estado vacío */
+.alq-layers-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 20px; gap: 12px;
   text-align: center;
 }
-.alq-jar-name {
-  font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text);
-  letter-spacing: 0.02em; margin-bottom: 2px;
-  min-height: 1.2em;
+.alq-layers-empty-icon {
+  font-size: 2rem; color: var(--text-muted); opacity: 0.4;
+  width: 56px; height: 56px;
+  border: 2px dashed var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
 }
-.alq-jar-name:empty::before {
-  content: 'Tu Blend'; color: var(--text-muted); font-style: italic; font-weight: 400;
+.alq-layers-empty-text {
+  font-size: 0.85rem; color: var(--text-muted); font-style: italic;
 }
-.alq-jar-size {
-  font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.06em;
-  text-transform: uppercase;
+
+/* Cada fila de capa */
+.alq-layer-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1.2fr) 2fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  animation: alqLayerRowFadeIn 0.4s var(--ease);
 }
-.alq-jar-price {
-  font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); font-weight: 700;
-  margin-top: 6px;
+@keyframes alqLayerRowFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.alq-layer-info {
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0;
+}
+.alq-layer-swatch {
+  width: 14px; height: 14px; border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
+  border: 1px solid rgba(0,0,0,0.25);
+}
+.alq-layer-name {
+  font-size: 0.82rem; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.alq-layer-bar-wrap {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.alq-layer-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s var(--ease);
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.alq-layer-pct {
+  font-family: var(--font-display); font-size: 0.82rem; font-weight: 700;
+  color: var(--gold);
+  min-width: 36px; text-align: right;
+}
+
+/* Footer: contador de especias */
+.alq-preview-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+  font-size: 0.78rem;
+}
+.alq-preview-count {
+  color: var(--text-muted); font-weight: 500;
+}
+.alq-preview-total {
+  color: var(--gold); font-weight: 700; font-family: var(--font-display);
 }
 
 /* ---------- Panel derecho: Controles ---------- */
@@ -1546,28 +1563,20 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     gap: 20px;
     padding-top: 8px;
   }
-  .alq-jar-panel {
+  .alq-preview-panel {
     position: static;
-    flex-direction: row;
     padding: 16px;
-    gap: 20px;
-    align-items: center;
   }
-  .alq-jar-stage {
-    width: 100px;
-    max-width: 100px;
-    flex-shrink: 0;
-  }
-  .alq-jar-info { text-align: left; flex: 1; }
-  .alq-jar-name { font-size: 0.95rem; }
-  .alq-jar-price { font-size: 1rem; }
+  .alq-preview-name { font-size: 1.05rem; }
+  .alq-preview-price { font-size: 1rem; }
 }
 @media (max-width: 480px) {
-  .alq-jar-panel { padding: 12px; gap: 12px; }
-  .alq-jar-stage {
-    width: 84px;
-    max-width: 84px;
-  }
+  .alq-preview-panel { padding: 14px; gap: 12px; }
+  .alq-preview-header { padding-bottom: 12px; }
+  .alq-preview-name { font-size: 1rem; }
+  .alq-layer-row { grid-template-columns: 1fr 1.5fr auto; gap: 8px; }
+  .alq-layer-name { font-size: 0.78rem; }
+  .alq-layer-pct { font-size: 0.78rem; }
   .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
   .alq-spice-card { padding: 8px 4px 6px; }
   .alq-spice-name { font-size: 0.72rem; }
