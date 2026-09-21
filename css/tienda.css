@@ -1200,23 +1200,34 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* Stage: contenedor del frasco + sombra base */
 .alq-jar-stage {
   position: relative;
-  width: 130px; height: 390px;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: flex-start;
-}
-.alq-jar-svg {
-  width: 100%;
-  height: 100%;
+  width: 140px; height: 280px;
   display: block;
   filter: drop-shadow(0 12px 20px rgba(0,0,0,0.4));
 }
+.alq-jar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
 
-/* Capas de especias (llenado dinámico) */
+/* Capas de especias (sobre el área del cuerpo del frasco)
+   Coordenadas medidas de la imagen 200x200:
+   Cuerpo: x=74-127 (left:37%, width:27%)
+           y=68-185 (top:34%, height:59%) */
 .alq-jar-layers {
-  position: absolute; top: 0; bottom: 0; left: 0; right: 0;
+  position: absolute;
+  left: 37%;
+  top: 34%;
+  width: 27%;
+  height: 59%;
   display: flex; flex-direction: column-reverse;
   z-index: 2;
   pointer-events: none;
+  overflow: hidden;
+  border-radius: 0 0 4px 4px / 0 0 8px 8px;
 }
 .alq-layer {
   width: 100%;
@@ -1228,9 +1239,9 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   animation: alqLayerDrop 0.55s var(--ease);
 }
 @keyframes alqLayerDrop {
-  0%   { transform: translateY(-40px); opacity: 0; }
-  50%  { transform: translateY(4px); opacity: 0.85; }
-  75%  { transform: translateY(-2px); opacity: 1; }
+  0%   { transform: translateY(-30px); opacity: 0; }
+  50%  { transform: translateY(3px); opacity: 0.85; }
+  75%  { transform: translateY(-1px); opacity: 1; }
   100% { transform: translateY(0); opacity: 1; }
 }
 .alq-layer.alq-empty-fill {
@@ -1238,7 +1249,6 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     rgba(120,100,80,0.25) 0%,
     rgba(80,60,40,0.4) 100%
   );
-  border-radius: 0 0 8px 8px;
   animation: none;
   box-shadow:
     inset 0 2px 4px rgba(0,0,0,0.4),
@@ -1528,7 +1538,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     align-items: center;
   }
   .alq-jar-stage {
-    width: 88px; height: 264px;
+    width: 100px; height: 200px;
     flex-shrink: 0;
   }
   .alq-jar-info { text-align: left; flex: 1; }
@@ -1537,7 +1547,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 @media (max-width: 480px) {
   .alq-jar-panel { padding: 12px; gap: 12px; }
-  .alq-jar-stage { width: 74px; height: 222px; }
+  .alq-jar-stage { width: 84px; height: 168px; }
   .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
   .alq-spice-card { padding: 8px 4px 6px; }
   .alq-spice-name { font-size: 0.72rem; }

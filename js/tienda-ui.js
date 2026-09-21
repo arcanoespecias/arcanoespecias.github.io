@@ -1086,76 +1086,9 @@ function renderBlendBuilder() {
   /* === Panel izquierdo: Frasco === */
   h += '<div class="alq-jar-panel">';
   h += '  <div class="alq-jar-stage">';
-  /* SVG del frasco - proporciones exactas del original:
-     - Tapa: ancho 42, alto 36 (x=24-66, y=20-56)
-     - Cuello: ancho 42, alto 36 (x=24-66, y=56-92) — igual de ancho que la tapa
-     - Hombros: ancho 74, alto 14 (y=92-106) — transición cuello→cuerpo
-     - Cuerpo: ancho 74, alto 162 (x=8-82, y=106-268) — cilindro largo y estrecho
-     Total: ~250 alto × 74 ancho (ratio 3.4) */
-  h += '    <svg class="alq-jar-svg" viewBox="0 0 90 270" preserveAspectRatio="xMidYMid meet" aria-label="Frasco Arcano">';
-  h += '      <defs>';
-  h += '        <linearGradient id="alq-metal" x1="0" y1="0" x2="0" y2="1">';
-  h += '          <stop offset="0%" stop-color="#B8B8C0"/>';
-  h += '          <stop offset="15%" stop-color="#FFFFFF"/>';
-  h += '          <stop offset="35%" stop-color="#E0E0E8"/>';
-  h += '          <stop offset="55%" stop-color="#A8A8B0"/>';
-  h += '          <stop offset="80%" stop-color="#6C6C76"/>';
-  h += '          <stop offset="100%" stop-color="#383840"/>';
-  h += '        </linearGradient>';
-  h += '        <linearGradient id="alq-glass" x1="0" y1="0" x2="1" y2="0">';
-  h += '          <stop offset="0%" stop-color="rgba(120,170,140,0.32)"/>';
-  h += '          <stop offset="20%" stop-color="rgba(255,255,255,0.18)"/>';
-  h += '          <stop offset="50%" stop-color="rgba(240,255,250,0.05)"/>';
-  h += '          <stop offset="80%" stop-color="rgba(200,230,210,0.18)"/>';
-  h += '          <stop offset="100%" stop-color="rgba(90,130,110,0.55)"/>';
-  h += '        </linearGradient>';
-  h += '        <linearGradient id="alq-glass-neck" x1="0" y1="0" x2="1" y2="0">';
-  h += '          <stop offset="0%" stop-color="rgba(120,170,140,0.5)"/>';
-  h += '          <stop offset="30%" stop-color="rgba(255,255,255,0.5)"/>';
-  h += '          <stop offset="50%" stop-color="rgba(220,240,230,0.18)"/>';
-  h += '          <stop offset="70%" stop-color="rgba(180,220,200,0.25)"/>';
-  h += '          <stop offset="100%" stop-color="rgba(80,120,100,0.6)"/>';
-  h += '        </linearGradient>';
-  h += '        <linearGradient id="alq-shine" x1="0" y1="0" x2="0" y2="1">';
-  h += '          <stop offset="0%" stop-color="rgba(255,255,255,0.65)"/>';
-  h += '          <stop offset="30%" stop-color="rgba(255,255,255,0.32)"/>';
-  h += '          <stop offset="60%" stop-color="rgba(255,255,255,0.12)"/>';
-  h += '          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>';
-  h += '        </linearGradient>';
-  h += '        <clipPath id="alq-body-clip">';
-  h += '          <path d="M 8 106 L 8 260 Q 8 268 16 268 L 74 268 Q 82 268 82 260 L 82 106 Z"/>';
-  h += '        </clipPath>';
-  h += '      </defs>';
-  /* Sombra elíptica base */
-  h += '      <ellipse cx="45" cy="268" rx="42" ry="4" fill="rgba(0,0,0,0.55)"/>';
-  /* Cuerpo del frasco (cilindro con esquinas inferiores redondeadas) */
-  h += '      <path d="M 8 106 L 8 260 Q 8 268 16 268 L 74 268 Q 82 268 82 260 L 82 106 Z" fill="url(#alq-glass)" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>';
-  /* Capas de especias dentro del cuerpo (clip-path al cuerpo) */
-  h += '      <g clip-path="url(#alq-body-clip)" id="alq-layers-svg"></g>';
-  /* Brillo principal izquierdo (franja vertical sobre el cuerpo) */
-  h += '      <rect x="13" y="114" width="6" height="145" rx="3" fill="url(#alq-shine)" opacity="0.85"/>';
-  /* Brillo secundario derecho */
-  h += '      <rect x="71" y="120" width="2.5" height="120" rx="1.5" fill="rgba(255,255,255,0.3)"/>';
-  /* Hombros curvos (transición del cuello estrecho al cuerpo ancho) */
-  h += '      <path d="M 8 106 Q 8 92 24 88 L 66 88 Q 82 92 82 106 Z" fill="url(#alq-glass)" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>';
-  /* Cuello estrecho (mismo ancho que la tapa) */
-  h += '      <rect x="24" y="52" width="42" height="36" fill="url(#alq-glass-neck)" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>';
-  /* Brillo del cuello (franja vertical) */
-  h += '      <rect x="28" y="56" width="3" height="28" rx="1.5" fill="rgba(255,255,255,0.55)"/>';
-  /* Tapa metálica con estrías (mismo ancho que el cuello) */
-  h += '      <rect x="24" y="16" width="42" height="36" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.65)" stroke-width="1" rx="2"/>';
-  /* Estrías verticales en la tapa (rosca metálica) */
-  h += '      <g stroke="rgba(0,0,0,0.4)" stroke-width="0.6">';
-  for (var se = 0; se < 14; se++) {
-    var xPos = 26 + se * 3;
-    h += '<line x1="' + xPos + '" y1="18" x2="' + xPos + '" y2="50"/>';
-  }
-  h += '      </g>';
-  /* Brillo metálico izquierdo (franja vertical) */
-  h += '      <rect x="28" y="20" width="3" height="28" rx="1.5" fill="rgba(255,255,255,0.7)"/>';
-  /* Cúpula superior convexa de la tapa */
-  h += '      <path d="M 25 18 Q 45 8 65 18" fill="url(#alq-metal)" stroke="rgba(0,0,0,0.5)" stroke-width="0.8"/>';
-  h += '    </svg>';
+  /* Frasco: imagen real + capas de especias superpuestas en el área del cuerpo */
+  h += '    <img src="icons/jar.png" alt="Frasco Arcano" class="alq-jar-img">';
+  h += '    <div class="alq-jar-layers" id="alq-layers"></div>';
   h += '  </div>';
   h += '  <div class="alq-jar-info">';
   h += '    <div class="alq-jar-name" id="alq-jar-name">' + (state.nombre ? esc(state.nombre) : '') + '</div>';
@@ -1251,41 +1184,26 @@ function renderBlendBuilder() {
    Dentro del área llenada, cada capa se dimensiona por su porcentaje del blend.
 === */
 function _alqUpdateJar() {
-  var layersEl = document.getElementById('alq-layers-svg');
+  var layersEl = document.getElementById('alq-layers');
   if (!layersEl) return;
   var state = _blendBuilderState;
-  /* El cuerpo del frasco en el SVG va de y=106 a y=268 (altura útil = 162 unidades) */
-  var BODY_TOP = 106;
-  var BODY_BOTTOM = 268;
-  var BODY_HEIGHT = BODY_BOTTOM - BODY_TOP;
-  var BODY_LEFT = 8;
-  var BODY_RIGHT = 82;
-
-  var svgContent = '';
+  var h = '';
   if (state.especias.length === 0) {
-    /* Frasco vacío: polvo residual al fondo (8% de la altura del cuerpo) */
-    var emptyHeight = BODY_HEIGHT * 0.08;
-    svgContent += '<rect x="' + BODY_LEFT + '" y="' + (BODY_BOTTOM - emptyHeight) + '" width="' + (BODY_RIGHT - BODY_LEFT) + '" height="' + emptyHeight + '" fill="rgba(80,60,40,0.5)"/>';
+    /* Frasco vacío: capa fantasma al fondo para dar sensación de "polvo" */
+    h += '<div class="alq-layer alq-empty-fill" style="height:8%"></div>';
   } else {
     /* Calcular el nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% */
     var fillLevel = Math.min(100, state.especias.length / 5 * 100);
     var totalPct = _bbGetTotal() || 100;
-    var filledHeight = BODY_HEIGHT * (fillLevel / 100);
-    var currentY = BODY_BOTTOM;
     for (var i = 0; i < state.especias.length; i++) {
       var sp = state.especias[i];
       var color = _alqGetSpiceColor(sp.nombre);
       /* La altura de la capa es proporcional a su % del blend, dentro del fillLevel */
-      var layerHeight = (sp.porcentaje / totalPct) * filledHeight;
-      var layerY = currentY - layerHeight;
-      /* Rectángulo de la capa */
-      svgContent += '<rect x="' + BODY_LEFT + '" y="' + layerY.toFixed(2) + '" width="' + (BODY_RIGHT - BODY_LEFT) + '" height="' + layerHeight.toFixed(2) + '" fill="' + color + '"/>';
-      /* Línea superior sutil para separar capas */
-      svgContent += '<line x1="' + BODY_LEFT + '" y1="' + layerY.toFixed(2) + '" x2="' + BODY_RIGHT + '" y2="' + layerY.toFixed(2) + '" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>';
-      currentY = layerY;
+      var layerHeight = (sp.porcentaje / totalPct) * fillLevel;
+      h += '<div class="alq-layer" style="height:' + layerHeight.toFixed(2) + '%;background:' + color + '"></div>';
     }
   }
-  layersEl.innerHTML = svgContent;
+  layersEl.innerHTML = h;
 }
 
 /* === Actualizar la barra de proporciones === */
