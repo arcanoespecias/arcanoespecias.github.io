@@ -1179,7 +1179,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
    ============================================================ */
 .alq-container {
   display: grid; gap: 32px;
-  grid-template-columns: minmax(220px, 280px) 1fr;
+  grid-template-columns: minmax(240px, 1fr) 2fr;
   max-width: 1080px; margin: 0 auto;
   padding: 24px 0 0;
   align-items: start;
@@ -1197,37 +1197,53 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   border: 1px solid var(--border-light);
 }
 
-/* Stage: contenedor del frasco + sombra base
-   Dimensiones con ratio ~3.5:1 (igual que la imagen recortada 53x186) */
+/* Stage: contenedor del frasco + sombra base */
 .alq-jar-stage {
   position: relative;
-  width: 130px; height: 456px;
+  width: 100%;
+  max-width: 320px; /* Aumentado para frasco más grande */
+  aspect-ratio: 53 / 186;
   display: block;
   filter: drop-shadow(0 12px 20px rgba(0,0,0,0.4));
+  margin: 0 auto;
 }
 .alq-jar-img {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
-  position: relative;
-  z-index: 1;
+  z-index: 2; /* Imagen DELANTE: tapa, cuello, hombros, bordes del frasco */
 }
 
-/* Capas de especias (sobre el área del cuerpo del frasco)
-   En la imagen recortada (53x186), el cuerpo va de y=62-179 y x=0-53:
-   top:33%, height:63%, left:0%, width:100% */
+/* Capas de especias (DETRÁS de la imagen del frasco)
+   La imagen del frasco tiene el cuerpo transparente (100% transparente en el interior),
+   así las capas se ven a través del vidrio.
+   En la imagen recortada (53x186):
+   - Cuerpo va de y=68 a y=180 (top:36.5%, height:60.7%)
+   - Ancho del cuerpo: ~92% (left:4%, width:92%) */
 .alq-jar-layers {
   position: absolute;
-  left: 0%;
-  top: 33%;
-  width: 100%;
-  height: 63%;
+  left: 4%;
+  top: 36.5%;
+  width: 92%;
+  height: 60.7%;
   display: flex; flex-direction: column-reverse;
-  z-index: 2;
+  z-index: 1; /* Detrás de la imagen del frasco */
   pointer-events: none;
   overflow: hidden;
-  border-radius: 0 0 4px 4px / 0 0 8px 8px;
+  /* clip-path: forma del cuerpo (cilindro con esquinas inferiores redondeadas) */
+  clip-path: polygon(
+    0% 0%,
+    100% 0%,
+    100% 88%,
+    94% 95%,
+    85% 100%,
+    15% 100%,
+    6% 95%,
+    0% 88%
+  );
 }
 .alq-layer {
   width: 100%;
@@ -1538,7 +1554,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     align-items: center;
   }
   .alq-jar-stage {
-    width: 88px; height: 308px;
+    width: 100px;
+    max-width: 100px;
     flex-shrink: 0;
   }
   .alq-jar-info { text-align: left; flex: 1; }
@@ -1547,7 +1564,10 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 @media (max-width: 480px) {
   .alq-jar-panel { padding: 12px; gap: 12px; }
-  .alq-jar-stage { width: 74px; height: 260px; }
+  .alq-jar-stage {
+    width: 84px;
+    max-width: 84px;
+  }
   .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
   .alq-spice-card { padding: 8px 4px 6px; }
   .alq-spice-name { font-size: 0.72rem; }
