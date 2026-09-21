@@ -1023,7 +1023,7 @@ function renderBlendBuilder() {
   var precio = state.talla ? _getCustomBlendPrice(state.talla) : 0;
   var canAdd = state.nombre.trim().length > 0 &&
                (state.talla === 'chico' || state.talla === 'grande') &&
-               state.especias.length >= 2 && total === 100;
+               state.especias.length >= 3 && total === 100;
   var tallaLbl = state.talla === 'grande' ? 'Grande' : (state.talla === 'chico' ? 'Pequeño' : '');
   var pChico = _getCustomBlendPrice('chico');
   var pGrande = _getCustomBlendPrice('grande');
@@ -1033,11 +1033,14 @@ function renderBlendBuilder() {
   h += '<div class="alq-bench">';
   h += '  <div class="alq-bench-title">Tu Mesa</div>';
   h += '  <div class="alq-bowl-wrap">';
-  /* SVG simple del bowl: semicírculo con capas dentro (clip-path) */
-  h += '    <svg class="alq-bowl" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid meet">';
+  /* SVG del bowl (mortero) + pistilo (palo ancho de moler) */
+  h += '    <svg class="alq-bowl" viewBox="0 0 220 160" preserveAspectRatio="xMidYMid meet">';
   h += '      <defs>';
   h += '        <linearGradient id="bowl-stone" x1="0" y1="0" x2="0" y2="1">';
   h += '          <stop offset="0%" stop-color="#3A3028"/><stop offset="100%" stop-color="#1A1410"/>';
+  h += '        </linearGradient>';
+  h += '        <linearGradient id="pestle-stone" x1="0" y1="0" x2="0" y2="1">';
+  h += '          <stop offset="0%" stop-color="#4A3E32"/><stop offset="50%" stop-color="#2A2018"/><stop offset="100%" stop-color="#1A1410"/>';
   h += '        </linearGradient>';
   h += '        <clipPath id="bowl-clip"><path d="M 20 30 Q 20 130 100 135 Q 180 130 180 30 Z"/></clipPath>';
   h += '      </defs>';
@@ -1052,6 +1055,18 @@ function renderBlendBuilder() {
   h += '      <ellipse cx="100" cy="30" rx="75" ry="6" fill="#0F0A07"/>';
   /* Brillo sutil */
   h += '      <ellipse cx="100" cy="27" rx="55" ry="2" fill="rgba(255,255,255,0.08)"/>';
+  /* === Pistilo (palo ancho de moler) — apoyado sobre el labio derecho ===';
+     Cabeza redonda grande + varilla gruesa */
+  h += '      <g transform="rotate(15 100 90)">';
+  /* Varilla gruesa (10 unidades de ancho) */
+  h += '        <rect x="148" y="0" width="12" height="105" fill="url(#pestle-stone)" rx="6" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
+  /* Brillo de la varilla */
+  h += '        <rect x="151" y="5" width="3" height="95" rx="1.5" fill="rgba(255,255,255,0.1)"/>';
+  /* Cabeza del pistilo (esfera grande de piedra) */
+  h += '        <ellipse cx="154" cy="-2" rx="16" ry="18" fill="url(#pestle-stone)" stroke="rgba(0,0,0,0.45)" stroke-width="0.6"/>';
+  /* Brillo de la cabeza */
+  h += '        <ellipse cx="150" cy="-7" rx="7" ry="4" fill="rgba(255,255,255,0.15)"/>';
+  h += '      </g>';
   h += '    </svg>';
   h += '  </div>';
   /* Info del blend */
@@ -1061,7 +1076,7 @@ function renderBlendBuilder() {
   h += '      <span>' + (tallaLbl || 'Elige tamaño') + '</span>';
   if (precio > 0) h += '      <span class="alq-bench-price">$' + precio.toLocaleString() + '</span>';
   h += '    </div>';
-  h += '    <div class="alq-bench-count">' + state.especias.length + '/5 especias · ' + total + '%</div>';
+  h += '    <div class="alq-bench-count">' + state.especias.length + '/5 especias (mín. 3) · ' + total + '%</div>';
   h += '  </div>';
   h += '</div>';
 
@@ -1097,7 +1112,7 @@ function renderBlendBuilder() {
   h += '    </div>';
   h += '  </div>';
   /* Proporciones (visible si 2+ especias) */
-  if (state.especias.length >= 2) {
+  if (state.especias.length >= 3) {
     h += '  <div class="alq-field alq-prop-field">';
     h += '    <label class="alq-field-label">Proporciones <span class="alq-total-pill' + (total === 100 ? '' : (total > 100 ? ' d' : ' w')) + '">' + total + '%</span></label>';
     h += '    <div class="alq-bar" id="alq-mix-bar"></div>';
@@ -1208,8 +1223,8 @@ function _alqMove(e) {
   s.especias[idx + 1].porcentaje = Math.round(combined - nl);
   _alqUpdateBar(); _alqUpdateBowl();
   var pill = document.querySelector('.alq-total-pill'); if (pill) { var t = _bbGetTotal(); pill.textContent = t + '%'; pill.className = 'alq-total-pill' + (t === 100 ? '' : (t > 100 ? ' d' : ' w')); }
-  var count = document.querySelector('.alq-bench-count'); if (count) count.textContent = s.especias.length + '/5 especias · ' + t + '%';
-  var cta = document.querySelector('.alq-cta'); if (cta) { var canAdd = s.nombre.trim().length > 0 && (s.talla === 'chico' || s.talla === 'grande') && s.especias.length >= 2 && t === 100; cta.classList.toggle('off', !canAdd); cta.disabled = !canAdd; }
+  var count = document.querySelector('.alq-bench-count'); if (count) count.textContent = s.especias.length + '/5 especias (mín. 3) · ' + t + '%';
+  var cta = document.querySelector('.alq-cta'); if (cta) { var canAdd = s.nombre.trim().length > 0 && (s.talla === 'chico' || s.talla === 'grande') && s.especias.length >= 3 && t === 100; cta.classList.toggle('off', !canAdd); cta.disabled = !canAdd; }
 }
 function _alqEnd() {
   _alqDrag = null;
@@ -1238,7 +1253,7 @@ function _alqToggle(nombre) {
 }
 function _alqRefreshCTA() {
   var s = _blendBuilderState; var t = _bbGetTotal();
-  var can = s.nombre.trim().length > 0 && (s.talla === 'chico' || s.talla === 'grande') && s.especias.length >= 2 && t === 100;
+  var can = s.nombre.trim().length > 0 && (s.talla === 'chico' || s.talla === 'grande') && s.especias.length >= 3 && t === 100;
   var cta = document.querySelector('.alq-cta'); if (cta) { cta.classList.toggle('off', !can); cta.disabled = !can; }
 }
 function _alqSuccess() {
@@ -1251,7 +1266,7 @@ function _bbCanNext(step) {
   var s = _blendBuilderState;
   if (step === 1) return s.nombre.trim().length > 0;
   if (step === 2) return s.talla === 'chico' || s.talla === 'grande';
-  if (step === 3) return s.especias.length >= 2;
+  if (step === 3) return s.especias.length >= 3;
   if (step === 4) return _bbGetTotal() === 100;
   return false;
 }
@@ -1280,7 +1295,7 @@ function addCustomBlendToCart() {
   if (!nombre) { alert('Dale un nombre a tu blend'); return; }
   var total = _bbGetTotal();
   if (total !== 100) { alert('Las proporciones deben sumar 100%'); return; }
-  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
+  if (_blendBuilderState.especias.length < 3) { alert('Selecciona al menos 3 especias'); return; }
   if (_blendBuilderState.talla !== 'chico' && _blendBuilderState.talla !== 'grande') { alert('Elige el tamaño del frasco'); return; }
   var precio = _getCustomBlendPrice(_blendBuilderState.talla);
   var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeño';
