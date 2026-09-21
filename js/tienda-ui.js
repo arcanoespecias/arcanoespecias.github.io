@@ -1095,9 +1095,9 @@ function renderBlendBuilder() {
   }
   h += '    </div>';
   h += '  </div>';
-  /* Mortero: SVG del bowl semicircular con capas dentro */
+  /* Mortero: SVG con forma de cáliz + pistilo grueso */
   h += '  <div class="alq-mortar-stage">';
-  h += '    <svg class="alq-mortar-svg" viewBox="0 0 200 160" preserveAspectRatio="xMidYMid meet" aria-label="Mortero">';
+  h += '    <svg class="alq-mortar-svg" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid meet" aria-label="Mortero">';
   h += '      <defs>';
   h += '        <linearGradient id="alq-stone" x1="0" y1="0" x2="0" y2="1">';
   h += '          <stop offset="0%" stop-color="#3A3028"/>';
@@ -1116,31 +1116,38 @@ function renderBlendBuilder() {
   h += '          <stop offset="100%" stop-color="#0F0A07"/>';
   h += '        </linearGradient>';
   h += '        <clipPath id="alq-mortar-clip">';
-  h += '          <path d="M 25 50 Q 25 145 100 150 Q 175 145 175 50 Z"/>';
+  h += '          <path d="M 30 50 L 30 110 Q 30 160 85 180 L 135 180 Q 190 160 190 110 L 190 50 Z"/>';
   h += '        </clipPath>';
   h += '      </defs>';
-  /* Sombra elíptica bajo el mortero */
-  h += '      <ellipse cx="100" cy="155" rx="80" ry="5" fill="rgba(0,0,0,0.45)"/>';
-  /* === Interior del mortero (oscuro, donde van las capas) ===';
-     El interior es un bowl cóncavo: semicírculo con recorte */
-  h += '      <path d="M 25 50 Q 25 145 100 150 Q 175 145 175 50 Z" fill="url(#alq-stone-inner)"/>';
-  /* Capas de especias dentro del mortero (clip-path al interior) */
+  /* Sombra elíptica bajo el cáliz */
+  h += '      <ellipse cx="110" cy="188" rx="50" ry="4" fill="rgba(0,0,0,0.5)"/>';
+  /* === Interior del cáliz (oscuro, donde van las capas) ===';
+     Forma de cáliz: boca ancha arriba, se estrecha hacia la base */
+  h += '      <path d="M 30 50 L 30 110 Q 30 160 85 180 L 135 180 Q 190 160 190 110 L 190 50 Z" fill="url(#alq-stone-inner)"/>';
+  /* Capas de especias dentro del cáliz (clip-path al interior) */
   h += '      <g clip-path="url(#alq-mortar-clip)" id="alq-layers"></g>';
-  /* === Borde exterior del mortero (piedra gruesa) ===';
-     El borde exterior es un anillo grueso de piedra */
-  h += '      <path d="M 18 45 Q 18 152 100 158 Q 182 152 182 45 L 175 50 Q 175 145 100 150 Q 25 145 25 50 Z" fill="url(#alq-stone-outer)" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>';
-  /* === Borde superior del mortero (labio grueso) ===';
-     El labio superior es un anillo ovalado que define la boca del mortero */
-  h += '      <ellipse cx="100" cy="50" rx="82" ry="14" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
-  h += '      <ellipse cx="100" cy="50" rx="75" ry="10" fill="url(#alq-stone-inner)"/>';
+  /* === Borde exterior del cáliz (piedra gruesa) ===';
+     Borde más grueso en la boca, se estrecha hacia la base */
+  h += '      <path d="M 22 45 L 22 108 Q 22 162 80 184 L 85 180 Q 30 160 30 110 L 30 50 Z" fill="url(#alq-stone-outer)" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>';
+  h += '      <path d="M 198 45 L 198 108 Q 198 162 140 184 L 135 180 Q 190 160 190 110 L 190 50 Z" fill="url(#alq-stone-outer)" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>';
+  /* === Borde superior del cáliz (labio grueso ovalado) ===';
+     La boca es ancha y el labio es grueso */
+  h += '      <ellipse cx="110" cy="50" rx="88" ry="14" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
+  h += '      <ellipse cx="110" cy="50" rx="80" ry="9" fill="url(#alq-stone-inner)"/>';
   /* Brillo del labio superior (reflejo de luz) */
-  h += '      <ellipse cx="100" cy="46" rx="60" ry="3" fill="rgba(255,255,255,0.08)"/>';
-  /* === Maja (pistilo) del mortero — apoyado al lado derecho ===';
-     Es una varilla de piedra con cabeza redonda */
-  h += '      <g transform="rotate(15 100 100)">';
-  h += '        <rect x="155" y="-30" width="6" height="120" fill="url(#alq-stone)" rx="3" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
-  h += '        <ellipse cx="158" cy="-30" rx="10" ry="12" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
-  h += '        <ellipse cx="156" cy="-33" rx="5" ry="3" fill="rgba(255,255,255,0.15)"/>';
+  h += '      <ellipse cx="110" cy="46" rx="65" ry="3" fill="rgba(255,255,255,0.1)"/>';
+  /* Base del cáliz (pie pequeño) */
+  h += '      <ellipse cx="110" cy="184" rx="28" ry="4" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>';
+  /* === Maja (pistilo) GRUESO — apoyado dentro del cáliz ===';
+     Pistilo más ancho: varilla gruesa + cabeza redonda grande */
+  h += '      <g transform="rotate(12 110 90)">';
+  /* Cabeza del pistilo (esfera grande de piedra) */
+  h += '        <ellipse cx="155" cy="20" rx="18" ry="20" fill="url(#alq-stone)" stroke="rgba(0,0,0,0.5)" stroke-width="0.6"/>';
+  h += '        <ellipse cx="151" cy="14" rx="8" ry="5" fill="rgba(255,255,255,0.18)"/>';
+  /* Varilla del pistilo (gruesa, 10 unidades de ancho) */
+  h += '        <rect x="150" y="35" width="10" height="100" fill="url(#alq-stone)" rx="5" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>';
+  /* Brillo de la varilla */
+  h += '        <rect x="152" y="40" width="2.5" height="90" rx="1.25" fill="rgba(255,255,255,0.12)"/>';
   h += '      </g>';
   h += '    </svg>';
   h += '  </div>';
@@ -1231,28 +1238,28 @@ function renderBlendBuilder() {
   _alqUpdateMixBar();
 }
 
-/* === Actualizar el mortero (capas de especias dentro del bowl) ===
-   Las capas se apilan verticalmente dentro del interior del mortero.
-   El interior del mortero va de y=50 (boca) a y=150 (fondo), x=25-175.
+/* === Actualizar el cáliz (capas de especias dentro del mortero) ===
+   Las capas se apilan verticalmente dentro del interior del cáliz.
+   El interior del cáliz va de y=50 (boca) a y=180 (base), x=30-190.
    Cada capa es un rect con altura proporcional al porcentaje del blend.
-   Nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% de la profundidad del mortero.
+   Nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% de la profundidad.
 === */
 function _alqUpdateJar() {
   var layersEl = document.getElementById('alq-layers');
   if (!layersEl) return;
   var state = _blendBuilderState;
-  /* Coordenadas del interior del mortero (en viewBox 200x160) */
+  /* Coordenadas del interior del cáliz (en viewBox 220x200) */
   var MORTAR_TOP = 50;
-  var MORTAR_BOTTOM = 150;
-  var MORTAR_HEIGHT = MORTAR_BOTTOM - MORTAR_TOP; /* 100 unidades */
-  var MORTAR_LEFT = 25;
-  var MORTAR_RIGHT = 175;
-  var MORTAR_WIDTH = MORTAR_RIGHT - MORTAR_LEFT;
+  var MORTAR_BOTTOM = 180;
+  var MORTAR_HEIGHT = MORTAR_BOTTOM - MORTAR_TOP; /* 130 unidades */
+  var MORTAR_LEFT = 30;
+  var MORTAR_RIGHT = 190;
+  var MORTAR_WIDTH = MORTAR_RIGHT - MORTAR_LEFT; /* 160 unidades */
 
   var svgContent = '';
   if (state.especias.length === 0) {
-    /* Mortero vacío: textura sutil de polvo residual al fondo */
-    svgContent += '<ellipse cx="100" cy="145" rx="65" ry="6" fill="rgba(60,50,40,0.5)"/>';
+    /* Cáliz vacío: textura sutil de polvo residual al fondo */
+    svgContent += '<ellipse cx="110" cy="175" rx="70" ry="6" fill="rgba(60,50,40,0.5)"/>';
   } else {
     /* Calcular el nivel de llenado: 1=20%, 2=40%, 3=60%, 4=80%, 5=100% */
     var fillLevel = Math.min(100, state.especias.length / 5 * 100);
@@ -1265,7 +1272,7 @@ function _alqUpdateJar() {
       /* La altura de la capa es proporcional a su % del blend, dentro del fillLevel */
       var layerHeight = (sp.porcentaje / totalPct) * filledHeight;
       var layerY = currentY - layerHeight;
-      /* Rectángulo de la capa (con leve curva inferior para seguir la forma del mortero) */
+      /* Rectángulo de la capa */
       svgContent += '<rect x="' + MORTAR_LEFT + '" y="' + layerY.toFixed(2) + '" width="' + MORTAR_WIDTH + '" height="' + layerHeight.toFixed(2) + '" fill="' + color + '" opacity="0.92"/>';
       /* Línea superior sutil para separar capas */
       if (i < state.especias.length - 1) {

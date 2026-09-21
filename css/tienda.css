@@ -915,6 +915,16 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .page-header p {
   color: var(--text-sec); font-size: 0.95rem;
 }
+/* Reducir padding del header solo en la página Blend (para que entre en pantalla) */
+#page-blend .page-header {
+  padding: 16px 20px 8px;
+}
+#page-blend .page-header h2 {
+  font-size: 1.4rem; margin-bottom: 2px;
+}
+#page-blend .page-header p {
+  font-size: 0.82rem;
+}
 .recipe-tabs {
   display: flex; gap: 8px; justify-content: center;
   margin-bottom: 28px;
@@ -1175,13 +1185,13 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* ============================================================
    ALQUIMISTA — Rediseño "Arma tu Blend"
-   Una sola pantalla con frasco interactivo + barra drag.
+   Una sola pantalla con mortero interactivo + barra drag.
    ============================================================ */
 .alq-container {
-  display: grid; gap: 32px;
-  grid-template-columns: minmax(240px, 1fr) 2fr;
+  display: grid; gap: 24px;
+  grid-template-columns: minmax(220px, 1fr) 2.2fr;
   max-width: 1080px; margin: 0 auto;
-  padding: 24px 0 0;
+  padding: 16px 0 0;
   align-items: start;
   animation: alqFadeIn 0.45s var(--ease);
 }
@@ -1190,8 +1200,8 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* ---------- Panel izquierdo: Mortero Alquímico ---------- */
 .alq-mortar-panel {
   position: sticky; top: 90px;
-  display: flex; flex-direction: column; gap: 16px;
-  padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 18px;
   background: var(--surface);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
@@ -1200,32 +1210,32 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* Header: nombre + tamaño + precio */
 .alq-mortar-header {
-  display: flex; flex-direction: column; gap: 6px;
-  padding-bottom: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border-light);
 }
 .alq-mortar-name {
-  font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--text);
-  letter-spacing: 0.02em; min-height: 1.3em;
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--text);
+  letter-spacing: 0.02em; min-height: 1.2em;
   word-break: break-word;
 }
 .alq-mortar-meta {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
 .alq-mortar-size {
-  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.08em;
+  font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.08em;
   text-transform: uppercase; font-weight: 500;
 }
 .alq-mortar-price {
-  font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); font-weight: 700;
+  font-family: var(--font-display); font-size: 1rem; color: var(--gold); font-weight: 700;
 }
 
 /* Stage: contenedor del mortero */
 .alq-mortar-stage {
   position: relative;
   width: 100%;
-  max-width: 240px;
-  aspect-ratio: 200 / 160;
+  max-width: 200px;
+  aspect-ratio: 220 / 200;
   margin: 0 auto;
   filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
 }
@@ -1238,9 +1248,9 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* Footer: contador de especias */
 .alq-mortar-footer {
   display: flex; align-items: center; justify-content: space-between;
-  padding-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 .alq-mortar-count {
   color: var(--text-muted); font-weight: 500;
@@ -1251,13 +1261,13 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* ---------- Panel derecho: Controles ---------- */
 .alq-controls-panel {
-  display: flex; flex-direction: column; gap: 24px;
+  display: flex; flex-direction: column; gap: 16px;
 }
 .alq-section {
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
 }
 .alq-label {
-  font-size: 0.75rem; font-weight: 600; color: var(--text-sec);
+  font-size: 0.72rem; font-weight: 600; color: var(--text-sec);
   text-transform: uppercase; letter-spacing: 0.1em;
   display: flex; align-items: center; justify-content: space-between;
 }
@@ -1269,10 +1279,10 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* Step 1: Nombre */
 .alq-name-input {
-  width: 100%; padding: 12px 0;
+  width: 100%; padding: 10px 0;
   border: none; border-bottom: 1px solid var(--border);
   background: transparent;
-  font-family: var(--font-display); font-size: 1.15rem; font-weight: 500;
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 500;
   color: var(--text); outline: none;
   transition: border-color 0.3s var(--ease);
 }
@@ -1280,11 +1290,11 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .alq-name-input::placeholder { color: var(--text-muted); font-weight: 300; font-style: italic; }
 
 /* Step 2: Tamaño */
-.alq-size-row { display: flex; gap: 12px; }
+.alq-size-row { display: flex; gap: 10px; }
 .alq-size-btn {
-  flex: 1; padding: 14px 16px;
+  flex: 1; padding: 10px 14px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
   cursor: pointer; transition: all 0.25s var(--ease);
   font-family: inherit;
 }
@@ -1299,14 +1309,23 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* Step 3: Grid de especias */
 .alq-spice-grid {
-  display: grid; gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  display: grid; gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+  /* Scrollbar estilizada */
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) var(--surface);
 }
+.alq-spice-grid::-webkit-scrollbar { width: 6px; }
+.alq-spice-grid::-webkit-scrollbar-track { background: var(--surface); border-radius: 3px; }
+.alq-spice-grid::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
 .alq-spice-card {
   position: relative;
-  padding: 12px 8px 10px;
+  padding: 6px 4px 5px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xs);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; transition: all 0.2s var(--ease);
   overflow: hidden;
   font-family: inherit;
@@ -1334,7 +1353,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   margin-top: -2px;
 }
 .alq-spice-swatch {
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 20px; height: 20px; border-radius: 50%;
   background: var(--swatch-color, var(--gold));
   box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2);
   border: 1px solid rgba(0,0,0,0.3);
@@ -1344,12 +1363,12 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   content: '✓';
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  color: white; font-size: 0.85rem; font-weight: 700;
+  color: white; font-size: 0.72rem; font-weight: 700;
   text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 .alq-spice-name {
-  font-size: 0.78rem; font-weight: 500; color: var(--text);
-  text-align: center; line-height: 1.2;
+  font-size: 0.7rem; font-weight: 500; color: var(--text);
+  text-align: center; line-height: 1.1;
 }
 
 /* Step 4: Barra de proporciones drag-to-resize */
@@ -1439,14 +1458,14 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 /* Step 5: CTA */
 .alq-cta {
-  margin-top: 8px;
-  padding: 16px 24px;
+  margin-top: 4px;
+  padding: 12px 20px;
   background: var(--gold); color: var(--bg);
   border: none; border-radius: var(--radius-sm);
-  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+  font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer; transition: all 0.2s var(--ease);
-  display: flex; align-items: center; justify-content: center; gap: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
   box-shadow: 0 6px 18px rgba(201,169,97,0.35);
 }
 .alq-cta:hover:not(:disabled) {
