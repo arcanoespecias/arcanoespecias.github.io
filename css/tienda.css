@@ -1197,10 +1197,11 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   border: 1px solid var(--border-light);
 }
 
-/* Stage: contenedor del frasco + sombra base */
+/* Stage: contenedor del frasco + sombra base
+   Dimensiones con ratio ~3.5:1 (igual que la imagen recortada 53x186) */
 .alq-jar-stage {
   position: relative;
-  width: 140px; height: 280px;
+  width: 130px; height: 456px;
   display: block;
   filter: drop-shadow(0 12px 20px rgba(0,0,0,0.4));
 }
@@ -1214,15 +1215,14 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* Capas de especias (sobre el área del cuerpo del frasco)
-   Coordenadas medidas de la imagen 200x200:
-   Cuerpo: x=74-127 (left:37%, width:27%)
-           y=68-185 (top:34%, height:59%) */
+   En la imagen recortada (53x186), el cuerpo va de y=62-179 y x=0-53:
+   top:33%, height:63%, left:0%, width:100% */
 .alq-jar-layers {
   position: absolute;
-  left: 37%;
-  top: 34%;
-  width: 27%;
-  height: 59%;
+  left: 0%;
+  top: 33%;
+  width: 100%;
+  height: 63%;
   display: flex; flex-direction: column-reverse;
   z-index: 2;
   pointer-events: none;
@@ -1538,7 +1538,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
     align-items: center;
   }
   .alq-jar-stage {
-    width: 100px; height: 200px;
+    width: 88px; height: 308px;
     flex-shrink: 0;
   }
   .alq-jar-info { text-align: left; flex: 1; }
@@ -1547,7 +1547,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 @media (max-width: 480px) {
   .alq-jar-panel { padding: 12px; gap: 12px; }
-  .alq-jar-stage { width: 84px; height: 168px; }
+  .alq-jar-stage { width: 74px; height: 260px; }
   .alq-spice-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; }
   .alq-spice-card { padding: 8px 4px 6px; }
   .alq-spice-name { font-size: 0.72rem; }
