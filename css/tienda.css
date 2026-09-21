@@ -1198,51 +1198,51 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 
 /* Stage: contenedor del frasco + sombra base
-   Ratio 3.54:1 igual que la imagen recortada (156x552) */
+   Ratio 100/350 (3.5:1) igual que el viewBox del SVG */
 .alq-jar-stage {
   position: relative;
   width: 100%;
   max-width: 180px;
-  aspect-ratio: 156 / 552;
+  aspect-ratio: 100 / 350;
   display: block;
   filter: drop-shadow(0 12px 20px rgba(0,0,0,0.4));
   margin: 0 auto;
 }
-.alq-jar-img {
+.alq-jar-svg {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
   display: block;
-  z-index: 1; /* Imagen del frasco al fondo */
+  z-index: 2; /* SVG delante: tapa, cuello, hombros y bordes del cuerpo visibles */
 }
 
-/* Capas de especias (DELANTE de la imagen del frasco)
-   Recortadas con clip-path a la forma del cuerpo del frasco.
-   En la imagen recortada (156x552):
-   - Cuerpo va de y=195 a y=521 (top:35.3%, height:59.1%)
-   - Ancho del cuerpo: ~98% (left:1%, width:98%) */
+/* Capas de especias (DETRÁS del SVG, dentro del área del cuerpo)
+   En el SVG (viewBox 100x350), el cuerpo va de y=100 a y=340, x=12-88:
+   - top: 100/350 = 28.6%
+   - height: 240/350 = 68.6%
+   - left: 12/100 = 12%
+   - width: 76/100 = 76% */
 .alq-jar-layers {
   position: absolute;
-  left: 1%;
-  top: 35.3%;
-  width: 98%;
-  height: 59.1%;
+  left: 12%;
+  top: 28.6%;
+  width: 76%;
+  height: 68.6%;
   display: flex; flex-direction: column-reverse;
-  z-index: 2; /* Delante de la imagen del frasco */
+  z-index: 1; /* Detrás del SVG */
   pointer-events: none;
   overflow: hidden;
   /* clip-path: forma del cuerpo (cilindro con esquinas inferiores redondeadas) */
   clip-path: polygon(
     0% 0%,
     100% 0%,
-    100% 90%,
-    94% 96%,
+    100% 92%,
+    94% 97%,
     85% 100%,
     15% 100%,
-    6% 96%,
-    0% 90%
+    6% 97%,
+    0% 92%
   );
 }
 .alq-layer {
