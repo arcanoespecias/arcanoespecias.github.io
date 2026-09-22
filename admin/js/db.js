@@ -30,6 +30,9 @@ var _saveTimer = null;
 var _listeners = [];
 var _localDirty = false;  // prevents Firebase listener from overwriting pending saves
 
+// Helper: round a number to 3 decimals (prevents float drift in stockBolsa)
+function _r3(v) { return Math.round((Number(v) || 0) * 1000) / 1000; }
+
 var DEFAULT_IDS = { especias: 1, blends: 1, producciones: 1, ventas: 1, entradas: 1, stickers: 1, ajustes: 1, puntosDeVenta: 1, pdvVentas: 1, packs: 1, costales: 1 };
 
 /* ==================== HELPERS ==================== */
@@ -301,7 +304,12 @@ function saveNow() {
         gastosCategorias: _db.gastosCategorias || [],
         ajustes: _db.ajustes || {},
         usuarios: _db.usuarios || {},
-        puntosdeventa: _db.puntosdeventa || {},
+        puntosDeVenta: _db.puntosDeVenta || {},
+        pdvVentas: _db.pdvVentas || {},
+        productTags: _db.productTags || [],
+        usoOptions: _db.usoOptions || [],
+        tiendaConfig: _db.tiendaConfig || {},
+        costosInsumos: _db.costosInsumos || {},
         meta: _db.meta || {}
       };
       _firebaseRef.update(dataToSave, function(error) {
@@ -1056,7 +1064,7 @@ function saveEntrada(data) {
             }
             try { localStorage.setItem('arcano_costos', JSON.stringify(_costosInsumos)); } catch (e) {}
           }
-          espObj.stockBolsa = (espObj.stockBolsa || 0) + grsNuevos;
+          espObj.stockBolsa = _r3(espObj.stockBolsa + grsNuevos);
         }
       } else if (tipo === 'envase') {
         var talla = item.talla || 'chico';
@@ -1105,7 +1113,7 @@ function _revertirEntrada(entrada) {
     if (tipo === 'especia_grs') {
       if (item.especiaId && _db.especias[item.especiaId]) {
         var espObj = _db.especias[item.especiaId];
-        espObj.stockBolsa = Math.max(0, (espObj.stockBolsa || 0) - cantidad);
+        espObj.stockBolsa = _r3(Math.max(0, espObj.stockBolsa - cantidad));
         // Nota: el costo promedio ponderado no se revierte exactamente porque
         // entradas posteriores pueden haberlo recalculado. Lo dejamos como está;
         // el admin puede reajustarlo manualmente si lo necesita.
@@ -1200,7 +1208,7 @@ function _aplicarItemsEntrada(items) {
           }
           try { localStorage.setItem('arcano_costos', JSON.stringify(_costosInsumos)); } catch (e) {}
         }
-        espObj.stockBolsa = (espObj.stockBolsa || 0) + cantidad;
+        espObj.stockBolsa = _r3(espObj.stockBolsa + cantidad);
       }
     } else if (tipo === 'envase') {
       var talla = item.talla || 'chico';
@@ -1413,7 +1421,7 @@ function producirEspecia(especiaId, talla, cantidad) {
   }
 
   // All checks passed — consume
-  esp.stockBolsa = (esp.stockBolsa || 0) - grsTotal;
+  esp.stockBolsa = _r3(esp.stockBolsa - grsTotal);
   _db.stockEnvases[talla] = (_db.stockEnvases[talla] || 0) - cantidad;
   _db.stockBolsas[talla] = (_db.stockBolsas[talla] || 0) - cantidad;
   _db.stockCintas = (_db.stockCintas || 0) - cantidad;
@@ -1496,7 +1504,7 @@ function producirBlend(blendId, talla, cantidad) {
   for (var i = 0; i < detalleIngredientes.length; i++) {
     var d = detalleIngredientes[i];
     var esp = _db.especias[d.especiaId];
-    esp.stockBolsa = (esp.stockBolsa || 0) - d.gramosTotal;
+    esp.stockBolsa = _r3(esp.stockBolsa - d.gramosTotal);
     grsTotalGeneral += d.gramosTotal;
   }
   _db.stockEnvases[talla] = (_db.stockEnvases[talla] || 0) - cantidad;
@@ -1540,7 +1548,7 @@ function deleteProduccion(id) {
       if (esp[frascoKey] < 0) esp[frascoKey] = 0;
       // Devolver pala (gramos consumidos)
       if (prod.gramosTotal) {
-        esp.stockBolsa = (esp.stockBolsa || 0) + prod.gramosTotal;
+        esp.stockBolsa = _r3(esp.stockBolsa + prod.gramosTotal);
       }
     }
   } else if (prod.tipo === 'blend') {
@@ -1555,7 +1563,7 @@ function deleteProduccion(id) {
         var ing = prod.ingredientes[i];
         var espIng = _db.especias[ing.especiaId];
         if (espIng && ing.gramosTotal) {
-          espIng.stockBolsa = (espIng.stockBolsa || 0) + ing.gramosTotal;
+          espIng.stockBolsa = _r3(espIng.stockBolsa + ing.gramosTotal);
         }
       }
     } else if (prod.gramosTotal) {
@@ -1661,7 +1669,7 @@ function saveVenta(data) {
           item.costalId = costalAbierto.id;
           item.costalNombre = costalAbierto.nombre;
         } else {
-          productoPala.stockBolsa = (Number(productoPala.stockBolsa) || 0) - grsNecesarios;
+          productoPala.stockBolsa = _r3(productoPala.stockBolsa - grsNecesarios);
         }
 
         item.peso = pesoP;
@@ -1727,7 +1735,7 @@ function deleteVenta(id) {
             costal.estado = 'abierto';
           }
         } else if (prod) {
-          prod.stockBolsa = (Number(prod.stockBolsa) || 0) + grs;
+          prod.stockBolsa = _r3(prod.stockBolsa + grs);
         }
       } else {
         var producto;
@@ -2328,10 +2336,17 @@ function deletePuntoDeVenta(id) {
     if (cant <= 0) continue;
     var parts = k.split('_');
     var tipo = parts[0], prodId = Number(parts[1]), talla = parts[2];
-    var producto = tipo === 'blend' ? _db.blends[prodId] : _db.especias[prodId];
+    var producto;
+    if (tipo === 'blend') producto = _db.blends[prodId];
+    else if (tipo === 'pack') producto = _db.packs[prodId];
+    else producto = _db.especias[prodId];
     if (producto) {
-      var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
-      producto[frascoKey] = (producto[frascoKey] || 0) + cant;
+      if (tipo === 'pack') {
+        producto.stock = (Number(producto.stock) || 0) + cant;
+      } else {
+        var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
+        producto[frascoKey] = (producto[frascoKey] || 0) + cant;
+      }
     }
   }
   // Return all costales to main inventory
@@ -2904,10 +2919,28 @@ function saveCostal(data) {
   }
   // Calcular gramosTotal
   var gramosTotal = 0;
-  if (data.items) {
+  if (data.items && data.items.length > 0) {
+    // Costal multi-ingrediente
     for (var i = 0; i < data.items.length; i++) {
       gramosTotal += Number(data.items[i].gramos) || 0;
     }
+    // Si es nuevo, descontar gramos de cada especia en la Bodega
+    if (isNew) {
+      for (var j = 0; j < data.items.length; j++) {
+        var item = data.items[j];
+        var especia = _db.especias && _db.especias[item.especiaId];
+        if (especia) {
+          var g = Number(item.gramos) || 0;
+          if ((Number(especia.stockBolsa) || 0) < g) {
+            throw new Error('Bodega insuficiente de "' + especia.nombre + '". Necesitas ' + g + 'g, tienes ' + (especia.stockBolsa || 0) + 'g');
+          }
+          especia.stockBolsa = _r3(especia.stockBolsa - g);
+        }
+      }
+    }
+  } else if (data.productoId) {
+    // Costal single-producto (no descontar aquí, lo hace armarCostalDesdeBodega)
+    gramosTotal = Number(data.gramosTotal) || 0;
   }
   data.gramosTotal = gramosTotal;
   // Si es nuevo, gramosRestantes = gramosTotal. Si edit, solo actualizar si no tiene
@@ -2916,8 +2949,9 @@ function saveCostal(data) {
   }
   // Defaults
   if (!data.gramosPorPala) data.gramosPorPala = 50;
-  if (!data.estado) data.estado = gramosTotal > 0 ? 'abierto' : 'vacio';
-  if (data.gramosRestantes <= 0) data.estado = 'vacio';
+  // Estado: vacio si gramosRestantes < gramosPorPala
+  if (data.gramosRestantes < data.gramosPorPala) data.estado = 'vacio';
+  else if (!data.estado) data.estado = gramosTotal > 0 ? 'abierto' : 'vacio';
 
   _db.costales[data.id] = data;
   _saveToFirebase(); _cacheLocal();
@@ -2927,17 +2961,33 @@ function saveCostal(data) {
 
 function deleteCostal(id) {
   if (!_db.costales || !_db.costales[id]) return false;
-  // Si el costal tiene gramos restantes, devolverlos a la Bodega (stockBolsa) del producto
   var costal = _db.costales[id];
-  if ((Number(costal.gramosRestantes) || 0) > 0 && costal.productoId && costal.productoTipo) {
-    var prod;
-    if (costal.productoTipo === 'blend') {
-      prod = _db.blends[costal.productoId];
-    } else {
-      prod = _db.especias[costal.productoId];
-    }
-    if (prod) {
-      prod.stockBolsa = (Number(prod.stockBolsa) || 0) + (Number(costal.gramosRestantes) || 0);
+  var gramosRestantes = Number(costal.gramosRestantes) || 0;
+
+  if (gramosRestantes > 0) {
+    if (costal.items && costal.items.length > 0) {
+      // Costal multi-ingrediente: devolver gramos a cada especia
+      for (var i = 0; i < costal.items.length; i++) {
+        var item = costal.items[i];
+        var especia = _db.especias && _db.especias[item.especiaId];
+        if (especia) {
+          // Devolver proporcionalmente según gramosRestantes
+          var ratio = gramosRestantes / (Number(costal.gramosTotal) || 1);
+          var gramosADevolver = Math.round((Number(item.gramos) || 0) * ratio, 3);
+          especia.stockBolsa = _r3(especia.stockBolsa + gramosADevolver);
+        }
+      }
+    } else if (costal.productoId && costal.productoTipo) {
+      // Costal single-producto: devolver al stockBolsa del producto
+      var prod;
+      if (costal.productoTipo === 'blend') {
+        prod = _db.blends[costal.productoId];
+      } else {
+        prod = _db.especias[costal.productoId];
+      }
+      if (prod) {
+        prod.stockBolsa = _r3(prod.stockBolsa + gramosRestantes);
+      }
     }
   }
   delete _db.costales[id];
@@ -2969,7 +3019,7 @@ function armarCostalDesdeBodega(productoTipo, productoId, gramos, nombreCostal) 
   }
 
   // Descontar de Bodega
-  prod.stockBolsa = (Number(prod.stockBolsa) || 0) - gramos;
+  prod.stockBolsa = _r3(prod.stockBolsa - gramos);
 
   // Crear el costal
   var id = nextId('costales');
