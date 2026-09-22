@@ -6409,7 +6409,7 @@ const Pages = {
       listEl.innerHTML = '<p class="text-center text-muted">No hay articulos. Genera el primero con el boton de arriba.</p>';
       return;
     }
-    var h = '<div class="table-wrap"><table class="table"><thead><tr><th>Titulo</th><th>Img</th><th>Categoria</th><th>Fecha</th><th></th></tr></thead><tbody>';
+    var h = '<div class="table-wrap"><table class="table"><thead><tr><th>Titulo</th><th>Img</th><th>Categoria</th><th>Fecha</th><th>Estado</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < articulos.length; i++) {
       var a = articulos[i];
       var imgCell;
@@ -6421,16 +6421,35 @@ const Pages = {
       } else {
         imgCell = '<button class="btn btn-sm btn-outline" onclick="Pages.uploadBlogImage(\'' + a._key + '\')">+ Img</button>';
       }
-      h += '<tr>' +
+      var pausado = a.pausado === true;
+      var estadoBadge = pausado
+        ? '<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">⏸ Pausado</span>'
+        : '<span class="badge badge-green">● Activo</span>';
+      var toggleBtn = pausado
+        ? '<button class="btn btn-sm btn-green" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',false)" title="Activar">▶</button>'
+        : '<button class="btn btn-sm" style="background:rgba(245,158,11,0.1);color:#f59e0b;border-color:rgba(245,158,11,0.3)" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',true)" title="Pausar">⏸</button>';
+      h += '<tr' + (pausado ? ' style="opacity:0.6"' : '') + '>' +
         '<td class="fw7"><a href="#" onclick="Pages.editarArticulo(\'' + a._key + '\');return false" style="color:inherit;text-decoration:none" title="Editar">' + (a.titulo || 'Sin titulo') + '</a></td>' +
         '<td>' + imgCell + '</td>' +
         '<td><span class="badge badge-gold">' + (a.categoria || '') + '</span></td>' +
         '<td class="text-sm text-muted">' + (a.fecha || '') + '</td>' +
-        '<td style="white-space:nowrap"><button class="btn btn-sm btn-outline" onclick="Pages.editarArticulo(\'' + a._key + '\')" title="Editar">✎</button> <button class="btn btn-sm btn-red" onclick="Pages.borrarArticulo(\'' + a._key + '\')" title="Eliminar">X</button></td>' +
+        '<td>' + estadoBadge + '</td>' +
+        '<td style="white-space:nowrap">' + toggleBtn + ' <button class="btn btn-sm btn-outline" onclick="Pages.editarArticulo(\'' + a._key + '\')" title="Editar">✎</button> <button class="btn btn-sm btn-red" onclick="Pages.borrarArticulo(\'' + a._key + '\')" title="Eliminar">X</button></td>' +
         '</tr>';
     }
     h += '</tbody></table></div>';
     listEl.innerHTML = h;
+  },
+
+  togglePausaArticulo: function(key, pausar) {
+    firebase.database().ref('arcano/db/blog/' + key + '/pausado').set(pausar, function(error) {
+      if (error) {
+        toast('Error al actualizar', 'err');
+      } else {
+        toast(pausar ? '⏸ Artículo pausado' : '▶ Artículo activado', 'ok');
+        Pages._loadBlogAdmin();
+      }
+    });
   },
 
   fixBlogLinks: function() {

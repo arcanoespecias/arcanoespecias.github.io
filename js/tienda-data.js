@@ -729,7 +729,9 @@ function initBlog() {
     if (d) {
       var keys = Object.keys(d);
       for (var i = 0; i < keys.length; i++) {
-        var p = d[keys[i]]; p._key = keys[i]; _blogPosts.push(p);
+        var p = d[keys[i]]; p._key = keys[i];
+        if (p.pausado === true) continue;
+        _blogPosts.push(p);
       }
     }
     _blogPosts.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
