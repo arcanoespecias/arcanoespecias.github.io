@@ -756,6 +756,8 @@ function updatePedidoEstado(pedidoKey, nuevoEstado) {
       if (!pedido || pedido.stockDescontado) return;
       _descontarStockPedido(pedido);
       _pedidosRef.child(pedidoKey + '/stockDescontado').set(true);
+      // === Colección Arcano: contar blends pequeños ===
+      _contarBlendsColeccion(pedido, pedidoKey);
     });
   } else {
     // Si el pedido estaba entregado y vuelve a otro estado, revertir stock
@@ -801,6 +803,53 @@ function _descontarStockPedido(pedido) {
     console.log('[DB] Stock descontado por entrega de pedido');
   } catch (e) {
     console.error('[DB] Error descontando stock de pedido:', e);
+  }
+}
+
+/* === Colección Arcano: contar blends pequeños de un pedido === */
+function _contarBlendsColeccion(pedido, pedidoKey) {
+  try {
+    var cliente = pedido.cliente || {};
+    var whatsapp = cliente.telefono || cliente.whatsapp || '';
+    if (!whatsapp) return;
+    // Normalizar whatsapp
+    whatsapp = whatsapp.replace(/[^0-9+]/g, '');
+    if (whatsapp.startsWith('+')) whatsapp = whatsapp.substring(1);
+
+    var items = pedido.items || [];
+    var blendsChicosCount = 0;
+    var blendNombres = [];
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var tipo = item.tipo || 'blend';
+      var talla = item.talla || 'chico';
+      var qty = Number(item.qty) || Number(item.cantidad) || 0;
+
+      // Solo contar blends y especias en talla chico (pequeño)
+      if ((tipo === 'blend' || tipo === 'especia') && talla === 'chico' && qty > 0) {
+        blendsChicosCount += qty;
+        var nombre = item.nombre || item.productoNombre || '';
+        if (nombre) blendNombres.push(nombre);
+      }
+    }
+
+    if (blendsChicosCount > 0) {
+      var col = addBlendsToColeccion(whatsapp, blendsChicosCount, pedidoKey, blendNombres);
+      // Actualizar el nombre del cliente en la colección si no lo tiene
+      if (!col.nombre && cliente.nombre) {
+        col.nombre = cliente.nombre;
+        if (_coleccionesRef) _coleccionesRef.child(whatsapp + '/nombre').set(cliente.nombre);
+      }
+      // Si completó el cartón, notificar al admin
+      if (col.completado && !col.canjeado) {
+        console.log('[Colección Arcano] ¡Cliente completó su cartón! WhatsApp:', whatsapp);
+        // Notificación visual en el admin
+        _notify('coleccion_completada', 'colecciones', whatsapp);
+      }
+    }
+  } catch(e) {
+    console.error('[Colección Arcano] Error al contar blends:', e);
   }
 }
 
@@ -3227,6 +3276,121 @@ function saveTiendaConfigField(path, value) {
   return _db.tiendaConfig;
 }
 
+/* ==================== COLECCIÓN ARCANO ==================== */
+var _coleccionesRef = null;
+var _coleccionesListeners = [];
+
+function _ensureColeccionesRef() {
+  if (!_coleccionesRef && _firebaseDb) {
+    _coleccionesRef = _firebaseDb.ref('arcano/db/colecciones');
+    _coleccionesRef.on('value', function(snap) {
+      _db.colecciones = snap.val() || {};
+      for (var i = 0; i < _coleccionesListeners.length; i++) {
+        try { _coleccionesListeners[i](_db.colecciones); } catch(e) {}
+      }
+      _notify('update', 'colecciones', 'all');
+    });
+  }
+}
+
+function getColecciones() {
+  _ensureColeccionesRef();
+  if (!_db.colecciones) _db.colecciones = {};
+  return Object.values(_db.colecciones).filter(function(c) { return c !== null; }).sort(function(a, b) {
+    return (b.updated || b.creado || '').localeCompare(a.updated || a.creado || '');
+  });
+}
+
+function getColeccion(whatsapp) {
+  _ensureColeccionesRef();
+  if (!_db.colecciones) return null;
+  return _db.colecciones[whatsapp] || null;
+}
+
+function getColeccionesCompletadas() {
+  return getColecciones().filter(function(c) { return c.casilleros >= 10; });
+}
+
+function saveColeccion(data) {
+  _ensureStructure();
+  if (!_db.colecciones) _db.colecciones = {};
+  var key = data.whatsapp;
+  if (!key) throw new Error('WhatsApp es requerido');
+  var existing = _db.colecciones[key] || {};
+  if (!existing.creado) {
+    data.creado = new Date().toISOString();
+    data.casilleros = data.casilleros || 0;
+    data.completado = false;
+    data.canjeado = false;
+    data.historial = [];
+  } else {
+    data.creado = existing.creado;
+    data.historial = data.historial || existing.historial || [];
+  }
+  data.updated = new Date().toISOString();
+  data.completado = (data.casilleros || 0) >= 10;
+  _db.colecciones[key] = data;
+  if (_coleccionesRef) _coleccionesRef.child(key).set(data);
+  else _saveToFirebase();
+  _cacheLocal();
+  _notify('update', 'colecciones', key);
+  return data;
+}
+
+function deleteColeccion(whatsapp) {
+  _ensureStructure();
+  if (!_db.colecciones) return false;
+  delete _db.colecciones[whatsapp];
+  if (_coleccionesRef) _coleccionesRef.child(whatsapp).remove();
+  else _saveToFirebase();
+  _cacheLocal();
+  _notify('delete', 'colecciones', whatsapp);
+  return true;
+}
+
+function addBlendsToColeccion(whatsapp, cantidad, pedidoKey, blendNombres) {
+  _ensureStructure();
+  if (!_db.colecciones) _db.colecciones = {};
+  var col = _db.colecciones[whatsapp];
+  if (!col) {
+    col = { whatsapp: whatsapp, nombre: '', casilleros: 0, completado: false, canjeado: false, historial: [], creado: new Date().toISOString() };
+    _db.colecciones[whatsapp] = col;
+  }
+  if (col.casilleros >= 10 && !col.canjeado) return col;
+  var prev = col.casilleros || 0;
+  col.casilleros = Math.min(10, prev + cantidad);
+  col.historial = col.historial || [];
+  col.historial.push({ pedidoKey: pedidoKey || '', fecha: new Date().toISOString(), cantidad: cantidad, blends: blendNombres || [] });
+  col.updated = new Date().toISOString();
+  var wasCompleted = col.completado;
+  col.completado = col.casilleros >= 10;
+  if (!wasCompleted && col.completado) _notify('coleccion_completada', 'colecciones', whatsapp);
+  if (_coleccionesRef) _coleccionesRef.child(whatsapp).set(col);
+  else _saveToFirebase();
+  _cacheLocal();
+  _notify('update', 'colecciones', whatsapp);
+  return col;
+}
+
+function canjearColeccion(whatsapp, reset) {
+  _ensureStructure();
+  if (!_db.colecciones) return null;
+  var col = _db.colecciones[whatsapp];
+  if (!col) return null;
+  col.canjeado = true;
+  col.canjeadoFecha = new Date().toISOString();
+  if (reset) { col.casilleros = 0; col.completado = false; col.canjeado = false; }
+  col.updated = new Date().toISOString();
+  if (_coleccionesRef) _coleccionesRef.child(whatsapp).set(col);
+  else _saveToFirebase();
+  _cacheLocal();
+  _notify('update', 'colecciones', whatsapp);
+  return col;
+}
+
+function onColeccionesChange(callback) { _coleccionesListeners.push(callback); }
+/* ==================== FIN COLECCIÓN ARCANO ==================== */
+
 /* ==================== EXPORT ==================== */
 
 window.ArcanoDB = {
@@ -3272,5 +3436,11 @@ window.ArcanoDB = {
   getClientes: getClientes, getClientesCount: getClientesCount, onClientesChange: onClientesChange, deleteCliente: deleteCliente, getPedidosByCliente: getPedidosByCliente,
   getPromociones: getPromociones, getPromocionesActivas: getPromocionesActivas, savePromocion: savePromocion, deletePromocion: deletePromocion, onPromocionesChange: onPromocionesChange,
   getCarritos: getCarritos, getCarritosByEstado: getCarritosByEstado, deleteCarrito: deleteCarrito, onCarritosChange: onCarritosChange,
-  getOtpPendientes: getOtpPendientes, getOtpPendientesCount: getOtpPendientesCount, markOtpEnviado: markOtpEnviado, deleteOtpPendiente: deleteOtpPendiente, onOtpPendientesChange: onOtpPendientesChange
+  getOtpPendientes: getOtpPendientes, getOtpPendientesCount: getOtpPendientesCount, markOtpEnviado: markOtpEnviado, deleteOtpPendiente: deleteOtpPendiente, onOtpPendientesChange: onOtpPendientesChange,
+
+  // Colección Arcano
+  getColecciones: getColecciones, getColeccion: getColeccion, saveColeccion: saveColeccion,
+  deleteColeccion: deleteColeccion, addBlendsToColeccion: addBlendsToColeccion,
+  canjearColeccion: canjearColeccion, getColeccionesCompletadas: getColeccionesCompletadas,
+  onColeccionesChange: onColeccionesChange
 };

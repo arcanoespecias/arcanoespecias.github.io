@@ -17,7 +17,7 @@ function initTienda() {
   return new Promise(function(resolve) {
     firebase.initializeApp(FIREBASE_CONFIG);
     // Only load what the store needs: especias, blends, packs, tiendaConfig
-    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'colecciones'];
     var loaded = 0;
     _sDb = {};
 
@@ -744,4 +744,22 @@ function getBlogPosts() {
 function onBlogReady(cb) {
   if (_blogReady) { cb(_blogPosts); return; }
   _blogListeners.push(cb);
+}
+
+/* === COLECCIÓN ARCANO === */
+function getColeccionCliente(whatsapp) {
+  if (!_sDb || !_sDb.colecciones || !whatsapp) return null;
+  return _sDb.colecciones[whatsapp] || null;
+}
+function onColeccionReady(whatsapp, cb) {
+  if (_sDb && _sDb.colecciones && _sDb.colecciones[whatsapp]) { cb(_sDb.colecciones[whatsapp]); return; }
+  // Listen for when colecciones data arrives
+  var checkInterval = setInterval(function() {
+    if (_sDb && _sDb.colecciones) {
+      clearInterval(checkInterval);
+      cb(_sDb.colecciones[whatsapp] || null);
+    }
+  }, 500);
+  // Timeout after 10s
+  setTimeout(function() { clearInterval(checkInterval); }, 10000);
 }

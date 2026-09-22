@@ -275,6 +275,41 @@ const App = {
       _lastClientesCount = ArcanoDB.getClientesCount();
     }, 3000);
 
+    // === Colección Arcano: notificación cuando un cliente completa su cartón ===
+    ArcanoDB.onDBChange(function(type, collection, id) {
+      if (type === 'coleccion_completada') {
+        var col = ArcanoDB.getColeccion(id);
+        var nombre = (col && col.nombre) ? col.nombre : id;
+        // Sonido
+        try {
+          var ctx = new (window.AudioContext || window.webkitAudioContext)();
+          var osc = ctx.createOscillator(); var gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(523, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1047, ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+        } catch(e) {}
+        // Flash del título
+        var origTitle2 = document.title;
+        var flashCount2 = 0;
+        var flashInt2 = setInterval(function() {
+          document.title = flashCount2 % 2 === 0 ? '🏅 ¡Cartón Completado!' : origTitle2;
+          flashCount2++;
+          if (flashCount2 >= 10) { clearInterval(flashInt2); document.title = origTitle2; }
+        }, 800);
+        // Notificación nativa
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🏅 Colección Arcano', { body: nombre + ' completó su cartón de 10 blends. ¡Debe recibir Blend Grande gratis!', icon: 'icons/arcano-logo.webp' });
+        }
+        // Toast
+        if (typeof toast === 'function') toast('🏅 ' + nombre + ' completó su cartón. ¡Blend Grande gratis!', 'ok');
+        // Re-render si está en campañas
+        if (App.currentPage === 'campanas') App.renderPage('campanas');
+      }
+    });
+
     // Pedir permiso de notificaciones nativas al entrar al admin
     // (necesario para que funcione en PWA instalada en background)
     function _requestNotifPermission() {
@@ -393,6 +428,8 @@ const App = {
               '<span class="nav-icon">🛒</span><span class="nav-label">Carritos</span></a>' +
             '<a class="nav-item" data-page="mensajes" onclick="App.navigate(\'mensajes\')">' +
               '<span class="nav-icon">💬</span><span class="nav-label">Mensajes WA</span></a>' +
+            '<a class="nav-item" data-page="campanas" onclick="App.navigate(\'campanas\')">' +
+              '<span class="nav-icon">🏅</span><span class="nav-label">Campañas</span><span class="nav-badge" id="nav-campanas" style="display:none"></span></a>' +
             '<div style="border-top:1px solid var(--border);margin:8px 12px"></div>' +
             '<a class="nav-item" data-page="testing" onclick="App.navigate(\'testing\')">' +
               '<span class="nav-icon">🧪</span><span class="nav-label">Testing</span></a>' +
@@ -507,6 +544,7 @@ const App = {
         case 'promociones': Pages.renderPromociones(container); break;
         case 'carritos': Pages.renderCarritos(container); break;
         case 'mensajes': Pages.renderMensajes(container); break;
+        case 'campanas': Pages.renderCampanas(container); break;
         default: container.innerHTML = '<p>Pagina no encontrada</p>';
       }
     } catch (e) {

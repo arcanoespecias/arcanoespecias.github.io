@@ -10072,6 +10072,163 @@ Pages._resetDisenoDinamico = function() {
    3. Ver carritos abandonados pendientes de notificar.
    Config persistida en tiendaConfig.mensajesWhatsApp.
    ================================================================== */
+
+/* =================================================================
+   CAMPAÑAS — Colección Arcano
+   ================================================================= */
+Pages.renderCampanas = function(el) {
+  var colecciones = ArcanoDB.getColecciones();
+  var completadas = colecciones.filter(function(c) { return c.casilleros >= 10 && !c.canjeado; });
+  var canjeadas = colecciones.filter(function(c) { return c.canjeado; });
+  var activas = colecciones.filter(function(c) { return c.casilleros < 10; });
+
+  // Update nav badge
+  var badge = document.getElementById('nav-campanas');
+  if (badge) {
+    if (completadas.length > 0) { badge.style.display = 'flex'; badge.textContent = completadas.length; }
+    else { badge.style.display = 'none'; }
+  }
+
+  var h = '<div class="page-header"><h2>🏅 Campañas</h2></div>';
+
+  // KPIs
+  h += '<div class="g4 mb-16">';
+  h += '<div class="stat-card"><div class="stat-value">' + colecciones.length + '</div><div class="stat-label">Cartones totales</div></div>';
+  h += '<div class="stat-card"><div class="stat-value">' + activas.length + '</div><div class="stat-label">En progreso</div></div>';
+  h += '<div class="stat-card" style="border-color:var(--gold)"><div class="stat-value" style="color:var(--gold)">' + completadas.length + '</div><div class="stat-label">Completados (canjear)</div></div>';
+  h += '<div class="stat-card"><div class="stat-value" style="color:var(--green)">' + canjeadas.length + '</div><div class="stat-label">Canjeados</div></div>';
+  h += '</div>';
+
+  // Filtros
+  h += '<div class="tabs mb-16">';
+  var filter = Pages._campFilter || 'todos';
+  h += '<button class="tab' + (filter === 'todos' ? ' active' : '') + '" onclick="Pages._campFilter=\'todos\';App.renderPage(\'campanas\')">Todos (' + colecciones.length + ')</button>';
+  h += '<button class="tab' + (filter === 'completados' ? ' active' : '') + '" onclick="Pages._campFilter=\'completados\';App.renderPage(\'campanas\')">Completados (' + completadas.length + ')</button>';
+  h += '<button class="tab' + (filter === 'activos' ? ' active' : '') + '" onclick="Pages._campFilter=\'activos\';App.renderPage(\'campanas\')">En progreso (' + activas.length + ')</button>';
+  h += '</div>';
+
+  var lista = colecciones;
+  if (filter === 'completados') lista = completadas;
+  else if (filter === 'activos') lista = activas;
+
+  if (lista.length === 0) {
+    h += '<div class="card" style="padding:40px;text-align:center;color:var(--text-sec)"><p>No hay cartones en esta categoría.</p></div>';
+    el.innerHTML = h;
+    return;
+  }
+
+  h += '<div class="table-wrap"><table class="table"><thead><tr>';
+  h += '<th>Cliente</th><th>WhatsApp</th><th>Progreso</th><th>Estado</th><th class="text-right">Acciones</th>';
+  h += '</tr></thead><tbody>';
+
+  for (var i = 0; i < lista.length; i++) {
+    var c = lista[i];
+    var nombre = c.nombre || '(sin nombre)';
+    var wa = c.whatsapp || '';
+    var casilleros = c.casilleros || 0;
+    var estado = c.canjeado ? '<span class="badge badge-green">Canjeado</span>' :
+                 (casilleros >= 10 ? '<span class="badge badge-gold">Completado</span>' :
+                 '<span class="badge badge-blue">En progreso</span>');
+
+    // Visual bar: 10 slots
+    var bar = '<div style="display:flex;gap:3px">';
+    for (var s = 0; s < 10; s++) {
+      var lit = s < casilleros;
+      bar += '<div style="width:18px;height:18px;border-radius:4px;background:' + (lit ? 'var(--gold)' : 'var(--surface)') + ';border:1px solid ' + (lit ? 'var(--gold)' : 'var(--border)') + ';display:flex;align-items:center;justify-content:center;font-size:10px">' + (lit ? '✦' : '') + '</div>';
+    }
+    bar += '</div><div style="font-size:0.78rem;color:var(--text-sec);margin-top:4px">' + casilleros + '/10 blends pequeños</div>';
+
+    h += '<tr>';
+    h += '<td class="fw7">' + esc(nombre) + '</td>';
+    h += '<td>' + wa + '</td>';
+    h += '<td>' + bar + '</td>';
+    h += '<td>' + estado + '</td>';
+    h += '<td class="text-right">';
+    h += '<button class="btn btn-sm btn-outline" onclick="Pages._verColeccion(\'' + wa + '\')">Ver</button>';
+    if (casilleros >= 10 && !c.canjeado) {
+      h += ' <button class="btn btn-sm btn-gold" onclick="Pages._canjearColeccion(\'' + wa + '\')">Canjear</button>';
+    }
+    if (casilleros < 10) {
+      h += ' <button class="btn btn-sm btn-outline" style="border-color:var(--gold);color:var(--gold)" onclick="Pages._addManual(\'' + wa + '\')">+ Blend</button>';
+    }
+    h += '</td>';
+    h += '</tr>';
+  }
+
+  h += '</tbody></table></div>';
+  el.innerHTML = h;
+
+  // Listen for changes
+  if (!Pages._coleccionesListenerAdded) {
+    Pages._coleccionesListenerAdded = true;
+    ArcanoDB.onColeccionesChange(function() {
+      if (App.currentPage === 'campanas') App.renderPage('campanas');
+      // Update badge
+      var comps = ArcanoDB.getColeccionesCompletadas().filter(function(c) { return !c.canjeado; });
+      var b = document.getElementById('nav-campanas');
+      if (b) { if (comps.length > 0) { b.style.display = 'flex'; b.textContent = comps.length; } else b.style.display = 'none'; }
+    });
+  }
+};
+
+Pages._verColeccion = function(wa) {
+  var c = ArcanoDB.getColeccion(wa);
+  if (!c) { toast('Colección no encontrada', 'err'); return; }
+  var h = '<div class="modal-overlay" id="coleccion-modal" onclick="if(event.target===this)this.remove()">';
+  h += '<div class="modal" style="max-width:500px">';
+  h += '<div class="modal-header"><h3>Cartón de ' + esc(c.nombre || wa) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>';
+  h += '<div class="modal-body">';
+  // Visual card with 10 slots
+  h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">';
+  for (var s = 0; s < 10; s++) {
+    var lit = s < (c.casilleros || 0);
+    h += '<div style="aspect-ratio:1;border-radius:12px;background:' + (lit ? 'var(--gold-light)' : 'var(--surface)') + ';border:2px solid ' + (lit ? 'var(--gold)' : 'var(--border)') + ';display:flex;align-items:center;justify-content:center">';
+    h += '<img src="icons/arcano-logo.webp" style="width:60%;height:60%;opacity:' + (lit ? '1' : '0.15') + '" alt="Arcano">';
+    h += '</div>';
+  }
+  h += '</div>';
+  h += '<div style="text-align:center;margin-bottom:20px"><b style="font-size:1.5rem;color:var(--gold)">' + (c.casilleros || 0) + '/10</b><br><span class="text-sm text-muted">Blends pequeños comprados</span></div>';
+  if (c.casilleros >= 10 && !c.canjeado) {
+    h += '<div style="background:var(--gold-light);padding:16px;border-radius:8px;text-align:center;margin-bottom:16px"><b style="color:var(--gold)">¡Cartón completado!</b><br><span class="text-sm">Este cliente tiene derecho a 1 Blend Grande gratis.</span></div>';
+  }
+  // Historial
+  h += '<h4>Historial</h4>';
+  var hist = c.historial || [];
+  if (hist.length === 0) {
+    h += '<p class="text-muted">Sin movimientos.</p>';
+  } else {
+    h += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Cantidad</th><th>Blends</th></tr></thead><tbody>';
+    for (var i = 0; i < hist.length; i++) {
+      var item = hist[i];
+      var fecha = (item.fecha || '').substring(0, 10);
+      var blends = (item.blends || []).join(', ') || '-';
+      h += '<tr><td>' + fecha + '</td><td>+' + item.cantidad + '</td><td class="text-sm">' + esc(blends) + '</td></tr>';
+    }
+    h += '</tbody></table></div>';
+  }
+  h += '</div></div></div>';
+  var div = document.createElement('div');
+  div.innerHTML = h;
+  document.body.appendChild(div.firstChild);
+};
+
+Pages._canjearColeccion = function(wa) {
+  if (!confirm('¿Marcar como canjeado? El cliente recibió su Blend Grande gratis.\n\n¿Reiniciar el cartón a 0 para una nueva colección?')) return;
+  var reset = confirm('¿Reiniciar cartón a 0? (Cancelar = dejar completado sin reiniciar)');
+  ArcanoDB.canjearColeccion(wa, reset);
+  toast('✓ Colección canjeada' + (reset ? ' y reiniciada' : ''), 'ok');
+  App.renderPage('campanas');
+};
+
+Pages._addManual = function(wa) {
+  var cantidad = parseInt(prompt('¿Cuántos blends pequeños agregar al cartón de ' + wa + '?', '1'));
+  if (!cantidad || cantidad < 1) return;
+  ArcanoDB.addBlendsToColeccion(wa, cantidad, 'manual', []);
+  toast('✓ ' + cantidad + ' blend(s) agregado(s)', 'ok');
+  App.renderPage('campanas');
+};
+
+
 Pages.renderMensajes = function(el) {
   var cfg = ArcanoDB.getTiendaConfig();
   var mw = cfg.mensajesWhatsApp || {};

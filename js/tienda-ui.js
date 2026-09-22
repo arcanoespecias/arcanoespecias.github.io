@@ -1604,6 +1604,8 @@ function _mcShowHistorial(cliente) {
           '<span><b>' + totalPedidos + '</b> pedidos</span>' +
         '</div>' +
       '</div>' +
+      // Colección Arcano
+      '<div id="mc-coleccion-section"></div>' +
       // Seccion promos exclusivas
       '<div id="mc-promos-section"></div>' +
       // Tabs de pedidos
@@ -1617,6 +1619,8 @@ function _mcShowHistorial(cliente) {
     '</div>';
   // Cargar promos
   _mcLoadPromos();
+  // Cargar colección Arcano
+  _mcLoadColeccion(cliente);
   // Cargar pedidos
   if (!cliente.id) {
     var list = document.getElementById('mc-pedidos-list');
@@ -1985,3 +1989,93 @@ function _usosHtml(p) {
 
   // Sin fade on scroll — el texto se queda fijo
 })();
+
+/* === COLECCIÓN ARCANO — Cartón del cliente === */
+function _mcLoadColeccion(cliente) {
+  var el = document.getElementById('mc-coleccion-section');
+  if (!el) return;
+  var wa = cliente.telefono || cliente.whatsapp || '';
+  if (!wa) { el.innerHTML = ''; return; }
+
+  // Normalizar whatsapp
+  wa = wa.replace(/[^0-9+]/g, '');
+  if (wa.startsWith('+')) wa = wa.substring(1);
+
+  // Mostrar loading
+  el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">🏅 Colección Arcano</div><div class="loader" style="margin:12px auto"></div></div>';
+
+  onColeccionReady(wa, function(col) {
+    if (!col) {
+      // No tiene cartón todavía — mostrar cartón vacío
+      col = { whatsapp: wa, nombre: cliente.nombre || '', casilleros: 0, completado: false, canjeado: false, historial: [] };
+    }
+    _mcRenderColeccion(el, col);
+  });
+}
+
+function _mcRenderColeccion(el, col) {
+  var casilleros = col.casilleros || 0;
+  var completado = casilleros >= 10;
+  var canjeado = col.canjeado || false;
+
+  var h = '<div class="coleccion-card">';
+  h += '<div class="coleccion-title">🏅 Colección Arcano</div>';
+  h += '<p class="coleccion-desc">Cada vez que compras un Blend pequeño, completas 1 casillero. Al llegar a 10, recibes un <b>Blend Grande gratis</b>.</p>';
+
+  // Grid de 10 slots (2 filas de 5)
+  h += '<div class="coleccion-grid">';
+  for (var s = 0; s < 10; s++) {
+    var lit = s < casilleros;
+    h += '<div class="coleccion-slot' + (lit ? ' lit' : '') + '">';
+    h += '<img src="icons/arcano-logo.webp" alt="Arcano" class="coleccion-slot-logo">';
+    h += '</div>';
+  }
+  h += '</div>';
+
+  // Progreso
+  h += '<div class="coleccion-progress">';
+  h += '<span class="coleccion-count">' + casilleros + '/10</span>';
+  h += '<span class="coleccion-bar"><span class="coleccion-bar-fill" style="width:' + (casilleros * 10) + '%"></span></span>';
+  h += '</div>';
+
+  // Mensaje según estado
+  if (completado && !canjeado) {
+    h += '<div class="coleccion-complete-msg">¡Felicitaciones! 🎉 Has completado tu cartón. Tu próximo Blend Grande es gratis.</div>';
+  } else if (canjeado) {
+    h += '<div class="coleccion-canjeado-msg">✓ Canjeaste tu Blend Grande gratis. ¡Sigue comprando para completar tu próximo cartón!</div>';
+  } else if (casilleros > 0) {
+    var restantes = 10 - casilleros;
+    h += '<div class="coleccion-progress-msg">Te faltan <b>' + restantes + '</b> blend' + (restantes > 1 ? 's' : '') + ' pequeño' + (restantes > 1 ? 's' : '') + ' para tu Blend Grande gratis.</div>';
+  } else {
+    h += '<div class="coleccion-start-msg">¡Empieza tu colección! Compra tu primer Blend pequeño.</div>';
+  }
+
+  h += '</div>';
+
+  // CSS inline (se carga una sola vez)
+  if (!document.getElementById('coleccion-css')) {
+    var style = document.createElement('style');
+    style.id = 'coleccion-css';
+    style.textContent = `
+      .coleccion-card { background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border-light); padding: 20px; margin-bottom: 16px; }
+      .coleccion-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+      .coleccion-desc { font-size: 0.82rem; color: var(--text-sec); margin-bottom: 16px; line-height: 1.4; }
+      .coleccion-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+      .coleccion-slot { aspect-ratio: 1; border-radius: 12px; background: var(--bg); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all 0.3s var(--ease); }
+      .coleccion-slot.lit { background: var(--gold-light); border-color: var(--gold); box-shadow: 0 2px 8px rgba(201,169,97,0.3); }
+      .coleccion-slot-logo { width: 60%; height: 60%; opacity: 0.12; transition: opacity 0.3s var(--ease); }
+      .coleccion-slot.lit .coleccion-slot-logo { opacity: 1; }
+      .coleccion-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+      .coleccion-count { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--gold); min-width: 50px; }
+      .coleccion-bar { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+      .coleccion-bar-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 0.5s var(--ease); }
+      .coleccion-complete-msg { background: var(--gold-light); color: var(--gold); padding: 12px 16px; border-radius: var(--radius-xs); font-size: 0.88rem; font-weight: 600; text-align: center; }
+      .coleccion-canjeado-msg { background: rgba(46,204,113,0.1); color: var(--green); padding: 12px 16px; border-radius: var(--radius-xs); font-size: 0.82rem; text-align: center; }
+      .coleccion-progress-msg { font-size: 0.82rem; color: var(--text-sec); text-align: center; }
+      .coleccion-start-msg { font-size: 0.82rem; color: var(--text-muted); text-align: center; font-style: italic; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  el.innerHTML = h;
+}
