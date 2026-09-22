@@ -1569,39 +1569,54 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 
 .mc-overlay {
   position: fixed; inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
-  animation: mc-fade 0.2s ease;
+  animation: mc-fade 0.25s ease;
 }
 @keyframes mc-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .mc-modal {
-  background: var(--bg, #1b0b07);
-  border: 1px solid var(--border-light, #3a2218);
-  border-radius: 12px;
+  background: linear-gradient(180deg, #1f120a 0%, #160a05 100%);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 16px;
   width: 100%; max-width: 480px;
   max-height: 90vh; overflow-y: auto;
   position: relative;
   color: var(--text, #f0e6d3);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  scrollbar-width: thin; scrollbar-color: rgba(201,168,76,0.3) transparent;
 }
+.mc-modal::-webkit-scrollbar { width: 4px; }
+.mc-modal::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
 .mc-close {
-  position: absolute; top: 12px; right: 14px;
-  background: none; border: none;
-  font-size: 1.6rem; color: var(--text-muted, #9a8a78);
+  position: absolute; top: 14px; right: 16px;
+  background: rgba(255, 255, 255, 0.05); border: none;
+  width: 32px; height: 32px; border-radius: 50%;
+  font-size: 1.3rem; color: var(--text-muted, #9a8a78);
   cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
 }
-.mc-close:hover { color: var(--gold, #c9a84c); }
+.mc-close:hover { color: var(--gold, #c9a84c); background: rgba(201, 168, 76, 0.1); }
 
 .mc-login, .mc-historial { padding: 28px 24px 24px; }
-.mc-login h3, .mc-historial h4 {
-  font-size: 1.3rem; font-weight: 700;
+.mc-login h3 {
+  font-size: 1.4rem; font-weight: 800;
+  color: var(--gold, #c9a84c);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.mc-historial h4 {
+  font-size: 1.1rem; font-weight: 700;
   color: var(--gold, #c9a84c);
   margin-bottom: 8px;
 }
-.mc-historial h4 { margin-top: 20px; font-size: 1rem; }
+.mc-historial h4 { margin-top: 24px; font-size: 1rem; }
 .mc-sub {
   color: var(--text-muted, #9a8a78);
   font-size: 0.85rem;
@@ -1620,28 +1635,42 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 }
 .mc-help a { color: var(--gold, #c9a84c); }
 
+/* === HEADER DE USUARIO — elegante con avatar === */
 .mc-user-info {
-  background: rgba(201, 168, 76, 0.08);
-  border: 1px solid rgba(201, 168, 76, 0.2);
-  border-radius: 8px;
-  padding: 14px 16px;
-  margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.1) 0%, rgba(201, 168, 76, 0.03) 100%);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 12px;
+  padding: 18px 16px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 14px;
 }
+.mc-user-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold, #c9a84c), #a8823e);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 1.2rem; font-weight: 700;
+  color: var(--bg, #1b0b07);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+}
+.mc-user-data { flex: 1; min-width: 0; }
 .mc-user-name {
-  font-size: 1.1rem; font-weight: 700;
+  font-size: 1.05rem; font-weight: 700;
   color: var(--text, #f0e6d3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .mc-user-meta {
   color: var(--text-muted, #9a8a78);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   margin-top: 2px;
 }
 .mc-user-stats {
-  margin-top: 8px;
-  font-size: 0.78rem;
+  margin-top: 4px;
+  font-size: 0.75rem;
   color: var(--text-muted, #9a8a78);
+  display: flex; gap: 12px;
 }
-.mc-user-stats b { color: var(--gold, #c9a84c); font-size: 0.95rem; }
+.mc-user-stats b { color: var(--gold, #c9a84c); font-weight: 700; }
 
 .mc-pedido-card {
   background: rgba(0, 0, 0, 0.25);

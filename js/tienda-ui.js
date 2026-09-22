@@ -1598,10 +1598,13 @@ function _mcShowHistorial(cliente) {
   el.innerHTML =
     '<div class="mc-historial">' +
       '<div class="mc-user-info">' +
-        '<div class="mc-user-name">' + (cliente.nombre || 'Cliente') + '</div>' +
-        '<div class="mc-user-meta">' + (cliente.telefono || '') + '</div>' +
-        '<div class="mc-user-stats">' +
-          '<span><b>' + totalPedidos + '</b> pedidos</span>' +
+        '<div class="mc-user-avatar">' + ((cliente.nombre || 'C').charAt(0) || 'C').toUpperCase() + '</div>' +
+        '<div class="mc-user-data">' +
+          '<div class="mc-user-name">' + (cliente.nombre || 'Cliente') + '</div>' +
+          '<div class="mc-user-meta">' + (cliente.telefono || '') + '</div>' +
+          '<div class="mc-user-stats">' +
+            '<span><b>' + totalPedidos + '</b> pedidos</span>' +
+          '</div>' +
         '</div>' +
       '</div>' +
       // Colección Arcano
@@ -2019,8 +2022,12 @@ function _mcRenderColeccion(el, col) {
   var canjeado = col.canjeado || false;
 
   var h = '<div class="coleccion-card">';
-  h += '<div class="coleccion-title">🏅 Colección Arcano</div>';
-  h += '<p class="coleccion-desc">Cada vez que compras un Blend pequeño, completas 1 casillero. Al llegar a 10, recibes un <b>Blend Grande gratis</b>.</p>';
+  h += '<div class="coleccion-header">';
+  h += '<div class="coleccion-icon">🏅</div>';
+  h += '<div><div class="coleccion-title">Colección Arcano</div>';
+  h += '<div class="coleccion-subtitle">' + (casilleros >= 10 ? '¡Cartón completado!' : 'Acumula 10 blends pequeños') + '</div></div>';
+  h += '</div>';
+  h += '<div class="coleccion-desc">Compra <b>10 Blends pequeños</b> y recibe un <b>Blend Grande</b> de regalo.</div>';
 
   // Grid de 10 slots (2 filas de 5)
   h += '<div class="coleccion-grid">';
@@ -2028,26 +2035,35 @@ function _mcRenderColeccion(el, col) {
     var lit = s < casilleros;
     h += '<div class="coleccion-slot' + (lit ? ' lit' : '') + '">';
     h += '<img src="icons/arcano-logo.webp" alt="Arcano" class="coleccion-slot-logo">';
+    if (!lit) h += '<div class="coleccion-slot-num">' + (s + 1) + '</div>';
     h += '</div>';
   }
   h += '</div>';
 
   // Progreso
   h += '<div class="coleccion-progress">';
-  h += '<span class="coleccion-count">' + casilleros + '/10</span>';
-  h += '<span class="coleccion-bar"><span class="coleccion-bar-fill" style="width:' + (casilleros * 10) + '%"></span></span>';
+  h += '<div class="coleccion-progress-bar"><div class="coleccion-progress-fill" style="width:' + (casilleros * 10) + '%"></div></div>';
+  h += '<div class="coleccion-progress-text"><b>' + casilleros + '</b> / 10</div>';
   h += '</div>';
 
   // Mensaje según estado
   if (completado && !canjeado) {
-    h += '<div class="coleccion-complete-msg">¡Felicitaciones! 🎉 Has completado tu cartón. Tu próximo Blend Grande es gratis.</div>';
+    h += '<div class="coleccion-msg coleccion-msg-complete">';
+    h += '<span class="coleccion-msg-icon">🎉</span>';
+    h += '<span>¡Felicitaciones! Has completado tu cartón.<br>Tu próximo Blend Grande es <b>gratis</b>.</span>';
+    h += '</div>';
   } else if (canjeado) {
-    h += '<div class="coleccion-canjeado-msg">✓ Canjeaste tu Blend Grande gratis. ¡Sigue comprando para completar tu próximo cartón!</div>';
+    h += '<div class="coleccion-msg coleccion-msg-canjeado">';
+    h += '<span class="coleccion-msg-icon">✓</span>';
+    h += '<span>Canjeaste tu Blend Grande gratis.<br>¡Sigue comprando para completar tu próximo cartón!</span>';
+    h += '</div>';
   } else if (casilleros > 0) {
     var restantes = 10 - casilleros;
-    h += '<div class="coleccion-progress-msg">Te faltan <b>' + restantes + '</b> blend' + (restantes > 1 ? 's' : '') + ' pequeño' + (restantes > 1 ? 's' : '') + ' para tu Blend Grande gratis.</div>';
+    h += '<div class="coleccion-msg coleccion-msg-progress">';
+    h += 'Te faltan <b>' + restantes + '</b> blend' + (restantes > 1 ? 's' : '') + ' pequeño' + (restantes > 1 ? 's' : '') + ' para tu regalo.';
+    h += '</div>';
   } else {
-    h += '<div class="coleccion-start-msg">¡Empieza tu colección! Compra tu primer Blend pequeño.</div>';
+    h += '<div class="coleccion-msg coleccion-msg-start">¡Empieza tu colección comprando tu primer Blend pequeño!</div>';
   }
 
   h += '</div>';
@@ -2057,22 +2073,85 @@ function _mcRenderColeccion(el, col) {
     var style = document.createElement('style');
     style.id = 'coleccion-css';
     style.textContent = `
-      .coleccion-card { background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border-light); padding: 20px; margin-bottom: 16px; }
-      .coleccion-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
-      .coleccion-desc { font-size: 0.82rem; color: var(--text-sec); margin-bottom: 16px; line-height: 1.4; }
-      .coleccion-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
-      .coleccion-slot { aspect-ratio: 1; border-radius: 12px; background: var(--bg); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all 0.3s var(--ease); }
-      .coleccion-slot.lit { background: var(--gold-light); border-color: var(--gold); box-shadow: 0 2px 8px rgba(201,169,97,0.3); }
-      .coleccion-slot-logo { width: 60%; height: 60%; opacity: 0.12; transition: opacity 0.3s var(--ease); }
-      .coleccion-slot.lit .coleccion-slot-logo { opacity: 1; }
-      .coleccion-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-      .coleccion-count { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--gold); min-width: 50px; }
-      .coleccion-bar { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
-      .coleccion-bar-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 0.5s var(--ease); }
-      .coleccion-complete-msg { background: var(--gold-light); color: var(--gold); padding: 12px 16px; border-radius: var(--radius-xs); font-size: 0.88rem; font-weight: 600; text-align: center; }
-      .coleccion-canjeado-msg { background: rgba(46,204,113,0.1); color: var(--green); padding: 12px 16px; border-radius: var(--radius-xs); font-size: 0.82rem; text-align: center; }
-      .coleccion-progress-msg { font-size: 0.82rem; color: var(--text-sec); text-align: center; }
-      .coleccion-start-msg { font-size: 0.82rem; color: var(--text-muted); text-align: center; font-style: italic; }
+      .coleccion-card {
+        background: linear-gradient(180deg, rgba(201,168,76,0.06) 0%, rgba(201,168,76,0.02) 100%);
+        border: 1px solid rgba(201,168,76,0.18);
+        border-radius: 14px;
+        padding: 20px 18px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+      .coleccion-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+      .coleccion-icon { font-size: 1.8rem; line-height: 1; }
+      .coleccion-title {
+        font-family: var(--font-display); font-size: 1.05rem; font-weight: 800;
+        color: var(--gold, #c9a84c); letter-spacing: -0.01em;
+      }
+      .coleccion-subtitle { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+      .coleccion-desc { font-size: 0.78rem; color: var(--text-sec); margin-bottom: 16px; line-height: 1.45; }
+      .coleccion-desc b { color: var(--gold, #c9a84c); }
+
+      .coleccion-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin-bottom: 14px; }
+      .coleccion-slot {
+        aspect-ratio: 1; border-radius: 10px;
+        background: rgba(0,0,0,0.3);
+        border: 1.5px solid rgba(201,168,76,0.1);
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.34, 1.36, 0.64, 1);
+      }
+      .coleccion-slot.lit {
+        background: linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0.05) 100%);
+        border-color: rgba(201,168,76,0.5);
+        box-shadow: 0 2px 10px rgba(201,168,76,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+        animation: coleccionPop 0.4s ease;
+      }
+      @keyframes coleccionPop {
+        0% { transform: scale(0.85); }
+        60% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      .coleccion-slot-logo {
+        width: 65%; height: 65%; object-fit: contain;
+        filter: grayscale(1) brightness(0.3);
+        opacity: 0.25;
+        transition: all 0.4s ease;
+      }
+      .coleccion-slot.lit .coleccion-slot-logo {
+        filter: grayscale(0) brightness(1);
+        opacity: 1;
+        filter: drop-shadow(0 1px 4px rgba(201,168,76,0.4));
+      }
+      .coleccion-slot-num {
+        position: absolute;
+        font-size: 0.7rem; font-weight: 700;
+        color: rgba(201,168,76,0.2);
+      }
+
+      .coleccion-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+      .coleccion-progress-bar { flex: 1; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden; }
+      .coleccion-progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold, #c9a84c), #e8c860); border-radius: 3px; transition: width 0.6s ease; }
+      .coleccion-progress-text { font-size: 0.82rem; color: var(--text-sec); white-space: nowrap; }
+      .coleccion-progress-text b { color: var(--gold, #c9a84c); font-size: 1rem; font-family: var(--font-display); }
+
+      .coleccion-msg {
+        padding: 12px 14px; border-radius: 8px; font-size: 0.8rem; line-height: 1.4; text-align: center;
+      }
+      .coleccion-msg-complete {
+        background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));
+        border: 1px solid rgba(201,168,76,0.3);
+        color: var(--gold, #c9a84c); font-weight: 600;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .coleccion-msg-canjeado {
+        background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.2);
+        color: #6bcf8f;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .coleccion-msg-progress { color: var(--text-sec); }
+      .coleccion-msg-progress b { color: var(--gold, #c9a84c); }
+      .coleccion-msg-start { color: var(--text-muted); font-style: italic; }
+      .coleccion-msg-icon { font-size: 1.3rem; flex-shrink: 0; }
     `;
     document.head.appendChild(style);
   }
