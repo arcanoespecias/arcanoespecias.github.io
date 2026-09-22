@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://arcanoespecias.com/</loc>
     <lastmod>2026-09-22</lastmod>
@@ -715,6 +715,24 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://arcanoespecias.com/blog/arma-tu-blend-personalizado-como-crear-mezcla-de-especias.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arcanoespecias.com/blog/botanicos-para-cocteleria-guia-para-barman.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arcanoespecias.com/blog/comprar-especias-online-colombia-guia-2026.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://arcanoespecias.com/blog/el-brebaje-sagrado-de-los-dioses-el-origen-oscuro-y-especiado-del-cacao.html</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -734,6 +752,18 @@
   </url>
   <url>
     <loc>https://arcanoespecias.com/blog/el-secreto-rojo-de-los-monasterios-la-epica-odisea-del-pimenton.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arcanoespecias.com/blog/especias-para-asados-y-parrilla-guia-definitiva.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arcanoespecias.com/blog/especias-para-infusiones-bienestar-natural.html</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -770,6 +800,12 @@
   </url>
   <url>
     <loc>https://arcanoespecias.com/blog/pajaros-errores-y-viajes-epicos-3-curiosidades-inesperadas-del-aji.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arcanoespecias.com/blog/tendencias-sabores-2026-especias-gastronomia.html</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
