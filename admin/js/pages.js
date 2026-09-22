@@ -7471,18 +7471,33 @@ const Pages = {
   _ga4Url: 'https://script.google.com/macros/s/AKfycbw8kZ0mDAjRvTXHDehTOS85OCPIhxsSGtUSx0KYYmoLMjE2KTcTpcGf_M9uMyAN5jC0Dg/exec',
   _ga4Days: 30,
 
+  _ga4Loading: false,
+
   _renderWebAnalytics: function(el) {
     if (!el) return;
     var self = this;
-    // Destroy previous charts
+
+    // Destroy ALL charts that might exist on GA4 canvases (even if reference is lost)
+    var ga4CanvasIds = ['ga4-daily-chart', 'ga4-traffic-chart', 'ga4-pages-chart'];
+    for (var _ci = 0; _ci < ga4CanvasIds.length; _ci++) {
+      var _cv = document.getElementById(ga4CanvasIds[_ci]);
+      if (_cv) {
+        var _existing = Chart.getChart(_cv);
+        if (_existing) { try { _existing.destroy(); } catch(e) {} }
+      }
+    }
+    // Also destroy any tracked charts
     if (Pages._ga4Charts) { for (var _gi = 0; _gi < Pages._ga4Charts.length; _gi++) { try { Pages._ga4Charts[_gi].destroy(); } catch(e) {} } }
     Pages._ga4Charts = [];
+
+    // Prevent multiple simultaneous JSONP requests
+    if (Pages._ga4Loading) return;
+    Pages._ga4Loading = true;
 
     // Clean up any previous JSONP script and callback
     var oldScript = document.getElementById('_ga4_script');
     if (oldScript) oldScript.remove();
-    if (window._ga4Jsonp) delete window._ga4Jsonp;
-    // Cancel any pending timeout
+    if (window._ga4Jsonp) { delete window._ga4Jsonp; }
     if (Pages._ga4TimeoutId) { clearTimeout(Pages._ga4TimeoutId); Pages._ga4TimeoutId = null; }
 
     var h = '';
@@ -7511,6 +7526,7 @@ const Pages = {
       var loading = document.getElementById('ga4-loading');
       if (loading) loading.innerHTML = '<p style="color:#e74c3c">Tiempo de espera agotado. Reintenta.</p>';
       Pages._ga4TimeoutId = null;
+      Pages._ga4Loading = false;
     }, 15000);
     Pages._ga4TimeoutId = timeoutId;
     window._ga4Jsonp = function(resp) {
@@ -7519,6 +7535,7 @@ const Pages = {
       clearTimeout(timeoutId);
       Pages._ga4TimeoutId = null;
       delete window._ga4Jsonp;
+      Pages._ga4Loading = false;
       var s = document.getElementById('_ga4_script');
       if (s) s.remove();
       var loading = document.getElementById('ga4-loading');
@@ -7541,6 +7558,7 @@ const Pages = {
     script.onerror = function() {
       clearTimeout(timeoutId);
       delete window._ga4Jsonp;
+      Pages._ga4Loading = false;
       var loading = document.getElementById('ga4-loading');
       if (loading) loading.innerHTML = '<p style="color:#e74c3c">Error de conexion. Verifica el Apps Script.</p>';
     };
