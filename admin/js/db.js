@@ -2613,6 +2613,17 @@ function _startCostosListener() {
   try {
     var cached = JSON.parse(localStorage.getItem('arcano_costos'));
     if (cached && typeof cached === 'object' && cached.especias) {
+      // Si especias es array (formato antiguo), migrar a object
+      if (Array.isArray(cached.especias)) {
+        var espObj = {};
+        for (var ci = 0; ci < cached.especias.length; ci++) {
+          if (cached.especias[ci] != null) {
+            espObj[String(ci)] = cached.especias[ci];
+          }
+        }
+        cached.especias = espObj;
+        try { localStorage.setItem('arcano_costos', JSON.stringify(cached)); } catch (e2) {}
+      }
       _costosInsumos = cached;
       _costosReady = true;
     }
@@ -2973,7 +2984,7 @@ function deleteCostal(id) {
         if (especia) {
           // Devolver proporcionalmente según gramosRestantes
           var ratio = gramosRestantes / (Number(costal.gramosTotal) || 1);
-          var gramosADevolver = Math.round((Number(item.gramos) || 0) * ratio, 3);
+          var gramosADevolver = _r3((Number(item.gramos) || 0) * ratio);
           especia.stockBolsa = _r3(especia.stockBolsa + gramosADevolver);
         }
       }
