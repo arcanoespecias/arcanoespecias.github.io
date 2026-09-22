@@ -3695,7 +3695,7 @@ const Pages = {
         precioPala: Number(b.precioPala) || 0
       });
     }
-    allProductos.sort(function(a, b2) { return a.nombre.localeCompare(b2.nombre); });
+    allProductos.sort(function(a, b2) { return (a.nombre||"").localeCompare(b2.nombre||""); });
 
     h += '<div class="table-wrap"><table class="table"><thead><tr>';
     h += '<th>Producto</th><th>Tipo</th>';
@@ -4511,7 +4511,7 @@ const Pages = {
         if (precio === 0) continue;
         products.push({ id: p.id, nombre: p.nombre, tipo: 'pack', categoria: 'Packs', precioChico: 0, precioGrande: 0, precio: precio, stock: p.stock || 0, stockChico: p.stock || 0, stockGrande: 0, region: '', descripcion: p.descripcion || '', tags: p.tags || [], ingredientes: [] });
       }
-      products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+      products.sort(function(a, b) { return (a.nombre||"").localeCompare(b.nombre||""); });
       return products;
     }
 
