@@ -7478,6 +7478,13 @@ const Pages = {
     if (Pages._ga4Charts) { for (var _gi = 0; _gi < Pages._ga4Charts.length; _gi++) { try { Pages._ga4Charts[_gi].destroy(); } catch(e) {} } }
     Pages._ga4Charts = [];
 
+    // Clean up any previous JSONP script and callback
+    var oldScript = document.getElementById('_ga4_script');
+    if (oldScript) oldScript.remove();
+    if (window._ga4Jsonp) delete window._ga4Jsonp;
+    // Cancel any pending timeout
+    if (Pages._ga4TimeoutId) { clearTimeout(Pages._ga4TimeoutId); Pages._ga4TimeoutId = null; }
+
     var h = '';
     h += '<div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">';
     h += '<h3 style="margin:0;font-size:1.1rem">Analitica Web (GA4)</h3>';
@@ -7503,9 +7510,14 @@ const Pages = {
     var timeoutId = setTimeout(function() {
       var loading = document.getElementById('ga4-loading');
       if (loading) loading.innerHTML = '<p style="color:#e74c3c">Tiempo de espera agotado. Reintenta.</p>';
+      Pages._ga4TimeoutId = null;
     }, 15000);
+    Pages._ga4TimeoutId = timeoutId;
     window._ga4Jsonp = function(resp) {
+      // Guard: si ya se procesó una respuesta, ignorar duplicados
+      if (!window._ga4Jsonp) return;
       clearTimeout(timeoutId);
+      Pages._ga4TimeoutId = null;
       delete window._ga4Jsonp;
       var s = document.getElementById('_ga4_script');
       if (s) s.remove();
@@ -7586,7 +7598,7 @@ const Pages = {
           {label: 'Usuarios', data: users, borderColor: '#7B68EE', backgroundColor: 'rgba(123,104,238,0.05)', fill: true, tension: 0.3, pointRadius: 2}
         ]
       },
-      options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}}}}, scales: {x: {ticks: {font: {size: 10}, maxTicksLimit: 10}}, y: {beginAtZero: true, ticks: {font: {size: 10}}}}}
+      options: {responsive: true, maintainAspectRatio: false, animation: false, plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}}}}, scales: {x: {ticks: {font: {size: 10}, maxTicksLimit: 10}}, y: {beginAtZero: true, ticks: {font: {size: 10}}}}}
     });
     Pages._ga4Charts.push(chart);
   },
@@ -7603,7 +7615,7 @@ const Pages = {
     var chart = new Chart(canvas, {
       type: 'doughnut',
       data: {labels: labels, datasets: [{data: data, backgroundColor: colors.slice(0, data.length), borderWidth: 0}]},
-      options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}, padding: 12}}}, cutout: '55%'}
+      options: {responsive: true, maintainAspectRatio: false, animation: false, plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}, padding: 12}}}, cutout: '55%'}
     });
     Pages._ga4Charts.push(chart);
   },
