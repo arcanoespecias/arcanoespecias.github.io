@@ -213,6 +213,10 @@ async function sendWebPush({ subscription, payload, vapid }) {
   const encryptedPayload = await encryptPayload(payload, p256dh, auth);
 
   // 3. POST al endpoint del push service
+  // Header Authorization: vapid t=<jwt>; k=<base64url_public_key>
+  // (la public key debe ir en base64url, sin padding)
+  const authHeader = 'vapid t=' + jwt + '; k=' + publicKey;
+  
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -220,7 +224,7 @@ async function sendWebPush({ subscription, payload, vapid }) {
       'Content-Encoding': 'aes128gcm',
       'Content-Length': encryptedPayload.byteLength,
       'TTL': '2419200',
-      'Authorization': 'vapid t=' + jwt,
+      'Authorization': authHeader,
       'Urgency': 'high'
     },
     body: encryptedPayload
