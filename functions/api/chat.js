@@ -113,7 +113,8 @@ async function getApiKey(env) {
     if (!r.ok) return null;
     const data = await r.json();
     const key = data?.config?.apiKey;
-    if (key && key.startsWith('AIzaSy')) {
+    // Aceptar formatos AIzaSy... (legacy) y AQ.Ab8RN6K... (nuevo formato Gemini 2026)
+    if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
       _cachedKey = key;
       _cachedKeyTs = Date.now();
       return key;

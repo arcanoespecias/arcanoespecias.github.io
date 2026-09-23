@@ -108,7 +108,8 @@ var ChatbotPanel = (function() {
     var api = document.getElementById('cb-api-status');
     if (api) {
       var key = _config.config?.apiKey;
-      if (key && key.startsWith('AIzaSy')) api.innerHTML = '<span style="color:#4ade80">✓ Key configurada</span>';
+      // Aceptar formatos AIzaSy... y AQ.Ab8RN6K... (nuevo Gemini 2026)
+      if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) api.innerHTML = '<span style="color:#4ade80">✓ Key configurada</span>';
       else api.innerHTML = '<span style="color:#f87171">✗ Sin configurar</span>';
     }
   }
@@ -154,8 +155,9 @@ var ChatbotPanel = (function() {
   async function saveApiKey() {
     var key = getVal('cb-apikey').trim();
     if (!key) { alert('Ingresá la API key'); return; }
-    if (!key.startsWith('AIzaSy')) {
-      if (!confirm('La key no empieza con "AIzaSy". ¿Estás seguro que es una API key de Gemini válida?')) return;
+    // Aceptar formatos AIzaSy... (legacy) y AQ.Ab8RN6K... (nuevo formato Gemini 2026)
+    if (!key.startsWith('AIzaSy') && !key.startsWith('AQ.')) {
+      if (!confirm('La key no empieza con "AIzaSy" ni "AQ.". ¿Estás seguro que es una API key de Gemini válida?')) return;
     }
     try {
       await fetch(FB_URL + '/config/apiKey.json', {
