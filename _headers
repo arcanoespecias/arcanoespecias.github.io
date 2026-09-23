@@ -37,3 +37,14 @@
 # No indexar admin
 /admin/*
   X-Robots-Tag: noindex, nofollow
+
+# Chatbot: API no cacheable, JS/CSS cache 1h (versionable)
+/api/*
+  Cache-Control: no-store
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: POST, OPTIONS
+  Access-Control-Allow-Headers: Content-Type
+/css/chatbot.css
+  Cache-Control: public, max-age=3600
+/js/chatbot.js
+  Cache-Control: public, max-age=3600

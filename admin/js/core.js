@@ -430,6 +430,8 @@ const App = {
               '<span class="nav-icon">💬</span><span class="nav-label">Mensajes WA</span></a>' +
             '<a class="nav-item" data-page="campanas" onclick="App.navigate(\'campanas\')">' +
               '<span class="nav-icon">🏅</span><span class="nav-label">Campañas</span><span class="nav-badge" id="nav-campanas" style="display:none"></span></a>' +
+            '<a class="nav-item" data-page="chatbot" onclick="App.navigate(\'chatbot\')">' +
+              '<span class="nav-icon">🔮</span><span class="nav-label">Chatbot IA</span></a>' +
             '<div style="border-top:1px solid var(--border);margin:8px 12px"></div>' +
             '<a class="nav-item" data-page="testing" onclick="App.navigate(\'testing\')">' +
               '<span class="nav-icon">🧪</span><span class="nav-label">Testing</span></a>' +
@@ -468,7 +470,7 @@ const App = {
     this.closeMobileSidebar();
     var titles = {
       dashboard: 'Dashboard', productos: 'Productos', insumos: 'Insumos', testing: 'Testing',
-      produccion: 'Produccion', costales: 'Costales', ventas: 'Ventas', gastos: 'Gastos', pedidos: 'Pedidos', envios: 'Envíos', stock: 'Stock', costos: 'Costos', palas: 'Palas', tienda: 'Tienda', tublend: 'Tu Blend', recetas: 'Recetas IA', blog: 'Blog IA', estadisticas: 'Estadisticas', usuarios: 'Usuarios', puntosdeventa: 'P. Venta', grandesClientes: 'Grandes Clientes', clientes: 'Clientes', promociones: 'Promociones', carritos: 'Carritos', mensajes: 'Mensajes WhatsApp'
+      produccion: 'Produccion', costales: 'Costales', ventas: 'Ventas', gastos: 'Gastos', pedidos: 'Pedidos', envios: 'Envíos', stock: 'Stock', costos: 'Costos', palas: 'Palas', tienda: 'Tienda', tublend: 'Tu Blend', recetas: 'Recetas IA', blog: 'Blog IA', estadisticas: 'Estadisticas', usuarios: 'Usuarios', puntosdeventa: 'P. Venta', grandesClientes: 'Grandes Clientes', clientes: 'Clientes', promociones: 'Promociones', carritos: 'Carritos', mensajes: 'Mensajes WhatsApp', chatbot: 'Chatbot IA'
     };
     document.getElementById('page-title').textContent = titles[page] || page;
     // Cierra el drawer lateral en mobile al cambiar de pagina
@@ -545,6 +547,7 @@ const App = {
         case 'carritos': Pages.renderCarritos(container); break;
         case 'mensajes': Pages.renderMensajes(container); break;
         case 'campanas': Pages.renderCampanas(container); break;
+        case 'chatbot': ChatbotPanel.render(container); break;
         default: container.innerHTML = '<p>Pagina no encontrada</p>';
       }
     } catch (e) {
