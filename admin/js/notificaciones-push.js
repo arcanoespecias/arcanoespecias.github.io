@@ -443,7 +443,37 @@ var NotificacionesPush = (function() {
     
     var report = output.join('\n');
     console.log(report);
-    alert(report);
+    
+    // Mostrar en un modal con textarea copiable
+    var existing = document.getElementById('notif-diag-modal');
+    if (existing) existing.remove();
+    
+    var modal = document.createElement('div');
+    modal.id = 'notif-diag-modal';
+    modal.className = 'modal-overlay';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    modal.innerHTML =
+      '<div class="modal" style="max-width:600px;max-height:80vh">' +
+        '<div class="modal-header">' +
+          '<h3>🔍 Diagnóstico de Notificaciones</h3>' +
+          '<button class="btn btn-ghost" onclick="document.getElementById(\'notif-diag-modal\').remove()">×</button>' +
+        '</div>' +
+        '<div class="modal-body" style="overflow-y:auto">' +
+          '<p class="text-sm text-muted mb-8">Copiá todo este texto y pegalo en el chat:</p>' +
+          '<textarea readonly style="width:100%;height:300px;font-family:monospace;font-size:0.75rem;background:var(--bg,#1b0b07);color:var(--text,#e8d5b7);border:1px solid var(--border,#3a2a1e);border-radius:6px;padding:8px" id="notif-diag-text">' + report.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>' +
+        '</div>' +
+        '<div class="modal-footer">' +
+          '<button class="btn btn-gold" onclick="var t=document.getElementById(\'notif-diag-text\');t.select();document.execCommand(\'copy\');toast(\'Copiado al portapapeles\')">📋 Copiar todo</button>' +
+          '<button class="btn btn-outline ml-8" onclick="document.getElementById(\'notif-diag-modal\').remove()">Cerrar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    
+    // Auto-seleccionar el texto para que sea fácil copiar
+    setTimeout(function() {
+      var ta = document.getElementById('notif-diag-text');
+      if (ta) { ta.focus(); ta.select(); }
+    }, 100);
   }
 
   function _urlBase64ToUint8Array(base64String) {
