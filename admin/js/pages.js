@@ -6700,21 +6700,64 @@ const Pages = {
         }
 
         var prompt =
-          'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias. Escribe en espanol.\n\n' +
+          'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias (tienda colombiana online).\n' +
+          'Escribes en ESPANOL NEUTRO INTERNACIONAL (no argentino, no voseo, no "vos", no "che", no "pibe"). Usas "tu" y "tienes".\n' +
+          'Tono: cercano, conversacional pero profesional. Como un amigo experto en cocina que comparte lo que sabe.\n\n' +
           'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos):\n' + productContext + '\n\n' +
-          'REGLAS OBLIGATORIAS:\n' +
-          '1. EL PRIMER PARRAFO del articulo debe mencionar al menos UN blend del catalogo de arriba, usando su nombre EXACTO. El blend debe estar relacionado con el tema del articulo de forma natural y creativa. Por ejemplo: si el tema es pimienta, podes relacionarlo con Chai Imperial; si hablas de una ciudad o region, menciona un blend de esa zona (ej: Bangkok Curry para Tailandia, Garam Masala Clasico para India, Mediterranean Citrus para el Mediterraneo, etc). El articulo SIEMPRE debe conectar el tema con algun blend de la tienda.\n' +
-          '2. Cada vez que menciones un blend, convierte el nombre en un enlace clickable usando este formato EXACTO: <a href="#" onclick="openDetail(NUMERO_ID);return false">Nombre Exacto del Blend</a> donde NUMERO_ID es el numero ID del blend que aparece en el catalogo como [ID:123]. El texto visible del enlace debe ser el nombre EXACTO del blend.\n' +
-          '3. El contenido debe ser informativo, entretenido y relevante para amantes de las especias.\n' +
-          '4. Usa etiquetas HTML semanticas: <p> para parrafos, <h2> y <h3> para subtitulos, <ul><li> para listas, <blockquote> para citas destacadas.\n' +
-          '5. El articulo debe tener entre 400 y 800 palabras.\n' +
-          '6. El articulo debe ser ORIGINAL, diferente a los existentes. NO menciones especias sueltas como productos, solo BLENDS.' +
+          '=== INSTRUCCION DE KEYWORDS (MUY IMPORTANTE) ===\n' +
+          '1. ANTES de escribir, identifica 5-8 keywords transaccionales e informativas del mercado de especias online en Colombia.\n' +
+          '   Ejemplos: "comprar especias online", "especias artesanales", "mezcla de especias", "sazonador natural",\n' +
+          '   "especias para asados", "botanicos para cocteleria", "especias para infusiones", "comprar pimienta online",\n' +
+          '   "condimentos naturales", "hierbas aromaticas", "blends de especias", "especias del mundo", etc.\n' +
+          '2. Adapta las keywords al tema del articulo (no uses todas, solo las que encajen naturalmente).\n' +
+          '3. Integra las keywords de forma SUTIL y NATURAL en el contenido, creando frases con sentido completo.\n' +
+          '4. NUNCA repitas una keyword mas de 2 veces en todo el articulo.\n' +
+          '5. NUNCA fuerces la keyword si no encaja. Mejor omitirla que sonar robotico.\n' +
+          '6. Incluye las keywords en el JSON de respuesta (campo "keywords").\n\n' +
+          '=== ESTRUCTURA OBLIGATORIA DEL ARTICULO ===\n' +
+          'El contenido HTML debe seguir esta estructura exacta:\n\n' +
+          '<p>[Lead paragraph: 150-200 palabras. Arranca DIRECTO con el tema, sin "En este articulo te contaremos...".\n' +
+          '   Conecta el tema con al menos UN blend del catalogo, usando su nombre EXACTO como enlace clickable.]</p>\n\n' +
+          '<h2>[Subtitulo 1: atractivo, descriptivo, con keyword si encaja]</h2>\n' +
+          '<p>[2-3 parrafos, 200-300 palabras total]</p>\n' +
+          '<p>[...]</p>\n\n' +
+          '<h2>[Subtitulo 2]</h2>\n' +
+          '<p>[2-3 parrafos, 200-300 palabras total]</p>\n' +
+          '<p>[...]</p>\n\n' +
+          '<h2>[Subtitulo 3 - opcional si el tema lo permite]</h2>\n' +
+          '<p>[1-2 parrafos, 150-200 palabras]</p>\n\n' +
+          '<blockquote>[Frase memorable o dato destacado del articulo, 1-2 oraciones]</blockquote>\n\n' +
+          '<h2>Para llevar a tu cocina</h2>\n' +
+          '<p>[Conclusion + CTA sutil a la tienda, 100-150 palabras. No agresivo. Ej: "Si quieres explorar estos sabores, en nuestra tienda encontraras..."]</p>\n\n' +
+          'TOTAL: entre 700 y 1200 palabras.\n\n' +
+          '=== REGLAS DE ESTILO ===\n' +
+          '1. Espresion: ESPANOL NEUTRO. Sin voseo, sin argentismos, sin "vos". Usar "tu" y "tienes".\n' +
+          '2. Tono: cercano, conversacional, como hablar con un amigo que sabe de cocina.\n' +
+          '3. Sin emojis en el cuerpo del articulo (solo en CTA si quieres).\n' +
+          '4. Sin frases hechas: no usar "En este articulo te contaremos", "A continuacion", "Como puedes ver".\n' +
+          '5. Sin palabras relleno: limitar a 1 por articulo el uso de "delicioso", "increible", "magico", "fascinante".\n' +
+          '6. Datos y cifras concretas cuando sea posible (ej: "la pimienta represento el 70% del comercio de especias en 1400").\n' +
+          '7. Minimo 1 link a blend, MAXIMO 3 links a blends (no sobreoptimizar).\n' +
+          '8. Cada vez que menciones un blend, usa este formato EXACTO:\n' +
+          '   <a href="#" onclick="openDetail(NUMERO_ID);return false">Nombre Exacto del Blend</a>\n' +
+          '   donde NUMERO_ID es el ID del blend del catalogo [ID:123].\n' +
+          '9. HTML semantico: <p>, <h2>, <h3>, <ul><li>, <blockquote>.\n' +
+          '10. NO menciones especias sueltas como productos. Solo BLENDS de la tienda.\n' +
           existingBlock + '\n\n' +
-          'Escribe un articulo de blog categoria "' + categoria + '". ' + temaInstr + '\n\n' +
-          'Responde SOLO con JSON valido (sin markdown, sin backticks, sin texto antes o despues) con esta estructura:\n' +
-          '{"titulo": "...", "subtitulo": "... (1-2 oraciones)", "categoria": "' + categoria + '", ' +
-          '"contenido": "<p>HTML content here</p>", ' +
-          '"imagen_prompt": "visual description for AI image generation (in english, 1 sentence)"}';
+          '=== RESPUESTA JSON ===\n' +
+          'Responde SOLO con JSON valido (sin markdown, sin backticks, sin texto antes o despues):\n' +
+          '{\n' +
+          '  "titulo": "50-60 caracteres, atractivo, con keyword principal si encaja",\n' +
+          '  "subtitulo": "100-160 caracteres, gancho que invite a leer",\n' +
+          '  "categoria": "' + categoria + '",\n' +
+          '  "descripcion_meta": "150-155 caracteres para SEO. Incluye keyword principal. No cortar a mitad de palabra.",\n' +
+          '  "keywords": ["keyword 1", "keyword 2", ...],\n' +
+          '  "tiempoLectura": "X min",\n' +
+          '  "contenido": "<p>...</p><h2>...</h2>...",\n' +
+          '  "imagen_prompt": "visual description in english for AI image generation, 1 sentence"\n' +
+          '}\n\n' +
+          'Escribe un articulo de blog categoria "' + categoria + '". ' + temaInstr + '\n' +
+          'Recuerda: investiga keywords del mercado de especias en Colombia y usalas de forma sutil.';
 
         status.textContent = 'Consultando Gemini 3.6 Flash...';
 
@@ -6746,8 +6789,23 @@ const Pages = {
               throw new Error('La IA no devolvio un JSON valido: ' + jsonStr.slice(0, 100));
             }
           }
-          if (!articulo.titulo) throw new Error('El articulo no tiene titulo');
-          if (!articulo.contenido) throw new Error('El articulo no tiene contenido');
+          
+          // === VALIDACION ESTRICTA ===
+          var errores = Pages._validarArticulo(articulo);
+          if (errores.length > 0) {
+            var msg = 'El articulo NO cumple las normas:\n\n';
+            for (var ei = 0; ei < errores.length; ei++) msg += '  - ' + errores[ei] + '\n';
+            msg += '\n¿Quieres verlo igualmente o prefieres regenerar?';
+            if (!confirm(msg)) {
+              status.innerHTML = '<span style="color:var(--red)">Articulo descartado. Genera otro.</span>';
+              btn.disabled = false;
+              btn.textContent = 'Generar Articulo';
+              return;
+            }
+            // Si el admin decide verlo, mostramos advertencias en la preview
+            articulo._advertencias = errores;
+          }
+          
           Pages._showBlogPreview(articulo, categoria);
           status.innerHTML = '<span style="color:var(--green)">Articulo generado. Revisa y publica.</span>';
           btn.disabled = false;
@@ -6770,14 +6828,147 @@ const Pages = {
     }
   },
 
+  _validarArticulo: function(articulo) {
+    var errores = [];
+    
+    // 1. Campos obligatorios
+    if (!articulo.titulo) errores.push('Falta el titulo');
+    if (!articulo.subtitulo) errores.push('Falta el subtitulo');
+    if (!articulo.contenido) errores.push('Falta el contenido');
+    if (!articulo.categoria) errores.push('Falta la categoria');
+    
+    // 2. Longitud del titulo (50-70 caracteres recomendado SEO)
+    if (articulo.titulo) {
+      var tl = articulo.titulo.length;
+      if (tl < 40) errores.push('Titulo muy corto (' + tl + ' chars, minimo 40)');
+      if (tl > 70) errores.push('Titulo muy largo (' + tl + ' chars, maximo 70)');
+    }
+    
+    // 3. Longitud del subtitulo (100-160 caracteres)
+    if (articulo.subtitulo) {
+      var sl = articulo.subtitulo.length;
+      if (sl < 80) errores.push('Subtitulo muy corto (' + sl + ' chars, minimo 80)');
+      if (sl > 180) errores.push('Subtitulo muy largo (' + sl + ' chars, maximo 180)');
+    }
+    
+    // 4. Contar palabras del contenido (700-1200)
+    if (articulo.contenido) {
+      var textoPlano = articulo.contenido.replace(/<[^>]+>/g, ' ');
+      var palabras = textoPlano.split(/\s+/).filter(function(w) { return w.length > 0; });
+      var numPalabras = palabras.length;
+      if (numPalabras < 700) errores.push('Contenido muy corto (' + numPalabras + ' palabras, minimo 700)');
+      if (numPalabras > 1300) errores.push('Contenido muy largo (' + numPalabras + ' palabras, maximo 1200)');
+    }
+    
+    // 5. Contar links a blends (min 1, max 3)
+    if (articulo.contenido) {
+      var links = articulo.contenido.match(/<a[^>]*onclick="openDetail\(\d+\)[^"]*"[^>]*>/g) || [];
+      if (links.length < 1) errores.push('No hay enlaces a blends (minimo 1)');
+      if (links.length > 3) errores.push('Demasiados enlaces a blends (' + links.length + ', maximo 3)');
+    }
+    
+    // 6. Minimo 2 H2
+    if (articulo.contenido) {
+      var h2s = articulo.contenido.match(/<h2[^>]*>/g) || [];
+      if (h2s.length < 2) errores.push('Faltan subtitulos H2 (minimo 2, hay ' + h2s.length + ')');
+    }
+    
+    // 7. Verificar espanol neutro (sin voseo)
+    if (articulo.contenido) {
+      var voseo = articulo.contenido.match(/\b(vos|tenes|podes|sabes|queres|vení|vení)\b/gi);
+      if (voseo && voseo.length > 2) {
+        // Permitimos hasta 2 (pueden ser falsos positivos como "vos" en una cita)
+        errores.push('Contiene voseo argentino ("vos", "tenes", "podes"). Debe ser espanol neutro con "tu" y "tienes"');
+      }
+    }
+    
+    // 8. Palabras relleno excesivas
+    if (articulo.contenido) {
+      var relleno = articulo.contenido.match(/\b(delicioso|increible|magico|fascinante|maravilloso|espectacular)\b/gi) || [];
+      if (relleno.length > 3) {
+        errores.push('Exceso de palabras relleno (' + relleno.length + ' de "delicioso/increible/magico...". Maximo 3)');
+      }
+    }
+    
+    // 9. Frases hechas prohibidas
+    if (articulo.contenido) {
+      var frasesProhibidas = ['En este articulo te contaremos', 'A continuacion', 'Como puedes ver', 'Como puedes observar', 'En resumen'];
+      for (var fi = 0; fi < frasesProhibidas.length; fi++) {
+        if (articulo.contenido.indexOf(frasesProhibidas[fi]) >= 0) {
+          errores.push('Contiene frase hecha prohibida: "' + frasesProhibidas[fi] + '"');
+        }
+      }
+    }
+    
+    // 10. descripcion_meta (si esta, verificar longitud)
+    if (articulo.descripcion_meta) {
+      var dml = articulo.descripcion_meta.length;
+      if (dml > 165) errores.push('descripcion_meta muy larga (' + dml + ' chars, maximo 160)');
+    }
+    
+    // 11. Keywords (si estan, minimo 3)
+    if (articulo.keywords) {
+      if (!Array.isArray(articulo.keywords) || articulo.keywords.length < 3) {
+        errores.push('Faltan keywords (minimo 3, recomendado 5-8)');
+      }
+    } else {
+      errores.push('No se incluyeron keywords del mercado');
+    }
+    
+    return errores;
+  },
+
   _showBlogPreview: function(articulo, categoria) {
     var previewCard = document.getElementById('ba-preview-card');
     var previewEl = document.getElementById('ba-preview');
     var actionsEl = document.getElementById('ba-preview-actions');
     if (!previewCard || !previewEl || !actionsEl) return;
     Pages._blogDraft = articulo;
-    var h = '<h2 style="margin-bottom:4px">' + (articulo.titulo || '') + '</h2>' +
-      '<p class="text-sm text-muted" style="margin-bottom:16px">' + (articulo.subtitulo || '') + '</p>' +
+    
+    // Mostrar advertencias si las hay
+    var advertenciasHtml = '';
+    if (articulo._advertencias && articulo._advertencias.length > 0) {
+      advertenciasHtml = '<div style="background:rgba(251,191,36,0.1);border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:12px">' +
+        '<strong style="color:#f59e0b">Advertencias de validacion:</strong>' +
+        '<ul style="margin:8px 0 0 16px;color:#fbbf24;font-size:0.85rem">';
+      for (var ai = 0; ai < articulo._advertencias.length; ai++) {
+        advertenciasHtml += '<li>' + articulo._advertencias[ai] + '</li>';
+      }
+      advertenciasHtml += '</ul></div>';
+    }
+    
+    // Mostrar campos SEO
+    var seoInfo = '';
+    if (articulo.descripcion_meta || articulo.keywords) {
+      seoInfo = '<div style="background:var(--bg2);border-radius:8px;padding:12px;margin:12px 0;border:1px solid var(--border)">' +
+        '<strong style="color:var(--gold);font-size:0.85rem">SEO</strong>';
+      if (articulo.descripcion_meta) {
+        var dml = articulo.descripcion_meta.length;
+        var dmColor = dml <= 160 ? 'var(--green)' : '#f59e0b';
+        seoInfo += '<div style="margin-top:6px"><span class="text-xs text-muted">Meta description (' + dml + ' chars):</span><br>' +
+          '<span style="color:' + dmColor + ';font-size:0.85rem">' + (articulo.descripcion_meta || '').replace(/</g, '&lt;') + '</span></div>';
+      }
+      if (articulo.keywords && articulo.keywords.length > 0) {
+        seoInfo += '<div style="margin-top:8px"><span class="text-xs text-muted">Keywords (' + articulo.keywords.length + '):</span><br>';
+        var kwHtml = [];
+        for (var ki = 0; ki < articulo.keywords.length; ki++) {
+          kwHtml.push('<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:0.75rem;margin:2px;color:var(--gold)">' + articulo.keywords[ki] + '</span>');
+        }
+        seoInfo += kwHtml.join('') + '</div>';
+      }
+      seoInfo += '</div>';
+    }
+    
+    // Contar palabras
+    var textoPlano = (articulo.contenido || '').replace(/<[^>]+>/g, ' ');
+    var numPalabras = textoPlano.split(/\s+/).filter(function(w) { return w.length > 0; }).length;
+    var palabrasColor = numPalabras >= 700 && numPalabras <= 1200 ? 'var(--green)' : '#f59e0b';
+    
+    var h = advertenciasHtml +
+      '<h2 style="margin-bottom:4px">' + (articulo.titulo || '') + '</h2>' +
+      '<p class="text-sm text-muted" style="margin-bottom:8px">' + (articulo.subtitulo || '') + '</p>' +
+      '<p class="text-xs" style="color:' + palabrasColor + ';margin-bottom:12px">' + numPalabras + ' palabras | ' + (articulo.categoria || '') + (articulo.tiempoLectura ? ' | ' + articulo.tiempoLectura : '') + '</p>' +
+      seoInfo +
       '<div style="max-height:400px;overflow-y:auto;padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">' +
       (articulo.contenido || '') +
       '</div>' +
@@ -6785,7 +6976,8 @@ const Pages = {
       (articulo.imagen_prompt ? '<p class="text-xs text-muted mt-8">Imagen prompt: ' + articulo.imagen_prompt + '</p>' : '');
     previewEl.innerHTML = h;
     actionsEl.innerHTML = '<button class="btn btn-gold" onclick="Pages.publicarArticulo()">Publicar</button>' +
-      '<button class="btn btn-outline ml-8" onclick="Pages.descartarArticulo()">Descartar</button>';
+      '<button class="btn btn-outline ml-8" onclick="Pages.descartarArticulo()">Descartar</button>' +
+      (articulo._advertencias && articulo._advertencias.length > 0 ? '<span class="text-sm ml-12" style="color:#f59e0b">Publicar con advertencias</span>' : '<span class="text-sm text-green ml-12">Cumple todas las normas</span>');
     previewCard.style.display = 'block';
     previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
