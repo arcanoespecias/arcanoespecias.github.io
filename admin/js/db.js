@@ -950,8 +950,10 @@ function saveEspecia(data) {
     }
   }
   // Si la imagen cambio, registrar timestamp para cache-busting en la tienda
+  var imagenCambiada = false;
   if (data.imagen && data.imagen !== oldImagen) {
     data.imagenUpdatedAt = Date.now();
+    imagenCambiada = true;
   }
   data.nombre = (data.nombre || '').trim();
   if (Array.isArray(data.categorias) && data.categorias.length > 0) {
@@ -969,6 +971,23 @@ function saveEspecia(data) {
   _db.especias[data.id] = data;
   _getOrCreateSticker(data.nombre);
   _saveToFirebase(); _cacheLocal();
+  
+  // IMPORTANTE: Si la imagen cambio y es base64 (subida por admin), hacer
+  // un writeField PUNTUAL a Firebase para asegurar que se guarde correctamente.
+  if (imagenCambiada && _firebaseRef) {
+    try {
+      _firebaseRef.child('especias/' + data.id + '/imagen').set(data.imagen, function(err) {
+        if (err) console.error('[DB] Error guardando imagen especia:', err);
+        else console.log('[DB] Imagen especia guardada directamente');
+      });
+      _firebaseRef.child('especias/' + data.id + '/imagenUpdatedAt').set(data.imagenUpdatedAt, function(err) {
+        if (err) console.error('[DB] Error guardando imagenUpdatedAt:', err);
+      });
+    } catch (e) {
+      console.error('[DB] writeField imagen error:', e);
+    }
+  }
+  
   _notify(isNew ? 'create' : 'update', 'especias', data.id);
   return data;
 }
@@ -1003,8 +1022,10 @@ function saveBlend(data) {
     }
   }
   // Si la imagen cambio, registrar timestamp para cache-busting en la tienda
+  var imagenCambiada = false;
   if (data.imagen && data.imagen !== oldImagen) {
     data.imagenUpdatedAt = Date.now();
+    imagenCambiada = true;
   }
   data.nombre = (data.nombre || '').trim();
   if (Array.isArray(data.categorias) && data.categorias.length > 0) {
@@ -1020,6 +1041,24 @@ function saveBlend(data) {
   _db.blends[data.id] = data;
   _getOrCreateSticker(data.nombre);
   _saveToFirebase(); _cacheLocal();
+  
+  // IMPORTANTE: Si la imagen cambio y es base64 (subida por admin), hacer
+  // un writeField PUNTUAL a Firebase para asegurar que se guarde correctamente.
+  // El update(_db) general a veces no persiste imagenes base64 grandes.
+  if (imagenCambiada && _firebaseRef) {
+    try {
+      _firebaseRef.child('blends/' + data.id + '/imagen').set(data.imagen, function(err) {
+        if (err) console.error('[DB] Error guardando imagen blend:', err);
+        else console.log('[DB] Imagen blend guardada directamente');
+      });
+      _firebaseRef.child('blends/' + data.id + '/imagenUpdatedAt').set(data.imagenUpdatedAt, function(err) {
+        if (err) console.error('[DB] Error guardando imagenUpdatedAt:', err);
+      });
+    } catch (e) {
+      console.error('[DB] writeField imagen error:', e);
+    }
+  }
+  
   _notify(isNew ? 'create' : 'update', 'blends', data.id);
   return data;
 }
