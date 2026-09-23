@@ -3952,6 +3952,7 @@ const Pages = {
           '<td class="text-gold fw7">$' + (p.total || 0).toLocaleString() + '</td>' +
           '<td><span class="badge ' + estClass + '" style="border:1px solid">' + estLabel + '</span></td>' +
           '<td><button class="btn btn-sm btn-gold" onclick="Pages.verPedido(\'' + p._key + '\')">Ver</button>' +
+          '<button class="btn btn-sm btn-outline" style="margin-left:4px" onclick="Pages._waDesdePedido(\'' + p._key + '\')" title="Enviar WhatsApp">📱</button>' +
           '<button class="btn btn-sm btn-red" style="margin-left:4px" onclick="Pages.eliminarPedido(\'' + p._key + '\')">Eliminar</button></td>' +
           '</tr>';
       }
@@ -4066,6 +4067,22 @@ const Pages = {
     var modal = document.getElementById('pedido-modal');
     if (modal) modal.remove();
     App.renderPage(App.currentPage);
+
+    // Notificar por WhatsApp (si está activo para este evento)
+    if (typeof WhatsAppNotifications !== 'undefined') {
+      var pedidos = ArcanoDB.getPedidos();
+      var pedido = null;
+      for (var i = 0; i < pedidos.length; i++) { if (pedidos[i]._key === pedidoKey) { pedido = pedidos[i]; break; } }
+      if (pedido) {
+        // Mapear estados del pedido a estados de notificación
+        var estadoNotif = nuevoEstado;
+        if (nuevoEstado === 'nuevo') estadoNotif = 'nuevo';
+        else if (nuevoEstado === 'confirmado') estadoNotif = 'confirmado';
+        else if (nuevoEstado === 'enviado') estadoNotif = 'enviado';
+        else if (nuevoEstado === 'cancelado') estadoNotif = 'cancelado';
+        WhatsAppNotifications.showNotificacionModal(pedido, estadoNotif);
+      }
+    }
   },
 
   _showPagoModal(pedidoKey, nuevoEstado) {
@@ -4108,6 +4125,11 @@ const Pages = {
       var modal2 = document.getElementById('pedido-modal');
       if (modal2) modal2.remove();
       App.renderPage(App.currentPage);
+      // Notificar pago recibido + entregado
+      if (typeof WhatsAppNotifications !== 'undefined') {
+        var ped = ArcanoDB.getPedidos().find(function(p) { return p._key === pedidoKey; });
+        if (ped) WhatsAppNotifications.showNotificacionModal(ped, 'pago_recibido');
+      }
     });
     document.getElementById('pedido-pago-qr-btn').addEventListener('click', function() {
       document.getElementById('pedido-pago-qr-area').style.display = 'block';
@@ -4121,6 +4143,11 @@ const Pages = {
       var modal2 = document.getElementById('pedido-modal');
       if (modal2) modal2.remove();
       App.renderPage(App.currentPage);
+      // Notificar pago recibido + entregado
+      if (typeof WhatsAppNotifications !== 'undefined') {
+        var ped = ArcanoDB.getPedidos().find(function(p) { return p._key === pedidoKey; });
+        if (ped) WhatsAppNotifications.showNotificacionModal(ped, 'pago_recibido');
+      }
     });
     document.getElementById('pedido-pago-qr-cancel').addEventListener('click', function() {
       document.getElementById('pedido-pago-qr-area').style.display = 'none';
@@ -4138,6 +4165,15 @@ const Pages = {
     if (modal) modal.remove();
     ArcanoDB.deletePedido(pedidoKey);
     App.renderPage(App.currentPage);
+  },
+
+  _waDesdePedido(pedidoKey) {
+    if (typeof WhatsAppNotifications === 'undefined') { alert('Módulo de WhatsApp no disponible'); return; }
+    var pedidos = ArcanoDB.getPedidos();
+    var pedido = null;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i]._key === pedidoKey) { pedido = pedidos[i]; break; } }
+    if (!pedido) { alert('Pedido no encontrado'); return; }
+    WhatsAppNotifications.showNotificacionModal(pedido, pedido.estado || 'nuevo');
   },
 
   /* ================================================================

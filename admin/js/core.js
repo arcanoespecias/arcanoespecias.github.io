@@ -545,7 +545,7 @@ const App = {
         case 'clientes': Pages.renderClientes(container); break;
         case 'promociones': Pages.renderPromociones(container); break;
         case 'carritos': Pages.renderCarritos(container); break;
-        case 'mensajes': Pages.renderMensajes(container); break;
+        case 'mensajes': WhatsAppNotifications.renderPanel(container); break;
         case 'campanas': Pages.renderCampanas(container); break;
         case 'chatbot': ChatbotPanel.render(container); break;
         default: container.innerHTML = '<p>Pagina no encontrada</p>';
