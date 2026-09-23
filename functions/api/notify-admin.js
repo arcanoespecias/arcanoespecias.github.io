@@ -290,7 +290,17 @@ async function generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
     new TextEncoder().encode(signingInput)
   );
 
-  const rawSignature = derToRaw(signature);
+  // La firma puede venir en formato DER (ASN.1) o en formato raw (64 bytes R+S)
+  // dependiendo del runtime. Cloudflare Workers devuelve raw en algunos casos.
+  const sigBytes = new Uint8Array(signature);
+  let rawSignature;
+  if (sigBytes.length === 64) {
+    // Ya está en formato raw (R + S, 32 bytes cada uno)
+    rawSignature = sigBytes;
+  } else {
+    // Está en formato DER, hay que convertirlo a raw
+    rawSignature = derToRaw(signature);
+  }
   const signatureB64 = base64UrlEncodeBytes(new Uint8Array(rawSignature));
 
   return signingInput + '.' + signatureB64;
@@ -485,18 +495,37 @@ async function hkdf(ikm, salt, info, length) {
 
 function derToRaw(derSignature) {
   const der = new Uint8Array(derSignature);
-  let offset = 2;
+  
+  // Verificar que empiece con SEQUENCE (0x30)
+  if (der[0] !== 0x30) {
+    throw new Error('Invalid DER: expected 0x30 for SEQUENCE, got 0x' + der[0].toString(16));
+  }
+  
+  // Calcular offset al contenido (manejar short-form y long-form length)
+  let offset = 1;
   if (der[1] & 0x80) {
+    // Long form length: el byte 1 indica cuántos bytes siguen para la length
     const lenBytes = der[1] & 0x7f;
     offset = 2 + lenBytes;
+  } else {
+    // Short form length: el byte 1 es la length directamente
+    offset = 2;
   }
-  if (der[offset] !== 0x02) throw new Error('Invalid DER: expected 0x02 for r');
+  
+  // Ahora deberíamos estar en el primer INTEGER (r)
+  if (der[offset] !== 0x02) {
+    throw new Error('Invalid DER: expected 0x02 for r at offset ' + offset + ', got 0x' + der[offset].toString(16) + '. Signature length=' + der.length);
+  }
   offset++;
   const rLen = der[offset];
   offset++;
   const r = der.slice(offset, offset + rLen);
   offset += rLen;
-  if (der[offset] !== 0x02) throw new Error('Invalid DER: expected 0x02 for s');
+  
+  // Segundo INTEGER (s)
+  if (der[offset] !== 0x02) {
+    throw new Error('Invalid DER: expected 0x02 for s at offset ' + offset + ', got 0x' + der[offset].toString(16));
+  }
   offset++;
   const sLen = der[offset];
   offset++;
