@@ -1,4 +1,4 @@
-/* ===================== ARCANO TIENDA — DATA LAYER (read-only) ===================== */
+/* ===================== ARCANO TIENDA \u2014 DATA LAYER (read-only) ===================== */
 var FIREBASE_CONFIG = {
   apiKey: "AIzaSyBvuJusx4_FvAdXhBl89VVlCicNb-yrdzo",
   authDomain: "arcano-6788d.firebaseapp.com",
@@ -21,13 +21,13 @@ function initTienda() {
     var loaded = 0;
     _sDb = {};
 
-    // === CACHE LOCAL: cargar datos cacheados instantáneamente ===
+    // === CACHE LOCAL: cargar datos cacheados instant\u00E1neamente ===
     var CACHE_KEY = 'arcano_tienda_cache';
     var cacheValid = false;
     try {
       var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
       if (cached.timestamp && (Date.now() - cached.timestamp) < 5 * 60 * 1000) {
-        // Cache válido por 5 minutos
+        // Cache v\u00E1lido por 5 minutos
         for (var cp = 0; cp < neededPaths.length; cp++) {
           var path = neededPaths[cp];
           if (cached[path]) {
@@ -280,14 +280,14 @@ function clearClienteSession() {
 
 /**
  * Registra o actualiza un cliente solo con WhatsApp + nombre.
- * Sin OTP, sin verificación — el cliente queda logueado directamente.
+ * Sin OTP, sin verificaci\u00F3n \u2014 el cliente queda logueado directamente.
  * Si el cliente ya existe, actualiza el nombre si vino nuevo.
- * Devuelve los datos del cliente para crear sesión local.
+ * Devuelve los datos del cliente para crear sesi\u00F3n local.
  */
 function registrarCliente(telefono, nombre) {
   return new Promise(function(resolve, reject) {
     var tel = _normalizeWhatsapp(telefono);
-    if (!tel) { reject(new Error('Teléfono inválido. Ingresa tu número de WhatsApp con código de país.')); return; }
+    if (!tel) { reject(new Error('Tel\u00E9fono inv\u00E1lido. Ingresa tu n\u00FAmero de WhatsApp con c\u00F3digo de pa\u00EDs.')); return; }
     if (!nombre || !nombre.trim()) { reject(new Error('Ingresa tu nombre')); return; }
     if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
     _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
@@ -298,7 +298,7 @@ function registrarCliente(telefono, nombre) {
         var key = Object.keys(data)[0];
         var cliente = data[key];
         var updates = { ultimoLogin: now };
-        // Si el nombre cambió, actualizarlo
+        // Si el nombre cambi\u00F3, actualizarlo
         if (nombre && nombre.trim() && (!cliente.nombre || cliente.nombre !== nombre.trim())) {
           updates.nombre = nombre.trim();
         }
@@ -352,17 +352,17 @@ function registrarCliente(telefono, nombre) {
 
 /**
  * Genera un OTP de 6 digitos y lo guarda en Firebase con expiracion 10 min.
- * Si el cliente no existe, lo crea automáticamente (registro nuevo).
+ * Si el cliente no existe, lo crea autom\u00E1ticamente (registro nuevo).
  * Si existe, usa el cliente existente.
- * NO devuelve el código al frontend (UX: el cliente no debe ver el código,
+ * NO devuelve el c\u00F3digo al frontend (UX: el cliente no debe ver el c\u00F3digo,
  * solo recibirlo por WhatsApp desde el admin).
- * También encola el OTP en arcano/db/otpPendientes para que el admin
- * lo vea y lo envíe por WhatsApp manualmente.
+ * Tambi\u00E9n encola el OTP en arcano/db/otpPendientes para que el admin
+ * lo vea y lo env\u00EDe por WhatsApp manualmente.
  */
 function requestClienteOTP(telefono, nombreOpt) {
   return new Promise(function(resolve, reject) {
     var tel = _normalizeWhatsapp(telefono);
-    if (!tel) { reject(new Error('Teléfono inválido. Ingresa tu número de WhatsApp con código de país.')); return; }
+    if (!tel) { reject(new Error('Tel\u00E9fono inv\u00E1lido. Ingresa tu n\u00FAmero de WhatsApp con c\u00F3digo de pa\u00EDs.')); return; }
     if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
     _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
       var data = snap.val();
@@ -371,7 +371,7 @@ function requestClienteOTP(telefono, nombreOpt) {
       var now = Date.now();
       var otpData = { codigo: otp, creado: now, expira: now + 10 * 60 * 1000 };
       var finish = function(key, cliente, esNuevo) {
-        // Encolar OTP pendiente para que el admin lo envíe por WhatsApp
+        // Encolar OTP pendiente para que el admin lo env\u00EDe por WhatsApp
         try {
           var pendienteRef = firebase.database().ref('arcano/db/otpPendientes').push();
           pendienteRef.set({
@@ -386,7 +386,7 @@ function requestClienteOTP(telefono, nombreOpt) {
             esNuevo: !!esNuevo
           });
         } catch(e) { console.warn('No se pudo encolar OTP pendiente:', e); }
-        // Resolver sin devolver el código al frontend
+        // Resolver sin devolver el c\u00F3digo al frontend
         resolve({ clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || nombreOpt || '', esNuevo: !!esNuevo });
       };
       if (data) {
@@ -629,7 +629,7 @@ function getTiendaConfig() {
   return _sDb.tiendaConfig || {};
 }
 
-/* === FIX DE URLs: reemplazar dominio viejo por nuevo en imágenes === */
+/* === FIX DE URLs: reemplazar dominio viejo por nuevo en im\u00E1genes === */
 function _fixImageUrl(url) {
   if (!url) return '';
   return url.replace(/https?:\/\/arcanoespecias\.github\.io/g, 'https://arcanoespecias.com');
@@ -748,7 +748,7 @@ function onBlogReady(cb) {
   _blogListeners.push(cb);
 }
 
-/* === COLECCIÓN ARCANO === */
+/* === COLECCI\u00D3N ARCANO === */
 function getColeccionCliente(whatsapp) {
   if (!_sDb || !_sDb.colecciones || !whatsapp) return null;
   return _sDb.colecciones[whatsapp] || null;

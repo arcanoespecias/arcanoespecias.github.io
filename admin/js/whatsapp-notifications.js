@@ -1,11 +1,11 @@
-/* ===================== WHATSAPP NOTIFICATIONS — Admin Panel =====================
- * Sistema de plantillas configurables por evento + historial + estadísticas.
+/* ===================== WHATSAPP NOTIFICATIONS \u2014 Admin Panel =====================
+ * Sistema de plantillas configurables por evento + historial + estad\u00EDsticas.
  * Eventos: nuevo, confirmado, enviado, entregado, cancelado, pago_recibido.
  *
  * Persistencia: arcano/db/tiendaConfig/mensajesWhatsApp/
- *   ├── plantillas: { estado: {mensaje, activo} }
- *   └── historial: [{cliente, tel, mensaje, estado, fecha, enviado}]
- *                  (también en arcano/db/whatsappHistorial/{autoId})
+ *   \u251C\u2500\u2500 plantillas: { estado: {mensaje, activo} }
+ *   \u2514\u2500\u2500 historial: [{cliente, tel, mensaje, estado, fecha, enviado}]
+ *                  (tambi\u00E9n en arcano/db/whatsappHistorial/{autoId})
  */
 
 var WhatsAppNotifications = (function() {
@@ -13,74 +13,74 @@ var WhatsAppNotifications = (function() {
   var FB_URL = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
   var ESTADOS = ['nuevo', 'confirmado', 'enviado', 'entregado', 'cancelado', 'pago_recibido'];
   var ESTADO_LABELS = {
-    nuevo: '🆕 Pedido Nuevo',
-    confirmado: '✅ Pedido Confirmado',
-    enviado: '🚚 Pedido Enviado',
-    entregado: '📦 Pedido Entregado',
-    cancelado: '❌ Pedido Cancelado',
-    pago_recibido: '💰 Pago Recibido'
+    nuevo: '\u{1F195} Pedido Nuevo',
+    confirmado: '\u2705 Pedido Confirmado',
+    enviado: '\u{1F69A} Pedido Enviado',
+    entregado: '\u{1F4E6} Pedido Entregado',
+    cancelado: '\u274C Pedido Cancelado',
+    pago_recibido: '\u{1F4B0} Pago Recibido'
   };
   var ESTADO_DESCRIPCIONES = {
     nuevo: 'Cuando un cliente hace un pedido nuevo en la tienda',
-    confirmado: 'Cuando confirmás el pedido (lo vas a preparar)',
-    enviado: 'Cuando el pedido sale a entrega / guía generada',
+    confirmado: 'Cuando confirm\u00E1s el pedido (lo vas a preparar)',
+    enviado: 'Cuando el pedido sale a entrega / gu\u00EDa generada',
     entregado: 'Cuando el pedido fue entregado al cliente',
-    cancelado: 'Cuando cancelás un pedido',
-    pago_recibido: 'Cuando registrás un pago del cliente'
+    cancelado: 'Cuando cancel\u00E1s un pedido',
+    pago_recibido: 'Cuando registr\u00E1s un pago del cliente'
   };
 
   var PLANTILLAS_DEFAULT = {
     nuevo: {
-      mensaje: '¡Hola {nombre}! 🌿 Recibimos tu pedido #{id} en Arcano Especias por ${total}. Lo estamos revisando y te confirmamos en breve.',
+      mensaje: '\u00A1Hola {nombre}! \u{1F33F} Recibimos tu pedido #{id} en Arcano Especias por ${total}. Lo estamos revisando y te confirmamos en breve.',
       activo: true
     },
     confirmado: {
-      mensaje: '¡Hola {nombre}! ✅ Confirmamos tu pedido #{id} por ${total}. Lo estamos preparando con cuidado. Te avisamos cuando salga 📦',
+      mensaje: '\u00A1Hola {nombre}! \u2705 Confirmamos tu pedido #{id} por ${total}. Lo estamos preparando con cuidado. Te avisamos cuando salga \u{1F4E6}',
       activo: true
     },
     enviado: {
-      mensaje: '🚚 {nombre}, tu pedido #{id} está en viaje! Lo recibirás pronto. Si tienes dudas, escríbenos por aquí 🌿',
+      mensaje: '\u{1F69A} {nombre}, tu pedido #{id} est\u00E1 en viaje! Lo recibir\u00E1s pronto. Si tienes dudas, escr\u00EDbenos por aqu\u00ED \u{1F33F}',
       activo: true
     },
     entregado: {
-      mensaje: '¡Hola {nombre}! 📦 Tu pedido #{id} fue entregado. Esperamos que disfrutes tus blends. ¿Cómo fue tu experiencia? Cuéntanos por aquí 🌟',
+      mensaje: '\u00A1Hola {nombre}! \u{1F4E6} Tu pedido #{id} fue entregado. Esperamos que disfrutes tus blends. \u00BFC\u00F3mo fue tu experiencia? Cu\u00E9ntanos por aqu\u00ED \u{1F31F}',
       activo: true
     },
     cancelado: {
-      mensaje: 'Hola {nombre}, tu pedido #{id} fue cancelado. Si tienes dudas o quieres reactivarlo, escríbenos por aquí 🌿',
+      mensaje: 'Hola {nombre}, tu pedido #{id} fue cancelado. Si tienes dudas o quieres reactivarlo, escr\u00EDbenos por aqu\u00ED \u{1F33F}',
       activo: false
     },
     pago_recibido: {
-      mensaje: '💰 ¡Gracias {nombre}! Recibimos tu pago de ${total} por el pedido #{id}. Lo estamos preparando para envío 🌿',
+      mensaje: '\u{1F4B0} \u00A1Gracias {nombre}! Recibimos tu pago de ${total} por el pedido #{id}. Lo estamos preparando para env\u00EDo \u{1F33F}',
       activo: true
     }
   };
 
   var VARIABLES = [
     { var: '{nombre}', desc: 'Nombre del cliente' },
-    { var: '{id}', desc: 'ID corto del pedido (últimos 6 caracteres)' },
+    { var: '{id}', desc: 'ID corto del pedido (\u00FAltimos 6 caracteres)' },
     { var: '{total}', desc: 'Total del pedido en COP' },
     { var: '{estado}', desc: 'Estado actual del pedido' },
     { var: '{items}', desc: 'Lista de productos del pedido' },
     { var: '{cantidad}', desc: 'Cantidad total de items' },
-    { var: '{ciudad}', desc: 'Ciudad de envío' },
-    { var: '{direccion}', desc: 'Dirección de envío' },
+    { var: '{ciudad}', desc: 'Ciudad de env\u00EDo' },
+    { var: '{direccion}', desc: 'Direcci\u00F3n de env\u00EDo' },
     { var: '{fecha}', desc: 'Fecha del pedido' },
-    { var: '{guia}', desc: 'Número de guía (si está disponible)' }
+    { var: '{guia}', desc: 'N\u00FAmero de gu\u00EDa (si est\u00E1 disponible)' }
   ];
 
   function renderPanel(container) {
     container.innerHTML =
       '<div class="wa-panel">' +
         _styles() +
-        '<h2 style="color:var(--gold,#d4af37);margin:0 0 4px">📱 Mensajes WhatsApp</h2>' +
-        '<p style="color:var(--text-muted,#8a7a6e);margin:0 0 20px;font-size:0.9rem">Plantillas automáticas para cada evento del pedido + envío manual + estadísticas</p>' +
+        '<h2 style="color:var(--gold,#d4af37);margin:0 0 4px">\u{1F4F1} Mensajes WhatsApp</h2>' +
+        '<p style="color:var(--text-muted,#8a7a6e);margin:0 0 20px;font-size:0.9rem">Plantillas autom\u00E1ticas para cada evento del pedido + env\u00EDo manual + estad\u00EDsticas</p>' +
 
         '<div id="wa-tabs" class="wa-tabs">' +
-          '<button class="wa-tab active" data-tab="plantillas" onclick="WhatsAppNotifications.showTab(\'plantillas\')">📝 Plantillas por evento</button>' +
-          '<button class="wa-tab" data-tab="estadisticas" onclick="WhatsAppNotifications.showTab(\'estadisticas\')">📊 Estadísticas</button>' +
-          '<button class="wa-tab" data-tab="historial" onclick="WhatsAppNotifications.showTab(\'historial\')">📜 Historial</button>' +
-          '<button class="wa-tab" data-tab="manual" onclick="WhatsAppNotifications.showTab(\'manual\')">📤 Envío manual</button>' +
+          '<button class="wa-tab active" data-tab="plantillas" onclick="WhatsAppNotifications.showTab(\'plantillas\')">\u{1F4DD} Plantillas por evento</button>' +
+          '<button class="wa-tab" data-tab="estadisticas" onclick="WhatsAppNotifications.showTab(\'estadisticas\')">\u{1F4CA} Estad\u00EDsticas</button>' +
+          '<button class="wa-tab" data-tab="historial" onclick="WhatsAppNotifications.showTab(\'historial\')">\u{1F4DC} Historial</button>' +
+          '<button class="wa-tab" data-tab="manual" onclick="WhatsAppNotifications.showTab(\'manual\')">\u{1F4E4} Env\u00EDo manual</button>' +
         '</div>' +
 
         '<div id="wa-content"><div class="loader-center"><div class="loader"></div></div></div>' +
@@ -121,8 +121,8 @@ var WhatsAppNotifications = (function() {
 
     // Header con variables
     html += '<div class="wa-info-box">' +
-      '<h4>📋 Variables disponibles</h4>' +
-      '<p>Usá estas variables en tus mensajes. Se reemplazan automáticamente con los datos del pedido:</p>' +
+      '<h4>\u{1F4CB} Variables disponibles</h4>' +
+      '<p>Us\u00E1 estas variables en tus mensajes. Se reemplazan autom\u00E1ticamente con los datos del pedido:</p>' +
       '<div class="wa-vars-grid">';
     VARIABLES.forEach(function(v) {
       html += '<code>' + v.var + '</code><span>' + v.desc + '</span>';
@@ -147,9 +147,9 @@ var WhatsAppNotifications = (function() {
         '</div>' +
         '<textarea id="wa-msg-' + estado + '" rows="3" placeholder="Escribe el mensaje...">' + escHtml(p.mensaje || '') + '</textarea>' +
         '<div class="wa-template-actions">' +
-          '<button class="wa-btn wa-btn-sec" onclick="WhatsAppNotifications.previewMensaje(\'' + estado + '\')">👁️ Vista previa</button>' +
-          '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.savePlantilla(\'' + estado + '\')">💾 Guardar</button>' +
-          '<button class="wa-btn wa-btn-outline" onclick="WhatsAppNotifications.resetPlantilla(\'' + estado + '\')">↺ Restablecer</button>' +
+          '<button class="wa-btn wa-btn-sec" onclick="WhatsAppNotifications.previewMensaje(\'' + estado + '\')">\u{1F441}\uFE0F Vista previa</button>' +
+          '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.savePlantilla(\'' + estado + '\')">\u{1F4BE} Guardar</button>' +
+          '<button class="wa-btn wa-btn-outline" onclick="WhatsAppNotifications.resetPlantilla(\'' + estado + '\')">\u21BA Restablecer</button>' +
         '</div>' +
       '</div>';
     });
@@ -165,7 +165,7 @@ var WhatsAppNotifications = (function() {
       cfg.plantillas[estado] = cfg.plantillas[estado] || PLANTILLAS_DEFAULT[estado];
       cfg.plantillas[estado].activo = activo;
       await saveConfig(cfg);
-      toast(activo ? 'Plantilla activada ✅' : 'Plantilla desactivada');
+      toast(activo ? 'Plantilla activada \u2705' : 'Plantilla desactivada');
       // Update visual sin recargar todo
       var card = document.getElementById('wa-activo-' + estado).closest('.wa-template-card');
       if (card) card.classList.toggle('inactive', !activo);
@@ -174,41 +174,41 @@ var WhatsAppNotifications = (function() {
 
   async function savePlantilla(estado) {
     var msg = document.getElementById('wa-msg-' + estado).value.trim();
-    if (!msg) { alert('El mensaje no puede estar vacío'); return; }
+    if (!msg) { alert('El mensaje no puede estar vac\u00EDo'); return; }
     try {
       var cfg = await loadConfig();
       cfg.plantillas = cfg.plantillas || {};
       var current = cfg.plantillas[estado] || PLANTILLAS_DEFAULT[estado];
       cfg.plantillas[estado] = { mensaje: msg, activo: current.activo !== false };
       await saveConfig(cfg);
-      toast('Plantilla guardada ✅');
+      toast('Plantilla guardada \u2705');
     } catch (e) { alert('Error: ' + e.message); }
   }
 
   function resetPlantilla(estado) {
-    if (!confirm('¿Restablecer esta plantilla a su valor por defecto?')) return;
+    if (!confirm('\u00BFRestablecer esta plantilla a su valor por defecto?')) return;
     document.getElementById('wa-msg-' + estado).value = PLANTILLAS_DEFAULT[estado].mensaje;
-    toast('Plantilla restablecida. Hacé clic en "Guardar" para confirmar.');
+    toast('Plantilla restablecida. Hac\u00E9 clic en "Guardar" para confirmar.');
   }
 
   function previewMensaje(estado) {
     var msg = document.getElementById('wa-msg-' + estado).value;
     var preview = applyVariables(msg, {
-      nombre: 'María González',
+      nombre: 'Mar\u00EDa Gonz\u00E1lez',
       id: 'A3F2K9',
       total: '45.000',
       estado: estado,
       items: 'Chimichurri Argentino x1, Garam Masala x2',
       cantidad: '3',
-      ciudad: 'Medellín',
+      ciudad: 'Medell\u00EDn',
       direccion: 'Cra 45 #12-34, Apto 502',
       fecha: new Date().toLocaleDateString('es-CO'),
       guia: '1234567890'
     });
-    alert('📱 Vista previa del mensaje:\n\n' + preview);
+    alert('\u{1F4F1} Vista previa del mensaje:\n\n' + preview);
   }
 
-  // === TAB: Estadísticas ===
+  // === TAB: Estad\u00EDsticas ===
 
   function renderEstadisticas(container, cfg, historial) {
     var total = historial.length;
@@ -229,7 +229,7 @@ var WhatsAppNotifications = (function() {
       if (h.enviado !== false) porEvento[ev].enviados++;
     });
 
-    // Últimos 30 días
+    // \u00DAltimos 30 d\u00EDas
     var porDia = {};
     var hoyDate = new Date();
     for (var i = 29; i >= 0; i--) {
@@ -245,10 +245,10 @@ var WhatsAppNotifications = (function() {
       }
     });
 
-    // Clientes únicos notificados
+    // Clientes \u00FAnicos notificados
     var clientesUnicos = new Set(historial.filter(function(h) { return h.enviado !== false; }).map(function(h) { return h.tel; })).size;
 
-    // Tasa de envío
+    // Tasa de env\u00EDo
     var tasaEnvio = total > 0 ? Math.round((enviados / total) * 100) : 0;
 
     var html = '<div class="wa-section">' +
@@ -257,19 +257,19 @@ var WhatsAppNotifications = (function() {
         _statCard('Enviadas', enviados, 'green') +
         _statCard('Saltadas', saltados, 'muted') +
         _statCard('Enviadas hoy', enviadosHoy, 'gold') +
-        _statCard('Clientes únicos', clientesUnicos, 'blue') +
-        _statCard('Tasa de envío', tasaEnvio + '%', 'green') +
+        _statCard('Clientes \u00FAnicos', clientesUnicos, 'blue') +
+        _statCard('Tasa de env\u00EDo', tasaEnvio + '%', 'green') +
       '</div>';
 
-    // Gráfico de mensajes por día (últimos 30 días)
+    // Gr\u00E1fico de mensajes por d\u00EDa (\u00FAltimos 30 d\u00EDas)
     html += '<div class="wa-card mt-16">' +
-      '<h4>📈 Mensajes enviados por día (últimos 30 días)</h4>' +
+      '<h4>\u{1F4C8} Mensajes enviados por d\u00EDa (\u00FAltimos 30 d\u00EDas)</h4>' +
       '<div class="wa-chart-wrap"><canvas id="wa-chart-dias"></canvas></div>' +
     '</div>';
 
     // Tabla por evento
     html += '<div class="wa-card mt-16">' +
-      '<h4>📊 Notificaciones por evento</h4>' +
+      '<h4>\u{1F4CA} Notificaciones por evento</h4>' +
       '<div class="table-wrap"><table class="table"><thead><tr><th>Evento</th><th>Disparadas</th><th>Enviadas</th><th>Saltadas</th><th>Tasa</th></tr></thead><tbody>';
     ESTADOS.forEach(function(e) {
       var d = porEvento[e];
@@ -311,17 +311,17 @@ var WhatsAppNotifications = (function() {
   function renderHistorial(container, historial) {
     var html = '<div class="wa-section">' +
       '<div class="wa-card">' +
-        '<h4>📜 Últimas 50 notificaciones</h4>';
+        '<h4>\u{1F4DC} \u00DAltimas 50 notificaciones</h4>';
     if (historial.length === 0) {
-      html += '<p class="text-muted text-center" style="padding:40px">No hay notificaciones enviadas todavía. Cuando cambies el estado de un pedido y notifiques al cliente, aparecerá acá.</p>';
+      html += '<p class="text-muted text-center" style="padding:40px">No hay notificaciones enviadas todav\u00EDa. Cuando cambies el estado de un pedido y notifiques al cliente, aparecer\u00E1 ac\u00E1.</p>';
     } else {
-      html += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Teléfono</th><th>Evento</th><th>Pedido</th><th>Estado</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Tel\u00E9fono</th><th>Evento</th><th>Pedido</th><th>Estado</th><th></th></tr></thead><tbody>';
       var ultimos = historial.slice(-50).reverse();
       ultimos.forEach(function(h, idx) {
         var fecha = h.fecha ? new Date(h.fecha).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
         var estadoBadge = h.enviado !== false
-          ? '<span class="badge text-green">✓ Enviado</span>'
-          : '<span class="badge text-muted">⊘ Saltado</span>';
+          ? '<span class="badge text-green">\u2713 Enviado</span>'
+          : '<span class="badge text-muted">\u2298 Saltado</span>';
         var pedidoId = h.pedidoId ? h.pedidoId.slice(-6).toUpperCase() : '-';
         html += '<tr>' +
           '<td class="text-sm">' + fecha + '</td>' +
@@ -331,7 +331,7 @@ var WhatsAppNotifications = (function() {
           '<td><code>#' + pedidoId + '</code></td>' +
           '<td>' + estadoBadge + '</td>' +
           '<td>' +
-            (h.tel ? '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications.reenviar(' + idx + ')">↻ Reenviar</button>' : '') +
+            (h.tel ? '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications.reenviar(' + idx + ')">\u21BB Reenviar</button>' : '') +
           '</td>' +
         '</tr>';
       });
@@ -344,14 +344,14 @@ var WhatsAppNotifications = (function() {
     _lastHistorial = ultimos;
   }
 
-  // === TAB: Envío manual ===
+  // === TAB: Env\u00EDo manual ===
 
   function renderManual(container, cfg) {
     var clientes = (typeof ArcanoDB !== 'undefined' && ArcanoDB.getClientes) ? ArcanoDB.getClientes() : [];
     var html = '<div class="wa-section">' +
       '<div class="wa-card">' +
-        '<h4>📤 Envío manual a clientes</h4>' +
-        '<p class="text-sm text-muted">Selecciona uno o varios clientes y envíales un mensaje personalizado. Se abrirá una pestaña de WhatsApp por cada uno con el mensaje pre-cargado.</p>' +
+        '<h4>\u{1F4E4} Env\u00EDo manual a clientes</h4>' +
+        '<p class="text-sm text-muted">Selecciona uno o varios clientes y env\u00EDales un mensaje personalizado. Se abrir\u00E1 una pesta\u00F1a de WhatsApp por cada uno con el mensaje pre-cargado.</p>' +
 
         '<div class="form-group mt-12">' +
           '<label>Mensaje (usa {nombre})</label>' +
@@ -359,17 +359,17 @@ var WhatsAppNotifications = (function() {
         '</div>' +
 
         '<div class="mt-8" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<button class="wa-btn wa-btn-outline" onclick="WhatsAppNotifications.selectAllClientes(true)">☑ Seleccionar todos</button>' +
-          '<button class="wa-btn wa-btn-outline" onclick="WhatsAppNotifications.selectAllClientes(false)">☐ Quitar selección</button>' +
+          '<button class="wa-btn wa-btn-outline" onclick="WhatsAppNotifications.selectAllClientes(true)">\u2611 Seleccionar todos</button>' +
+          '<button class="wa-btn wa-btn-outline" onclick="WhatsAppNotifications.selectAllClientes(false)">\u2610 Quitar selecci\u00F3n</button>' +
           '<span class="text-sm text-muted ml-8" id="wa-seleccionados-count">0 seleccionados</span>' +
         '</div>';
 
     if (clientes.length === 0) {
-      html += '<p class="text-muted text-center mt-12">No hay clientes registrados aún.</p>';
+      html += '<p class="text-muted text-center mt-12">No hay clientes registrados a\u00FAn.</p>';
     } else {
       html += '<div class="table-wrap mt-12"><table class="table"><thead><tr>' +
         '<th><input type="checkbox" onchange="WhatsAppNotifications.selectAllClientes(this.checked)"></th>' +
-        '<th>Nombre</th><th>WhatsApp</th><th>Pedidos</th><th>Último pedido</th>' +
+        '<th>Nombre</th><th>WhatsApp</th><th>Pedidos</th><th>\u00DAltimo pedido</th>' +
         '</tr></thead><tbody>';
       var pedidos = (typeof ArcanoDB !== 'undefined' && ArcanoDB.getPedidos) ? ArcanoDB.getPedidos() : [];
       var totalPorCliente = {};
@@ -393,7 +393,7 @@ var WhatsAppNotifications = (function() {
       html += '</tbody></table></div>';
 
       html += '<div class="mt-12" style="display:flex;gap:8px;align-items:center">' +
-        '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.enviarManual()">📤 Enviar a seleccionados</button>' +
+        '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.enviarManual()">\u{1F4E4} Enviar a seleccionados</button>' +
         '<span id="wa-envio-status" class="text-sm text-muted ml-8"></span>' +
       '</div>';
     }
@@ -434,17 +434,17 @@ var WhatsAppNotifications = (function() {
       });
     }
     var status = document.getElementById('wa-envio-status');
-    if (status) status.innerHTML = '<span style="color:var(--green)">' + enviados + ' mensajes abiertos en WhatsApp. Envíalos manualmente.</span>';
+    if (status) status.innerHTML = '<span style="color:var(--green)">' + enviados + ' mensajes abiertos en WhatsApp. Env\u00EDalos manualmente.</span>';
     toast(enviados + ' mensajes preparados');
   }
 
-  // === Modal de notificación al cambiar estado ===
+  // === Modal de notificaci\u00F3n al cambiar estado ===
 
   async function showNotificacionModal(pedido, nuevoEstado) {
     var cfg = await loadConfig();
     var plantilla = (cfg.plantillas && cfg.plantillas[nuevoEstado]) || PLANTILLAS_DEFAULT[nuevoEstado];
 
-    // Si la plantilla está desactivada, no mostrar modal
+    // Si la plantilla est\u00E1 desactivada, no mostrar modal
     if (plantilla.activo === false) {
       logHistorial({
         cliente: (pedido.cliente || {}).nombre || 'Cliente',
@@ -453,7 +453,7 @@ var WhatsAppNotifications = (function() {
         estado: nuevoEstado, enviado: false,
         fecha: new Date().toISOString()
       });
-      return false; // no se envió
+      return false; // no se envi\u00F3
     }
 
     var cl = pedido.cliente || {};
@@ -472,9 +472,9 @@ var WhatsAppNotifications = (function() {
       guia: pedido.guia || ''
     });
 
-    // Si no hay teléfono, no se puede notificar
+    // Si no hay tel\u00E9fono, no se puede notificar
     if (!telNorm) {
-      toast('⚠️ El cliente no tiene teléfono para WhatsApp', 'warn');
+      toast('\u26A0\uFE0F El cliente no tiene tel\u00E9fono para WhatsApp', 'warn');
       logHistorial({
         cliente: cl.nombre || 'Cliente', tel: '',
         pedidoId: pedido._key, estado: nuevoEstado,
@@ -496,22 +496,22 @@ var WhatsAppNotifications = (function() {
       modal.innerHTML =
         '<div class="modal" style="max-width:520px">' +
           '<div class="modal-header">' +
-            '<h3>📱 Notificar por WhatsApp</h3>' +
-            '<button class="btn btn-ghost" onclick="document.getElementById(\'wa-notif-modal\').remove()">×</button>' +
+            '<h3>\u{1F4F1} Notificar por WhatsApp</h3>' +
+            '<button class="btn btn-ghost" onclick="document.getElementById(\'wa-notif-modal\').remove()">\u00D7</button>' +
           '</div>' +
           '<div class="modal-body">' +
             '<div class="wa-notif-info">' +
               '<div><strong>Cliente:</strong> ' + escHtml(cl.nombre || 'Cliente') + '</div>' +
-              '<div><strong>Teléfono:</strong> ' + escHtml(tel) + '</div>' +
+              '<div><strong>Tel\u00E9fono:</strong> ' + escHtml(tel) + '</div>' +
               '<div><strong>Evento:</strong> ' + ESTADO_LABELS[nuevoEstado] + '</div>' +
               '<div><strong>Pedido:</strong> #' + pedido._key.slice(-6).toUpperCase() + '</div>' +
             '</div>' +
             '<label class="text-sm text-muted mt-12" style="display:block;margin-bottom:6px">Mensaje pre-cargado (puedes editarlo):</label>' +
             '<textarea id="wa-notif-msg" rows="5" style="width:100%;background:var(--bg,#1b0b07);border:1px solid var(--border,#3a2a1e);color:var(--text,#e8d5b7);padding:10px;border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical">' + escHtml(mensaje) + '</textarea>' +
-            '<p class="text-xs text-muted mt-4">Se abrirá WhatsApp con este mensaje. Solo tienes que hacer clic en "Enviar" dentro de WhatsApp.</p>' +
+            '<p class="text-xs text-muted mt-4">Se abrir\u00E1 WhatsApp con este mensaje. Solo tienes que hacer clic en "Enviar" dentro de WhatsApp.</p>' +
           '</div>' +
           '<div class="modal-footer" style="display:flex;gap:8px;justify-content:space-between">' +
-            '<button class="btn btn-outline" onclick="document.getElementById(\'wa-notif-modal\').remove()">⊘ Saltar</button>' +
+            '<button class="btn btn-outline" onclick="document.getElementById(\'wa-notif-modal\').remove()">\u2298 Saltar</button>' +
             '<a id="wa-notif-send" href="' + _buildWaLink(telNorm, mensaje) + '" target="_blank" class="btn btn-gold" style="text-decoration:none">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>' +
               'Enviar por WhatsApp' +
@@ -563,7 +563,7 @@ var WhatsAppNotifications = (function() {
     });
   }
 
-  // === Función para botón WA en lista de pedidos ===
+  // === Funci\u00F3n para bot\u00F3n WA en lista de pedidos ===
 
   async function notificarDesdePedido(pedidoKey, estado) {
     var pedidos = (typeof ArcanoDB !== 'undefined' && ArcanoDB.getPedidos) ? ArcanoDB.getPedidos() : [];

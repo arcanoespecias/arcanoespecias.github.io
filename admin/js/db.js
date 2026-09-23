@@ -1,8 +1,8 @@
-/* ===================== ARCANO V3 — DATA LAYER =====================
+/* ===================== ARCANO V3 \u2014 DATA LAYER =====================
    Flujo:
-     Insumos → Stock (pala grs, envases, stickers, bolsas)
-     Produccion → consume insumos → Frascos listos (chico / grande)
-     Ventas → consume frascos
+     Insumos \u2192 Stock (pala grs, envases, stickers, bolsas)
+     Produccion \u2192 consume insumos \u2192 Frascos listos (chico / grande)
+     Ventas \u2192 consume frascos
 
    Stock por especia: stockBolsa (grs), stockChico, stockGrande (frascos)
    Stock por blend:   stockChico, stockGrande (frascos)
@@ -90,7 +90,7 @@ function _ensureStructure() {
   };
   if (!_db.productTags) _db.productTags = {
     'Comidas': ['Aves', 'Pescados y Mariscos', 'Cerdo', 'Salsas y Aderezos', 'Verduras y Vegetales', 'Granos y Legumbres'],
-    'Infusiones': ['Relajante', 'Digestiva', 'Energética', 'Citrica', 'Refrescante', 'Detox', 'Aromatica'],
+    'Infusiones': ['Relajante', 'Digestiva', 'Energ\u00E9tica', 'Citrica', 'Refrescante', 'Detox', 'Aromatica'],
     'Cocteleria': ['Tropical', 'Citrica', 'Seca', 'Dulce']
   };
   if (!_db.usoOptions) _db.usoOptions = ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'];
@@ -98,12 +98,12 @@ function _ensureStructure() {
 
   _cleanNulls();
 
-  // === MIGRACIÓN: reparar especiaNombre='?' en entradas históricas ===
+  // === MIGRACI\u00D3N: reparar especiaNombre='?' en entradas hist\u00F3ricas ===
   // Bug: el handler de guardado comparaba IDs con === sin convertir tipos,
-  // entonces si la especia tenía ID string, no la encontraba y guardaba '?'.
-  // Esta migración busca los items con especiaNombre='?' y los repara buscando
-  // la especia por ID en la colección actual.
-  // IMPORTANTE: debe ir DESPUÉS de _cleanNulls() para no crashear con nulls.
+  // entonces si la especia ten\u00EDa ID string, no la encontraba y guardaba '?'.
+  // Esta migraci\u00F3n busca los items con especiaNombre='?' y los repara buscando
+  // la especia por ID en la colecci\u00F3n actual.
+  // IMPORTANTE: debe ir DESPU\u00C9S de _cleanNulls() para no crashear con nulls.
   if (!window._arcanoMigracionReparada) {
     var entradasKeys = Object.keys(_db.entradas || {});
     var reparadas = 0;
@@ -127,19 +127,19 @@ function _ensureStructure() {
       }
     }
     if (reparadas > 0) {
-      console.log('[DB] Migración: ' + reparadas + ' items de entrada con especiaNombre="?" reparados.');
+      console.log('[DB] Migraci\u00F3n: ' + reparadas + ' items de entrada con especiaNombre="?" reparados.');
       window._arcanoMigracionReparada = true;
       // Persistir los cambios a Firebase y localStorage
       setTimeout(function() {
         _saveToFirebase();
         _cacheLocal();
-        console.log('[DB] Migración: cambios persistidos a Firebase y localStorage.');
+        console.log('[DB] Migraci\u00F3n: cambios persistidos a Firebase y localStorage.');
       }, 2000);
     } else {
       window._arcanoMigracionReparada = true;
     }
   }
-  // === FIN MIGRACIÓN ===
+  // === FIN MIGRACI\u00D3N ===
   return true;
 }
 
@@ -152,7 +152,7 @@ function _emptyDB() {
     stockCintas: 0,
     productTags: {
       'Comidas': ['Aves', 'Pescados y Mariscos', 'Cerdo', 'Salsas y Aderezos', 'Verduras y Vegetales', 'Granos y Legumbres'],
-      'Infusiones': ['Relajante', 'Digestiva', 'Energética', 'Citrica', 'Refrescante', 'Detox', 'Aromatica'],
+      'Infusiones': ['Relajante', 'Digestiva', 'Energ\u00E9tica', 'Citrica', 'Refrescante', 'Detox', 'Aromatica'],
       'Cocteleria': ['Tropical', 'Citrica', 'Seca', 'Dulce']
     },
     usoOptions: ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'],
@@ -316,7 +316,7 @@ function saveNow() {
         if (resolved) return;
         resolved = true;
         clearTimeout(safetyTimer);
-        // Mantener _localDirty = true por 2 segundos más para que el listener
+        // Mantener _localDirty = true por 2 segundos m\u00E1s para que el listener
         // no sobreescriba _db con datos viejos antes de que Firebase confirme
         setTimeout(function() { _localDirty = false; }, 2000);
         if (error) { console.error('[DB] Firebase save error:', error); resolve(false); }
@@ -695,7 +695,7 @@ function deleteCarrito(key) {
 
 function onCarritosChange(fn) { _carritosListeners.push(fn); }
 
-/* === OTP pendientes (cola de códigos a enviar a clientes) === */
+/* === OTP pendientes (cola de c\u00F3digos a enviar a clientes) === */
 function _startOtpPendientesListener() {
   if (!_otpPendientesRef) return;
   _otpPendientesRef.on('value', function(snap) {
@@ -711,7 +711,7 @@ function _startOtpPendientesListener() {
         }
       }
     }
-    // Ordenar: no enviados primero, luego por creación desc
+    // Ordenar: no enviados primero, luego por creaci\u00F3n desc
     _otpPendientes.sort(function(a, b) {
       var aPend = a.enviado ? 1 : 0;
       var bPend = b.enviado ? 1 : 0;
@@ -749,14 +749,14 @@ function updatePedidoEstado(pedidoKey, nuevoEstado) {
   if (!_pedidosRef) return;
   _pedidosRef.child(pedidoKey + '/estado').set(nuevoEstado);
   // Si el pedido pasa a "entregado", descontar stock de los productos
-  // (solo si no fue descontado antes — flag stockDescontado)
+  // (solo si no fue descontado antes \u2014 flag stockDescontado)
   if (nuevoEstado === 'entregado') {
     _pedidosRef.child(pedidoKey).once('value', function(snap) {
       var pedido = snap.val();
       if (!pedido || pedido.stockDescontado) return;
       _descontarStockPedido(pedido);
       _pedidosRef.child(pedidoKey + '/stockDescontado').set(true);
-      // === Colección Arcano: contar blends pequeños ===
+      // === Colecci\u00F3n Arcano: contar blends peque\u00F1os ===
       _contarBlendsColeccion(pedido, pedidoKey);
     });
   } else {
@@ -786,7 +786,7 @@ function _descontarStockPedido(pedido) {
         var collection = tipo === 'blend' ? _db.blends : _db.especias;
         var prod = collection ? collection[productId] : null;
         if (!prod) continue;
-        // Descontar stockChico o stockGrande según la talla
+        // Descontar stockChico o stockGrande seg\u00FAn la talla
         if (talla === 'grande') {
           prod.stockGrande = Math.max(0, (Number(prod.stockGrande) || 0) - qty);
         } else {
@@ -806,7 +806,7 @@ function _descontarStockPedido(pedido) {
   }
 }
 
-/* === Colección Arcano: contar blends pequeños de un pedido === */
+/* === Colecci\u00F3n Arcano: contar blends peque\u00F1os de un pedido === */
 function _contarBlendsColeccion(pedido, pedidoKey) {
   try {
     var cliente = pedido.cliente || {};
@@ -826,7 +826,7 @@ function _contarBlendsColeccion(pedido, pedidoKey) {
       var talla = item.talla || 'chico';
       var qty = Number(item.qty) || Number(item.cantidad) || 0;
 
-      // Solo contar blends y especias en talla chico (pequeño)
+      // Solo contar blends y especias en talla chico (peque\u00F1o)
       if ((tipo === 'blend' || tipo === 'especia') && talla === 'chico' && qty > 0) {
         blendsChicosCount += qty;
         var nombre = item.nombre || item.productoNombre || '';
@@ -836,20 +836,20 @@ function _contarBlendsColeccion(pedido, pedidoKey) {
 
     if (blendsChicosCount > 0) {
       var col = addBlendsToColeccion(whatsapp, blendsChicosCount, pedidoKey, blendNombres);
-      // Actualizar el nombre del cliente en la colección si no lo tiene
+      // Actualizar el nombre del cliente en la colecci\u00F3n si no lo tiene
       if (!col.nombre && cliente.nombre) {
         col.nombre = cliente.nombre;
         if (_coleccionesRef) _coleccionesRef.child(whatsapp + '/nombre').set(cliente.nombre);
       }
-      // Si completó el cartón, notificar al admin
+      // Si complet\u00F3 el cart\u00F3n, notificar al admin
       if (col.completado && !col.canjeado) {
-        console.log('[Colección Arcano] ¡Cliente completó su cartón! WhatsApp:', whatsapp);
-        // Notificación visual en el admin
+        console.log('[Colecci\u00F3n Arcano] \u00A1Cliente complet\u00F3 su cart\u00F3n! WhatsApp:', whatsapp);
+        // Notificaci\u00F3n visual en el admin
         _notify('coleccion_completada', 'colecciones', whatsapp);
       }
     }
   } catch(e) {
-    console.error('[Colección Arcano] Error al contar blends:', e);
+    console.error('[Colecci\u00F3n Arcano] Error al contar blends:', e);
   }
 }
 
@@ -1079,7 +1079,7 @@ function saveEntrada(data) {
     data.fecha = data.fecha || new Date().toISOString().slice(0, 10);
     data.items = data.items || [];
     data.total = Number(data.total) || 0;
-    // Persistir campos de ajuste si vienen (compat hacia atrás: si no vienen, se asume = total)
+    // Persistir campos de ajuste si vienen (compat hacia atr\u00E1s: si no vienen, se asume = total)
     if (data.totalCalculado == null) data.totalCalculado = data.total;
     if (data.totalPagado == null) data.totalPagado = data.total;
     if (data.ajuste == null) data.ajuste = 0;
@@ -1148,7 +1148,7 @@ function saveEntrada(data) {
  * Se usa antes de borrar o antes de actualizar una entrada.
  * Para especias, revierte el costo promedio solo si la especia sigue existiendo
  * y si el costo actual corresponde al promedio (mejor esfuerzo, no exacto para
- * especias con múltiples entradas posteriores).
+ * especias con m\u00FAltiples entradas posteriores).
  */
 function _revertirEntrada(entrada) {
   if (!entrada || !entrada.items) return;
@@ -1164,7 +1164,7 @@ function _revertirEntrada(entrada) {
         var espObj = _db.especias[item.especiaId];
         espObj.stockBolsa = _r3(Math.max(0, espObj.stockBolsa - cantidad));
         // Nota: el costo promedio ponderado no se revierte exactamente porque
-        // entradas posteriores pueden haberlo recalculado. Lo dejamos como está;
+        // entradas posteriores pueden haberlo recalculado. Lo dejamos como est\u00E1;
         // el admin puede reajustarlo manualmente si lo necesita.
       }
     } else if (tipo === 'envase') {
@@ -1218,7 +1218,7 @@ function updateEntrada(id, newData) {
     ajuste: newData.ajuste != null ? Number(newData.ajuste) : (existing.ajuste || 0),
     editado: new Date().toISOString()
   };
-  // 3. Aplicar stock de los nuevos items (reutiliza la lógica de saveEntrada con un flag)
+  // 3. Aplicar stock de los nuevos items (reutiliza la l\u00F3gica de saveEntrada con un flag)
   _aplicarItemsEntrada(updated.items);
   // 4. Guardar y notificar
   _db.entradas[id] = updated;
@@ -1469,7 +1469,7 @@ function producirEspecia(especiaId, talla, cantidad) {
     throw new Error('Cintas insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockCintas || 0));
   }
 
-  // All checks passed — consume
+  // All checks passed \u2014 consume
   esp.stockBolsa = _r3(esp.stockBolsa - grsTotal);
   _db.stockEnvases[talla] = (_db.stockEnvases[talla] || 0) - cantidad;
   _db.stockBolsas[talla] = (_db.stockBolsas[talla] || 0) - cantidad;
@@ -1548,7 +1548,7 @@ function producirBlend(blendId, talla, cantidad) {
     throw new Error('Cintas insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockCintas || 0));
   }
 
-  // All checks passed — consume
+  // All checks passed \u2014 consume
   var grsTotalGeneral = 0;
   for (var i = 0; i < detalleIngredientes.length; i++) {
     var d = detalleIngredientes[i];
@@ -1616,7 +1616,7 @@ function deleteProduccion(id) {
         }
       }
     } else if (prod.gramosTotal) {
-      // Fallback: blend sin ingredientes detallados (producción vieja)
+      // Fallback: blend sin ingredientes detallados (producci\u00F3n vieja)
       // No se puede devolver pala por especia, pero al menos registramos
       console.warn('[deleteProduccion] Blend sin ingredientes detallados, no se puede devolver pala por especia');
     }
@@ -1664,13 +1664,13 @@ function saveVenta(data) {
     data.items = data.items || [];
     data.total = Number(data.total) || 0;
   }
-  // Separar costo de envío del total de productos (envío NO es venta)
-  // El total siempre es SOLO productos. El envío va aparte en envioCosto.
+  // Separar costo de env\u00EDo del total de productos (env\u00EDo NO es venta)
+  // El total siempre es SOLO productos. El env\u00EDo va aparte en envioCosto.
   if (isNew) {
     for (var i = 0; i < data.items.length; i++) {
       var item = data.items[i];
       // PALAS: armado al vender.
-      // Costo = peso × costo por gramo (sin bolsa, sin envase).
+      // Costo = peso \u00D7 costo por gramo (sin bolsa, sin envase).
       // Descuento: primero del costal abierto del producto, si no hay, de la Bodega (stockBolsa).
       if (item.tipo === 'pala') {
         var productoPala;
@@ -1684,7 +1684,7 @@ function saveVenta(data) {
         var cantP = Number(item.cantidad) || 0;
         var pesoP = Number(item.peso) || Number(productoPala.pesoPala) || 0;
         var grsNecesarios = cantP * pesoP;
-        if (pesoP <= 0) throw new Error('El producto "' + productoPala.nombre + '" no tiene peso de pala configurado. Configuralo en Palas → Configuración.');
+        if (pesoP <= 0) throw new Error('El producto "' + productoPala.nombre + '" no tiene peso de pala configurado. Configuralo en Palas \u2192 Configuraci\u00F3n.');
 
         // Buscar costal abierto del producto
         var costalAbierto = null;
@@ -1747,7 +1747,7 @@ function saveVenta(data) {
       item.precioUnitario = Number(item.precioUnitario) || 0;
       item.subtotal = item.precioUnitario * cant;
     }
-    // Recalculate total (SOLO productos, sin envío)
+    // Recalculate total (SOLO productos, sin env\u00EDo)
     data.total = data.items.reduce(function(s, it) { return s + (it.subtotal || 0); }, 0);
     // envioCosto se guarda aparte (no se suma al total)
     // Si la venta viene con envioCosto ya seteado (de un pedido online), se respeta
@@ -1776,7 +1776,7 @@ function deleteVenta(id) {
           prod = _db.especias[item.productoId];
         }
         var grs = (Number(item.cantidad) || 0) * (Number(item.peso) || 0);
-        // Si la venta original descontó de un costal, revertir al costal; sino a Bodega
+        // Si la venta original descont\u00F3 de un costal, revertir al costal; sino a Bodega
         if (item.costalId && _db.costales && _db.costales[item.costalId]) {
           var costal = _db.costales[item.costalId];
           costal.gramosRestantes = (Number(costal.gramosRestantes) || 0) + grs;
@@ -1964,7 +1964,7 @@ function getFrascosParaVender() {
 }
 
 /**
- * Devuelve el histórico de palas vendidas, agregado por (productoId, productoTipo, peso).
+ * Devuelve el hist\u00F3rico de palas vendidas, agregado por (productoId, productoTipo, peso).
  * Filtra ventas con items tipo='pala' y suma cantidades, ingresos y conteo de ventas.
  */
 function getPalasVendidas() {
@@ -2133,7 +2133,7 @@ function _categoriaFromUso(uso) {
   // Cocteleria keywords
   if (/\b(gin|ron|vodka|whisky|mojito|mule|vermouth|aperitif|coctel)\b/.test(u)) return 'Cocteleria';
   // Infusiones keywords
-  if (/\b(relajant|sueño|digestiv|energiz|té|calidez|respiratorio|meditaci|antioxidant|bienestar|infusi)\b/.test(u)) return 'Infusiones';
+  if (/\b(relajant|sue\u00F1o|digestiv|energiz|t\u00E9|calidez|respiratorio|meditaci|antioxidant|bienestar|infusi)\b/.test(u)) return 'Infusiones';
   return 'Comidas';
 }
 
@@ -2203,7 +2203,7 @@ function importFromExcelData(especiasList, blendsList, gramosChico, gramosGrande
       var ing = ings[ii];
       var espObj = findEspeciaByName(ing.especia);
       if (!espObj) {
-        resultado.ingredientesNoResueltos.push(nombre + ' → ' + (ing.especia || '?'));
+        resultado.ingredientesNoResueltos.push(nombre + ' \u2192 ' + (ing.especia || '?'));
         continue;
       }
       var ingG = Number(ing.g) || 0;
@@ -2504,7 +2504,7 @@ function devolverCostalDePDV(pdvId, costalId, gramos) {
   if (!pdv) throw new Error('Punto de venta no encontrado');
   if (!pdv.stockCostales) pdv.stockCostales = {};
   gramos = Number(gramos) || 0;
-  if (gramos <= 0) throw new Error('Gramos inválidos');
+  if (gramos <= 0) throw new Error('Gramos inv\u00E1lidos');
   var disponible = Number(pdv.stockCostales[costalId]) || 0;
   if (disponible < gramos) {
     throw new Error('Gramos insuficientes en PDV. Disponibles: ' + disponible + 'g');
@@ -2943,7 +2943,7 @@ function deletePack(id) {
 
 /* ==================== COSTALES ====================
    Un costal es un saco/bolsa que contiene una o varias especias
-   con gramos específicos. Se vende en PDV por "palas" (scoops).
+   con gramos espec\u00EDficos. Se vende en PDV por "palas" (scoops).
    Cada pala consume X gramos del costal (gramosPorPala).
    El precio por pala lo define el admin.
 
@@ -2999,7 +2999,7 @@ function saveCostal(data) {
       }
     }
   } else if (data.productoId) {
-    // Costal single-producto (no descontar aquí, lo hace armarCostalDesdeBodega)
+    // Costal single-producto (no descontar aqu\u00ED, lo hace armarCostalDesdeBodega)
     gramosTotal = Number(data.gramosTotal) || 0;
   }
   data.gramosTotal = gramosTotal;
@@ -3031,7 +3031,7 @@ function deleteCostal(id) {
         var item = costal.items[i];
         var especia = _db.especias && _db.especias[item.especiaId];
         if (especia) {
-          // Devolver proporcionalmente según gramosRestantes
+          // Devolver proporcionalmente seg\u00FAn gramosRestantes
           var ratio = gramosRestantes / (Number(costal.gramosTotal) || 1);
           var gramosADevolver = _r3((Number(item.gramos) || 0) * ratio);
           especia.stockBolsa = _r3(especia.stockBolsa + gramosADevolver);
@@ -3153,7 +3153,7 @@ function moverCostalAPDV(pdvId, costalId, gramos) {
   var costal = _db.costales && _db.costales[costalId];
   if (!costal) throw new Error('Costal no encontrado');
   gramos = Number(gramos) || 0;
-  if (gramos <= 0) throw new Error('Gramos inválidos');
+  if (gramos <= 0) throw new Error('Gramos inv\u00E1lidos');
   if ((Number(costal.gramosRestantes) || 0) < gramos) {
     throw new Error('Gramos insuficientes en el costal. Disponibles: ' + (costal.gramosRestantes || 0) + 'g');
   }
@@ -3211,7 +3211,7 @@ function savePDVVentaPala(data) {
   };
   _db.pdvVentas[ventaId] = venta;
 
-  // También crear una entrada en ventas global para estadísticas
+  // Tambi\u00E9n crear una entrada en ventas global para estad\u00EDsticas
   var ventaGlobalId = nextId('ventas');
   _db.ventas[ventaGlobalId] = {
     id: ventaGlobalId,
@@ -3276,7 +3276,7 @@ function saveTiendaConfigField(path, value) {
   return _db.tiendaConfig;
 }
 
-/* ==================== COLECCIÓN ARCANO ==================== */
+/* ==================== COLECCI\u00D3N ARCANO ==================== */
 var _coleccionesRef = null;
 var _coleccionesListeners = [];
 
@@ -3389,7 +3389,7 @@ function canjearColeccion(whatsapp, reset) {
 }
 
 function onColeccionesChange(callback) { _coleccionesListeners.push(callback); }
-/* ==================== FIN COLECCIÓN ARCANO ==================== */
+/* ==================== FIN COLECCI\u00D3N ARCANO ==================== */
 
 /* ==================== EXPORT ==================== */
 
@@ -3438,7 +3438,7 @@ window.ArcanoDB = {
   getCarritos: getCarritos, getCarritosByEstado: getCarritosByEstado, deleteCarrito: deleteCarrito, onCarritosChange: onCarritosChange,
   getOtpPendientes: getOtpPendientes, getOtpPendientesCount: getOtpPendientesCount, markOtpEnviado: markOtpEnviado, deleteOtpPendiente: deleteOtpPendiente, onOtpPendientesChange: onOtpPendientesChange,
 
-  // Colección Arcano
+  // Colecci\u00F3n Arcano
   getColecciones: getColecciones, getColeccion: getColeccion, saveColeccion: saveColeccion,
   deleteColeccion: deleteColeccion, addBlendsToColeccion: addBlendsToColeccion,
   canjearColeccion: canjearColeccion, getColeccionesCompletadas: getColeccionesCompletadas,

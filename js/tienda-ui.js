@@ -1,14 +1,14 @@
-/* ===================== ARCANO TIENDA — UI REDESIGN ===================== */
+/* ===================== ARCANO TIENDA \u2014 UI REDESIGN ===================== */
 var cart = JSON.parse(localStorage.getItem('arcano_cart') || '[]');
 var _currentPage = 'tienda';
 var _currentRecetaCat = 'Comida';
 var _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 };
-/* Flag: ¿el usuario ya navegó fuera de Tienda en esta sesión de página?
-   - false → primera entrada a Tienda (mostrar cofre desde el top)
-   - true  → ya navegó a Recetas/Blog/etc., al volver a Tienda scrollear a filtros */
+/* Flag: \u00BFel usuario ya naveg\u00F3 fuera de Tienda en esta sesi\u00F3n de p\u00E1gina?
+   - false \u2192 primera entrada a Tienda (mostrar cofre desde el top)
+   - true  \u2192 ya naveg\u00F3 a Recetas/Blog/etc., al volver a Tienda scrollear a filtros */
 var _hasNavigatedAway = false;
 
-/* === UTIL: escapar HTML para evitar inyección XSS === */
+/* === UTIL: escapar HTML para evitar inyecci\u00F3n XSS === */
 function esc(s) {
   if (s == null) return '';
   return String(s)
@@ -60,11 +60,11 @@ function _updateTitle(page, extra) {
   var metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc) {
     var descs = {
-      tienda: 'Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rincón para crear sabores únicos. Comidas, infusiones y coctelería. Envíos a toda Colombia.',
-      recetas: 'Recetas con especias artesanales de Arcano. Inspírate para cocinar con blends únicos de cada rincón del mundo.',
+      tienda: 'Especias y Blends artesanales del mundo. Ingredientes seleccionados de cada rinc\u00F3n para crear sabores \u00FAnicos. Comidas, infusiones y cocteler\u00EDa. Env\u00EDos a toda Colombia.',
+      recetas: 'Recetas con especias artesanales de Arcano. Insp\u00EDrate para cocinar con blends \u00FAnicos de cada rinc\u00F3n del mundo.',
       blog: 'Blog de especias, blends artesanales, curiosidades, beneficios y origenes de las especias del mundo.',
       blend: 'Crea tu blend personalizado de especias artesanales con Arcano Especias.',
-      faq: 'Preguntas frecuentes sobre Arcano Especias: envíos, pagos, productos y más.'
+      faq: 'Preguntas frecuentes sobre Arcano Especias: env\u00EDos, pagos, productos y m\u00E1s.'
     };
     metaDesc.setAttribute('content', descs[page] || descs.tienda);
   }
@@ -126,8 +126,8 @@ function goTo(page) {
     });
   }
 
-  /* === Scroll: si volvemos a Tienda después de haber navegado a otra página,
-        scrollear a los filtros de categoría (saltando el hero/cofre).
+  /* === Scroll: si volvemos a Tienda despu\u00E9s de haber navegado a otra p\u00E1gina,
+        scrollear a los filtros de categor\u00EDa (saltando el hero/cofre).
         Si es primera entrada a Tienda, ir al top para mostrar el cofre. === */
   if (page === 'tienda') {
     if (_hasNavigatedAway) {
@@ -162,15 +162,15 @@ function _updateSidebar(page) {
   var sb = document.getElementById('sidebar-content');
   if (!sb) return;
   if (page === 'tienda') {
-    sb.innerHTML = '<p>En ARCANO seleccionamos especias, hierbas y botánicos para crear blends artesanales inspirados en los sabores de diferentes regiones del mundo. Condimentos para carnes, pescados, pollo, arroces, sopas y vegetales; mezclas para preparar infusiones y opciones especiales para coctelería.</p>';
+    sb.innerHTML = '<p>En ARCANO seleccionamos especias, hierbas y bot\u00E1nicos para crear blends artesanales inspirados en los sabores de diferentes regiones del mundo. Condimentos para carnes, pescados, pollo, arroces, sopas y vegetales; mezclas para preparar infusiones y opciones especiales para cocteler\u00EDa.</p>';
   } else if (page === 'recetas') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-receta-cats">' + '<li class="active" onclick="selectRecetaCat(\'Comida\')">Comida</li>' + '<li onclick="selectRecetaCat(\'Infusiones\')">Infusiones</li>' + '<li onclick="selectRecetaCat(\'Cocteleria\')">Cocteleria</li>' + '</ul>';
   } else if (page === 'blog') {
     sb.innerHTML = '<h3>Categorias</h3><ul class="sidebar-cat-list" id="sidebar-blog-cats"><li class="active" onclick="selectBlogCat(\'Todos\')">Todos</li><li onclick="selectBlogCat(\'Historias\')">Historias</li><li onclick="selectBlogCat(\'Beneficios\')">Beneficios</li><li onclick="selectBlogCat(\'Investigaciones\')">Investigaciones</li><li onclick="selectBlogCat(\'Curiosidades\')">Curiosidades</li><li onclick="selectBlogCat(\'Origenes\')">Origenes</li></ul>';
   } else if (page === 'blend') {
-    sb.innerHTML = '<p>Crea tu blend personalizado. Mezcla las especias a tu gusto para dar sabor, aroma y carácter a tus comidas, infusiones o cocteles.</p>';
+    sb.innerHTML = '<p>Crea tu blend personalizado. Mezcla las especias a tu gusto para dar sabor, aroma y car\u00E1cter a tus comidas, infusiones o cocteles.</p>';
   } else if (page === 'faq') {
-    sb.innerHTML = '<p>Aquí encontrarás respuestas a las preguntas más frecuentes sobre nuestros productos, envíos, formas de pago y más. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
+    sb.innerHTML = '<p>Aqu\u00ED encontrar\u00E1s respuestas a las preguntas m\u00E1s frecuentes sobre nuestros productos, env\u00EDos, formas de pago y m\u00E1s. Si no encuentras lo que buscas, no dudes en contactarnos.</p>';
   }
 }
 /* === MOBILE MENU === */
@@ -224,7 +224,7 @@ function renderCartDrawer() {
   if (!body) return;
   var total = getCartTotal();
   if (cart.length === 0) {
-    body.innerHTML = '<div class="empty-state" style="padding:48px 0"><p>Tu pedido está vacío</p></div>';
+    body.innerHTML = '<div class="empty-state" style="padding:48px 0"><p>Tu pedido esta\u0301 vac\u00EDo</p></div>';
     return;
   }
   var h = '';
@@ -252,7 +252,7 @@ function renderCartDrawer() {
     h += '</div>';
   }
   body.innerHTML = h;
-  // Update resumen (Subtotal + Envío + Total) usando el módulo de envío
+  // Update resumen (Subtotal + Env\u00EDo + Total) usando el m\u00F3dulo de env\u00EDo
   if (typeof arcanoActualizarResumenCarrito === 'function') {
     arcanoActualizarResumenCarrito(null, cart || [], getCartTotal());
   } else {
@@ -271,11 +271,11 @@ function _cartSetFooterStep(step) {
   if (step === 1) {
     footer.innerHTML = '<button class="btn-primary" onclick="showOrderForm()">Confirmar Pedido</button>' +
       '<button class="btn-secondary" onclick="toggleCartDrawer()">Seguir comprando</button>' +
-      '<p style="text-align:center;margin:8px 0 0;font-size:0.8rem;color:#a08b6e;line-height:1.5">🚚 Envío gratis en Medellín desde \$60.000. En compras inferiores y envíos fuera de Medellín, el envío tiene costo adicional.</p>';
+      '<p style="text-align:center;margin:8px 0 0;font-size:0.8rem;color:#a08b6e;line-height:1.5">\u{1F69A} Env\u00EDo gratis en Medell\u00EDn desde \$60.000. En compras inferiores y env\u00EDos fuera de Medell\u00EDn, el env\u00EDo tiene costo adicional.</p>';
   } else {
     footer.innerHTML = '<button class="btn-primary" onclick="sendOrder()">Enviar Pedido</button>' +
       '<button class="btn-secondary" onclick="backToCart()">Volver</button>' +
-      '<p style="text-align:center;margin:8px 0 0;font-size:0.8rem;color:#a08b6e;line-height:1.5">🚚 Envío gratis en Medellín desde \$60.000. En compras inferiores y envíos fuera de Medellín, el envío tiene costo adicional.</p>';
+      '<p style="text-align:center;margin:8px 0 0;font-size:0.8rem;color:#a08b6e;line-height:1.5">\u{1F69A} Env\u00EDo gratis en Medell\u00EDn desde \$60.000. En compras inferiores y env\u00EDos fuera de Medell\u00EDn, el env\u00EDo tiene costo adicional.</p>';
   }
 }
 
@@ -296,21 +296,21 @@ function showOrderForm() {
   // Order form
   h += '<div class="order-form">';
   h += '<div class="form-group"><label>Nombre</label><input class="form-input" id="o-nombre" placeholder="Tu nombre"></div>';
-  h += '<div class="form-row"><div class="form-group"><label>Teléfono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
+  h += '<div class="form-row"><div class="form-group"><label>Tel\u00E9fono</label><input class="form-input" id="o-tel" placeholder="300 123 4567"></div>';
   h += '<div class="form-group"><label>Email</label><input class="form-input" id="o-email" type="email" placeholder="tu@email.com"></div></div>';
-  h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><select class="form-input" id="o-ciudad" onchange="arcanoActualizarShippingInfo()"><option value="">Selecciona tu ciudad</option><option value="Medellín">Medellín</option><option value="Bogotá">Bogotá</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option><option value="Cartagena">Cartagena</option><option value="Bucaramanga">Bucaramanga</option><option value="Pereira">Pereira</option><option value="Manizales">Manizales</option><option value="Cúcuta">Cúcuta</option><option value="Santa Marta">Santa Marta</option><option value="Ibagué">Ibagué</option><option value="Villavicencio">Villavicencio</option><option value="Armenia">Armenia</option><option value="Neiva">Neiva</option><option value="Sincelejo">Sincelejo</option><option value="Popayán">Popayán</option><option value="Tunja">Tunja</option><option value="Montería">Montería</option><option value="Valledupar">Valledupar</option><option value="Riohacha">Riohacha</option><option value="Pasto">Pasto</option><option value="Quibdó">Quibdó</option><option value="Florencia">Florencia</option><option value="Yopal">Yopal</option><option value="Arauca">Arauca</option><option value="Leticia">Leticia</option><option value="Inírida">Inírida</option><option value="San José del Guaviare">San José del Guaviare</option><option value="Mitú">Mitú</option><option value="Puerto Carreño">Puerto Carreño</option><option value="Mocoa">Mocoa</option><option value="San Andrés">San Andrés</option><option value="Otra">Otra ciudad</option></select></div>';
-  h += '<div class="form-group"><label>Dirección</label><input class="form-input" id="o-dir" placeholder="Dirección de entrega"></div></div>';
+  h += '<div class="form-row"><div class="form-group"><label>Ciudad</label><select class="form-input" id="o-ciudad" onchange="arcanoActualizarShippingInfo()"><option value="">Selecciona tu ciudad</option><option value="Medell\u00EDn">Medell\u00EDn</option><option value="Bogot\u00E1">Bogot\u00E1</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option><option value="Cartagena">Cartagena</option><option value="Bucaramanga">Bucaramanga</option><option value="Pereira">Pereira</option><option value="Manizales">Manizales</option><option value="C\u00FAcuta">C\u00FAcuta</option><option value="Santa Marta">Santa Marta</option><option value="Ibagu\u00E9">Ibagu\u00E9</option><option value="Villavicencio">Villavicencio</option><option value="Armenia">Armenia</option><option value="Neiva">Neiva</option><option value="Sincelejo">Sincelejo</option><option value="Popay\u00E1n">Popay\u00E1n</option><option value="Tunja">Tunja</option><option value="Monter\u00EDa">Monter\u00EDa</option><option value="Valledupar">Valledupar</option><option value="Riohacha">Riohacha</option><option value="Pasto">Pasto</option><option value="Quibd\u00F3">Quibd\u00F3</option><option value="Florencia">Florencia</option><option value="Yopal">Yopal</option><option value="Arauca">Arauca</option><option value="Leticia">Leticia</option><option value="In\u00EDrida">In\u00EDrida</option><option value="San Jos\u00E9 del Guaviare">San Jos\u00E9 del Guaviare</option><option value="Mit\u00FA">Mit\u00FA</option><option value="Puerto Carre\u00F1o">Puerto Carre\u00F1o</option><option value="Mocoa">Mocoa</option><option value="San Andr\u00E9s">San Andr\u00E9s</option><option value="Otra">Otra ciudad</option></select></div>';
+  h += '<div class="form-group"><label>Direcci\u00F3n</label><input class="form-input" id="o-dir" placeholder="Direcci\u00F3n de entrega"></div></div>';
   h += '<div class="form-group"><label>Notas</label><textarea class="form-input" id="o-notas" placeholder="Horario, instrucciones..."></textarea></div>';
-  // Bloque donde se muestra el costo de envío (lo llena arcanoActualizarShippingInfo)
+  // Bloque donde se muestra el costo de env\u00EDo (lo llena arcanoActualizarShippingInfo)
   h += '<div id="shipping-info" style="display:none"></div>';
   h += '</div>';
-  // QR removido del checkout — el admin coordina el pago por WhatsApp
+  // QR removido del checkout \u2014 el admin coordina el pago por WhatsApp
   body.innerHTML = h;
   body.scrollTop = 0;
   _cartSetFooterStep(2);
   // Autocompletar si hay sesion de cliente
   setTimeout(_autocompletarCheckoutSiSesion, 50);
-  // Llamada inicial por si la ciudad quedó preseleccionada por autocompletar
+  // Llamada inicial por si la ciudad qued\u00F3 preseleccionada por autocompletar
   setTimeout(function() { if (typeof arcanoActualizarShippingInfo === 'function') arcanoActualizarShippingInfo(); }, 80);
 }
 
@@ -318,7 +318,7 @@ function backToCart() {
   renderCartDrawer();
 }
 
-// Mantenemos la función vieja como alias para no romper otros lugares que la llamen
+// Mantenemos la funci\u00F3n vieja como alias para no romper otros lugares que la llamen
 function updateShippingInfo() {
   if (typeof arcanoActualizarShippingInfo === 'function') {
     arcanoActualizarShippingInfo();
@@ -349,11 +349,11 @@ function sendOrder() {
   var ciudad = document.getElementById('o-ciudad').value.trim();
   var dir = document.getElementById('o-dir').value.trim();
   var notas = document.getElementById('o-notas').value.trim();
-  if (!nombre || !tel) { alert('Nombre y teléfono son obligatorios'); return; }
+  if (!nombre || !tel) { alert('Nombre y tel\u00E9fono son obligatorios'); return; }
   if (!ciudad) { alert('Selecciona tu ciudad'); return; }
-  if (cart.length === 0) { alert('El carrito está vacío'); return; }
+  if (cart.length === 0) { alert('El carrito est\u00E1 vac\u00EDo'); return; }
   var total = getCartTotal();
-  // Cálculo real de envío con Servientrega
+  // C\u00E1lculo real de env\u00EDo con Servientrega
   var envio = (typeof arcanoCalcularEnvio === 'function')
     ? arcanoCalcularEnvio(ciudad, cart, total)
     : { exito: false, costo: 0, gratis: false, categoria: null, pesoGramos: 0 };
@@ -361,11 +361,11 @@ function sendOrder() {
   var totalFinal = total + envioCosto;
   var envioInfoNotas;
   if (!envio.exito) {
-    envioInfoNotas = 'Sin cobertura automática. Coordinar con el cliente.';
+    envioInfoNotas = 'Sin cobertura autom\u00E1tica. Coordinar con el cliente.';
   } else if (envio.gratis) {
-    envioInfoNotas = 'Envío gratis (Medellín, pedido ≥ $60.000)';
+    envioInfoNotas = 'Env\u00EDo gratis (Medell\u00EDn, pedido \u2265 $60.000)';
   } else {
-    envioInfoNotas = 'Envío ' + ciudad + ' (' + envio.categoria + ', ' + Math.ceil(envio.pesoGramos / 1000) + 'kg): $' + envio.costo.toLocaleString('es-CO') + ' (Servientrega Contado Normal Terrestre)';
+    envioInfoNotas = 'Env\u00EDo ' + ciudad + ' (' + envio.categoria + ', ' + Math.ceil(envio.pesoGramos / 1000) + 'kg): $' + envio.costo.toLocaleString('es-CO') + ' (Servientrega Contado Normal Terrestre)';
   }
   var items = [];
   for (var i = 0; i < cart.length; i++) {
@@ -624,7 +624,7 @@ function _renderDetail(products, idx) {
   overlay.addEventListener('touchend', function(e) {
     touchEndX = e.changedTouches[0].screenX;
     var diff = touchEndX - touchStartX;
-    if (Math.abs(diff) < 60) return; // swipe mínimo 60px
+    if (Math.abs(diff) < 60) return; // swipe m\u00EDnimo 60px
     if (diff > 0 && hasPrev) _swipeDetail(idx, -1);
     else if (diff < 0 && hasNext) _swipeDetail(idx, 1);
   }, { passive: true });
@@ -640,7 +640,7 @@ function _swipeDetail(currentIdx, direction) {
   if (!overlay) { _renderDetail(products, newIdx); return; }
   var modal = overlay.querySelector('.detail-modal');
   if (!modal) { _renderDetail(products, newIdx); return; }
-  // Animación tipo carta: deslizar fuera + fade
+  // Animaci\u00F3n tipo carta: deslizar fuera + fade
   modal.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
   modal.style.transform = direction > 0 ? 'translateX(-40px) scale(0.95)' : 'translateX(40px) scale(0.95)';
   modal.style.opacity = '0';
@@ -650,7 +650,7 @@ function _swipeDetail(currentIdx, direction) {
     // Reset transform para que entre desde el lado opuesto
     modal.style.transform = direction > 0 ? 'translateX(40px) scale(0.95)' : 'translateX(-40px) scale(0.95)';
     modal.style.opacity = '0';
-    // Forzar reflow para que la transición funcione
+    // Forzar reflow para que la transici\u00F3n funcione
     void modal.offsetHeight;
     // Animar entrada
     modal.style.transform = 'translateX(0) scale(1)';
@@ -745,14 +745,14 @@ function renderRecipeGrid() {
   var filtered = [];
   for (var i = 0; i < recetas.length; i++) { if (recetas[i].categoria === _currentRecetaCat) filtered.push(recetas[i]); }
   var grid = document.getElementById('recipe-grid');
-  if (filtered.length === 0) { grid.innerHTML = '<div class="page-placeholder"><p>Sin recetas aún</p></div>'; return; }
+  if (filtered.length === 0) { grid.innerHTML = '<div class="page-placeholder"><p>Sin recetas a\u00FAn</p></div>'; return; }
   var h = '';
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
     var diffClass = r.dificultad === 'Facil' ? 'easy' : (r.dificultad === 'Dificil' ? 'hard' : 'medium');
     h += '<div class="recipe-grid-card" onclick="showRecipeDetail(\'' + r._key + '\')">';
     h += '<div class="rgc-cat">' + (r.categoria || '') + '</div>';
-    h += '<div class="rgc-title">' + (r.titulo || 'Sin título') + '</div>';
+    h += '<div class="rgc-title">' + (r.titulo || 'Sin t\u00EDtulo') + '</div>';
     h += '<div class="rgc-meta">';
     h += '<span class="rgc-diff ' + diffClass + '">' + (r.dificultad || '') + '</span>';
     if (r.tiempo) h += '<span>' + r.tiempo + '</span>';
@@ -802,7 +802,7 @@ function showRecipeDetail(key) {
   h += '<button class="recipe-detail-back" onclick="_backToRecipes()">\u2190 Volver a recetas</button>';
   h += '<div class="rd-header">';
   h += '<div class="rd-cat-badge">' + catIcon + ' ' + (r.categoria || '') + '</div>';
-  h += '<h2 class="rd-title">' + (r.titulo || 'Sin título') + '</h2>';
+  h += '<h2 class="rd-title">' + (r.titulo || 'Sin t\u00EDtulo') + '</h2>';
   h += '<div class="rd-meta">';
   h += '<span class="rd-diff" style="color:' + diffColor + '">' + (r.dificultad || '') + '</span>';
   if (r.tiempo) h += '<span>\u23f1 ' + r.tiempo + '</span>';
@@ -815,7 +815,7 @@ function showRecipeDetail(key) {
     h += '</ul>';
   }
   if (r.pasos && r.pasos.length) {
-    h += '<div class="rd-section-label">Preparación</div><ol class="rd-steps">';
+    h += '<div class="rd-section-label">Preparaci\u00F3n</div><ol class="rd-steps">';
     for (var k = 0; k < r.pasos.length; k++) h += '<li>' + _linkArcanoProducts(r.pasos[k]) + '</li>';
     h += '</ol>';
   }
@@ -842,7 +842,7 @@ function compartirReceta(key) {
     text += '\n';
   }
   if (receta.pasos && receta.pasos.length) {
-    text += 'Preparación:\n';
+    text += 'Preparaci\u00F3n:\n';
     for (var j = 0; j < receta.pasos.length; j++) text += (j + 1) + '. ' + receta.pasos[j] + '\n';
   }
   text += '\n\u2728 Arcano Especias';
@@ -1005,7 +1005,7 @@ function renderBlendBuilder() {
   }
 
   // Step indicators (hide on success)
-  var steps = ['Nombre', 'Tamaño', 'Especias', 'Proporciones', 'Confirmar'];
+  var steps = ['Nombre', 'Tama\u00F1o', 'Especias', 'Proporciones', 'Confirmar'];
   var h = '<div class="bb-container">';
   if (step < 6) {
   h += '<div class="bb-steps">';
@@ -1025,20 +1025,20 @@ function renderBlendBuilder() {
   if (step === 1) {
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">NOMBRE DE TU BLEND</h3>';
-    h += '<p class="bb-step-desc">Para un sabor único, un nombre increíble!.</p>';
-    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Sazón Original">';
+    h += '<p class="bb-step-desc">Para un sabor \u00FAnico, un nombre incre\u00EDble!.</p>';
+    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Saz\u00F3n Original">';
     h += '</div>';
   }
 
-  // Step 2: Tamaño
+  // Step 2: Tama\u00F1o
   if (step === 2) {
     h += '<div class="bb-step-content">';
-    h += '<h3 class="bb-step-title">Elige el tamaño</h3>';
-    h += '<p class="bb-step-desc">Selecciona el tamaño del frasco para tu blend.</p>';
+    h += '<h3 class="bb-step-title">Elige el tama\u00F1o</h3>';
+    h += '<p class="bb-step-desc">Selecciona el tama\u00F1o del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
-    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco pequeño"></div>';
-    h += '<div class="bb-size-card-name">Pequeño</div>';
+    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco peque\u00F1o"></div>';
+    h += '<div class="bb-size-card-name">Peque\u00F1o</div>';
     if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
     h += '</div>';
     h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
@@ -1098,8 +1098,8 @@ function renderBlendBuilder() {
   // Step 6: Exito
   if (step === 6) {
     h += '<div class="bb-step-content bb-success">';
-    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fantástico</h3>';
-    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho carácter y estilo.</p>';
+    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fant\u00E1stico</h3>';
+    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho car\u00E1cter y estilo.</p>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
     h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
@@ -1109,12 +1109,12 @@ function renderBlendBuilder() {
 
   // Step 5: Confirmar
   if (step === 5) {
-    var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Pequeño';
+    var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Peque\u00F1o';
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Resumen de tu blend</h3>';
     h += '<div class="bb-summary">';
     h += '<div class="bb-summary-row"><span class="bb-summary-label">Nombre</span><span class="bb-summary-value">' + (state.nombre || '-') + '</span></div>';
-    h += '<div class="bb-summary-row"><span class="bb-summary-label">Tamaño</span><span class="bb-summary-value">' + tallaLabel + '</span></div>';
+    h += '<div class="bb-summary-row"><span class="bb-summary-label">Tama\u00F1o</span><span class="bb-summary-value">' + tallaLabel + '</span></div>';
     h += '<div class="bb-summary-row"><span class="bb-summary-label">Precio</span><span class="bb-summary-value bb-summary-price">$' + precio.toLocaleString() + '</span></div>';
     h += '</div>';
     h += '<div class="bb-summary-specs">';
@@ -1129,7 +1129,7 @@ function renderBlendBuilder() {
   if (step < 6) {
   h += '<div class="bb-nav">';
   if (step > 1) {
-    h += '<button class="bb-nav-btn prev" onclick="_bbGoStep(' + (step - 1) + ')">Atrás</button>';
+    h += '<button class="bb-nav-btn prev" onclick="_bbGoStep(' + (step - 1) + ')">Atr\u00E1s</button>';
   } else {
     h += '<div></div>';
   }
@@ -1206,7 +1206,7 @@ function addCustomBlendToCart() {
   if (total !== 100) { alert('El total debe ser 100%'); return; }
   if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
   var precio = _getCustomBlendPrice(_blendBuilderState.talla);
-  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Pequeño';
+  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Peque\u00F1o';
   var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
   var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
   for (var i = 0; i < _blendBuilderState.especias.length; i++) {
@@ -1261,7 +1261,7 @@ function renderBlogList() {
   onBlogReady(function(posts) {
     var filtered = getBlogPosts();
     if (filtered.length === 0) {
-      grid.innerHTML = '<div class="empty-state"><p>Aún no hay artículos en esta categoria.</p></div>';
+      grid.innerHTML = '<div class="empty-state"><p>Au\u0301n no hay art\u00EDculos en esta categoria.</p></div>';
       return;
     }
     var h = '';
@@ -1278,7 +1278,7 @@ function renderBlogList() {
       if (imgSrc) h += '<div class="blog-card-img"><img src="' + imgSrc + '" alt="' + (p.titulo || '').replace(/"/g, '&quot;') + '" loading="lazy"></div>';
       h += '<div class="blog-card-body">';
       if (p.categoria) h += '<span class="blog-card-cat">' + p.categoria + '</span>';
-      h += '<h3 class="blog-card-title">' + (p.titulo || 'Sin título') + '</h3>';
+      h += '<h3 class="blog-card-title">' + (p.titulo || 'Sin t\u00EDtulo') + '</h3>';
       if (p.subtitulo) h += '<p class="blog-card-sub">' + p.subtitulo + '</p>';
       if (fechaStr) h += '<span class="blog-card-date">' + fechaStr + '</span>';
       h += '</div></div>';
@@ -1474,21 +1474,21 @@ function _mcShowLogin() {
         '<h3>Mi Cuenta</h3>' +
         '<p class="mc-sub" id="mc-sub-label">Accede para ver tus pedidos y promociones exclusivas</p>' +
       '</div>' +
-      '<div class="form-group"><label>Número de WhatsApp</label>' +
+      '<div class="form-group"><label>N\u00FAmero de WhatsApp</label>' +
         '<input class="form-input" id="mc-tel" placeholder="3001234567" maxlength="10" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,10)" onblur="_mcBuscarCliente()"></div>' +
       '<div class="form-group"><label>Tu nombre</label>' +
         '<input class="form-input" id="mc-nombre" placeholder="Tu nombre" maxlength="40"></div>' +
       '<button class="btn-primary btn-block" onclick="_mcRegistrar()" id="mc-btn-registrar">' +
         '<span>Ingresar</span>' +
       '</button>' +
-      '<p class="mc-hint" id="mc-hint">💡 Regístrate con tu WhatsApp y nombre. Podrás ver tus pedidos y promociones exclusivas.</p>' +
+      '<p class="mc-hint" id="mc-hint">\u{1F4A1} Reg\u00EDstrate con tu WhatsApp y nombre. Podr\u00E1s ver tus pedidos y promociones exclusivas.</p>' +
     '</div>';
 }
 
-// Busca si el WhatsApp ya existe en Firebase → autocompleta nombre y cambia UI
+// Busca si el WhatsApp ya existe en Firebase \u2192 autocompleta nombre y cambia UI
 function _mcBuscarCliente() {
   var tel = (document.getElementById('mc-tel').value || '').trim();
-  if (!tel || tel.length < 6) return; // necesita al menos 6 dígitos
+  if (!tel || tel.length < 6) return; // necesita al menos 6 d\u00EDgitos
   var telNorm = _normalizeWhatsapp(tel);
   if (!telNorm) return;
   try {
@@ -1510,18 +1510,18 @@ function _mcBuscarCliente() {
           nombreInput.style.color = 'var(--gold)';
           nombreInput.style.fontWeight = '600';
         }
-        if (subLabel) subLabel.textContent = '¡Bienvenido de nuevo, ' + (cliente.nombre || '').split(' ')[0] + '!';
+        if (subLabel) subLabel.textContent = '\u00A1Bienvenido de nuevo, ' + (cliente.nombre || '').split(' ')[0] + '!';
         if (btn) btn.innerHTML = '<span>Ingresar</span>';
-        if (hint) hint.innerHTML = '💡 Ya estás registrado. Solo presiona <b>Ingresar</b>.';
+        if (hint) hint.innerHTML = '\u{1F4A1} Ya est\u00E1s registrado. Solo presiona <b>Ingresar</b>.';
       } else {
         // Cliente nuevo: limpiar y mostrar registro
         if (nombreInput) {
           nombreInput.style.color = '';
           nombreInput.style.fontWeight = '';
         }
-        if (subLabel) subLabel.textContent = 'Regístrate para ver tus pedidos y promociones exclusivas';
+        if (subLabel) subLabel.textContent = 'Reg\u00EDstrate para ver tus pedidos y promociones exclusivas';
         if (btn) btn.innerHTML = '<span>Registrarme</span>';
-        if (hint) hint.innerHTML = '💡 Regístrate con tu WhatsApp y nombre.';
+        if (hint) hint.innerHTML = '\u{1F4A1} Reg\u00EDstrate con tu WhatsApp y nombre.';
       }
     });
   } catch (e) {
@@ -1533,7 +1533,7 @@ function _mcBuscarCliente() {
 function _mcRegistrar() {
   var tel = (document.getElementById('mc-tel').value || '').trim();
   var nombre = (document.getElementById('mc-nombre').value || '').trim();
-  if (!tel) { alert('Ingresa tu número de WhatsApp'); return; }
+  if (!tel) { alert('Ingresa tu n\u00FAmero de WhatsApp'); return; }
   if (!nombre) { alert('Ingresa tu nombre'); return; }
 
   var btn = document.getElementById('mc-btn-registrar');
@@ -1543,7 +1543,7 @@ function _mcRegistrar() {
 
   registrarCliente(tel, nombre).then(function(cliente) {
     saveClienteSession(cliente);
-    _showToast('¡Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
+    _showToast('\u00A1Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
     _updateCuentaBadge();
     _mcShowExito(cliente);
   }).catch(function(err) {
@@ -1553,7 +1553,7 @@ function _mcRegistrar() {
   });
 }
 
-// Pantalla de éxito: registro confirmado
+// Pantalla de \u00E9xito: registro confirmado
 function _mcShowExito(cliente) {
   var el = document.getElementById('mc-content');
   if (!el) return;
@@ -1562,7 +1562,7 @@ function _mcShowExito(cliente) {
       '<div class="mc-exito-icon">' +
         '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
       '</div>' +
-      '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">¡Bienvenido, ' + esc(cliente.nombre || '').split(' ')[0] + '!</h3>' +
+      '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">\u00A1Bienvenido, ' + esc(cliente.nombre || '').split(' ')[0] + '!</h3>' +
       '<p class="mc-sub" style="text-align:center;margin-bottom:20px">' +
         'Ya eres parte de Arcano!' +
       '</p>' +
@@ -1574,7 +1574,7 @@ function _mcVerifyOTP() {
   var tel = (document.querySelector('#mc-content [data-tel]') || {}).dataset ? document.querySelector('#mc-content [data-tel]').dataset.tel : '';
   if (!tel) tel = (document.getElementById('mc-tel').value || '').trim();
   var codigo = (document.getElementById('mc-otp').value || '').trim();
-  if (!codigo) { alert('Ingresa el código de 6 dígitos'); return; }
+  if (!codigo) { alert('Ingresa el c\u00F3digo de 6 d\u00EDgitos'); return; }
   var btn = event.target;
   btn.disabled = true; btn.textContent = 'Verificando...';
   verifyClienteOTP(tel, codigo).then(function(cliente) {
@@ -1607,7 +1607,7 @@ function _mcShowHistorial(cliente) {
           '</div>' +
         '</div>' +
       '</div>' +
-      // Colección Arcano
+      // Colecci\u00F3n Arcano
       '<div id="mc-coleccion-section"></div>' +
       // Seccion promos exclusivas
       '<div id="mc-promos-section"></div>' +
@@ -1618,11 +1618,11 @@ function _mcShowHistorial(cliente) {
         '<button class="mc-tab" data-tab="anulados" onclick="_mcSwitchTab(\'anulados\')">Anulados <span class="mc-tab-count" id="mc-c-anulados">0</span></button>' +
       '</div>' +
       '<div id="mc-pedidos-list"><div class="loader"></div></div>' +
-      '<button class="btn-secondary btn-block" style="margin-top:18px" onclick="_mcLogout()">Cerrar sesión</button>' +
+      '<button class="btn-secondary btn-block" style="margin-top:18px" onclick="_mcLogout()">Cerrar sesi\u00F3n</button>' +
     '</div>';
   // Cargar promos
   _mcLoadPromos();
-  // Cargar colección Arcano
+  // Cargar colecci\u00F3n Arcano
   _mcLoadColeccion(cliente);
   // Cargar pedidos
   if (!cliente.id) {
@@ -1675,7 +1675,7 @@ function _mcRenderPedidosTab(tab) {
     filtrados = pedidos.filter(function(p) { return ['nuevo','confirmado','enviado'].indexOf(p.estado || 'nuevo') !== -1; });
   }
   if (filtrados.length === 0) {
-    list.innerHTML = '<p class="mc-empty">No tienes pedidos ' + (tab === 'entregados' ? 'entregados aún.' : tab === 'anulados' ? 'anulados.' : 'en proceso.') + '</p>';
+    list.innerHTML = '<p class="mc-empty">No tienes pedidos ' + (tab === 'entregados' ? 'entregados a\u00FAn.' : tab === 'anulados' ? 'anulados.' : 'en proceso.') + '</p>';
     return;
   }
   var h = '';
@@ -1709,12 +1709,12 @@ function _mcRenderPedidosTab(tab) {
 function _mcLoadPromos() {
   var container = document.getElementById('mc-promos-section');
   if (!container) return;
-  container.innerHTML = '<h4 class="mc-promos-title">🎁 Promociones exclusivas para ti</h4><div id="mc-promos-list" class="mc-promos-list"><div class="loader"></div></div>';
+  container.innerHTML = '<h4 class="mc-promos-title">\u{1F381} Promociones exclusivas para ti</h4><div id="mc-promos-list" class="mc-promos-list"><div class="loader"></div></div>';
   getPromocionesActivas().then(function(promos) {
     var list = document.getElementById('mc-promos-list');
     if (!list) return;
     if (promos.length === 0) {
-      list.innerHTML = '<p class="mc-empty">Sin promociones activas por ahora. ¡Vuelve pronto!</p>';
+      list.innerHTML = '<p class="mc-empty">Sin promociones activas por ahora. \u00A1Vuelve pronto!</p>';
       return;
     }
     var h = '';
@@ -1728,16 +1728,16 @@ function _mcLoadPromos() {
         var fi = new Date(pr.fechaInicio);
         vigencia = '<div class="mc-promo-vigencia">Desde: ' + fi.toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) + '</div>';
       }
-      var codigo = pr.codigo ? '<div class="mc-promo-codigo" onclick="_mcCopiarCodigo(\'' + pr.codigo + '\')"><span>Código:</span><b>' + pr.codigo + '</b><span class="mc-copy-hint">📋 copiar</span></div>' : '';
+      var codigo = pr.codigo ? '<div class="mc-promo-codigo" onclick="_mcCopiarCodigo(\'' + pr.codigo + '\')"><span>C\u00F3digo:</span><b>' + pr.codigo + '</b><span class="mc-copy-hint">\u{1F4CB} copiar</span></div>' : '';
       var descuento = '';
       if (pr.tipo === 'porcentaje') descuento = pr.valor + '% OFF';
       else if (pr.tipo === 'monto') descuento = '$' + (pr.valor || 0).toLocaleString() + ' Off';
-      else if (pr.tipo === 'envio') descuento = 'Envío gratis';
+      else if (pr.tipo === 'envio') descuento = 'Env\u00EDo gratis';
       else if (pr.tipo === 'producto') descuento = 'Producto gratis';
       else descuento = pr.titulo || 'Promo';
       h += '<div class="mc-promo-card' + (pr.destacada ? ' mc-promo-destacada' : '') + '">' +
         '<div class="mc-promo-badge">' + descuento + '</div>' +
-        '<div class="mc-promo-nombre">' + (pr.titulo || 'Promoción') + '</div>' +
+        '<div class="mc-promo-nombre">' + (pr.titulo || 'Promoci\u00F3n') + '</div>' +
         (pr.descripcion ? '<div class="mc-promo-desc">' + pr.descripcion + '</div>' : '') +
         codigo + vigencia +
       '</div>';
@@ -1752,18 +1752,18 @@ function _mcLoadPromos() {
 function _mcCopiarCodigo(codigo) {
   try {
     navigator.clipboard.writeText(codigo).then(function() {
-      _showToast('Código copiado: ' + codigo);
+      _showToast('C\u00F3digo copiado: ' + codigo);
     }).catch(function() {
       // Fallback para navegadores sin clipboard API
       var tmp = document.createElement('input');
       tmp.value = codigo;
       document.body.appendChild(tmp);
       tmp.select();
-      try { document.execCommand('copy'); _showToast('Código copiado: ' + codigo); } catch(e) {}
+      try { document.execCommand('copy'); _showToast('C\u00F3digo copiado: ' + codigo); } catch(e) {}
       document.body.removeChild(tmp);
     });
   } catch(e) {
-    _showToast('Código: ' + codigo);
+    _showToast('C\u00F3digo: ' + codigo);
   }
 }
 
@@ -1771,7 +1771,7 @@ function _mcLogout() {
   clearClienteSession();
   closeMiCuenta();
   _updateCuentaBadge();
-  _showToast('Sesión cerrada');
+  _showToast('Sesi\u00F3n cerrada');
 }
 
 function _updateCuentaBadge() {
@@ -1781,7 +1781,7 @@ function _updateCuentaBadge() {
   var svgEl = btn ? btn.querySelector('svg') : null;
   if (!btn) return;
   if (session && session.nombre) {
-    // Mostrar primer nombre (no inicial) en el botón
+    // Mostrar primer nombre (no inicial) en el bot\u00F3n
     var primerNombre = session.nombre.trim().split(/\s+/)[0] || '';
     if (initialsEl) {
       initialsEl.textContent = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
@@ -1792,7 +1792,7 @@ function _updateCuentaBadge() {
     btn.setAttribute('title', 'Mi cuenta: ' + session.nombre + ' (click para ver pedidos y promos)');
     btn.setAttribute('aria-label', 'Mi cuenta: ' + session.nombre);
   } else {
-    // No hay sesión: mostrar icono default
+    // No hay sesi\u00F3n: mostrar icono default
     if (initialsEl) {
       initialsEl.textContent = '';
       initialsEl.style.display = '';
@@ -1820,7 +1820,7 @@ function _autocompletarCheckoutSiSesion() {
 }
 
 /* ===================== POPUP LATERAL =====================
-   Pestaña que asoma desde la derecha a los X segundos
+   Pesta\u00F1a que asoma desde la derecha a los X segundos
    configurados por el admin. Muestra mensaje + imagen.
    ================================================================== */
 var _popupLateralTimer = null;
@@ -1864,7 +1864,7 @@ function _showPopupLateral(popup) {
   el.style.setProperty('--pp-accent', accentColor);
   el.style.setProperty('--pp-btn-bg', btnBg);
   el.style.setProperty('--pp-btn-text', btnText);
-  // Tipografía configurable
+  // Tipograf\u00EDa configurable
   el.style.setProperty('--pp-title-size', popup.tamanoTitulo || '1.25rem');
   el.style.setProperty('--pp-text-size', popup.tamanoTexto || '0.9rem');
   // Estilos (negrita, subrayada, cursiva, combinaciones)
@@ -1915,21 +1915,21 @@ function _showPopupLateral(popup) {
   el.innerHTML = html;
   document.body.appendChild(el);
 
-  // Animación de entrada: doble rAF para asegurar que el browser pinte el estado inicial
+  // Animaci\u00F3n de entrada: doble rAF para asegurar que el browser pinte el estado inicial
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
       el.classList.add('show');
     });
   });
 
-  // Auto-cerrar después de la duración configurada
+  // Auto-cerrar despu\u00E9s de la duraci\u00F3n configurada
   var duracion = parseInt(popup.duracion, 10) || 8;
   if (duracion < 3) duracion = 3;
   setTimeout(function() {
     _closePopupLateral();
   }, duracion * 1000);
 
-  // No volver a mostrar en esta sesión
+  // No volver a mostrar en esta sesi\u00F3n
   try {
     sessionStorage.setItem('arcano_popup_shown', '1');
   } catch(e) {}
@@ -1951,25 +1951,25 @@ function _usosHtml(p) {
   var usos = p.uso.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
   if (!usos.length) return '';
   var iconos = {
-    'Carnes': '🥩', 'Pollo': '🍗', 'Pescados y Mariscos': '🐟', 'Cerdo': '🐖',
-    'Arroces': '🍚', 'Pastas': '🍝', 'Sopas y Cremas': '🍲', 'Ensaladas': '🥗',
-    'Guisos y Estofados': '🍲', 'Salsas': '🥫', 'Marinadas y Adobos': '🌿',
-    'Panaderia': '🍞', 'Postres': '🍰', 'Bebidas': '🥤', 'Vegetales': '🥕',
-    'Ceviches': '🐠', 'Currys': '🍛', 'Tacos y Burritos': '🌮',
-    'Hamburguesas': '🍔', 'Pizzas': '🍕'
+    'Carnes': '\u{1F969}', 'Pollo': '\u{1F357}', 'Pescados y Mariscos': '\u{1F41F}', 'Cerdo': '\u{1F416}',
+    'Arroces': '\u{1F35A}', 'Pastas': '\u{1F35D}', 'Sopas y Cremas': '\u{1F372}', 'Ensaladas': '\u{1F957}',
+    'Guisos y Estofados': '\u{1F372}', 'Salsas': '\u{1F96B}', 'Marinadas y Adobos': '\u{1F33F}',
+    'Panaderia': '\u{1F35E}', 'Postres': '\u{1F370}', 'Bebidas': '\u{1F964}', 'Vegetales': '\u{1F955}',
+    'Ceviches': '\u{1F420}', 'Currys': '\u{1F35B}', 'Tacos y Burritos': '\u{1F32E}',
+    'Hamburguesas': '\u{1F354}', 'Pizzas': '\u{1F355}'
   };
-  var html = '<div class="detail-usos"><div class="detail-usos-label">✨ Ideal para</div><div class="detail-usos-list">';
+  var html = '<div class="detail-usos"><div class="detail-usos-label">\u2728 Ideal para</div><div class="detail-usos-list">';
   for (var i = 0; i < usos.length; i++) {
-    var icon = iconos[usos[i]] || '▪';
+    var icon = iconos[usos[i]] || '\u25AA';
     html += '<span class="detail-uso-chip">' + icon + ' ' + usos[i] + '</span>';
   }
   html += '</div></div>';
   return html;
 }
 
-/* === Hero Landing: partículas + fade on scroll === */
+/* === Hero Landing: part\u00EDculas + fade on scroll === */
 (function() {
-  // Crear partículas de especias flotando
+  // Crear part\u00EDculas de especias flotando
   var particlesContainer = document.getElementById('hero-particles');
   if (!particlesContainer) return;
 
@@ -1990,10 +1990,10 @@ function _usosHtml(p) {
     particlesContainer.appendChild(p);
   }
 
-  // Sin fade on scroll — el texto se queda fijo
+  // Sin fade on scroll \u2014 el texto se queda fijo
 })();
 
-/* === COLECCIÓN ARCANO — Cartón del cliente === */
+/* === COLECCI\u00D3N ARCANO \u2014 Cart\u00F3n del cliente === */
 function _mcLoadColeccion(cliente) {
   var el = document.getElementById('mc-coleccion-section');
   if (!el) return;
@@ -2005,11 +2005,11 @@ function _mcLoadColeccion(cliente) {
   if (wa.startsWith('+')) wa = wa.substring(1);
 
   // Mostrar loading
-  el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">🏅 Colección Arcano</div><div class="loader" style="margin:12px auto"></div></div>';
+  el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">\u{1F3C5} Colecci\u00F3n Arcano</div><div class="loader" style="margin:12px auto"></div></div>';
 
   onColeccionReady(wa, function(col) {
     if (!col) {
-      // No tiene cartón todavía — mostrar cartón vacío
+      // No tiene cart\u00F3n todav\u00EDa \u2014 mostrar cart\u00F3n vac\u00EDo
       col = { whatsapp: wa, nombre: cliente.nombre || '', casilleros: 0, completado: false, canjeado: false, historial: [] };
     }
     _mcRenderColeccion(el, col);
@@ -2023,11 +2023,11 @@ function _mcRenderColeccion(el, col) {
 
   var h = '<div class="coleccion-card">';
   h += '<div class="coleccion-header">';
-  h += '<div class="coleccion-icon">🏅</div>';
-  h += '<div><div class="coleccion-title">Colección Arcano</div>';
-  h += '<div class="coleccion-subtitle">' + (casilleros >= 10 ? '¡Cartón completado!' : 'Acumula 10 blends pequeños') + '</div></div>';
+  h += '<div class="coleccion-icon">\u{1F3C5}</div>';
+  h += '<div><div class="coleccion-title">Colecci\u00F3n Arcano</div>';
+  h += '<div class="coleccion-subtitle">' + (casilleros >= 10 ? '\u00A1Cart\u00F3n completado!' : 'Acumula 10 blends peque\u00F1os') + '</div></div>';
   h += '</div>';
-  h += '<div class="coleccion-desc">Compra <b>10 Blends pequeños</b> y recibe un <b>Blend Grande</b> de regalo.</div>';
+  h += '<div class="coleccion-desc">Compra <b>10 Blends peque\u00F1os</b> y recibe un <b>Blend Grande</b> de regalo.</div>';
 
   // Grid de 10 slots (2 filas de 5)
   h += '<div class="coleccion-grid">';
@@ -2046,24 +2046,24 @@ function _mcRenderColeccion(el, col) {
   h += '<div class="coleccion-progress-text"><b>' + casilleros + '</b> / 10</div>';
   h += '</div>';
 
-  // Mensaje según estado
+  // Mensaje seg\u00FAn estado
   if (completado && !canjeado) {
     h += '<div class="coleccion-msg coleccion-msg-complete">';
-    h += '<span class="coleccion-msg-icon">🎉</span>';
-    h += '<span>¡Felicitaciones! Has completado tu cartón.<br>Tu próximo Blend Grande es <b>gratis</b>.</span>';
+    h += '<span class="coleccion-msg-icon">\u{1F389}</span>';
+    h += '<span>\u00A1Felicitaciones! Has completado tu cart\u00F3n.<br>Tu pr\u00F3ximo Blend Grande es <b>gratis</b>.</span>';
     h += '</div>';
   } else if (canjeado) {
     h += '<div class="coleccion-msg coleccion-msg-canjeado">';
-    h += '<span class="coleccion-msg-icon">✓</span>';
-    h += '<span>Canjeaste tu Blend Grande gratis.<br>¡Sigue comprando para completar tu próximo cartón!</span>';
+    h += '<span class="coleccion-msg-icon">\u2713</span>';
+    h += '<span>Canjeaste tu Blend Grande gratis.<br>\u00A1Sigue comprando para completar tu pr\u00F3ximo cart\u00F3n!</span>';
     h += '</div>';
   } else if (casilleros > 0) {
     var restantes = 10 - casilleros;
     h += '<div class="coleccion-msg coleccion-msg-progress">';
-    h += 'Te faltan <b>' + restantes + '</b> blend' + (restantes > 1 ? 's' : '') + ' pequeño' + (restantes > 1 ? 's' : '') + ' para tu regalo.';
+    h += 'Te faltan <b>' + restantes + '</b> blend' + (restantes > 1 ? 's' : '') + ' peque\u00F1o' + (restantes > 1 ? 's' : '') + ' para tu regalo.';
     h += '</div>';
   } else {
-    h += '<div class="coleccion-msg coleccion-msg-start">¡Empieza tu colección comprando tu primer Blend pequeño!</div>';
+    h += '<div class="coleccion-msg coleccion-msg-start">\u00A1Empieza tu colecci\u00F3n comprando tu primer Blend peque\u00F1o!</div>';
   }
 
   h += '</div>';

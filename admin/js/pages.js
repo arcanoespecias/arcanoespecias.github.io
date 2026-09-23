@@ -27,7 +27,7 @@ const Pages = {
 
 
   /* ================================================================
-     DASHBOARD — MAPA VISUAL COMPLETO DEL NEGOCIO
+     DASHBOARD \u2014 MAPA VISUAL COMPLETO DEL NEGOCIO
      ================================================================ */
   _dashCharts: [],
 
@@ -158,7 +158,7 @@ const Pages = {
     // === BUILD HTML ===
     var h = '';
 
-    // KPIs principales — todos clickeables, llevan a su seccion
+    // KPIs principales \u2014 todos clickeables, llevan a su seccion
     h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--gold)"></span>Resumen del Negocio</div>';
     h += '<div class="dash-kpi-row">';
     h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver historial de ventas"><div class="dash-kpi-icon">$</div><div class="dash-kpi-body"><div class="dash-kpi-val">$' + ingresosHoy.toLocaleString() + '</div><div class="dash-kpi-lbl">Ventas Hoy</div></div></div>';
@@ -169,7 +169,7 @@ const Pages = {
     h += '<div class="dash-kpi-card ' + (totalAlertas > 0 ? 'dash-kpi-red' : 'dash-kpi-green') + ' dash-clickable" onclick="App.navigate(\'stock\')" title="Ver estado de stock"><div class="dash-kpi-icon">!</div><div class="dash-kpi-body"><div class="dash-kpi-val">' + totalAlertas + '</div><div class="dash-kpi-lbl">Alertas de Stock</div><div class="dash-kpi-sub">' + palaBaja.length + ' pala, ' + frascosBajos.length + ' frascos, ' + stickerBajos.length + ' stk</div></div></div>';
     h += '</div>';
 
-    // Segunda fila — todos clickeables
+    // Segunda fila \u2014 todos clickeables
     h += '<div class="dash-kpi-row dash-kpi-sm">';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver ventas"><div class="dash-mini-val">' + totalUnidades + '</div><div class="dash-mini-lbl">Unidades Vendidas</div></div>';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver ventas"><div class="dash-mini-val">$' + (totalOps > 0 ? Math.round(totalIngresos / totalOps) : 0).toLocaleString() + '</div><div class="dash-mini-lbl">Ticket Promedio</div></div>';
@@ -180,23 +180,23 @@ const Pages = {
     var gastosMes = 0;
     for (var gm = 0; gm < gastos.length; gm++) { if (gastos[gm].fecha && gastos[gm].fecha.startsWith(mes)) gastosMes += (gastos[gm].monto || 0); }
     // Ganancia neta del mes = ingresos del mes - compras del mes - gastos del mes
-    // (NO usa totalCostos que es histórico y romperia el calculo mensual)
+    // (NO usa totalCostos que es hist\u00F3rico y romperia el calculo mensual)
     var gananciaNeta = ingresosMes - comprasMes - gastosMes;
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'gastos\')" title="Ver historial de gastos"><div class="dash-mini-val" style="color:var(--red)">$' + gastosMes.toLocaleString() + '</div><div class="dash-mini-lbl">Gastos del Mes</div></div>';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'estadisticas\')" title="Ver estadisticas"><div class="dash-mini-val" style="color:' + (gananciaNeta >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + gananciaNeta.toLocaleString() + '</div><div class="dash-mini-lbl">Ganancia Neta</div><div class="dash-mini-sub">ingresos - compras - gastos</div></div>';
     h += '</div>';
 
     // === VALOR DE INVENTARIO ===
-    // Modelo: Especias en bolsa (insumos) → Blends/Costales/Palas (productos)
+    // Modelo: Especias en bolsa (insumos) \u2192 Blends/Costales/Palas (productos)
     var costos = ArcanoDB.getCostosInsumos();
     var valorBlendsStock = 0;      // Blends producidos (frascos) al precio de venta
     var valorEspeciasBolsaCosto = 0; // Especias en bolsa (gramos) al costo de compra
     var valorEspeciasBolsaVenta = 0; // Especias en bolsa (gramos) convertidas a palas al precio de venta
-    var valorCostales = 0;        // Costales abiertos/vacíos
+    var valorCostales = 0;        // Costales abiertos/vac\u00EDos
     var valorPacks = 0;
     var gramosBolsaTotal = 0;
 
-    // 1. Blends en stock (frascos producidos) → valor de venta
+    // 1. Blends en stock (frascos producidos) \u2192 valor de venta
     for (var vi2 = 0; vi2 < blends.length; vi2++) {
       var b = blends[vi2];
       valorBlendsStock += (b.stockChico || 0) * (b.precioChico || 0);
@@ -208,7 +208,7 @@ const Pages = {
       var e = especias[ei2];
       var gramosBolsa = e.stockBolsa || 0;
       gramosBolsaTotal += gramosBolsa;
-      // Valor al costo (cuánto costó comprar estos gramos)
+      // Valor al costo (cu\u00E1nto cost\u00F3 comprar estos gramos)
       var costoPorGramo = (costos.especias && costos.especias[e.id]) || 0;
       valorEspeciasBolsaCosto += gramosBolsa * costoPorGramo;
       // Valor de venta potencial (convertir a palas y vender)
@@ -246,7 +246,7 @@ const Pages = {
     h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--green)"></span>Valor de Inventario</div>';
     h += '<div class="dash-kpi-row dash-kpi-sm">';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorBlendsStock.toLocaleString() + '</div><div class="dash-mini-lbl">Blends en Stock</div><div class="dash-mini-sub">frascos producidos</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">' + gramosBolsaTotal.toLocaleString() + 'g</div><div class="dash-mini-lbl">Especias en Bolsa</div><div class="dash-mini-sub">insumos — costo $' + valorEspeciasBolsaCosto.toLocaleString() + '</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">' + gramosBolsaTotal.toLocaleString() + 'g</div><div class="dash-mini-lbl">Especias en Bolsa</div><div class="dash-mini-sub">insumos \u2014 costo $' + valorEspeciasBolsaCosto.toLocaleString() + '</div></div>';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorCostales.toLocaleString() + '</div><div class="dash-mini-lbl">Costales (PDV)</div><div class="dash-mini-sub">palas potenciales</div></div>';
     h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--green)">$' + valorVentaTotal.toLocaleString() + '</div><div class="dash-mini-lbl">Valor Venta Total</div><div class="dash-mini-sub">si se vende todo</div></div>';
     h += '</div>';
@@ -406,7 +406,7 @@ const Pages = {
     var pkgC = (costos.envaseChico||0) + (costos.bolsaChica||0) + (costos.cinta||0) + (costos.stickerChico||0);
     var pkgG = (costos.envaseGrande||0) + (costos.bolsaGrande||0) + (costos.cinta||0) + (costos.stickerGrande||0);
 
-    // Filtrar por búsqueda
+    // Filtrar por b\u00FAsqueda
     var filteredEspecias = search ? especias.filter(function(e) {
       return e.nombre.toLowerCase().indexOf(search) !== -1 ||
         ((e.categoria || '').toLowerCase().indexOf(search) !== -1) ||
@@ -441,7 +441,7 @@ const Pages = {
     // Buscador
     if (tab === 'especias' || tab === 'blends' || tab === 'packs') {
       h += '<div style="margin-bottom:12px">' +
-        '<input type="text" class="input" id="prod-search-input" placeholder="Buscar por nombre, categoría o ingrediente..." value="' + (window._prodSearch || '').replace(/"/g, '&quot;') + '" ' +
+        '<input type="text" class="input" id="prod-search-input" placeholder="Buscar por nombre, categor\u00EDa o ingrediente..." value="' + (window._prodSearch || '').replace(/"/g, '&quot;') + '" ' +
         'style="width:100%;max-width:400px;padding:8px 12px;font-size:.9rem" ' +
         'oninput="window._prodSearch=this.value;App.renderPage(\'productos\');setTimeout(function(){var el=document.getElementById(\'prod-search-input\');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length)}},0)">' +
         '</div>';
@@ -456,12 +456,12 @@ const Pages = {
       } else if (filteredEspecias.length === 0) {
         h += '<div class="card"><div class="card-body"><p class="text-muted text-center" style="padding:32px">No se encontraron especias para "' + (window._prodSearch || '').replace(/"/g, '&quot;') + '"</p></div></div>';
       } else {
-        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Pala</th><th>Grs/Ch</th><th>Grs/Gr</th><th>$Pequeño</th><th>$Grande</th><th>Fr.Ch</th><th>Fr.Gr</th><th>Acciones</th></tr></thead><tbody>';
+        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Pala</th><th>Grs/Ch</th><th>Grs/Gr</th><th>$Peque\u00F1o</th><th>$Grande</th><th>Fr.Ch</th><th>Fr.Gr</th><th>Acciones</th></tr></thead><tbody>';
         for (var i = 0; i < filteredEspecias.length; i++) {
           var e = filteredEspecias[i];
           h += '<tr>' +
             '<td class="fw7">' + e.nombre + '</td>' +
-            '<td><span class="badge badge-gold">' + ((e.categorias||[]).length ? (e.categorias||[]).join(', ') : (e.categoria||'—')) + '</span></td>' +
+            '<td><span class="badge badge-gold">' + ((e.categorias||[]).length ? (e.categorias||[]).join(', ') : (e.categoria||'\u2014')) + '</span></td>' +
             '<td>' + (e.stockBolsa||0) + 'g</td>' +
             '<td>' + (e.gramosChico||0) + 'g</td>' +
             '<td>' + (e.gramosGrande||0) + 'g</td>' +
@@ -487,15 +487,15 @@ const Pages = {
       } else if (filteredBlends.length === 0) {
         h += '<div class="card"><div class="card-body"><p class="text-muted text-center" style="padding:32px">No se encontraron blends para "' + (window._prodSearch || '').replace(/"/g, '&quot;') + '"</p></div></div>';
       } else {
-        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Region</th><th>Ingredientes</th><th>$Pequeño</th><th>$Grande</th><th>Fr.Ch</th><th>Fr.Gr</th><th>Acciones</th></tr></thead><tbody>';
+        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Region</th><th>Ingredientes</th><th>$Peque\u00F1o</th><th>$Grande</th><th>Fr.Ch</th><th>Fr.Gr</th><th>Acciones</th></tr></thead><tbody>';
         for (var i = 0; i < filteredBlends.length; i++) {
           var b = filteredBlends[i];
           var ingN = (b.ingredientes||[]).map(function(x){return x.especiaNombre || _espMap[x.especiaId] || '?'}).join(', ');
           h += '<tr>' +
             '<td class="fw7">' + b.nombre + '</td>' +
-            '<td><span class="badge badge-blue">' + ((b.categorias||[]).length ? (b.categorias||[]).join(', ') : (b.categoria||'—')) + '</span></td>' +
-            '<td class="text-sm text-muted">' + (b.region||'—') + '</td>' +
-            '<td class="text-sm text-muted">' + (ingN||'—') + '</td>' +
+            '<td><span class="badge badge-blue">' + ((b.categorias||[]).length ? (b.categorias||[]).join(', ') : (b.categoria||'\u2014')) + '</span></td>' +
+            '<td class="text-sm text-muted">' + (b.region||'\u2014') + '</td>' +
+            '<td class="text-sm text-muted">' + (ingN||'\u2014') + '</td>' +
             '<td>$' + (b.precioChico||0).toLocaleString() + '</td>' +
             '<td>$' + (b.precioGrande||0).toLocaleString() + '</td>' +
             '<td><span class="' + ((b.stockChico||0)<=3?'text-red fw7':'text-green') + '">' + (b.stockChico||0) + '</span></td>' +
@@ -607,15 +607,15 @@ const Pages = {
         '<label class="cat-check"><input type="checkbox" value="Cocteleria" id="f-esp-cat-cocteleria"' + (isEdit && (esp.categorias || []).indexOf('Cocteleria') >= 0 ? ' checked' : '') + '><span>Cocteleria</span></label>' +
         '</div></div>' +
         '<div class="card" style="border-color:var(--gold)"><div class="card-header"><h3>Precios de Venta</h3></div><div class="card-body">' +
-        '<div class="g2"><div class="form-group"><label>Precio Pequeño ($)</label><input type="number" class="input" id="f-esp-pc" value="' + (isEdit ? esp.precioChico : '') + '" placeholder="Ej: 8000" min="0"></div>' +
+        '<div class="g2"><div class="form-group"><label>Precio Peque\u00F1o ($)</label><input type="number" class="input" id="f-esp-pc" value="' + (isEdit ? esp.precioChico : '') + '" placeholder="Ej: 8000" min="0"></div>' +
         '<div class="form-group"><label>Precio Grande ($)</label><input type="number" class="input" id="f-esp-pg" value="' + (isEdit ? esp.precioGrande : '') + '" placeholder="Ej: 18000" min="0"></div></div>' +
         '<p class="text-xs text-muted">Estos son los precios que se mostraran en la tienda.</p></div></div>' +
-        '<div class="g2"><div class="form-group"><label>Gramos por Frasco Pequeño</label><input type="number" class="input" id="f-esp-gc" value="' + (isEdit ? esp.gramosChico : '') + '" placeholder="Ej: 30" min="0"></div>' +
+        '<div class="g2"><div class="form-group"><label>Gramos por Frasco Peque\u00F1o</label><input type="number" class="input" id="f-esp-gc" value="' + (isEdit ? esp.gramosChico : '') + '" placeholder="Ej: 30" min="0"></div>' +
         '<div class="form-group"><label>Gramos por Frasco Grande</label><input type="number" class="input" id="f-esp-gg" value="' + (isEdit ? esp.gramosGrande : '') + '" placeholder="Ej: 80" min="0"></div></div>' +
         '<div class="card mt-12" style="background:var(--bg);border-color:var(--gold)"><div class="card-header"><h3>Tienda Online</h3></div><div class="card-body">' +
         '<div class="form-group"><label>Visible en Tienda</label><select class="input" id="f-esp-tienda"><option value="0"' + (isEdit && !esp.enTienda ? ' selected' : '') + '>No</option><option value="1"' + (isEdit && esp.enTienda ? ' selected' : (!isEdit ? ' selected' : '')) + '>Si</option></select></div>' +
         '<p class="text-xs text-muted mb-8">Precio especial para la tienda online (opcional). Si lo dejas vacio se usara el precio de venta.</p>' +
-        '<div class="g2"><div class="form-group"><label>Precio Tienda Pequeño ($)</label><input type="number" class="input" id="f-esp-tc" value="' + (isEdit ? (esp.precioTiendaChico||'') : '') + '" placeholder="Igual al de venta" min="0"></div>' +
+        '<div class="g2"><div class="form-group"><label>Precio Tienda Peque\u00F1o ($)</label><input type="number" class="input" id="f-esp-tc" value="' + (isEdit ? (esp.precioTiendaChico||'') : '') + '" placeholder="Igual al de venta" min="0"></div>' +
         '<div class="form-group"><label>Precio Tienda Grande ($)</label><input type="number" class="input" id="f-esp-tg" value="' + (isEdit ? (esp.precioTiendaGrande||'') : '') + '" placeholder="Igual al de venta" min="0"></div></div>' +
         '<div class="form-group"><label>Imagen</label><div class="img-upload-area" id="img-area-esp"><input type="file" accept="image/*" id="f-esp-img" style="display:none" onchange="Pages.handleImageUpload(this,\'img-area-esp\')">' +
         (isEdit && esp.imagen ? '<img src="' + esp.imagen + '" class="img-preview" id="img-preview-esp"><button class="btn btn-sm btn-red" style="margin-top:6px" onclick="Pages.removeImage(\'img-area-esp\',\'f-esp-img\')">Quitar imagen</button>' : '') +
@@ -623,7 +623,7 @@ const Pages = {
         '</div></div>' +
         '<div class="form-group"><label>Descripcion (opcional)</label><textarea class="input" id="f-esp-desc" rows="2" placeholder="Breve descripcion del producto para la tienda...">' + (isEdit ? (esp.descripcion||'') : '') + '</textarea></div>' +
         '<div class="form-group"><label>Uso / Preparaciones (opcional)</label><div id="uso-area-esp">' + Pages.buildUsoSelectorHtml(isEdit ? (esp.uso||'') : '') + '</div></div>' +
-        (isEdit ? '<p class="text-xs text-muted mt-8">Stock: ' + (esp.stockBolsa||0) + 'g pala, ' + (esp.stockChico||0) + ' fr pequeño, ' + (esp.stockGrande||0) + ' fr grande</p>' : '') +
+        (isEdit ? '<p class="text-xs text-muted mt-8">Stock: ' + (esp.stockBolsa||0) + 'g pala, ' + (esp.stockChico||0) + ' fr peque\u00F1o, ' + (esp.stockGrande||0) + ' fr grande</p>' : '') +
       '</div><div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
         '<button class="btn btn-gold" id="btn-save-esp">Guardar</button>' +
@@ -705,7 +705,7 @@ const Pages = {
         '</div>' +
         '<div class="form-group"><label>Uso / Preparaciones (opcional)</label><div id="uso-area-bl">' + Pages.buildUsoSelectorHtml(isEdit ? (bl.uso||'') : '') + '</div></div>' +
         '<div class="card" style="border-color:var(--gold)"><div class="card-header"><h3>Precios de Venta</h3></div><div class="card-body">' +
-        '<div class="g2"><div class="form-group"><label>Precio Pequeño ($)</label><input type="number" class="input" id="f-bl-pc" value="' + (isEdit ? bl.precioChico : '') + '" placeholder="Ej: 8000" min="0"></div>' +
+        '<div class="g2"><div class="form-group"><label>Precio Peque\u00F1o ($)</label><input type="number" class="input" id="f-bl-pc" value="' + (isEdit ? bl.precioChico : '') + '" placeholder="Ej: 8000" min="0"></div>' +
         '<div class="form-group"><label>Precio Grande ($)</label><input type="number" class="input" id="f-bl-pg" value="' + (isEdit ? bl.precioGrande : '') + '" placeholder="Ej: 18000" min="0"></div></div>' +
         '<p class="text-xs text-muted">Estos son los precios que se mostraran en la tienda.</p></div></div>' +
         '<div class="form-group"><label>Ingredientes</label><div id="blend-ings"></div>' +
@@ -714,7 +714,7 @@ const Pages = {
         '<div class="card mt-12" style="background:var(--bg);border-color:var(--gold)"><div class="card-header"><h3>Tienda Online</h3></div><div class="card-body">' +
         '<div class="form-group"><label>Visible en Tienda</label><select class="input" id="f-bl-tienda"><option value="0"' + (isEdit && !bl.enTienda ? ' selected' : '') + '>No</option><option value="1"' + (isEdit && bl.enTienda ? ' selected' : (!isEdit ? ' selected' : '')) + '>Si</option></select></div>' +
         '<p class="text-xs text-muted mb-8">Precio especial para la tienda online (opcional). Si lo dejas vacio se usara el precio de venta.</p>' +
-        '<div class="g2"><div class="form-group"><label>Precio Tienda Pequeño ($)</label><input type="number" class="input" id="f-bl-tc" value="' + (isEdit ? (bl.precioTiendaChico||'') : '') + '" placeholder="Igual al de venta" min="0"></div>' +
+        '<div class="g2"><div class="form-group"><label>Precio Tienda Peque\u00F1o ($)</label><input type="number" class="input" id="f-bl-tc" value="' + (isEdit ? (bl.precioTiendaChico||'') : '') + '" placeholder="Igual al de venta" min="0"></div>' +
         '<div class="form-group"><label>Precio Tienda Grande ($)</label><input type="number" class="input" id="f-bl-tg" value="' + (isEdit ? (bl.precioTiendaGrande||'') : '') + '" placeholder="Igual al de venta" min="0"></div></div>' +
         '<div class="form-group"><label>Imagen</label><div class="img-upload-area" id="img-area-bl"><input type="file" accept="image/*" id="f-bl-img" style="display:none" onchange="Pages.handleImageUpload(this,\'img-area-bl\')">' +
         (isEdit && bl.imagen ? '<img src="' + bl.imagen + '" class="img-preview" id="img-preview-bl"><button class="btn btn-sm btn-red" style="margin-top:6px" onclick="Pages.removeImage(\'img-area-bl\',\'f-bl-img\')">Quitar imagen</button>' : '') +
@@ -722,7 +722,7 @@ const Pages = {
         '</div></div>' +
 
         '<div class="form-group"><label>Descripcion (opcional)</label><textarea class="input" id="f-bl-desc" rows="2" placeholder="Breve descripcion del blend para la tienda...">' + (isEdit ? (bl.descripcion||'') : '') + '</textarea></div>' +
-        (isEdit ? '<p class="text-xs text-muted mt-8">Stock: ' + (bl.stockChico||0) + ' fr pequeño, ' + (bl.stockGrande||0) + ' fr grande</p>' : '') +
+        (isEdit ? '<p class="text-xs text-muted mt-8">Stock: ' + (bl.stockChico||0) + ' fr peque\u00F1o, ' + (bl.stockGrande||0) + ' fr grande</p>' : '') +
       '</div><div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
         '<button class="btn btn-gold" id="btn-save-bl">Guardar</button>' +
@@ -743,7 +743,7 @@ const Pages = {
       var selVal = ing ? ing.especiaId : '';
       div.innerHTML =
         '<div class="form-group" style="margin:0"><label>Especia</label><select class="input ing-esp">' + espOptsHTML + '</select></div>' +
-        '<div class="form-group" style="margin:0"><label>Grs/Pequeño</label><input type="number" class="input ing-gc" value="' + gc + '" placeholder="0" min="0"></div>' +
+        '<div class="form-group" style="margin:0"><label>Grs/Peque\u00F1o</label><input type="number" class="input ing-gc" value="' + gc + '" placeholder="0" min="0"></div>' +
         '<div class="form-group" style="margin:0"><label>Grs/Grande</label><input type="number" class="input ing-gg" value="' + gg + '" placeholder="0" min="0"></div>' +
         '<div><button class="btn btn-sm btn-red btn-rm-ing">X</button></div>';
       if (selVal) div.querySelector('.ing-esp').value = selVal;
@@ -1062,7 +1062,7 @@ const Pages = {
         var disponible = bl[frascoKey] || 0;
         var ok = disponible >= cant;
         if (!ok) allOk = false;
-        h += '<div class="list-row"><span>' + bl.nombre + ' (' + talla + ')</span><span class="' + (ok ? 'text-green' : 'text-red fw7') + '">' + disponible + ' fr → necesita ' + cant + ' ' + (ok ? 'OK' : 'FALTA') + '</span></div>';
+        h += '<div class="list-row"><span>' + bl.nombre + ' (' + talla + ')</span><span class="' + (ok ? 'text-green' : 'text-red fw7') + '">' + disponible + ' fr \u2192 necesita ' + cant + ' ' + (ok ? 'OK' : 'FALTA') + '</span></div>';
       }
     }
 
@@ -1094,9 +1094,9 @@ const Pages = {
 
     var cintas = db.stockCintas || 0;
     var costos = ArcanoDB.getCostosInsumos();
-    var h = '<div class="page-actions"><button class="btn btn-gold" onclick="Pages.formEntrada()">+ Registrar Entrada</button><button class="btn btn-outline" style="margin-left:8px" onclick="Pages.formCostosInsumos()">✏ Editar Costos</button></div>';
+    var h = '<div class="page-actions"><button class="btn btn-gold" onclick="Pages.formEntrada()">+ Registrar Entrada</button><button class="btn btn-outline" style="margin-left:8px" onclick="Pages.formCostosInsumos()">\u270F Editar Costos</button></div>';
     h += '<div class="stats-grid mt-12" style="grid-template-columns: repeat(5, 1fr)">' +
-      '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value" style="color:var(--blue)">' + (envases.chico||0) + '</div><div class="stat-label">Frascos Pequeños</div></div>' +
+      '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value" style="color:var(--blue)">' + (envases.chico||0) + '</div><div class="stat-label">Frascos Peque\u00F1os</div></div>' +
       '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value" style="color:var(--blue)">' + (envases.grande||0) + '</div><div class="stat-label">Frascos Grandes</div></div>' +
       '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value" style="color:var(--green)">' + (bolsas.chico||0) + '</div><div class="stat-label">Bolsas Chicas</div></div>' +
       '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value" style="color:var(--green)">' + (bolsas.grande||0) + '</div><div class="stat-label">Bolsas Grandes</div></div>' +
@@ -1120,7 +1120,7 @@ const Pages = {
     h += '<div class="card"><div class="card-header"><h3>Stickers</h3></div><div class="card-body">';
     if (etiqList.length === 0) { h += '<p class="text-muted text-center text-sm">Sin productos</p>'; }
     else {
-      h += '<div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Tipo</th><th>Pequeño</th><th>Grande</th></tr></thead><tbody>';
+      h += '<div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Tipo</th><th>Peque\u00F1o</th><th>Grande</th></tr></thead><tbody>';
       for (var i = 0; i < etiqList.length; i++) {
         var et = etiqList[i];
         h += '<tr><td class="fw7">' + et.nombre + '</td><td><span class="badge ' + (et.tipo==='blend'?'badge-blue':'badge-gold') + '">' + (et.tipo==='blend'?'Blend':'Especia') + '</span></td>' +
@@ -1135,18 +1135,18 @@ const Pages = {
     h += '<div class="card mt-16"><div class="card-header"><h3>Historial de Entradas (' + entradas.length + ')</h3></div><div class="card-body">';
     if (entradas.length === 0) { h += '<p class="text-muted text-center">Sin entradas.</p>'; }
     else {
-      // Input de búsqueda
+      // Input de b\u00FAsqueda
       h += '<div class="form-group" style="margin-bottom:12px">' +
-        '<input type="text" class="input" id="insumos-busqueda" placeholder="🔍 Buscar por fecha, proveedor o item..." style="width:100%">' +
+        '<input type="text" class="input" id="insumos-busqueda" placeholder="\u{1F50D} Buscar por fecha, proveedor o item..." style="width:100%">' +
       '</div>';
       h += '<div class="table-wrap"><table class="table" id="insumos-table"><thead><tr><th>Fecha</th><th>Items</th><th>Total</th><th></th></tr></thead><tbody id="insumos-tbody"></tbody></table></div>';
-      // Botón "ver más"
-      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="insumos-ver-mas" style="display:none">Ver más</button></div>';
+      // Bot\u00F3n "ver m\u00E1s"
+      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="insumos-ver-mas" style="display:none">Ver m\u00E1s</button></div>';
     }
     h += '</div></div>';
     container.innerHTML = h;
 
-    // Lógica de búsqueda y paginación para el historial de insumos
+    // L\u00F3gica de b\u00FAsqueda y paginaci\u00F3n para el historial de insumos
     if (entradas.length > 0) {
       var _insumosLimit = 10;
       var _insumosFiltro = '';
@@ -1181,7 +1181,7 @@ const Pages = {
           return '?';
         }).join(' | ');
         return '<tr><td>' + (en.fecha||'') + '</td><td class="text-sm">' + desc + '</td><td class="fw7 text-gold">$' + (en.total||0).toLocaleString() + (en.ajuste && en.ajuste !== 0 ? ' <span class="badge ' + (en.ajuste > 0 ? 'badge-green' : 'badge-red') + '" style="font-size:10px" title="Total calculado: $' + (en.totalCalculado||0).toLocaleString() + '">' + (en.ajuste > 0 ? '-' : '+') + '$' + Math.abs(en.ajuste).toLocaleString() + '</span>' : '') + '</td>' +
-          '<td style="white-space:nowrap"><button class="btn btn-sm btn-outline" onclick="Pages.formEntrada(' + en.id + ')" title="Editar entrada">✏</button> <button class="btn btn-sm btn-red" onclick="Pages.delEntrada(' + en.id + ')" title="Eliminar entrada">X</button></td></tr>';
+          '<td style="white-space:nowrap"><button class="btn btn-sm btn-outline" onclick="Pages.formEntrada(' + en.id + ')" title="Editar entrada">\u270F</button> <button class="btn btn-sm btn-red" onclick="Pages.delEntrada(' + en.id + ')" title="Eliminar entrada">X</button></td></tr>';
       }
 
       function _insumosRender() {
@@ -1194,11 +1194,11 @@ const Pages = {
           html = '<tr><td colspan="4" class="text-muted text-center" style="padding:16px">Sin resultados para "' + esc(_insumosFiltro) + '"</td></tr>';
         }
         _insumosTbody.innerHTML = html;
-        // Mostrar/ocultar botón "ver más"
+        // Mostrar/ocultar bot\u00F3n "ver m\u00E1s"
         if (_insumosLimit < filtradas.length) {
           _insumosVerMasBtn.style.display = '';
           var restantes = filtradas.length - _insumosLimit;
-          _insumosVerMasBtn.textContent = 'Ver más (' + restantes + ' restantes de ' + filtradas.length + ')';
+          _insumosVerMasBtn.textContent = 'Ver m\u00E1s (' + restantes + ' restantes de ' + filtradas.length + ')';
         } else {
           _insumosVerMasBtn.style.display = 'none';
         }
@@ -1241,7 +1241,7 @@ const Pages = {
         '<div class="form-group mt-12" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--border)">' +
           '<label style="font-weight:600">Total pagado (opcional)</label>' +
           '<input type="number" class="input" id="f-ent-pagado" placeholder="Igual al total calculado" min="0" step="0.01" style="margin-top:6px">' +
-          '<p class="text-xs text-muted mt-4" id="f-ent-ajuste-info">Si el monto pagado difiere del total calculado, el ajuste se registrará como descuento o recargo.</p>' +
+          '<p class="text-xs text-muted mt-4" id="f-ent-ajuste-info">Si el monto pagado difiere del total calculado, el ajuste se registrar\u00E1 como descuento o recargo.</p>' +
         '</div>' +
       '</div><div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
@@ -1309,7 +1309,7 @@ const Pages = {
         function tableHeader() {
           return '<thead><tr>' +
             '<th style="text-align:left;padding:6px 10px">Producto</th>' +
-            '<th style="width:90px;text-align:center;padding:6px">Pequeño</th>' +
+            '<th style="width:90px;text-align:center;padding:6px">Peque\u00F1o</th>' +
             '<th style="width:90px;text-align:center;padding:6px">Grande</th>' +
           '</tr></thead>';
         }
@@ -1326,7 +1326,7 @@ const Pages = {
         }
 
         var html = '<label>Cantidades recibidas</label>' +
-          '<p class="text-xs text-muted" style="margin:4px 0">Cargá la cantidad en la columna Pequeño o Grande para cada producto.</p>';
+          '<p class="text-xs text-muted" style="margin:4px 0">Carg\u00E1 la cantidad en la columna Peque\u00F1o o Grande para cada producto.</p>';
 
         // Costos separados: chico y grande (se aplican a todas las filas)
         html += '<div style="display:flex;align-items:center;gap:14px;margin:8px 0;flex-wrap:wrap;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px">' +
@@ -1336,7 +1336,7 @@ const Pages = {
             '<input type="number" class="input stk-cost stk-cost-grande" placeholder="$0" min="0" step="0.01" style="width:110px"></div>' +
         '</div>';
 
-        // Sección BLENDS
+        // Secci\u00F3n BLENDS
         if (blsSorted.length > 0) {
           html += '<h4 style="margin:14px 0 6px;font-size:0.95rem">Blends (' + blsSorted.length + ')</h4>';
           html += '<div style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">' +
@@ -1344,7 +1344,7 @@ const Pages = {
             tableHeader() + '<tbody>' + tableRows(blsSorted, 'blend') + '</tbody></table></div>';
         }
 
-        // Sección ESPECIAS
+        // Secci\u00F3n ESPECIAS
         if (espsSorted.length > 0) {
           html += '<h4 style="margin:14px 0 6px;font-size:0.95rem">Especias (' + espsSorted.length + ')</h4>';
           html += '<div style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">' +
@@ -1380,17 +1380,17 @@ const Pages = {
           });
           newInput.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') { this.value = ''; this.blur(); } });
         } else if (t === 'envase') {
-          detailDiv.innerHTML = '<label>Talla</label><select class="input ent-talla"><option value="chico">Pequeño</option><option value="grande">Grande</option></select>';
+          detailDiv.innerHTML = '<label>Talla</label><select class="input ent-talla"><option value="chico">Peque\u00F1o</option><option value="grande">Grande</option></select>';
         } else if (t === 'bolsa') {
           detailDiv.innerHTML = '<label>Talla</label><select class="input ent-talla"><option value="chico">Chica</option><option value="grande">Grande</option></select>';
         } else if (t === 'cinta') {
           detailDiv.innerHTML = '';
         } else if (t === 'sticker') {
-          // Si la fila tiene preload de un sticker individual (edición), usar modo simple:
+          // Si la fila tiene preload de un sticker individual (edici\u00F3n), usar modo simple:
           // inputs para producto (select de todos los productos) + talla + cantidad + costo.
           // Si NO hay preload (alta nueva), usar el modo tabla masiva original.
           if (preload && preload.tipo === 'sticker' && preload.stickerNombre) {
-            // Modo edición: fila simple con select de producto + talla
+            // Modo edici\u00F3n: fila simple con select de producto + talla
             // Cantidad y costo van en los inputs generales (cantWrap + costWrap)
             var allProdsOpts = '';
             var blsSorted2 = bls.slice().sort(function(a, b) { return (a.nombre||'').localeCompare(b.nombre||''); });
@@ -1408,13 +1408,13 @@ const Pages = {
             detailDiv.innerHTML =
               '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
                 '<div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Producto</label><select class="input stk-prod-simple">' + allProdsOpts + '</select></div>' +
-                '<div class="form-group" style="margin:0;min-width:110px"><label>Talla</label><select class="input stk-talla-simple"><option value="chico">Pequeño</option><option value="grande">Grande</option></select></div>' +
+                '<div class="form-group" style="margin:0;min-width:110px"><label>Talla</label><select class="input stk-talla-simple"><option value="chico">Peque\u00F1o</option><option value="grande">Grande</option></select></div>' +
               '</div>';
           } else {
             // Modo alta nueva: tabla masiva con todos los productos (comportamiento original)
             cantWrap.style.display = 'none';
             costWrap.style.display = 'none';
-            detailDiv.innerHTML = '<label>&nbsp;</label><span class="text-xs text-muted">Stickers ↓</span>';
+            detailDiv.innerHTML = '<label>&nbsp;</label><span class="text-xs text-muted">Stickers \u2193</span>';
             stickerExtra.style.display = '';
             stickerExtra.innerHTML = buildStickerTable();
             // Listeners para recalcular total al tipear cantidades o costo
@@ -1431,7 +1431,7 @@ const Pages = {
         tipoSel.value = preload.tipo;
       }
       renderDetail();
-      // Aplicar valores pre-cargados después de que renderDetail construyó el detalle
+      // Aplicar valores pre-cargados despu\u00E9s de que renderDetail construy\u00F3 el detalle
       if (preload) {
         _aplicarPreload(div, preload, stickerExtra);
       }
@@ -1441,7 +1441,7 @@ const Pages = {
       if (genCost) genCost.addEventListener('input', updateTotal);
     }
 
-    /** Aplica los valores de un item existente a una fila recién creada. */
+    /** Aplica los valores de un item existente a una fila reci\u00E9n creada. */
     function _aplicarPreload(div, it, stickerExtra) {
       try {
         // Tipo (ya fue seteado antes de renderDetail, pero por las dudas)
@@ -1454,7 +1454,7 @@ const Pages = {
           var costInput = div.querySelector('.ent-cost-gen');
           if (costInput && it.costoUnitario != null) costInput.value = it.costoUnitario;
         }
-        // Detalle según tipo
+        // Detalle seg\u00FAn tipo
         if (it.tipo === 'especia_grs') {
           var espSel = div.querySelector('.ent-especia');
           if (espSel && it.especiaId) espSel.value = String(it.especiaId);
@@ -1462,8 +1462,8 @@ const Pages = {
           var tallaSel = div.querySelector('.ent-talla');
           if (tallaSel && it.talla) tallaSel.value = it.talla;
         } else if (it.tipo === 'sticker') {
-          // Sticker individual en modo edición: setear select de producto + talla + cantidad + costo
-          // (los inputs generales .ent-cant y .ent-cost-gen ya están visibles en este modo)
+          // Sticker individual en modo edici\u00F3n: setear select de producto + talla + cantidad + costo
+          // (los inputs generales .ent-cant y .ent-cost-gen ya est\u00E1n visibles en este modo)
           var stkProdSimple = div.querySelector('.stk-prod-simple');
           var stkTallaSimple = div.querySelector('.stk-talla-simple');
           if (stkProdSimple && it.stickerNombre) {
@@ -1477,7 +1477,7 @@ const Pages = {
           }
           if (stkTallaSimple && it.talla) stkTallaSimple.value = it.talla;
           // Cantidad y costo van en los inputs generales (ya seteados arriba para no-sticker,
-          // pero como en edición sticker esos campos SÍ son visibles, los seteamos acá también)
+          // pero como en edici\u00F3n sticker esos campos S\u00CD son visibles, los seteamos ac\u00E1 tambi\u00E9n)
           var cantInputStk = div.querySelector('.ent-cant');
           if (cantInputStk && it.cantidad != null) cantInputStk.value = it.cantidad;
           var costInputStk = div.querySelector('.ent-cost-gen');
@@ -1494,7 +1494,7 @@ const Pages = {
       for (var i = 0; i < rows.length; i++) {
         var tipo = rows[i].querySelector('.ent-tipo').value;
         if (tipo === 'sticker') {
-          // Si la fila tiene el select de producto simple (modo edición), usar inputs generales
+          // Si la fila tiene el select de producto simple (modo edici\u00F3n), usar inputs generales
           var stkProdSimpleCheck = rows[i].querySelector('.stk-prod-simple');
           if (stkProdSimpleCheck) {
             var cS = Number(rows[i].querySelector('.ent-cant').value) || 0;
@@ -1530,14 +1530,14 @@ const Pages = {
       if (!pagadoInput || !infoEl) return;
       var pagado = Number(pagadoInput.value) || 0;
       if (pagadoInput.value === '' || pagadoInput.value == null) {
-        infoEl.textContent = 'Total calculado: $' + totalCalc.toLocaleString() + '. Dejá vacío si el pago coincide; o cargá el monto efectivamente pagado para registrar el ajuste.';
+        infoEl.textContent = 'Total calculado: $' + totalCalc.toLocaleString() + '. Dej\u00E1 vac\u00EDo si el pago coincide; o carg\u00E1 el monto efectivamente pagado para registrar el ajuste.';
         infoEl.style.color = '';
       } else {
         var ajuste = totalCalc - pagado;
         if (ajuste > 0) {
-          infoEl.innerHTML = 'Descuento de <b style="color:var(--green)">-$' + ajuste.toLocaleString() + '</b> (pagaste menos que el cálculo). El total de compras reflejará $' + pagado.toLocaleString() + '.';
+          infoEl.innerHTML = 'Descuento de <b style="color:var(--green)">-$' + ajuste.toLocaleString() + '</b> (pagaste menos que el c\u00E1lculo). El total de compras reflejar\u00E1 $' + pagado.toLocaleString() + '.';
         } else if (ajuste < 0) {
-          infoEl.innerHTML = 'Recargo de <b style="color:var(--red)">+$' + Math.abs(ajuste).toLocaleString() + '</b> (pagaste más que el cálculo). El total de compras reflejará $' + pagado.toLocaleString() + '.';
+          infoEl.innerHTML = 'Recargo de <b style="color:var(--red)">+$' + Math.abs(ajuste).toLocaleString() + '</b> (pagaste m\u00E1s que el c\u00E1lculo). El total de compras reflejar\u00E1 $' + pagado.toLocaleString() + '.';
         } else {
           infoEl.textContent = 'El monto pagado coincide con el total calculado.';
           infoEl.style.color = '';
@@ -1552,9 +1552,9 @@ const Pages = {
     var pagadoInputEl = document.getElementById('f-ent-pagado');
     if (pagadoInputEl) pagadoInputEl.addEventListener('input', updateAjusteInfo);
 
-    // Si es edición, pre-cargar las filas con los items de la entrada existente
+    // Si es edici\u00F3n, pre-cargar las filas con los items de la entrada existente
     if (isEdit && existingEntrada.items && existingEntrada.items.length > 0) {
-      // Limpiar la fila default que addEntRow agregó
+      // Limpiar la fila default que addEntRow agreg\u00F3
       itemsDiv.innerHTML = '';
       for (var ei2 = 0; ei2 < existingEntrada.items.length; ei2++) {
         var it = existingEntrada.items[ei2];
@@ -1584,7 +1584,7 @@ const Pages = {
 
         // Sticker: dos modos posibles
         if (tipo === 'sticker') {
-          // MODO EDICIÓN: fila simple con select de producto + talla + inputs generales
+          // MODO EDICI\u00D3N: fila simple con select de producto + talla + inputs generales
           var stkProdSimpleEl = rows[i].querySelector('.stk-prod-simple');
           if (stkProdSimpleEl) {
             var stkProdVal = stkProdSimpleEl.value;
@@ -1635,8 +1635,8 @@ const Pages = {
               hasAnySticker = true;
             }
           }
-          if (!hasAnySticker) { alert('Cargá al menos una cantidad de stickers (fila ' + (i+1) + ')'); return; }
-          // Validar que el costo correspondiente esté cargado si hay stickers de esa talla
+          if (!hasAnySticker) { alert('Carg\u00E1 al menos una cantidad de stickers (fila ' + (i+1) + ')'); return; }
+          // Validar que el costo correspondiente est\u00E9 cargado si hay stickers de esa talla
           var hasChico = false, hasGrande = false;
           for (var k2 = 0; k2 < stkCants.length; k2++) {
             if ((Number(stkCants[k2].value) || 0) > 0) {
@@ -1717,7 +1717,7 @@ const Pages = {
   },
 
   delEntrada(id) {
-    if (!confirm('Eliminar esta entrada? Se revertirán los stocks que esta entrada sumó (especies, envases, bolsas, cintas, stickers).')) return;
+    if (!confirm('Eliminar esta entrada? Se revertir\u00E1n los stocks que esta entrada sum\u00F3 (especies, envases, bolsas, cintas, stickers).')) return;
     try {
       ArcanoDB.deleteEntrada(id);
       toast('Entrada eliminada. Stocks revertidos.');
@@ -1795,8 +1795,8 @@ const Pages = {
     // Tabs
     h += '<div class="tabs mt-16" style="margin-bottom:0">';
     h += '<button class="tab-btn ' + (self._prodTab === 'historial' ? 'active' : '') + '" onclick="Pages._prodTab=\'historial\';App.renderPage(\'produccion\')">Historial</button>';
-    h += '<button class="tab-btn ' + (self._prodTab === 'sugerencias' ? 'active' : '') + '" onclick="Pages._prodTab=\'sugerencias\';App.renderPage(\'produccion\')">Sugerencias de Producción</button>';
-    h += '<button class="tab-btn ' + (self._prodTab === 'making' ? 'active' : '') + '" onclick="Pages._prodTab=\'making\';App.renderPage(\'produccion\')">🎮 Making Blends</button>';
+    h += '<button class="tab-btn ' + (self._prodTab === 'sugerencias' ? 'active' : '') + '" onclick="Pages._prodTab=\'sugerencias\';App.renderPage(\'produccion\')">Sugerencias de Producci\u00F3n</button>';
+    h += '<button class="tab-btn ' + (self._prodTab === 'making' ? 'active' : '') + '" onclick="Pages._prodTab=\'making\';App.renderPage(\'produccion\')">\u{1F3AE} Making Blends</button>';
     h += '</div>';
 
     if (self._prodTab === 'sugerencias') {
@@ -1816,15 +1816,15 @@ const Pages = {
     if (prods.length === 0) {
       h += '<p class="text-muted text-center">Sin producciones.</p>';
     } else {
-      // Filtros por tipo + búsqueda
+      // Filtros por tipo + b\u00FAsqueda
       h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">';
       h += '<button class="btn btn-sm btn-gold" data-prod-filter="todos">Todos</button>';
       h += '<button class="btn btn-sm btn-outline" data-prod-filter="blend">Blends</button>';
       h += '<button class="btn btn-sm btn-outline" data-prod-filter="especia">Especias</button>';
-      h += '<input type="text" class="input" id="prod-busqueda" placeholder="🔍 Buscar por producto o fecha..." style="flex:1;min-width:200px">';
+      h += '<input type="text" class="input" id="prod-busqueda" placeholder="\u{1F50D} Buscar por producto o fecha..." style="flex:1;min-width:200px">';
       h += '</div>';
       h += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Talla</th><th>Cant.</th><th>Detalle</th><th></th></tr></thead><tbody id="prod-tbody"></tbody></table></div>';
-      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="prod-ver-mas" style="display:none">Ver más</button></div>';
+      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="prod-ver-mas" style="display:none">Ver m\u00E1s</button></div>';
     }
     h += '</div></div>';
     container.innerHTML = h;
@@ -1877,7 +1877,7 @@ const Pages = {
         if (_prodLimit < filtradas.length) {
           _prodVerMas.style.display = '';
           var restantes = filtradas.length - _prodLimit;
-          _prodVerMas.textContent = 'Ver más (' + restantes + ' restantes de ' + filtradas.length + ')';
+          _prodVerMas.textContent = 'Ver m\u00E1s (' + restantes + ' restantes de ' + filtradas.length + ')';
         } else {
           _prodVerMas.style.display = 'none';
         }
@@ -1908,7 +1908,7 @@ const Pages = {
     }
   },
 
-  /* ---------- Sugerencias de Producción (tab nuevo) ---------- */
+  /* ---------- Sugerencias de Producci\u00F3n (tab nuevo) ---------- */
   _renderProduccionSugerencias() {
     var blends = ArcanoDB.getBlends();
     var especias = ArcanoDB.getEspecias();
@@ -1936,9 +1936,9 @@ const Pages = {
       return { chico: 0, grande: 0 };
     }
 
-    // ====== CÁLCULO 1: Blends ordenados por costo (menor a mayor) ======
-    // Para cada blend, calcular cuántos frascos chico y grande se pueden producir
-    // según el insumo más limitante, y el costo total de producir ese máximo.
+    // ====== C\u00C1LCULO 1: Blends ordenados por costo (menor a mayor) ======
+    // Para cada blend, calcular cu\u00E1ntos frascos chico y grande se pueden producir
+    // seg\u00FAn el insumo m\u00E1s limitante, y el costo total de producir ese m\u00E1ximo.
     var sugerenciasBlends = [];
     for (var bi = 0; bi < blends.length; bi++) {
       var b = blends[bi];
@@ -2012,11 +2012,11 @@ const Pages = {
       // Costos unitarios
       var costoUnitChico = espChCost + pkgC;
       var costoUnitGrande = espGrCost + pkgG;
-      // Costo total de producir el máximo posible
+      // Costo total de producir el m\u00E1ximo posible
       var costoTotalChico = limitChico * costoUnitChico;
       var costoTotalGrande = limitGrande * costoUnitGrande;
 
-      // Ingreso potencial (precio × max)
+      // Ingreso potencial (precio \u00D7 max)
       var ventaTotalChico = limitChico * (Number(b.precioChico) || 0);
       var ventaTotalGrande = limitGrande * (Number(b.precioGrande) || 0);
       var margenTotalChico = ventaTotalChico - costoTotalChico;
@@ -2033,9 +2033,9 @@ const Pages = {
       });
     }
 
-    // ====== CÁLCULO 2: Especias limitantes ordenadas por costo ======
-    // Para cada especia, cuántos blends la usan y cuántos frascos en total se podrían
-    // producir si esa especia tuviera stock suficiente (es decir, qué blends están
+    // ====== C\u00C1LCULO 2: Especias limitantes ordenadas por costo ======
+    // Para cada especia, cu\u00E1ntos blends la usan y cu\u00E1ntos frascos en total se podr\u00EDan
+    // producir si esa especia tuviera stock suficiente (es decir, qu\u00E9 blends est\u00E1n
     // frenados por esta especia). El "costo" es el costo por gramo de cada especia.
     var especiasImpacto = {};
     for (var bi2 = 0; bi2 < blends.length; bi2++) {
@@ -2059,7 +2059,7 @@ const Pages = {
           };
         }
         especiasImpacto[esp3.id].blendsQueLaUsan.push(b2.nombre);
-        // Para cada blend, calcular cuántos frascos podría producir si tuviera stock
+        // Para cada blend, calcular cu\u00E1ntos frascos podr\u00EDa producir si tuviera stock
         // (limitado por las otras especias del blend, no por esta)
         var ingsBlend = b2.ingredientes || [];
         var maxChicoSinEsta = Infinity;
@@ -2080,7 +2080,7 @@ const Pages = {
             if (mx2 < maxGrandeSinEsta) maxGrandeSinEsta = mx2;
           }
         }
-        // Si las otras especias limitan a 5 chico y 3 grande, esta especia frenaría 5+3=8 frascos
+        // Si las otras especias limitan a 5 chico y 3 grande, esta especia frenar\u00EDa 5+3=8 frascos
         if (isFinite(maxChicoSinEsta)) {
           especiasImpacto[esp3.id].totalFrascosFrenadosChico += maxChicoSinEsta;
           var gpfThisCh = Number(ing3.gramosChico) || 0;
@@ -2094,31 +2094,31 @@ const Pages = {
       }
     }
     var especiasLista = Object.values(especiasImpacto);
-    // Ordenar: de menor costo a mayor costo (el más barato primero — más rentable reponer primero)
+    // Ordenar: de menor costo a mayor costo (el m\u00E1s barato primero \u2014 m\u00E1s rentable reponer primero)
     especiasLista.sort(function(a, b) { return a.costoPorGramo - b.costoPorGramo; });
 
     // ====== HTML ======
     var h = '';
-    h += '<p class="text-sm text-muted mb-16">Sugerencias basadas en el stock actual de insumos y especias. Actualizá en tiempo real al cambiar stocks o costos.</p>';
+    h += '<p class="text-sm text-muted mb-16">Sugerencias basadas en el stock actual de insumos y especias. Actualiz\u00E1 en tiempo real al cambiar stocks o costos.</p>';
 
-    // ===== SECCIÓN 1: BLENDS ORDENADOS POR COSTO =====
-    h += '<div class="card"><div class="card-header"><h3>1. Blends que podés producir ahora (ordenados por menor costo)</h3></div><div class="card-body">';
-    h += '<p class="text-sm text-muted mb-12">Para cada blend, calcula el máximo de frascos chico y grande que se pueden producir con el stock actual. Ordenados de menor a mayor costo unitario (chico).</p>';
+    // ===== SECCI\u00D3N 1: BLENDS ORDENADOS POR COSTO =====
+    h += '<div class="card"><div class="card-header"><h3>1. Blends que pod\u00E9s producir ahora (ordenados por menor costo)</h3></div><div class="card-body">';
+    h += '<p class="text-sm text-muted mb-12">Para cada blend, calcula el m\u00E1ximo de frascos chico y grande que se pueden producir con el stock actual. Ordenados de menor a mayor costo unitario (chico).</p>';
 
     // Ordenar sugerenciasBlends por costo unitario chico ascendente
     sugerenciasBlends.sort(function(a, b) { return a.costoUnitChico - b.costoUnitChico; });
 
     if (sugerenciasBlends.length === 0) {
-      h += '<p class="text-muted text-center">No hay blends con receta definida. Agregá ingredientes a los blends primero.</p>';
+      h += '<p class="text-muted text-center">No hay blends con receta definida. Agreg\u00E1 ingredientes a los blends primero.</p>';
     } else {
       h += '<div class="table-wrap"><table class="table"><thead><tr>';
       h += '<th>Blend</th>';
-      h += '<th class="text-center">Máx Chico</th>';
+      h += '<th class="text-center">M\u00E1x Chico</th>';
       h += '<th class="text-center">Limitante Chico</th>';
       h += '<th class="text-right">Costo Unit. Ch</th>';
       h += '<th class="text-right">$ Venta Ch</th>';
       h += '<th class="text-right">$ Margen Ch</th>';
-      h += '<th class="text-center">Máx Grande</th>';
+      h += '<th class="text-center">M\u00E1x Grande</th>';
       h += '<th class="text-center">Limitante Grande</th>';
       h += '<th class="text-right">Costo Unit. Gr</th>';
       h += '<th class="text-right">$ Venta Gr</th>';
@@ -2134,12 +2134,12 @@ const Pages = {
         h += '<tr>' +
           '<td class="fw7">' + esc(s.blend.nombre) + '</td>' +
           '<td class="text-center ' + mcCls + '">' + s.maxChico + '</td>' +
-          '<td class="text-sm text-muted">' + esc(s.limitanteChico || '—') + '</td>' +
+          '<td class="text-sm text-muted">' + esc(s.limitanteChico || '\u2014') + '</td>' +
           '<td class="text-right">$' + s.costoUnitChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</td>' +
           '<td class="text-right text-gold">$' + s.ventaTotalChico.toLocaleString() + '</td>' +
           '<td class="text-right fw7" style="color:' + margenChColor + '">$' + s.margenTotalChico.toLocaleString() + '</td>' +
           '<td class="text-center ' + mgCls + '">' + s.maxGrande + '</td>' +
-          '<td class="text-sm text-muted">' + esc(s.limitanteGrande || '—') + '</td>' +
+          '<td class="text-sm text-muted">' + esc(s.limitanteGrande || '\u2014') + '</td>' +
           '<td class="text-right">$' + s.costoUnitGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + '</td>' +
           '<td class="text-right text-gold">$' + s.ventaTotalGrande.toLocaleString() + '</td>' +
           '<td class="text-right fw7" style="color:' + margenGrColor + '">$' + s.margenTotalGrande.toLocaleString() + '</td>' +
@@ -2150,12 +2150,12 @@ const Pages = {
     }
     h += '</div></div>';
 
-    // ===== SECCIÓN 2: ESPECIAS LIMITANTES ORDENADAS POR COSTO =====
-    h += '<div class="card mt-16"><div class="card-header"><h3>2. Especias e insumos para producir más blends (ordenados por menor costo)</h3></div><div class="card-body">';
-    h += '<p class="text-sm text-muted mb-12">Para cada especia que usan tus blends, muestra cuántos frascos en total están frenados por falta de esa especia. Ordenados de menor a mayor costo por gramo (los más baratos primero — reponerlos da más retorno por peso invertido).</p>';
+    // ===== SECCI\u00D3N 2: ESPECIAS LIMITANTES ORDENADAS POR COSTO =====
+    h += '<div class="card mt-16"><div class="card-header"><h3>2. Especias e insumos para producir m\u00E1s blends (ordenados por menor costo)</h3></div><div class="card-body">';
+    h += '<p class="text-sm text-muted mb-12">Para cada especia que usan tus blends, muestra cu\u00E1ntos frascos en total est\u00E1n frenados por falta de esa especia. Ordenados de menor a mayor costo por gramo (los m\u00E1s baratos primero \u2014 reponerlos da m\u00E1s retorno por peso invertido).</p>';
 
     if (especiasLista.length === 0) {
-      h += '<p class="text-muted text-center">No hay especias usadas en blends todavía.</p>';
+      h += '<p class="text-muted text-center">No hay especias usadas en blends todav\u00EDa.</p>';
     } else {
       h += '<div class="table-wrap"><table class="table"><thead><tr>';
       h += '<th>Especia</th>';
@@ -2188,7 +2188,7 @@ const Pages = {
       }
       h += '</tbody></table></div>';
 
-      // También insumos globales limitantes (envases, bolsas, cintas, stickers)
+      // Tambi\u00E9n insumos globales limitantes (envases, bolsas, cintas, stickers)
       h += '<h4 style="margin:20px 0 8px;font-size:.95rem">Insumos globales (packaging)</h4>';
       h += '<div class="table-wrap"><table class="table"><thead><tr><th>Insumo</th><th class="text-center">Stock</th><th class="text-center">Blends frenados por esto</th><th></th></tr></thead><tbody>';
       var envChFrenados = 0, envGrFrenados = 0, bolChFrenados = 0, bolGrFrenados = 0, cinFrenados = 0;
@@ -2216,19 +2216,19 @@ const Pages = {
     Pages.formProduccion(tipo, productoId);
   },
 
-  /** Elimina una producción y revierte el stock */
+  /** Elimina una producci\u00F3n y revierte el stock */
   deleteProduccion(id) {
-    if (!confirm('¿Eliminar esta producción? Se revertirá todo el stock consumido (pala, envases, stickers, bolsas, cintas) y se restarán los frascos producidos.')) return;
+    if (!confirm('\u00BFEliminar esta producci\u00F3n? Se revertir\u00E1 todo el stock consumido (pala, envases, stickers, bolsas, cintas) y se restar\u00E1n los frascos producidos.')) return;
     try {
       ArcanoDB.deleteProduccion(id);
-      toast('Producción eliminada. Stock revertido.');
+      toast('Producci\u00F3n eliminada. Stock revertido.');
       App.renderPage('produccion');
     } catch (e) {
       toast('Error: ' + e.message, 'err');
     }
   },
 
-  /** Formulario de produccion — tipo y productoId son opcionales (pre-llenan) */
+  /** Formulario de produccion \u2014 tipo y productoId son opcionales (pre-llenan) */
   formProduccion(presetTipo, presetProdId) {
     var self = this;
     var modal = document.createElement('div');
@@ -2373,8 +2373,8 @@ const Pages = {
       var hasIng = calc.hasIngredientes;
 
       var h = '';
-      // ====== SECCION 1: BOLSA — receta detallada por especia ======
-      h += '<div class="card mt-12"><div class="card-header"><h3>Bolsa de Preparacion — ' + esc(p.nombre) + '</h3></div><div class="card-body">';
+      // ====== SECCION 1: BOLSA \u2014 receta detallada por especia ======
+      h += '<div class="card mt-12"><div class="card-header"><h3>Bolsa de Preparacion \u2014 ' + esc(p.nombre) + '</h3></div><div class="card-body">';
 
       if (!hasIng) {
         h += '<p class="text-red fw7">Este blend no tiene ingredientes definidos. Editalo primero.</p>';
@@ -2449,7 +2449,7 @@ const Pages = {
             var it = t3.items[ii];
             var itColor = it.ok ? 'var(--green)' : 'var(--red)';
             var itTxt = it.ok ? 'OK' : 'FALTA';
-            h += '<div class="list-row"><span>' + esc(it.label) + '</span><span class="fw7" style="color:' + itColor + '">' + it.avail + ' ' + it.unit + ' &rarr; necesita ' + it.needed + ' ' + it.unit + ' · ' + itTxt + '</span></div>';
+            h += '<div class="list-row"><span>' + esc(it.label) + '</span><span class="fw7" style="color:' + itColor + '">' + it.avail + ' ' + it.unit + ' &rarr; necesita ' + it.needed + ' ' + it.unit + ' \u00B7 ' + itTxt + '</span></div>';
           }
           h += '</div>';
         }
@@ -2465,10 +2465,10 @@ const Pages = {
     cantChicoInput.addEventListener('input', updatePreview);
     cantGrandeInput.addEventListener('input', updatePreview);
 
-    // PRODUCE BUTTON — produce ambas tallas en secuencia con validacion previa
+    // PRODUCE BUTTON \u2014 produce ambas tallas en secuencia con validacion previa
     prodBtn.addEventListener('click', function() {
       var calc = calcularRequerimientos();
-      if (!calc || !calc.allOk) { alert('Faltan insumos para producir. Revisá el detalle en rojo.'); return; }
+      if (!calc || !calc.allOk) { alert('Faltan insumos para producir. Revis\u00E1 el detalle en rojo.'); return; }
       var tipo = tipoSel.value;
       var prodId = Number(prodSel.value);
       var cantChico = Number(cantChicoInput.value) || 0;
@@ -2525,10 +2525,10 @@ const Pages = {
       h += '<p class="text-muted text-center">Sin ventas.</p>';
     } else {
       h += '<div class="form-group" style="margin-bottom:12px">' +
-        '<input type="text" class="input" id="ventas-busqueda" placeholder="🔍 Buscar por fecha o producto..." style="width:100%">' +
+        '<input type="text" class="input" id="ventas-busqueda" placeholder="\u{1F50D} Buscar por fecha o producto..." style="width:100%">' +
       '</div>';
       h += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Items</th><th>Total</th><th></th></tr></thead><tbody id="ventas-tbody"></tbody></table></div>';
-      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="ventas-ver-mas" style="display:none">Ver más</button></div>';
+      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="ventas-ver-mas" style="display:none">Ver m\u00E1s</button></div>';
     }
     h += '</div></div>';
     container.innerHTML = h;
@@ -2572,7 +2572,7 @@ const Pages = {
         if (_ventasLimit < filtradas.length) {
           _ventasVerMas.style.display = '';
           var restantes = filtradas.length - _ventasLimit;
-          _ventasVerMas.textContent = 'Ver más (' + restantes + ' restantes de ' + filtradas.length + ')';
+          _ventasVerMas.textContent = 'Ver m\u00E1s (' + restantes + ' restantes de ' + filtradas.length + ')';
         } else {
           _ventasVerMas.style.display = 'none';
         }
@@ -2630,7 +2630,7 @@ const Pages = {
     }
 
     function buildPalaProductoOpts() {
-      // Lista de especias + blends (para que el admin elija de qué producto es la pala)
+      // Lista de especias + blends (para que el admin elija de qu\u00E9 producto es la pala)
       var o = '<option value="">Seleccionar producto</option>';
       if (blends.length > 0) {
         o += '<optgroup label="Blends">';
@@ -2730,7 +2730,7 @@ const Pages = {
         var maxPalas = peso > 0 ? Math.floor(stockBodega / peso) : 0;
         cantInp.max = maxPalas;
         if (Number(cantInp.value) > maxPalas) cantInp.value = maxPalas;
-        // También actualiza data-stock visible del opt
+        // Tambi\u00E9n actualiza data-stock visible del opt
       }
 
       function _calcPrecioSugerido() {
@@ -2805,12 +2805,12 @@ const Pages = {
 
         if (rowType === 'pala') {
           var palaVal = rows[i].querySelector('.vi-pala-prod').value;
-          if (!palaVal) { alert('Seleccioná un producto para la pala (fila ' + (i+1) + ')'); return; }
+          if (!palaVal) { alert('Seleccion\u00E1 un producto para la pala (fila ' + (i+1) + ')'); return; }
           var partsP = palaVal.split('|');
           var productoTipo = partsP[0];
           var productoId = Number(partsP[1]);
           var peso = Number(rows[i].querySelector('.vi-pala-peso').value) || 0;
-          if (peso <= 0) { alert('Cargá el peso de la pala en gramos (fila ' + (i+1) + ')'); return; }
+          if (peso <= 0) { alert('Carg\u00E1 el peso de la pala en gramos (fila ' + (i+1) + ')'); return; }
           items.push({
             tipo: 'pala',
             productoTipo: productoTipo,
@@ -2927,10 +2927,10 @@ const Pages = {
       h += '<p class="text-muted text-center">Sin gastos registrados.</p>';
     } else {
       h += '<div class="form-group" style="margin-bottom:12px">' +
-        '<input type="text" class="input" id="gastos-busqueda" placeholder="🔍 Buscar por fecha, categoría o descripción..." style="width:100%">' +
+        '<input type="text" class="input" id="gastos-busqueda" placeholder="\u{1F50D} Buscar por fecha, categor\u00EDa o descripci\u00F3n..." style="width:100%">' +
       '</div>';
       h += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Categoria</th><th>Descripcion</th><th>Monto</th><th></th></tr></thead><tbody id="gastos-tbody"></tbody></table></div>';
-      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="gastos-ver-mas" style="display:none">Ver más</button></div>';
+      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="gastos-ver-mas" style="display:none">Ver m\u00E1s</button></div>';
     }
     h += '</div></div>';
     container.innerHTML = h;
@@ -2971,7 +2971,7 @@ const Pages = {
         if (_gastosLimit < filtrados.length) {
           _gastosVerMas.style.display = '';
           var restantes = filtrados.length - _gastosLimit;
-          _gastosVerMas.textContent = 'Ver más (' + restantes + ' restantes de ' + filtrados.length + ')';
+          _gastosVerMas.textContent = 'Ver m\u00E1s (' + restantes + ' restantes de ' + filtrados.length + ')';
         } else {
           _gastosVerMas.style.display = 'none';
         }
@@ -3133,7 +3133,7 @@ const Pages = {
             '<div id="cam-detected-text" style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;font-style:italic"></div>' +
             '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
               '<select class="input" id="cam-prod-select" style="flex:1;min-width:140px"><option value="">Seleccionar producto</option></select>' +
-              '<select class="input" id="cam-talla-select" style="width:120px"><option value="chico">Pequeño</option><option value="grande">Grande</option></select>' +
+              '<select class="input" id="cam-talla-select" style="width:120px"><option value="chico">Peque\u00F1o</option><option value="grande">Grande</option></select>' +
               '<button class="btn btn-sm btn-gold" onclick="Pages.addCamProduct()">+ Agregar</button>' +
               '<button class="btn btn-sm btn-outline" onclick="Pages.cancelCamDetect()">Seguir leyendo</button>' +
             '</div>' +
@@ -3392,7 +3392,7 @@ const Pages = {
 
 
   /* ================================================================
-     PALAS — Bodega, Ventas de Palas, Configuración
+     PALAS \u2014 Bodega, Ventas de Palas, Configuraci\u00F3n
      ================================================================ */
   _palasTab: 'config',
 
@@ -3404,11 +3404,11 @@ const Pages = {
     var db = ArcanoDB.getDB();
 
     var h = '';
-    // Tabs (sin Bodega — esa info vive en Stock)
+    // Tabs (sin Bodega \u2014 esa info vive en Stock)
     h += '<div class="tabs" style="margin-bottom:16px">';
-    h += '<button class="tab-btn ' + (self._palasTab === 'config' ? 'active' : '') + '" onclick="Pages._palasTab=\'config\';App.renderPage(\'palas\')">⚙ Configuración</button>';
-    h += '<button class="tab-btn ' + (self._palasTab === 'ventas' ? 'active' : '') + '" onclick="Pages._palasTab=\'ventas\';App.renderPage(\'palas\')">💰 Palas Vendidas</button>';
-    h += '<button class="tab-btn ' + (self._palasTab === 'costales' ? 'active' : '') + '" onclick="Pages._palasTab=\'costales\';App.renderPage(\'palas\')">📦 Costales Armados</button>';
+    h += '<button class="tab-btn ' + (self._palasTab === 'config' ? 'active' : '') + '" onclick="Pages._palasTab=\'config\';App.renderPage(\'palas\')">\u2699 Configuraci\u00F3n</button>';
+    h += '<button class="tab-btn ' + (self._palasTab === 'ventas' ? 'active' : '') + '" onclick="Pages._palasTab=\'ventas\';App.renderPage(\'palas\')">\u{1F4B0} Palas Vendidas</button>';
+    h += '<button class="tab-btn ' + (self._palasTab === 'costales' ? 'active' : '') + '" onclick="Pages._palasTab=\'costales\';App.renderPage(\'palas\')">\u{1F4E6} Costales Armados</button>';
     h += '</div>';
 
     if (self._palasTab === 'ventas') {
@@ -3420,7 +3420,7 @@ const Pages = {
     }
     container.innerHTML = h;
 
-    // Wire up el botón Guardar de Configuración si está visible
+    // Wire up el bot\u00F3n Guardar de Configuraci\u00F3n si est\u00E1 visible
     var btnSavePalasConfig = document.getElementById('btn-save-palas-config');
     if (btnSavePalasConfig) {
       btnSavePalasConfig.addEventListener('click', function() {
@@ -3473,7 +3473,7 @@ const Pages = {
         var prodNombre = this.getAttribute('data-prod-nombre');
         var gramosInput = document.querySelector('.costal-gramos-' + prodTipo + '-' + prodId);
         var gramos = Number(gramosInput ? gramosInput.value : 0) || 0;
-        if (gramos <= 0) { alert('Cargá los gramos para armar el costal'); return; }
+        if (gramos <= 0) { alert('Carg\u00E1 los gramos para armar el costal'); return; }
         try {
           ArcanoDB.armarCostalDesdeBodega(prodTipo, prodId, gramos, 'Costal de ' + prodNombre);
           toast('Costal armado: ' + gramos + 'g de ' + prodNombre);
@@ -3523,7 +3523,7 @@ const Pages = {
       var grsB = Number(b.stockBolsa) || 0;
       if (grsB > 0) {
         // Para blends: el "stock en bodega" es tricky porque un blend se produce desde especias
-        // pero si por algún motivo tiene stockBolsa (no debería normalmente), lo mostramos
+        // pero si por alg\u00FAn motivo tiene stockBolsa (no deber\u00EDa normalmente), lo mostramos
         items.push({
           nombre: b.nombre, tipo: 'blend', id: b.id, gramos: grsB,
           costoPorGramo: 0, valorCosto: 0,
@@ -3536,11 +3536,11 @@ const Pages = {
     items.sort(function(a, b2) { return b2.gramos - a.gramos; });
 
     var h = '';
-    h += '<div class="card"><div class="card-header"><h3>Bodega — Stock de Especias y Blends (gramos)</h3></div><div class="card-body">';
-    h += '<p class="text-sm text-muted mb-16">La Bodega contiene las especias y blends a granel (en costales). Es la materia prima para armar palas al vender. El stock se carga desde Insumos → Registrar Entrada.</p>';
+    h += '<div class="card"><div class="card-header"><h3>Bodega \u2014 Stock de Especias y Blends (gramos)</h3></div><div class="card-body">';
+    h += '<p class="text-sm text-muted mb-16">La Bodega contiene las especias y blends a granel (en costales). Es la materia prima para armar palas al vender. El stock se carga desde Insumos \u2192 Registrar Entrada.</p>';
 
     if (items.length === 0) {
-      h += '<div class="empty-state"><div class="empty-state-icon">📦</div><p class="empty-state-text">Bodega vacía. Cargá costales en Insumos → Registrar Entrada.</p></div>';
+      h += '<div class="empty-state"><div class="empty-state-icon">\u{1F4E6}</div><p class="empty-state-text">Bodega vac\u00EDa. Carg\u00E1 costales en Insumos \u2192 Registrar Entrada.</p></div>';
     } else {
       // KPIs resumen
       var totalGramos = items.reduce(function(s, x) { return s + x.gramos; }, 0);
@@ -3591,7 +3591,7 @@ const Pages = {
         '<td class="text-center">' + totalPalas30 + '</td>' +
       '</tr>';
       h += '</tbody></table></div>';
-      h += '<p class="text-xs text-muted mt-8">Las palas se arman al momento de vender. Cada pala descuenta (cantidad × peso) gramos de Bodega. No requieren producción anticipada.</p>';
+      h += '<p class="text-xs text-muted mt-8">Las palas se arman al momento de vender. Cada pala descuenta (cantidad \u00D7 peso) gramos de Bodega. No requieren producci\u00F3n anticipada.</p>';
     }
     h += '</div></div>';
     return h;
@@ -3600,11 +3600,11 @@ const Pages = {
   _renderPalasVendidas() {
     var data = ArcanoDB.getPalasVendidas();
     var h = '';
-    h += '<div class="card"><div class="card-header"><h3>Palas Vendidas — Histórico</h3></div><div class="card-body">';
+    h += '<div class="card"><div class="card-header"><h3>Palas Vendidas \u2014 Hist\u00F3rico</h3></div><div class="card-body">';
     h += '<p class="text-sm text-muted mb-16">Reporte dedicado de ventas que incluyeron palas. Se calcula en tiempo real a partir de las ventas registradas.</p>';
 
     if (data.agregado.length === 0) {
-      h += '<div class="empty-state"><div class="empty-state-icon">💰</div><p class="empty-state-text">Aún no se vendieron palas. Hacé tu primera venta con palas desde Ventas → + Nueva Venta → + Pala.</p></div>';
+      h += '<div class="empty-state"><div class="empty-state-icon">\u{1F4B0}</div><p class="empty-state-text">A\u00FAn no se vendieron palas. Hac\u00E9 tu primera venta con palas desde Ventas \u2192 + Nueva Venta \u2192 + Pala.</p></div>';
     } else {
       // KPIs
       var totalPalas = data.agregado.reduce(function(s, x) { return s + x.totalVendidas; }, 0);
@@ -3648,7 +3648,7 @@ const Pages = {
       h += '<th class="text-right">Precio Unit.</th>';
       h += '<th class="text-right">Subtotal</th>';
       h += '</tr></thead><tbody>';
-      // Mostrar solo los primeros 30 (con scroll implícito)
+      // Mostrar solo los primeros 30 (con scroll impl\u00EDcito)
       var limit = Math.min(data.registros.length, 30);
       for (var j = 0; j < limit; j++) {
         var r = data.registros[j];
@@ -3672,8 +3672,8 @@ const Pages = {
 
   _renderPalasConfig(especias, blends, costos) {
     var h = '';
-    h += '<div class="card"><div class="card-header"><h3>Configuración de Palas</h3></div><div class="card-body">';
-    h += '<p class="text-sm text-muted mb-16">Para cada producto configurá: el <b>peso de la pala</b> (gramos) y el <b>precio de venta</b>. El costo se calcula como: (peso × costo por gramo de la especia) <b>+ costo de bolsa pequeña</b>. El margen sugerido es 100% sobre el costo.</p>';
+    h += '<div class="card"><div class="card-header"><h3>Configuraci\u00F3n de Palas</h3></div><div class="card-body">';
+    h += '<p class="text-sm text-muted mb-16">Para cada producto configur\u00E1: el <b>peso de la pala</b> (gramos) y el <b>precio de venta</b>. El costo se calcula como: (peso \u00D7 costo por gramo de la especia) <b>+ costo de bolsa peque\u00F1a</b>. El margen sugerido es 100% sobre el costo.</p>';
     var costoBolsaPala = Number(costos.bolsaChica) || 0;
 
     var allProductos = [];
@@ -3720,7 +3720,7 @@ const Pages = {
     for (var i = 0; i < allProductos.length; i++) {
       var p = allProductos[i];
       var tipoBadge = p.tipo === 'blend' ? '<span class="badge badge-blue">Blend</span>' : '<span class="badge badge-gold">Especia</span>';
-      var costoPala = (p.pesoPala * p.costoPorGramo) + costoBolsaPala;  // especia + bolsa pequeña
+      var costoPala = (p.pesoPala * p.costoPorGramo) + costoBolsaPala;  // especia + bolsa peque\u00F1a
       var margen = p.precioPala - costoPala;
       var margenPct = p.precioPala > 0 ? (margen / p.precioPala * 100) : 0;
       var margenColor = margen >= 0 ? 'var(--green)' : 'var(--red)';
@@ -3736,16 +3736,16 @@ const Pages = {
     }
     h += '</tbody></table></div>';
     h += '<div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-      '<button class="btn btn-gold" id="btn-save-palas-config">💾 Guardar Configuración</button>' +
+      '<button class="btn btn-gold" id="btn-save-palas-config">\u{1F4BE} Guardar Configuraci\u00F3n</button>' +
       '<span class="text-xs text-muted">El peso y precio se guardan en cada producto y se usan al vender palas.</span>' +
     '</div>';
-    h += '<p class="text-xs text-muted mt-8">Costo de bolsa pequeña para palas: $' + costoBolsaPala + ' (configurable en Insumos → Editar Costos Base).</p>';
+    h += '<p class="text-xs text-muted mt-8">Costo de bolsa peque\u00F1a para palas: $' + costoBolsaPala + ' (configurable en Insumos \u2192 Editar Costos Base).</p>';
     h += '</div></div>';
     return h;
   },
 
   _renderPalasCostales(especias, blends, db) {
-    // Unificado: delegar a renderCostales (la versión completa con precio/g/pala)
+    // Unificado: delegar a renderCostales (la versi\u00F3n completa con precio/g/pala)
     var el = document.createElement('div');
     Pages.renderCostales(el);
     return el.innerHTML;
@@ -3820,9 +3820,9 @@ const Pages = {
 
       // Subtipo options
       if (cat === 'especia') {
-        subSel.innerHTML = '<option value="pala">Pala (gramos)</option><option value="chico">Frasco Pequeño (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
+        subSel.innerHTML = '<option value="pala">Pala (gramos)</option><option value="chico">Frasco Peque\u00F1o (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
       } else if (cat === 'blend') {
-        subSel.innerHTML = '<option value="chico">Frasco Pequeño (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
+        subSel.innerHTML = '<option value="chico">Frasco Peque\u00F1o (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
       } else if (cat === 'envase') {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       } else if (cat === 'bolsa') {
@@ -3964,7 +3964,7 @@ const Pages = {
           '<td class="text-gold fw7">$' + (p.total || 0).toLocaleString() + '</td>' +
           '<td><span class="badge ' + estClass + '" style="border:1px solid">' + estLabel + '</span></td>' +
           '<td><button class="btn btn-sm btn-gold" onclick="Pages.verPedido(\'' + p._key + '\')">Ver</button>' +
-          '<button class="btn btn-sm btn-outline" style="margin-left:4px" onclick="Pages._waDesdePedido(\'' + p._key + '\')" title="Enviar WhatsApp">📱</button>' +
+          '<button class="btn btn-sm btn-outline" style="margin-left:4px" onclick="Pages._waDesdePedido(\'' + p._key + '\')" title="Enviar WhatsApp">\u{1F4F1}</button>' +
           '<button class="btn btn-sm btn-red" style="margin-left:4px" onclick="Pages.eliminarPedido(\'' + p._key + '\')">Eliminar</button></td>' +
           '</tr>';
       }
@@ -4021,7 +4021,7 @@ const Pages = {
     }
     h += '</tbody></table></div>';
 
-    // Mostrar subtotal (productos) + envío + total separados
+    // Mostrar subtotal (productos) + env\u00EDo + total separados
     var envio = p.envio || {};
     var envioCosto = p.envio ? (p.envio.costo || 0) : 0;
     var envioGratis = p.envio ? p.envio.gratis : false;
@@ -4030,21 +4030,21 @@ const Pages = {
     h += '<div style="text-align:right;margin-top:12px;font-size:1rem">';
     h += '<div style="color:var(--text-sec)">Subtotal productos: <strong>$' + subtotal.toLocaleString() + '</strong></div>';
     if (envioGratis) {
-      h += '<div style="color:var(--green)">Envío: <strong>GRATIS</strong></div>';
+      h += '<div style="color:var(--green)">Env\u00EDo: <strong>GRATIS</strong></div>';
     } else if (envioCosto > 0) {
-      h += '<div style="color:var(--text-sec)">Envío: <strong>$' + envioCosto.toLocaleString() + '</strong></div>';
+      h += '<div style="color:var(--text-sec)">Env\u00EDo: <strong>$' + envioCosto.toLocaleString() + '</strong></div>';
     }
     h += '<div style="font-size:1.2rem;margin-top:4px" class="fw7 text-gold">Total: $' + (p.total || 0).toLocaleString() + '</div>';
     h += '</div>';
 
-    // Botón "Envío sin cargo"
+    // Bot\u00F3n "Env\u00EDo sin cargo"
     if (!envioGratis) {
       h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center">';
-      h += '<button class="btn btn-sm btn-outline" style="border-color:var(--green);color:var(--green)" onclick="Pages.marcarEnvioSinCargo(\'' + pedidoKey + '\')">🎁 Envío sin cargo</button>';
-      h += '<span class="text-xs text-muted">Quita el costo de envío y lo marca como gratis</span>';
+      h += '<button class="btn btn-sm btn-outline" style="border-color:var(--green);color:var(--green)" onclick="Pages.marcarEnvioSinCargo(\'' + pedidoKey + '\')">\u{1F381} Env\u00EDo sin cargo</button>';
+      h += '<span class="text-xs text-muted">Quita el costo de env\u00EDo y lo marca como gratis</span>';
       h += '</div>';
     } else {
-      h += '<div class="mt-8"><span class="badge" style="background:rgba(107,142,78,0.15);color:var(--green);padding:6px 12px;border-radius:8px;font-size:.85rem">✓ Envío sin cargo aplicado</span></div>';
+      h += '<div class="mt-8"><span class="badge" style="background:rgba(107,142,78,0.15);color:var(--green);padding:6px 12px;border-radius:8px;font-size:.85rem">\u2713 Env\u00EDo sin cargo aplicado</span></div>';
     }
 
     // Estado buttons
@@ -4080,13 +4080,13 @@ const Pages = {
     if (modal) modal.remove();
     App.renderPage(App.currentPage);
 
-    // Notificar por WhatsApp (si está activo para este evento)
+    // Notificar por WhatsApp (si est\u00E1 activo para este evento)
     if (typeof WhatsAppNotifications !== 'undefined') {
       var pedidos = ArcanoDB.getPedidos();
       var pedido = null;
       for (var i = 0; i < pedidos.length; i++) { if (pedidos[i]._key === pedidoKey) { pedido = pedidos[i]; break; } }
       if (pedido) {
-        // Mapear estados del pedido a estados de notificación
+        // Mapear estados del pedido a estados de notificaci\u00F3n
         var estadoNotif = nuevoEstado;
         if (nuevoEstado === 'nuevo') estadoNotif = 'nuevo';
         else if (nuevoEstado === 'confirmado') estadoNotif = 'confirmado';
@@ -4180,7 +4180,7 @@ const Pages = {
   },
 
   _waDesdePedido(pedidoKey) {
-    if (typeof WhatsAppNotifications === 'undefined') { alert('Módulo de WhatsApp no disponible'); return; }
+    if (typeof WhatsAppNotifications === 'undefined') { alert('M\u00F3dulo de WhatsApp no disponible'); return; }
     var pedidos = ArcanoDB.getPedidos();
     var pedido = null;
     for (var i = 0; i < pedidos.length; i++) { if (pedidos[i]._key === pedidoKey) { pedido = pedidos[i]; break; } }
@@ -4207,16 +4207,16 @@ const Pages = {
       '<div class="stat-card"><div class="stat-value" style="font-size:0.85rem">arcanoespecias.com</div><div class="stat-label">URL Publica</div></div>' +
       '</div>';
 
-    // Boton Regenerar SEO (legacy — solo JSON-LD del index)
-    h += '<div class="card mt-16"><div class="card-header"><h3>SEO Tienda (JSON-LD Home) — Legacy</h3></div><div class="card-body">' +
-      '<p class="text-sm text-muted mb-12"><strong>⚠ No usar este botón.</strong> Actualiza solo el JSON-LD del index.html. Puede romper la estructura del index. <strong>Usá \"Regenerar SEO Completo\" abajo en su lugar</strong> — ese regenera las páginas /blends/ y /blends-para/ sin tocar el index.html.</p>' +
+    // Boton Regenerar SEO (legacy \u2014 solo JSON-LD del index)
+    h += '<div class="card mt-16"><div class="card-header"><h3>SEO Tienda (JSON-LD Home) \u2014 Legacy</h3></div><div class="card-body">' +
+      '<p class="text-sm text-muted mb-12"><strong>\u26A0 No usar este bot\u00F3n.</strong> Actualiza solo el JSON-LD del index.html. Puede romper la estructura del index. <strong>Us\u00E1 \"Regenerar SEO Completo\" abajo en su lugar</strong> \u2014 ese regenera las p\u00E1ginas /blends/ y /blends-para/ sin tocar el index.html.</p>' +
       '<button class="btn btn-outline" id="btn-regenerar-seo" onclick="Pages.regenerarSEO()">Regenerar SEO Tienda (no recomendado)</button>' +
       '<span id="seo-status" class="ml-8 text-sm"></span>' +
       '</div></div>';
 
-    // Botón Regenerar SEO Completo (recomendado)
-    h += '<div class="card mt-16"><div class="card-header"><h3>✓ SEO Completo — Recomendado</h3></div><div class="card-body">' +
-      '<p class="text-sm text-muted mb-12">Genera las páginas individuales de cada producto (/blends/slug/) y las páginas de categorías SEO (/blends-para/categoria/). También actualiza sitemap.xml, merchant_feed.xml/tsv y los canonicals de /p/*.html. <strong>Ejecutá esto después de agregar, modificar o eliminar productos.</strong> No toca el index.html.</p>' +
+    // Bot\u00F3n Regenerar SEO Completo (recomendado)
+    h += '<div class="card mt-16"><div class="card-header"><h3>\u2713 SEO Completo \u2014 Recomendado</h3></div><div class="card-body">' +
+      '<p class="text-sm text-muted mb-12">Genera las p\u00E1ginas individuales de cada producto (/blends/slug/) y las p\u00E1ginas de categor\u00EDas SEO (/blends-para/categoria/). Tambi\u00E9n actualiza sitemap.xml, merchant_feed.xml/tsv y los canonicals de /p/*.html. <strong>Ejecut\u00E1 esto despu\u00E9s de agregar, modificar o eliminar productos.</strong> No toca el index.html.</p>' +
       '<button class="btn btn-gold" id="btn-regenerar-seo-completo" onclick="Pages.regenerarSEOCompleto()">Regenerar SEO Completo</button>' +
       '<span id="seo-completo-status" class="ml-8 text-sm"></span>' +
       '<div id="seo-completo-log" class="mt-12" style="max-height:300px;overflow-y:auto;background:var(--bg3);padding:12px;border-radius:8px;font-size:12px;font-family:monospace;display:none"></div>' +
@@ -4226,7 +4226,7 @@ const Pages = {
     if (productos.length === 0) {
       h += '<p class="text-muted text-center">No hay productos visibles. Activa "Tienda" en Productos > Editar.</p>';
     } else {
-      h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Tipo</th><th>Cat.</th><th>Precio Pequeño</th><th>Precio Grande</th><th>Stock Pq</th><th>Stock Gr</th></tr></thead><tbody>';
+      h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Tipo</th><th>Cat.</th><th>Precio Peque\u00F1o</th><th>Precio Grande</th><th>Stock Pq</th><th>Stock Gr</th></tr></thead><tbody>';
       for (var i = 0; i < productos.length; i++) {
         var p = productos[i];
         h += '<tr>' +
@@ -4251,17 +4251,17 @@ const Pages = {
           '<div class="img-upload-placeholder" onclick="document.getElementById(\'f-logo-pago\').click()"><span>+ Formas de Pago</span></div></div>' +
       '</div></div></div>';
 
-    // === DISEÑO DINÁMICO ===
+    // === DISE\u00D1O DIN\u00C1MICO ===
     var din = cfg.dinamico || {};
-    h += '<div class="card mt-16"><div class="card-header"><h3>Diseño Dinámico de Fondo</h3><p class="text-xs text-muted">Configura la transición del fondo de la tienda (crema → negro). El efecto se activa por <b>tiempo de navegación</b> del usuario, no por scroll. Los textos se ajustan automáticamente para mantener contraste legible.</p></div><div class="card-body">';
+    h += '<div class="card mt-16"><div class="card-header"><h3>Dise\u00F1o Din\u00E1mico de Fondo</h3><p class="text-xs text-muted">Configura la transici\u00F3n del fondo de la tienda (crema \u2192 negro). El efecto se activa por <b>tiempo de navegaci\u00F3n</b> del usuario, no por scroll. Los textos se ajustan autom\u00E1ticamente para mantener contraste legible.</p></div><div class="card-body">';
     h += '<div class="form-group" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:8px">' +
       '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">' +
         '<input type="checkbox" id="din-habilitado" ' + (din.habilitado !== false ? 'checked' : '') + '> ' +
-        '<span>Habilitar fondo dinámico</span>' +
+        '<span>Habilitar fondo din\u00E1mico</span>' +
       '</label></div>';
 
     h += '<div class="g2 mt-12">' +
-      '<div class="form-group"><label>Tipo de partículas</label>' +
+      '<div class="form-group"><label>Tipo de part\u00EDculas</label>' +
         '<select class="input" id="din-tipo">' +
           '<option value="dust"' + (din.tipoParticulas === 'dust' || !din.tipoParticulas ? ' selected' : '') + '>Polvo dorado (especias)</option>' +
           '<option value="sparkles"' + (din.tipoParticulas === 'sparkles' ? ' selected' : '') + '>Destellos brillantes</option>' +
@@ -4269,37 +4269,37 @@ const Pages = {
           '<option value="embers"' + (din.tipoParticulas === 'embers' ? ' selected' : '') + '>Brasas anaranjadas</option>' +
           '<option value="stars"' + (din.tipoParticulas === 'stars' ? ' selected' : '') + '>Estrellas</option>' +
         '</select></div>' +
-      '<div class="form-group"><label>Cantidad de partículas</label>' +
+      '<div class="form-group"><label>Cantidad de part\u00EDculas</label>' +
         '<select class="input" id="din-cantidad">' +
-          '<option value="0"' + (din.cantidadParticulas === 0 ? ' selected' : '') + '>0 (sin partículas)</option>' +
-          '<option value="8"' + (din.cantidadParticulas === 8 ? ' selected' : '') + '>8 (mínimo)</option>' +
+          '<option value="0"' + (din.cantidadParticulas === 0 ? ' selected' : '') + '>0 (sin part\u00EDculas)</option>' +
+          '<option value="8"' + (din.cantidadParticulas === 8 ? ' selected' : '') + '>8 (m\u00EDnimo)</option>' +
           '<option value="18"' + (din.cantidadParticulas === 18 || !din.cantidadParticulas ? ' selected' : '') + '>18 (normal)</option>' +
           '<option value="30"' + (din.cantidadParticulas === 30 ? ' selected' : '') + '>30 (denso)</option>' +
         '</select></div>' +
     '</div>';
 
     h += '<div class="g2">' +
-      '<div class="form-group"><label>Velocidad de partículas</label>' +
+      '<div class="form-group"><label>Velocidad de part\u00EDculas</label>' +
         '<select class="input" id="din-velocidad">' +
           '<option value="slow"' + (din.velocidadParticulas === 'slow' ? ' selected' : '') + '>Lenta (relajante)</option>' +
           '<option value="normal"' + (din.velocidadParticulas === 'normal' || !din.velocidadParticulas ? ' selected' : '') + '>Normal</option>' +
-          '<option value="fast"' + (din.velocidadParticulas === 'fast' ? ' selected' : '') + '>Rápida (energética)</option>' +
+          '<option value="fast"' + (din.velocidadParticulas === 'fast' ? ' selected' : '') + '>R\u00E1pida (energ\u00E9tica)</option>' +
         '</select></div>' +
       '<div class="form-group"><label>Velocidad del mesh gradient</label>' +
         '<select class="input" id="din-mesh">' +
           '<option value="slow"' + (din.velocidadMesh === 'slow' ? ' selected' : '') + '>Lenta (120s)</option>' +
           '<option value="normal"' + (din.velocidadMesh === 'normal' || !din.velocidadMesh ? ' selected' : '') + '>Normal (60s)</option>' +
-          '<option value="fast"' + (din.velocidadMesh === 'fast' ? ' selected' : '') + '>Rápida (25s)</option>' +
-          '<option value="none"' + (din.velocidadMesh === 'none' ? ' selected' : '') + '>Sin animación</option>' +
+          '<option value="fast"' + (din.velocidadMesh === 'fast' ? ' selected' : '') + '>R\u00E1pida (25s)</option>' +
+          '<option value="none"' + (din.velocidadMesh === 'none' ? ' selected' : '') + '>Sin animaci\u00F3n</option>' +
         '</select></div>' +
     '</div>';
 
     h += '<div class="g2">' +
-      '<div class="form-group"><label>Tiempo de transición (qué tan rápido llega al tema oscuro)</label>' +
+      '<div class="form-group"><label>Tiempo de transici\u00F3n (qu\u00E9 tan r\u00E1pido llega al tema oscuro)</label>' +
         '<select class="input" id="din-intensidad">' +
-          '<option value="sutil"' + (din.intensidad === 'sutil' ? ' selected' : '') + '>Sutil — 2 minutos (transición muy lenta)</option>' +
-          '<option value="normal"' + (din.intensidad === 'normal' || !din.intensidad ? ' selected' : '') + '>Normal — 1 minuto (recomendado)</option>' +
-          '<option value="dramatico"' + (din.intensidad === 'dramatico' ? ' selected' : '') + '>Dramático — 30 segundos (cambio rápido)</option>' +
+          '<option value="sutil"' + (din.intensidad === 'sutil' ? ' selected' : '') + '>Sutil \u2014 2 minutos (transici\u00F3n muy lenta)</option>' +
+          '<option value="normal"' + (din.intensidad === 'normal' || !din.intensidad ? ' selected' : '') + '>Normal \u2014 1 minuto (recomendado)</option>' +
+          '<option value="dramatico"' + (din.intensidad === 'dramatico' ? ' selected' : '') + '>Dram\u00E1tico \u2014 30 segundos (cambio r\u00E1pido)</option>' +
         '</select></div>' +
       '<div class="form-group"><label>Vignette (oscurecido de bordes)</label>' +
         '<select class="input" id="din-vignette">' +
@@ -4313,12 +4313,12 @@ const Pages = {
       '<button class="btn btn-outline" onclick="Pages._resetDisenoDinamico()">Restablecer defaults</button>' +
       '<span id="din-status" class="text-sm text-muted ml-8"></span>' +
     '</div>';
-    h += '<p class="text-xs text-muted mt-8">💡 El efecto empieza cuando el usuario carga la tienda y transiciona gradualmente según los segundos configurados. Los textos mantienen SIEMPRE buen contraste (curva de easing diferenciada).</p>';
+    h += '<p class="text-xs text-muted mt-8">\u{1F4A1} El efecto empieza cuando el usuario carga la tienda y transiciona gradualmente seg\u00FAn los segundos configurados. Los textos mantienen SIEMPRE buen contraste (curva de easing diferenciada).</p>';
     h += '</div></div>';
 
     // === POPUP LATERAL ===
     var pp = cfg.popupTienda || {};
-    h += '<div class="card mt-16"><div class="card-header"><h3>📢 Popup Lateral</h3><p class="text-xs text-muted">Pestaña que se desliza desde la derecha. Configura colores, tiempos y contenido.</p></div><div class="card-body">';
+    h += '<div class="card mt-16"><div class="card-header"><h3>\u{1F4E2} Popup Lateral</h3><p class="text-xs text-muted">Pesta\u00F1a que se desliza desde la derecha. Configura colores, tiempos y contenido.</p></div><div class="card-body">';
     h += '<div class="form-group" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:8px">' +
       '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">' +
         '<input type="checkbox" id="pp-activo" ' + (pp.activo !== false ? 'checked' : '') + '> ' +
@@ -4328,47 +4328,47 @@ const Pages = {
     h += '<div class="g2 mt-12">' +
       '<div class="form-group"><label>Segundos antes de mostrar</label>' +
         '<input class="input" id="pp-segundos" type="number" min="3" max="120" value="' + (pp.segundos || 15) + '" placeholder="15"></div>' +
-      '<div class="form-group"><label>Duración visible (segundos)</label>' +
+      '<div class="form-group"><label>Duraci\u00F3n visible (segundos)</label>' +
         '<input class="input" id="pp-duracion" type="number" min="3" max="60" value="' + (pp.duracion || 8) + '" placeholder="8"></div>' +
     '</div>';
 
     h += '<div class="g2">' +
-      '<div class="form-group"><label>Título (opcional)</label>' +
-        '<input class="input" id="pp-titulo" value="' + esc(pp.titulo || '') + '" placeholder="Ej: ¡Promo especial!"></div>' +
-      '<div class="form-group"><label>Texto del botón (opcional)</label>' +
+      '<div class="form-group"><label>T\u00EDtulo (opcional)</label>' +
+        '<input class="input" id="pp-titulo" value="' + esc(pp.titulo || '') + '" placeholder="Ej: \u00A1Promo especial!"></div>' +
+      '<div class="form-group"><label>Texto del bot\u00F3n (opcional)</label>' +
         '<input class="input" id="pp-boton-texto" value="' + esc(pp.botonTexto || '') + '" placeholder="Ej: Ver promo"></div>' +
     '</div>';
 
     h += '<div class="form-group"><label>Mensaje</label>' +
       '<textarea class="input" id="pp-mensaje" rows="3" placeholder="Ej: Lleva 2 frascos y paga 1. Solo por hoy.">' + esc(pp.mensaje || '') + '</textarea></div>';
 
-    h += '<div class="form-group"><label>Link del botón (opcional)</label>' +
+    h += '<div class="form-group"><label>Link del bot\u00F3n (opcional)</label>' +
       '<input class="input" id="pp-boton-link" value="' + esc(pp.botonLink || '') + '" placeholder="https://..."></div>';
 
     // Colores configurables
     h += '<div class="card mt-12" style="background:var(--bg);border:1px solid var(--border)"><div class="card-body" style="padding:12px">';
-    h += '<p class="fw7 mb-8" style="font-size:0.85rem">🎨 Colores del popup</p>';
+    h += '<p class="fw7 mb-8" style="font-size:0.85rem">\u{1F3A8} Colores del popup</p>';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">' +
       '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Fondo</label><input type="color" id="pp-color-fondo" value="' + (pp.colorFondo || '#1A130D') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
       '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Texto</label><input type="color" id="pp-color-texto" value="' + (pp.colorTexto || '#F5E6D0') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
-      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Acento (título)</label><input type="color" id="pp-color-acento" value="' + (pp.colorAcento || '#E8B84B') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
-      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Botón fondo</label><input type="color" id="pp-color-boton" value="' + (pp.colorBoton || '#E8B84B') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
-      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Botón texto</label><input type="color" id="pp-color-boton-texto" value="' + (pp.colorBotonTexto || '#0E0A07') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
+      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Acento (t\u00EDtulo)</label><input type="color" id="pp-color-acento" value="' + (pp.colorAcento || '#E8B84B') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
+      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Bot\u00F3n fondo</label><input type="color" id="pp-color-boton" value="' + (pp.colorBoton || '#E8B84B') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
+      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Bot\u00F3n texto</label><input type="color" id="pp-color-boton-texto" value="' + (pp.colorBotonTexto || '#0E0A07') + '" style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:transparent"></div>' +
     '</div>';
     h += '</div></div>';
 
-    // Tipografía configurable
+    // Tipograf\u00EDa configurable
     var estiloTitulo = pp.estiloTitulo || 'negrita';
     var estiloTexto = pp.estiloTexto || 'normal';
     h += '<div class="card mt-12" style="background:var(--bg);border:1px solid var(--border)"><div class="card-body" style="padding:12px">';
-    h += '<p class="fw7 mb-8" style="font-size:0.85rem">✏️ Tipografía</p>';
+    h += '<p class="fw7 mb-8" style="font-size:0.85rem">\u270F\uFE0F Tipograf\u00EDa</p>';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">' +
-      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Tamaño título</label>' +
-        '<select class="input" id="pp-tamano-titulo" style="padding:4px 8px"><option value="1rem"' + (pp.tamanoTitulo === '1rem' ? ' selected' : '') + '>Pequeño</option><option value="1.25rem"' + (!pp.tamanoTitulo || pp.tamanoTitulo === '1.25rem' ? ' selected' : '') + '>Mediano</option><option value="1.5rem"' + (pp.tamanoTitulo === '1.5rem' ? ' selected' : '') + '>Grande</option><option value="1.75rem"' + (pp.tamanoTitulo === '1.75rem' ? ' selected' : '') + '>Muy Grande</option></select></div>' +
-      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Estilo título</label>' +
+      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Tama\u00F1o t\u00EDtulo</label>' +
+        '<select class="input" id="pp-tamano-titulo" style="padding:4px 8px"><option value="1rem"' + (pp.tamanoTitulo === '1rem' ? ' selected' : '') + '>Peque\u00F1o</option><option value="1.25rem"' + (!pp.tamanoTitulo || pp.tamanoTitulo === '1.25rem' ? ' selected' : '') + '>Mediano</option><option value="1.5rem"' + (pp.tamanoTitulo === '1.5rem' ? ' selected' : '') + '>Grande</option><option value="1.75rem"' + (pp.tamanoTitulo === '1.75rem' ? ' selected' : '') + '>Muy Grande</option></select></div>' +
+      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Estilo t\u00EDtulo</label>' +
         '<select class="input" id="pp-estilo-titulo" style="padding:4px 8px"><option value="negrita"' + (estiloTitulo === 'negrita' ? ' selected' : '') + '>Negrita</option><option value="subrayada"' + (estiloTitulo === 'subrayada' ? ' selected' : '') + '>Subrayada</option><option value="cursiva"' + (estiloTitulo === 'cursiva' ? ' selected' : '') + '>Cursiva</option><option value="negrita-subrayada"' + (estiloTitulo === 'negrita-subrayada' ? ' selected' : '') + '>Negrita + Subrayada</option><option value="negrita-cursiva"' + (estiloTitulo === 'negrita-cursiva' ? ' selected' : '') + '>Negrita + Cursiva</option></select></div>' +
-      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Tamaño texto</label>' +
-        '<select class="input" id="pp-tamano-texto" style="padding:4px 8px"><option value="0.8rem"' + (pp.tamanoTexto === '0.8rem' ? ' selected' : '') + '>Pequeño</option><option value="0.9rem"' + (!pp.tamanoTexto || pp.tamanoTexto === '0.9rem' ? ' selected' : '') + '>Mediano</option><option value="1rem"' + (pp.tamanoTexto === '1rem' ? ' selected' : '') + '>Grande</option></select></div>' +
+      '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Tama\u00F1o texto</label>' +
+        '<select class="input" id="pp-tamano-texto" style="padding:4px 8px"><option value="0.8rem"' + (pp.tamanoTexto === '0.8rem' ? ' selected' : '') + '>Peque\u00F1o</option><option value="0.9rem"' + (!pp.tamanoTexto || pp.tamanoTexto === '0.9rem' ? ' selected' : '') + '>Mediano</option><option value="1rem"' + (pp.tamanoTexto === '1rem' ? ' selected' : '') + '>Grande</option></select></div>' +
       '<div><label style="display:block;font-size:0.78rem;margin-bottom:4px">Estilo texto</label>' +
         '<select class="input" id="pp-estilo-texto" style="padding:4px 8px"><option value="normal"' + (estiloTexto === 'normal' ? ' selected' : '') + '>Normal</option><option value="negrita"' + (estiloTexto === 'negrita' ? ' selected' : '') + '>Negrita</option><option value="cursiva"' + (estiloTexto === 'cursiva' ? ' selected' : '') + '>Cursiva</option><option value="subrayada"' + (estiloTexto === 'subrayada' ? ' selected' : '') + '>Subrayada</option></select></div>' +
     '</div>';
@@ -4644,7 +4644,7 @@ const Pages = {
       }
       ns += '</ul>\n</div>\n</noscript>';
 
-      // SEO div content — extractos cortos + enlace a /blends/ (sin duplicar contenido completo)
+      // SEO div content \u2014 extractos cortos + enlace a /blends/ (sin duplicar contenido completo)
       var sd = '<h2>Catalogo de Especias y Blends Artesanales</h2>';
       sd += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y cocteleria, especias selectas y packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo. Envios a toda Colombia.</p>';
       sd += '<ul>';
@@ -4653,14 +4653,14 @@ const Pages = {
         var slug = Pages._productSlug(p.nombre);
         // Solo generar enlace si tenemos slug
         var link = slug ? '<a href="https://arcanoespecias.com/blends/' + slug + '/">' + escH(p.nombre) + '</a>' : escH(p.nombre);
-        // Extracto corto: máximo 80 chars
+        // Extracto corto: m\u00E1ximo 80 chars
         var extracto = '';
         if (p.descripcion) {
           extracto = p.descripcion.substring(0, 80);
           if (p.descripcion.length > 80) extracto = extracto.replace(/\s+\S*$/, '') + '...';
         }
         sd += '<li>' + link;
-        if (extracto) sd += ' — ' + escH(extracto);
+        if (extracto) sd += ' \u2014 ' + escH(extracto);
         sd += '</li>';
       }
       sd += '</ul>';
@@ -4670,12 +4670,12 @@ const Pages = {
 
       // FAQ JSON-LD
       var faqQ = [
-        {q: '¿Qué es Arcano Especias?', a: 'Arcano Especias es una marca colombiana especializada en blends y mezclas artesanales de especias selectas de cada rincón del mundo. Creamos combinaciones únicas para comidas, infusiones y coctelería, con ingredientes 100% naturales y de alta calidad.'},
-        {q: '¿Realizan envíos a toda Colombia?', a: 'Sí, Arcano Especias realiza envíos a todas las ciudades y municipios de Colombia. Los pedidos se envían una vez confirmado el pago y el tiempo de entrega varía según la ubicación.'},
-        {q: '¿Cuáles son las formas de pago aceptadas?', a: 'Aceptamos pagos mediante Nequi, transferencia bancaria a Bancolombia y otros métodos de pago disponibles. Los datos de pago se proporcionan al confirmar el pedido.'},
-        {q: '¿Qué presentaciones de productos ofrecen?', a: 'Nuestros blends y especias se ofrecen en dos presentaciones: tamaño pequeño y tamaño grande. También contamos con packs exclusivos que combinan varios productos a un precio especial.'},
-        {q: '¿Son productos naturales?', a: 'Sí, todos los productos de Arcano Especias son 100% naturales. Utilizamos especias y ingredientes de alta calidad, sin aditivos artificiales ni conservantes. Cada blend es mezclado de forma artesanal.'},
-        {q: '¿Para qué se pueden usar los blends de especias?', a: 'Nuestros blends están categorizados según su uso ideal: para comidas (carnes, sopas, arroces), para infusiones (tés y bebidas calientes) y para coctelería (bebidas y cócteles). Cada blend está diseñado para realzar el sabor de tus preparaciones.'}
+        {q: '\u00BFQu\u00E9 es Arcano Especias?', a: 'Arcano Especias es una marca colombiana especializada en blends y mezclas artesanales de especias selectas de cada rinc\u00F3n del mundo. Creamos combinaciones \u00FAnicas para comidas, infusiones y cocteler\u00EDa, con ingredientes 100% naturales y de alta calidad.'},
+        {q: '\u00BFRealizan env\u00EDos a toda Colombia?', a: 'S\u00ED, Arcano Especias realiza env\u00EDos a todas las ciudades y municipios de Colombia. Los pedidos se env\u00EDan una vez confirmado el pago y el tiempo de entrega var\u00EDa seg\u00FAn la ubicaci\u00F3n.'},
+        {q: '\u00BFCu\u00E1les son las formas de pago aceptadas?', a: 'Aceptamos pagos mediante Nequi, transferencia bancaria a Bancolombia y otros m\u00E9todos de pago disponibles. Los datos de pago se proporcionan al confirmar el pedido.'},
+        {q: '\u00BFQu\u00E9 presentaciones de productos ofrecen?', a: 'Nuestros blends y especias se ofrecen en dos presentaciones: tama\u00F1o peque\u00F1o y tama\u00F1o grande. Tambi\u00E9n contamos con packs exclusivos que combinan varios productos a un precio especial.'},
+        {q: '\u00BFSon productos naturales?', a: 'S\u00ED, todos los productos de Arcano Especias son 100% naturales. Utilizamos especias y ingredientes de alta calidad, sin aditivos artificiales ni conservantes. Cada blend es mezclado de forma artesanal.'},
+        {q: '\u00BFPara qu\u00E9 se pueden usar los blends de especias?', a: 'Nuestros blends est\u00E1n categorizados seg\u00FAn su uso ideal: para comidas (carnes, sopas, arroces), para infusiones (t\u00E9s y bebidas calientes) y para cocteler\u00EDa (bebidas y c\u00F3cteles). Cada blend est\u00E1 dise\u00F1ado para realzar el sabor de tus preparaciones.'}
       ];
       var faqItems = [];
       for (var _qi = 0; _qi < faqQ.length; _qi++) {
@@ -4705,11 +4705,11 @@ const Pages = {
         // El index.html debe tener </head>, </body>, <main> o .main-content
         // Si no los tiene, es un index roto y no debemos seguir
         if (content.indexOf('</head>') === -1 || content.indexOf('</body>') === -1) {
-          throw new Error('index.html no tiene estructura válida (falta </head> o </body>). No se modificará para no romperlo. Usá "Regenerar SEO Completo" en su lugar.');
+          throw new Error('index.html no tiene estructura v\u00E1lida (falta </head> o </body>). No se modificar\u00E1 para no romperlo. Us\u00E1 "Regenerar SEO Completo" en su lugar.');
         }
         // Verificar que tenga el body con class="opening-active" (estructura Arcano)
         if (content.indexOf('class="opening-active"') === -1 && content.indexOf('id="page-tienda"') === -1) {
-          throw new Error('index.html no parece ser la tienda Arcano. No se modificará. Usá "Regenerar SEO Completo" en su lugar.');
+          throw new Error('index.html no parece ser la tienda Arcano. No se modificar\u00E1. Us\u00E1 "Regenerar SEO Completo" en su lugar.');
         }
 
         if (statusEl) statusEl.innerHTML = '<span class="text-muted">Generando SEO para ' + products.length + ' productos...</span>';
@@ -4802,13 +4802,13 @@ const Pages = {
             }
           }
           if (pos > 0) {
-            // pos ahora apunta justo después del </div> que cierra el seo-content/products
+            // pos ahora apunta justo despu\u00E9s del </div> que cierra el seo-content/products
             var closeIdx = pos - 6; // inicio del </div>
             content = content.substring(0, openTagEnd + 1) + '\n' + seo.seoDiv + '\n' + content.substring(closeIdx);
             updated = true;
           }
         }
-        // Si no encontró ninguno de los dos selectores, no toca el contenido (no rompe)
+        // Si no encontr\u00F3 ninguno de los dos selectores, no toca el contenido (no rompe)
 
         if (statusEl) statusEl.innerHTML = '<span class="text-muted">Subiendo a GitHub...</span>';
 
@@ -4865,7 +4865,7 @@ const Pages = {
         '<div class="form-group"><label>Archivo Excel (.xlsx)</label>' +
         '<input type="file" class="input" id="f-import-file" accept=".xlsx,.xls"></div>' +
         '<div class="g2">' +
-          '<div class="form-group"><label>Grs por Frasco Pequeño</label><input type="number" class="input" id="f-import-gc" value="30" min="1"></div>' +
+          '<div class="form-group"><label>Grs por Frasco Peque\u00F1o</label><input type="number" class="input" id="f-import-gc" value="30" min="1"></div>' +
           '<div class="form-group"><label>Grs por Frasco Grande</label><input type="number" class="input" id="f-import-gg" value="80" min="1"></div>' +
         '</div>' +
         '<div id="f-import-status" class="mt-12"></div>' +
@@ -4927,7 +4927,7 @@ const Pages = {
               var ingCol = row[3] ? (row[3] || '').toString().trim() : '';
 
               if (firstCol) {
-                // New blend row — save previous if any
+                // New blend row \u2014 save previous if any
                 if (currentBlend && currentBlend.ingredientes.length > 0) {
                   blendsList.push(currentBlend);
                 }
@@ -5036,7 +5036,7 @@ const Pages = {
               '<span class="text-xs text-muted">' + (sb.region ? sb.region + ' | ' : '') + (sb.uso || '') + ' | ' + sb.ingredientes.length + ' ingredientes</span>' +
               '<span class="text-xs text-muted">' + sb.ingredientes.map(function(ing) {
                 var gc = Math.round((ing.g / 500) * gramosChico * 100) / 100;
-                return ing.especia + ' ' + ing.g + 'g → ' + gc + 'g/frasco';
+                return ing.especia + ' ' + ing.g + 'g \u2192 ' + gc + 'g/frasco';
               }).join(' + ') + '</span></div>';
           }
           if (blendsList.length > 5) phtml += '<p class="text-xs text-muted mt-4">... y ' + (blendsList.length - 5) + ' blends mas</p>';
@@ -5664,7 +5664,7 @@ const Pages = {
       if (allOpciones.indexOf(customUsos[ci]) < 0) allOpciones.push(customUsos[ci]);
     }
 
-    // Agregar opciones que están en selArr pero no en allOpciones
+    // Agregar opciones que est\u00E1n en selArr pero no en allOpciones
     // (pueden venir del Excel o ser datos viejos)
     for (var si = 0; si < selArr.length; si++) {
       if (allOpciones.indexOf(selArr[si]) < 0) {
@@ -5677,7 +5677,7 @@ const Pages = {
       }
     }
 
-    // Si se encontraron usos nuevos, guardarlos en Firebase automáticamente
+    // Si se encontraron usos nuevos, guardarlos en Firebase autom\u00E1ticamente
     if (needSave) {
       try { ArcanoDB.saveTiendaConfig({ usosCustom: customUsos }); } catch(e) {}
     }
@@ -5828,7 +5828,7 @@ const Pages = {
   },
 
   /* ================================================================
-   RECETAS IA  (Google Gemini — API gratuita desde el navegador)
+   RECETAS IA  (Google Gemini \u2014 API gratuita desde el navegador)
    ================================================================ */
   renderRecetasAdmin(container) {
     var categorias = ['Comida', 'Infusiones', 'Cocteleria'];
@@ -5962,7 +5962,7 @@ const Pages = {
      - _onRecetaImageSelect: cuando se selecciona archivo, lo sube
      - removeRecetaImage(key): quita la imagen
      - _generarImagenReceta: genera con Gemini Imagen y sube
-     - _uploadRecetaImageToGitHub: compresion + upload (análogo a Blog) */
+     - _uploadRecetaImageToGitHub: compresion + upload (an\u00E1logo a Blog) */
 
   _recetaImgTarget: null,
 
@@ -5978,10 +5978,10 @@ const Pages = {
         currentImg +
         '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
           '<button class="btn btn-gold" onclick="Pages._generarImagenReceta(\'' + key + '\', null, null, null);closeModal()">' +
-            '<span style="margin-right:6px">✨</span>Generar con IA' +
+            '<span style="margin-right:6px">\u2728</span>Generar con IA' +
           '</button>' +
           '<button class="btn btn-outline" onclick="Pages._pickRecetaImageFile(\'' + key + '\');closeModal()">' +
-            '<span style="margin-right:6px">📤</span>Subir archivo' +
+            '<span style="margin-right:6px">\u{1F4E4}</span>Subir archivo' +
           '</button>' +
         '</div>' +
         '<p class="text-muted text-sm" style="margin-top:12px;text-align:center">La opcion IA usa el prompt que genero Gemini al crear la receta. Si no existe, se creara uno nuevo automaticamente.</p>';
@@ -6040,7 +6040,7 @@ const Pages = {
 
   _generarImagenReceta: function(key, recetaOpt, apiKeyOpt, statusElOpt) {
     // Genera una imagen con Google AI y la sube a GitHub.
-    // Fallback chain: Imagen 3 → Imagen 3 Fast → Gemini 2.0 Flash (image generation)
+    // Fallback chain: Imagen 3 \u2192 Imagen 3 Fast \u2192 Gemini 2.0 Flash (image generation)
     var apiKey = apiKeyOpt || (localStorage.getItem('arcano_gemini_key') || '').trim();
     var statusEl = statusElOpt || document.getElementById('ra-gen-status');
     if (!apiKey) {
@@ -6062,7 +6062,7 @@ const Pages = {
       }
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Generando imagen con IA...</span>';
 
-      // Catálogo de modelos con su endpoint y formato de request/response
+      // Cat\u00E1logo de modelos con su endpoint y formato de request/response
       var models = [
         {
           name: 'imagen-3.0-generate-002',
@@ -6153,7 +6153,7 @@ const Pages = {
         })
         .catch(function(err) {
           if (err._providerError) {
-            console.warn('[Recetas] Modelo ' + m.name + ' fallo:', err.message, '→ probando siguiente...');
+            console.warn('[Recetas] Modelo ' + m.name + ' fallo:', err.message, '\u2192 probando siguiente...');
             return intentarCon(idx + 1);
           }
           throw err;
@@ -6170,7 +6170,7 @@ const Pages = {
               return url;
             });
           }).then(function(url) {
-            if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Imagen generada y guardada ✓</span>';
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Imagen generada y guardada \u2713</span>';
             Pages._loadRecetasAdmin();
             r.imagen_url = url;
             Pages._publishRecipeSEO(r);
@@ -6471,18 +6471,18 @@ const Pages = {
       }
       var pausado = a.pausado === true;
       var estadoBadge = pausado
-        ? '<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">⏸ Pausado</span>'
-        : '<span class="badge badge-green">● Activo</span>';
+        ? '<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">\u23F8 Pausado</span>'
+        : '<span class="badge badge-green">\u25CF Activo</span>';
       var toggleBtn = pausado
-        ? '<button class="btn btn-sm btn-green" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',false)" title="Activar">▶</button>'
-        : '<button class="btn btn-sm" style="background:rgba(245,158,11,0.1);color:#f59e0b;border-color:rgba(245,158,11,0.3)" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',true)" title="Pausar">⏸</button>';
+        ? '<button class="btn btn-sm btn-green" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',false)" title="Activar">\u25B6</button>'
+        : '<button class="btn btn-sm" style="background:rgba(245,158,11,0.1);color:#f59e0b;border-color:rgba(245,158,11,0.3)" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',true)" title="Pausar">\u23F8</button>';
       h += '<tr' + (pausado ? ' style="opacity:0.6"' : '') + '>' +
         '<td class="fw7"><a href="#" onclick="Pages.editarArticulo(\'' + a._key + '\');return false" style="color:inherit;text-decoration:none" title="Editar">' + (a.titulo || 'Sin titulo') + '</a></td>' +
         '<td>' + imgCell + '</td>' +
         '<td><span class="badge badge-gold">' + (a.categoria || '') + '</span></td>' +
         '<td class="text-sm text-muted">' + (a.fecha || '') + '</td>' +
         '<td>' + estadoBadge + '</td>' +
-        '<td style="white-space:nowrap">' + toggleBtn + ' <button class="btn btn-sm btn-outline" onclick="Pages.editarArticulo(\'' + a._key + '\')" title="Editar">✎</button> <button class="btn btn-sm btn-red" onclick="Pages.borrarArticulo(\'' + a._key + '\')" title="Eliminar">X</button></td>' +
+        '<td style="white-space:nowrap">' + toggleBtn + ' <button class="btn btn-sm btn-outline" onclick="Pages.editarArticulo(\'' + a._key + '\')" title="Editar">\u270E</button> <button class="btn btn-sm btn-red" onclick="Pages.borrarArticulo(\'' + a._key + '\')" title="Eliminar">X</button></td>' +
         '</tr>';
     }
     h += '</tbody></table></div>';
@@ -6494,7 +6494,7 @@ const Pages = {
       if (error) {
         toast('Error al actualizar', 'err');
       } else {
-        toast(pausar ? '⏸ Artículo pausado' : '▶ Artículo activado', 'ok');
+        toast(pausar ? '\u23F8 Art\u00EDculo pausado' : '\u25B6 Art\u00EDculo activado', 'ok');
         Pages._loadBlogAdmin();
       }
     });
@@ -7170,7 +7170,7 @@ const Pages = {
   },
 
   _doUpdateSitemap: function() {
-    // DESHABILITADO: este método generaba el sitemap con URLs /p/*.html (legacy)
+    // DESHABILITADO: este m\u00E9todo generaba el sitemap con URLs /p/*.html (legacy)
     // y con el dominio antiguo arcanoespecias.github.io.
     // Ahora el sitemap lo genera 'Regenerar SEO Completo' correctamente con
     // URLs /blends/<slug>/ y arcanoespecias.com.
@@ -7447,8 +7447,8 @@ const Pages = {
     h += '<div class="card mt-16"><div class="card-header"><h3>Resumen ' + (filter === 'blend' ? 'de Blends' : filter === 'especia' ? 'de Especias' : 'de Todos los Productos') + '</h3></div><div class="card-body">';
     h += '<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">';
     h += '<div class="stat-card"><div class="stat-value">' + count + '</div><div class="stat-label">Productos</div></div>';
-    h += '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">$' + promChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Costo Promedio Chico</div><div class="stat-sub text-xs text-muted">min $' + minChico.toLocaleString(undefined,{maximumFractionDigits:0}) + ' · max $' + maxChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div></div>';
-    h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">$' + promGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Costo Promedio Grande</div><div class="stat-sub text-xs text-muted">min $' + minGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + ' · max $' + maxGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">$' + promChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Costo Promedio Chico</div><div class="stat-sub text-xs text-muted">min $' + minChico.toLocaleString(undefined,{maximumFractionDigits:0}) + ' \u00B7 max $' + maxChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">$' + promGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Costo Promedio Grande</div><div class="stat-sub text-xs text-muted">min $' + minGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + ' \u00B7 max $' + maxGrande.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div></div>';
     h += '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value">$' + (sumChico + sumGrande).toLocaleString() + '</div><div class="stat-label">Suma total (ch+gr)</div></div>';
     h += '</div></div></div>';
 
@@ -7597,7 +7597,7 @@ const Pages = {
     }, 15000);
     Pages._ga4TimeoutId = timeoutId;
     window._ga4Jsonp = function(resp) {
-      // Guard: si ya se procesó una respuesta, ignorar duplicados
+      // Guard: si ya se proces\u00F3 una respuesta, ignorar duplicados
       if (!window._ga4Jsonp) return;
       clearTimeout(timeoutId);
       Pages._ga4TimeoutId = null;
@@ -7745,7 +7745,7 @@ const Pages = {
     for (var d = 0; d < data.length; d++) {
       var s = data[d];
       totalIngresos += (s.total || 0);
-      // Envío se cuenta separado (no es venta)
+      // Env\u00EDo se cuenta separado (no es venta)
       if (s.envioGratis) {
         totalEnviosGratis++;
       } else {
@@ -7805,7 +7805,7 @@ const Pages = {
     // KPIs
     h += '<div class="est-kpi-grid">';
     h += '<div class="est-kpi"><div class="est-kpi-value">$' + totalIngresos.toLocaleString() + '</div><div class="est-kpi-label">Ingresos por Ventas</div><div class="est-kpi-sub">' + totalOps + ' operaciones</div></div>';
-    h += '<div class="est-kpi"><div class="est-kpi-value">$' + totalEnvios.toLocaleString() + '</div><div class="est-kpi-label">Ingresos por Envíos</div><div class="est-kpi-sub">' + totalEnviosGratis + ' envíos gratis</div></div>';
+    h += '<div class="est-kpi"><div class="est-kpi-value">$' + totalEnvios.toLocaleString() + '</div><div class="est-kpi-label">Ingresos por Env\u00EDos</div><div class="est-kpi-sub">' + totalEnviosGratis + ' env\u00EDos gratis</div></div>';
     h += '<div class="est-kpi"><div class="est-kpi-value">' + totalUnidades + '</div><div class="est-kpi-label">Unidades Vendidas</div><div class="est-kpi-sub">' + prodArr.length + ' productos distintos</div></div>';
     h += '<div class="est-kpi"><div class="est-kpi-value">$' + (totalOps > 0 ? Math.round(totalIngresos / totalOps) : 0).toLocaleString() + '</div><div class="est-kpi-label">Ticket Promedio</div><div class="est-kpi-sub">por operacion</div></div>';
     h += '<div class="est-kpi ' + (tendenciaDiaria >= 0 ? 'up' : 'down') + '"><div class="est-kpi-value">' + tendSign + tendenciaDiaria + '%</div><div class="est-kpi-label">Tendencia Dia</div><div class="est-kpi-sub">vs dia anterior</div></div>';
@@ -8717,8 +8717,8 @@ const Pages = {
   },
 
   _testNuclearReset: function() {
-    if (!confirm('RESET NUCLEAR: Se borrarán TODOS los datos. Continuar?')) return;
-    if (!confirm('Estas SEGURO? Se perderán productos, ventas, pedidos, PDVs, todo.')) return;
+    if (!confirm('RESET NUCLEAR: Se borrar\u00E1n TODOS los datos. Continuar?')) return;
+    if (!confirm('Estas SEGURO? Se perder\u00E1n productos, ventas, pedidos, PDVs, todo.')) return;
     try { firebase.database().ref('arcano').remove(); } catch(e) {}
     localStorage.clear();
     toast('Reset completo. Recargando...');
@@ -8972,7 +8972,7 @@ const Pages = {
 
     var h = '';
     h += '<div class="page-header"><h2 style="font-size:22px;font-weight:700">Costos por Producto</h2>' +
-      '<button class="btn btn-outline" onclick="Pages.formCostosInsumos()">✏ Editar Costos Base</button></div>';
+      '<button class="btn btn-outline" onclick="Pages.formCostosInsumos()">\u270F Editar Costos Base</button></div>';
 
     h += '<p class="text-sm text-muted mb-16">Costo total de cada producto = Especias + Frasco + Bolsa + Sticker + Cinta. ' +
       'Los componentes del empaque son globales (se configuran en "Editar Costos Base"); las especias dependen de la receta del blend y el costo promedio ponderado por gramo.</p>';
@@ -8981,7 +8981,7 @@ const Pages = {
     h += '<div class="card mb-16"><div class="card-header"><h3>Costos Base de Empaque</h3></div><div class="card-body">';
     h += '<div class="g2">';
     h += '<div class="card" style="background:var(--bg);margin:0"><div class="card-body" style="padding:14px">' +
-      '<div class="fw7 mb-8" style="color:var(--blue)">Frasco Pequeño</div>' +
+      '<div class="fw7 mb-8" style="color:var(--blue)">Frasco Peque\u00F1o</div>' +
       '<div class="text-sm mb-4">Envase: $' + envaseChico + '</div>' +
       '<div class="text-sm mb-4">Bolsa: $' + bolsaChica + '</div>' +
       '<div class="text-sm mb-4">Sticker: $' + stickerChico + '</div>' +
@@ -9035,7 +9035,7 @@ const Pages = {
 
         // Columna Chico
         h += '<div class="costo-card-col">';
-        h += '<div class="costo-card-talla">Pequeño</div>';
+        h += '<div class="costo-card-talla">Peque\u00F1o</div>';
         h += '<div class="costo-card-row"><span>Especias</span><span>$' + it.espChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</span></div>';
         if (it.detailChico.length > 0 && it.detailChico.length <= 4) {
           for (var dc = 0; dc < it.detailChico.length; dc++) {
@@ -9101,10 +9101,10 @@ const Pages = {
       '<button class="btn btn-gold" id="btn-batch-aj" style="opacity:0.4;pointer-events:none">Guardar Ajustes (0)</button>' +
       '<button class="btn btn-outline" style="margin-left:8px" onclick="Pages.formAjusteStock()">Ajuste Individual</button>' +
       '<button class="btn btn-outline" style="margin-left:8px" id="btn-clear-aj" onclick="Pages._clearStockInputs()">Limpiar</button>' +
-      '<span class="text-xs text-muted" style="margin-left:12px">Escribe +/− en los campos y guarda todo de una vez</span>' +
+      '<span class="text-xs text-muted" style="margin-left:12px">Escribe +/\u2212 en los campos y guarda todo de una vez</span>' +
       '</div>';
 
-    // === SECCIÓN DESTACADA: FRASCOS PRODUCIDOS PARA LA VENTA ===
+    // === SECCI\u00D3N DESTACADA: FRASCOS PRODUCIDOS PARA LA VENTA ===
     // Construir lista de blends con stock > 0 (producidos y no vendidos)
     var blendsConStock = [];
     var totalChico = 0, totalGrande = 0;
@@ -9142,29 +9142,29 @@ const Pages = {
     });
 
     h += '<div class="card" style="border-color:var(--gold);background:linear-gradient(135deg, rgba(232,184,75,0.05), transparent)">' +
-      '<div class="card-header" style="background:rgba(232,184,75,0.1)"><h3 style="color:var(--gold-dark)">📦 Frascos Produccidos para la Venta</h3></div>' +
+      '<div class="card-header" style="background:rgba(232,184,75,0.1)"><h3 style="color:var(--gold-dark)">\u{1F4E6} Frascos Produccidos para la Venta</h3></div>' +
       '<div class="card-body">';
 
     if (blendsConStock.length === 0) {
-      h += '<p class="text-muted text-center" style="padding:24px 0">No hay frascos producidos en stock. Producí blends en el panel Producción para tener stock para vender.</p>';
+      h += '<p class="text-muted text-center" style="padding:24px 0">No hay frascos producidos en stock. Produc\u00ED blends en el panel Producci\u00F3n para tener stock para vender.</p>';
     } else {
       // KPIs resumen arriba
       h += '<div class="g4 mb-16">';
-      h += '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">' + totalChico + '</div><div class="stat-label">Frascos Pequeños</div><div class="stat-sub text-xs text-muted">' + blendsConStock.filter(function(x){return x.chico>0;}).length + ' blends</div></div>';
+      h += '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">' + totalChico + '</div><div class="stat-label">Frascos Peque\u00F1os</div><div class="stat-sub text-xs text-muted">' + blendsConStock.filter(function(x){return x.chico>0;}).length + ' blends</div></div>';
       h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">' + totalGrande + '</div><div class="stat-label">Frascos Grandes</div><div class="stat-sub text-xs text-muted">' + blendsConStock.filter(function(x){return x.grande>0;}).length + ' blends</div></div>';
       h += '<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-value">$' + valorCostoChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Valor Costo Stock</div></div>';
       h += '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value">$' + valorVentaChico.toLocaleString(undefined,{maximumFractionDigits:0}) + '</div><div class="stat-label">Valor Venta Stock</div></div>';
       h += '</div>';
 
-      // Input de búsqueda
+      // Input de b\u00FAsqueda
       h += '<div class="form-group" style="margin-bottom:12px">' +
-        '<input type="text" class="input" id="stock-blends-busqueda" placeholder="🔍 Buscar blend por nombre..." style="width:100%">' +
+        '<input type="text" class="input" id="stock-blends-busqueda" placeholder="\u{1F50D} Buscar blend por nombre..." style="width:100%">' +
       '</div>';
 
       // Tabla de blends con stock
       h += '<div class="table-wrap"><table class="table" id="stock-blends-table"><thead><tr>' +
         '<th>Blend</th>' +
-        '<th class="text-center">Pequeños</th>' +
+        '<th class="text-center">Peque\u00F1os</th>' +
         '<th class="text-center">Grandes</th>' +
         '<th class="text-center">Total</th>' +
         '<th class="text-right">$ Venta Pq</th>' +
@@ -9179,7 +9179,7 @@ const Pages = {
         '<td class="text-right" id="stock-blends-total-vg">$' + valorVentaGrande.toLocaleString() + '</td>' +
         '<td class="text-right" id="stock-blends-total-vt">$' + (valorVentaChico + valorVentaGrande).toLocaleString() + '</td>' +
         '</tr></tfoot></table></div>';
-      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="stock-blends-ver-mas" style="display:none">Ver más</button></div>';
+      h += '<div style="text-align:center;margin-top:12px"><button class="btn btn-sm btn-outline" id="stock-blends-ver-mas" style="display:none">Ver m\u00E1s</button></div>';
       h += '<p class="text-xs text-muted mt-8">Valor de venta calculado con precios actuales de cada blend. Los blends con stock 0 no aparecen en esta lista.</p>';
     }
     h += '</div></div>';
@@ -9194,7 +9194,7 @@ const Pages = {
 
     // === SECTION 1: ESPECIAS ===
     h += '<h3 style="color:var(--gold);margin:16px 0 12px;font-size:1.1rem">Especias</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Pala (g)</th><th>Ajuste</th><th>Fr.Pequeño</th><th>Ajuste</th><th>Fr.Grande</th><th>Ajuste</th><th></th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Pala (g)</th><th>Ajuste</th><th>Fr.Peque\u00F1o</th><th>Ajuste</th><th>Fr.Grande</th><th>Ajuste</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < especias.length; i++) {
       var e = especias[i];
       var palaCls = (e.stockBolsa||0)<=50?'text-red fw7':'';
@@ -9202,7 +9202,7 @@ const Pages = {
       var grCls = (e.stockGrande||0)<=3?'text-red fw7':'text-green';
       h += '<tr>' +
         '<td class="fw7">' + e.nombre + '</td>' +
-        '<td><span class="badge badge-gold">' + ((e.categorias||[]).length ? (e.categorias||[]).join(', ') : (e.categoria||'—')) + '</span></td>' +
+        '<td><span class="badge badge-gold">' + ((e.categorias||[]).length ? (e.categorias||[]).join(', ') : (e.categoria||'\u2014')) + '</span></td>' +
         '<td class="' + palaCls + '">' + (e.stockBolsa||0) + '</td>' +
         '<td>' + adjInput('especia', 'pala', e.id, e.nombre, e.stockBolsa||0) + '</td>' +
         '<td class="' + chCls + '">' + (e.stockChico||0) + '</td>' +
@@ -9216,14 +9216,14 @@ const Pages = {
 
     // === SECTION 2: BLENDS ===
     h += '<h3 style="color:var(--gold);margin:24px 0 12px;font-size:1.1rem">Blends</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Fr.Pequeño</th><th>Ajuste</th><th>Fr.Grande</th><th>Ajuste</th><th></th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Fr.Peque\u00F1o</th><th>Ajuste</th><th>Fr.Grande</th><th>Ajuste</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       var chCls = (b.stockChico||0)<=3?'text-red fw7':'text-green';
       var grCls = (b.stockGrande||0)<=3?'text-red fw7':'text-green';
       h += '<tr>' +
         '<td class="fw7">' + b.nombre + '</td>' +
-        '<td><span class="badge badge-blue">' + ((b.categorias||[]).length ? (b.categorias||[]).join(', ') : '—') + '</span></td>' +
+        '<td><span class="badge badge-blue">' + ((b.categorias||[]).length ? (b.categorias||[]).join(', ') : '\u2014') + '</span></td>' +
         '<td class="' + chCls + '">' + (b.stockChico||0) + '</td>' +
         '<td>' + adjInput('blend', 'chico', b.id, b.nombre, b.stockChico||0) + '</td>' +
         '<td class="' + grCls + '">' + (b.stockGrande||0) + '</td>' +
@@ -9236,7 +9236,7 @@ const Pages = {
     // === SECTION 3: PACKAGING ===
     h += '<h3 style="color:var(--gold);margin:24px 0 12px;font-size:1.1rem">Packaging</h3>';
     h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Item</th><th>Stock</th><th>Ajuste</th></tr></thead><tbody>';
-    h += '<tr><td class="fw7">Frascos Pequeños</td><td>' + (envases.chico||0) + '</td><td>' + adjInput('envase', 'chico', null, 'Frascos chico', envases.chico||0) + '</td></tr>';
+    h += '<tr><td class="fw7">Frascos Peque\u00F1os</td><td>' + (envases.chico||0) + '</td><td>' + adjInput('envase', 'chico', null, 'Frascos chico', envases.chico||0) + '</td></tr>';
     h += '<tr><td class="fw7">Frascos Grandes</td><td>' + (envases.grande||0) + '</td><td>' + adjInput('envase', 'grande', null, 'Frascos grande', envases.grande||0) + '</td></tr>';
     h += '<tr><td class="fw7">Bolsas Chicas</td><td>' + (bolsas.chico||0) + '</td><td>' + adjInput('bolsa', 'chico', null, 'Bolsas chica', bolsas.chico||0) + '</td></tr>';
     h += '<tr><td class="fw7">Bolsas Grandes</td><td>' + (bolsas.grande||0) + '</td><td>' + adjInput('bolsa', 'grande', null, 'Bolsas grande', bolsas.grande||0) + '</td></tr>';
@@ -9245,7 +9245,7 @@ const Pages = {
 
     // === SECTION 4: STICKERS ===
     h += '<h3 style="color:var(--gold);margin:24px 0 12px;font-size:1.1rem">Stickers</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Tipo</th><th>Pequeño</th><th>Ajuste</th><th>Grande</th><th>Ajuste</th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Tipo</th><th>Peque\u00F1o</th><th>Ajuste</th><th>Grande</th><th>Ajuste</th></tr></thead><tbody>';
     for (var i = 0; i < etiqList.length; i++) {
       var et = etiqList[i];
       var chCls = et.stockChico<=5?'text-red fw7':'';
@@ -9270,16 +9270,16 @@ const Pages = {
       for (var i = 0; i < Math.min(ajustes.length, 50); i++) {
         var aj = ajustes[i];
         var catLabel = aj.categoria === 'especia' ? 'Especia' : aj.categoria === 'blend' ? 'Blend' : aj.categoria === 'envase' ? 'Frascos' : aj.categoria === 'bolsa' ? 'Bolsas' : aj.categoria === 'cinta' ? 'Cintas' : 'Sticker';
-        var subLabel = aj.subtipo === 'pala' ? 'Pala' : aj.subtipo === 'chico' ? 'Pequeño' : 'Grande';
+        var subLabel = aj.subtipo === 'pala' ? 'Pala' : aj.subtipo === 'chico' ? 'Peque\u00F1o' : 'Grande';
         var cantColor = (aj.cantidad > 0) ? 'text-green' : 'text-red';
         var cantSign = (aj.cantidad > 0) ? '+' : '';
         var unidad = aj.subtipo === 'pala' ? 'g' : 'u';
         h += '<tr><td>' + (aj.fecha||'') + '</td>' +
           '<td><span class="badge badge-gold">' + catLabel + '</span></td>' +
-          '<td class="fw7">' + (aj.productoNombre||'—') + '</td>' +
+          '<td class="fw7">' + (aj.productoNombre||'\u2014') + '</td>' +
           '<td>' + subLabel + '</td>' +
           '<td class="' + cantColor + ' fw7">' + cantSign + (aj.cantidad||0) + ' ' + unidad + '</td>' +
-          '<td class="text-sm" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (aj.motivo||'').replace(/"/g, '&quot;') + '">' + (aj.motivo||'—') + '</td>' +
+          '<td class="text-sm" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (aj.motivo||'').replace(/"/g, '&quot;') + '">' + (aj.motivo||'\u2014') + '</td>' +
           '<td><button class="btn btn-sm btn-red" onclick="Pages.delAjuste(' + aj.id + ')">X</button></td></tr>';
       }
       h += '</tbody></table></div>';
@@ -9287,7 +9287,7 @@ const Pages = {
     h += '</div></div>';
     container.innerHTML = h;
 
-    // Lógica de búsqueda y paginación para la tabla de frascos producidos
+    // L\u00F3gica de b\u00FAsqueda y paginaci\u00F3n para la tabla de frascos producidos
     if (blendsConStock.length > 0) {
       var _sbLimit = 15;
       var _sbFiltro = '';
@@ -9331,7 +9331,7 @@ const Pages = {
           html = '<tr><td colspan="7" class="text-muted text-center" style="padding:16px">Sin resultados para "' + esc(_sbFiltro) + '"</td></tr>';
         }
         _sbTbody.innerHTML = html;
-        // Totales recalculados según el filtro
+        // Totales recalculados seg\u00FAn el filtro
         var fCh = 0, fGr = 0, fVp = 0, fVg = 0;
         for (var j = 0; j < filtrados.length; j++) {
           fCh += filtrados[j].chico;
@@ -9351,11 +9351,11 @@ const Pages = {
         if (tVp) tVp.textContent = '$' + fVp.toLocaleString();
         if (tVg) tVg.textContent = '$' + fVg.toLocaleString();
         if (tVt) tVt.textContent = '$' + (fVp + fVg).toLocaleString();
-        // Ver más
+        // Ver m\u00E1s
         if (_sbLimit < filtrados.length) {
           _sbVerMas.style.display = '';
           var restantes = filtrados.length - _sbLimit;
-          _sbVerMas.textContent = 'Ver más (' + restantes + ' restantes de ' + filtrados.length + ')';
+          _sbVerMas.textContent = 'Ver m\u00E1s (' + restantes + ' restantes de ' + filtrados.length + ')';
         } else {
           _sbVerMas.style.display = 'none';
         }
@@ -9524,9 +9524,9 @@ const Pages = {
 
       // Subtipo options
       if (cat === 'especia') {
-        subSel.innerHTML = '<option value="pala">Pala (gramos)</option><option value="chico">Frasco Pequeño (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
+        subSel.innerHTML = '<option value="pala">Pala (gramos)</option><option value="chico">Frasco Peque\u00F1o (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
       } else if (cat === 'blend') {
-        subSel.innerHTML = '<option value="chico">Frasco Pequeño (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
+        subSel.innerHTML = '<option value="chico">Frasco Peque\u00F1o (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
       } else if (cat === 'envase') {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       } else if (cat === 'bolsa') {
@@ -9703,12 +9703,12 @@ Pages.renderClientes = function(el) {
   h += '</div>';
 
   if (totalClientes === 0) {
-    h += '<div class="card"><div class="card-body"><p class="text-center text-muted">Todavía no hay clientes registrados. Cuando un cliente haga click en "Mi Cuenta" en la tienda y se registre con su WhatsApp + nombre, aparecerá aquí automáticamente.</p></div></div>';
+    h += '<div class="card"><div class="card-body"><p class="text-center text-muted">Todav\u00EDa no hay clientes registrados. Cuando un cliente haga click en "Mi Cuenta" en la tienda y se registre con su WhatsApp + nombre, aparecer\u00E1 aqu\u00ED autom\u00E1ticamente.</p></div></div>';
     el.innerHTML = h;
     return;
   }
 
-  // === Clientes recién llegados (últimas 24h) ===
+  // === Clientes reci\u00E9n llegados (\u00FAltimas 24h) ===
   var hace24h = Date.now() - 24 * 60 * 60 * 1000;
   var recientes = clientes.filter(function(c) {
     var t = c.creado ? new Date(c.creado).getTime() : 0;
@@ -9718,7 +9718,7 @@ Pages.renderClientes = function(el) {
   });
 
   if (recientes.length > 0) {
-    h += '<div class="card mb-16"><div class="card-header"><h3>🆕 Recién llegados (' + recientes.length + ')</h3><p class="text-xs text-muted">Clientes que se registraron en las últimas 24 horas</p></div><div class="card-body">';
+    h += '<div class="card mb-16"><div class="card-header"><h3>\u{1F195} Reci\u00E9n llegados (' + recientes.length + ')</h3><p class="text-xs text-muted">Clientes que se registraron en las \u00FAltimas 24 horas</p></div><div class="card-body">';
     h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>WhatsApp</th><th>Registrado hace</th><th></th></tr></thead><tbody>';
     for (var ri = 0; ri < recientes.length; ri++) {
       var r = recientes[ri];
@@ -9729,14 +9729,14 @@ Pages.renderClientes = function(el) {
         '<td class="fw7">' + esc(r.nombre || 'Sin nombre') + '</td>' +
         '<td><a href="' + waLink + '" target="_blank" style="color:var(--gold)">' + esc(r.telefono || '-') + '</a></td>' +
         '<td class="text-sm text-muted">' + tiempoStr + '</td>' +
-        '<td><a href="' + waLink + '?text=' + encodeURIComponent('¡Hola ' + (r.nombre || '') + '! Bienvenido a Arcano Especias. Ya estás registrado en nuestra tienda. Cualquier duda escríbenos por aquí 🌶️') + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none">Enviar bienvenida</a></td>' +
+        '<td><a href="' + waLink + '?text=' + encodeURIComponent('\u00A1Hola ' + (r.nombre || '') + '! Bienvenido a Arcano Especias. Ya est\u00E1s registrado en nuestra tienda. Cualquier duda escr\u00EDbenos por aqu\u00ED \u{1F336}\uFE0F') + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none">Enviar bienvenida</a></td>' +
       '</tr>';
     }
     h += '</tbody></table></div>';
     h += '</div></div>';
   }
 
-  // Input de búsqueda
+  // Input de b\u00FAsqueda
   h += '<div class="card mb-16"><div class="card-body">' +
     '<div class="form-group" style="margin:0"><input class="input" id="clientes-search" placeholder="Buscar por nombre, WhatsApp o email..." oninput="Pages._filterClientesTable(this.value)"></div>' +
   '</div></div>';
@@ -9756,7 +9756,7 @@ Pages._renderClientesTable = function(clientes, totalPorCliente) {
   }
   var h = '<div class="table-wrap"><table class="table"><thead><tr>' +
     '<th>Nombre</th><th>WhatsApp</th><th>Email</th><th>Ciudad</th>' +
-    '<th>Pedidos</th><th>Total Comprado</th><th>Último Pedido</th><th></th>' +
+    '<th>Pedidos</th><th>Total Comprado</th><th>\u00DAltimo Pedido</th><th></th>' +
     '</tr></thead><tbody>';
   for (var i = 0; i < clientes.length; i++) {
     var c = clientes[i];
@@ -9774,7 +9774,7 @@ Pages._renderClientesTable = function(clientes, totalPorCliente) {
       '<td class="fw7" style="color:var(--green)">$' + total.toLocaleString() + '</td>' +
       '<td class="text-sm text-muted">' + ultimoPed + '</td>' +
       '<td>' +
-        '<button class="btn btn-sm btn-outline" onclick="Pages._verHistorialCliente(\'' + c._key + '\')" title="Ver historial">📜</button> ' +
+        '<button class="btn btn-sm btn-outline" onclick="Pages._verHistorialCliente(\'' + c._key + '\')" title="Ver historial">\u{1F4DC}</button> ' +
         '<button class="btn btn-sm btn-red" onclick="Pages._deleteCliente(\'' + c._key + '\')" title="Eliminar">X</button>' +
       '</td>' +
       '</tr>';
@@ -9820,11 +9820,11 @@ Pages._verHistorialCliente = function(clienteKey) {
       '<div><div class="text-sm text-muted">WhatsApp</div><a href="' + waLink + '" target="_blank" style="color:var(--gold)">' + esc(cliente.telefono || '-') + '</a></div>' +
       '<div><div class="text-sm text-muted">Email</div>' + esc(cliente.email || '-') + '</div>' +
       '<div><div class="text-sm text-muted">Ciudad</div>' + esc(cliente.ciudad || '-') + '</div>' +
-      '<div><div class="text-sm text-muted">Dirección</div>' + esc(cliente.direccion || '-') + '</div>' +
+      '<div><div class="text-sm text-muted">Direcci\u00F3n</div>' + esc(cliente.direccion || '-') + '</div>' +
       '<div><div class="text-sm text-muted">Total pedidos</div><b>' + (cliente.totalPedidos || 0) + '</b></div>' +
       '<div><div class="text-sm text-muted">Total comprado</div><b style="color:var(--green)">$' + totalComprado.toLocaleString() + '</b></div>' +
       '<div><div class="text-sm text-muted">Cliente desde</div>' + (cliente.creado ? new Date(cliente.creado).toLocaleDateString('es-CO') : '-') + '</div>' +
-      '<div><div class="text-sm text-muted">Último pedido</div>' + (cliente.ultimoPedido ? new Date(cliente.ultimoPedido).toLocaleDateString('es-CO') : '-') + '</div>' +
+      '<div><div class="text-sm text-muted">\u00DAltimo pedido</div>' + (cliente.ultimoPedido ? new Date(cliente.ultimoPedido).toLocaleDateString('es-CO') : '-') + '</div>' +
     '</div>' +
     '<h4 style="margin:16px 0 8px">Historial de Pedidos (' + pedidos.length + ')</h4>';
   if (pedidos.length === 0) {
@@ -9848,7 +9848,7 @@ Pages._verHistorialCliente = function(clienteKey) {
 };
 
 Pages._deleteCliente = function(key) {
-  if (!confirm('¿Eliminar este cliente? Sus pedidos no se borrarán pero quedarán sin cliente vinculado.')) return;
+  if (!confirm('\u00BFEliminar este cliente? Sus pedidos no se borrar\u00E1n pero quedar\u00E1n sin cliente vinculado.')) return;
   ArcanoDB.deleteCliente(key);
   App.renderPage('clientes');
 };
@@ -9861,7 +9861,7 @@ Pages.renderPromociones = function(el) {
   var activas = ArcanoDB.getPromocionesActivas();
 
   var h = '<div class="page-header"><h2>Promociones</h2>';
-  h += '<button class="btn btn-gold" onclick="Pages._editarPromocion(null)">+ Nueva promoción</button>';
+  h += '<button class="btn btn-gold" onclick="Pages._editarPromocion(null)">+ Nueva promoci\u00F3n</button>';
   h += '</div>';
 
   // KPIs
@@ -9875,41 +9875,41 @@ Pages.renderPromociones = function(el) {
   h += '</div>';
 
   if (promos.length === 0) {
-    h += '<div class="card mt-16"><div class="card-body"><p class="text-center text-muted">No hay promociones. Crea la primera con el botón de arriba.</p></div></div>';
+    h += '<div class="card mt-16"><div class="card-body"><p class="text-center text-muted">No hay promociones. Crea la primera con el bot\u00F3n de arriba.</p></div></div>';
     el.innerHTML = h;
     return;
   }
 
   h += '<div class="card mt-16"><div class="card-header"><h3>Todas las promociones</h3></div><div class="card-body">';
-  h += '<div class="table-wrap"><table class="table"><thead><tr><th>Título</th><th>Tipo</th><th>Valor</th><th>Código</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead><tbody>';
+  h += '<div class="table-wrap"><table class="table"><thead><tr><th>T\u00EDtulo</th><th>Tipo</th><th>Valor</th><th>C\u00F3digo</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead><tbody>';
   for (var i = 0; i < promos.length; i++) {
     var p = promos[i];
-    var tipoLabel = { porcentaje: '% Off', monto: '$ Off', envio: 'Envío gratis', producto: 'Producto gratis' }[p.tipo] || p.tipo;
+    var tipoLabel = { porcentaje: '% Off', monto: '$ Off', envio: 'Env\u00EDo gratis', producto: 'Producto gratis' }[p.tipo] || p.tipo;
     var valorTxt = '';
     if (p.tipo === 'porcentaje') valorTxt = p.valor + '%';
     else if (p.tipo === 'monto') valorTxt = '$' + (p.valor || 0).toLocaleString();
-    else valorTxt = '—';
+    else valorTxt = '\u2014';
     var vigencia = '';
     if (p.fechaInicio || p.fechaFin) {
-      var fi = p.fechaInicio ? new Date(p.fechaInicio).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '—';
-      var ff = p.fechaFin ? new Date(p.fechaFin).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '—';
-      vigencia = fi + ' → ' + ff;
+      var fi = p.fechaInicio ? new Date(p.fechaInicio).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '\u2014';
+      var ff = p.fechaFin ? new Date(p.fechaFin).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '\u2014';
+      vigencia = fi + ' \u2192 ' + ff;
     } else {
-      vigencia = 'Sin límite';
+      vigencia = 'Sin l\u00EDmite';
     }
     var activaAhora = p.activa !== false && (!p.fechaFin || new Date(p.fechaFin).getTime() > Date.now()) && (!p.fechaInicio || new Date(p.fechaInicio).getTime() < Date.now());
     var estadoCls = activaAhora ? 'text-green' : 'text-muted';
     var estadoTxt = activaAhora ? 'Vigente' : (p.activa === false ? 'Inactiva' : 'Vencida');
     h += '<tr>' +
-      '<td class="fw7">' + esc(p.titulo || 'Sin título') + (p.destacada ? ' ⭐' : '') + '</td>' +
+      '<td class="fw7">' + esc(p.titulo || 'Sin t\u00EDtulo') + (p.destacada ? ' \u2B50' : '') + '</td>' +
       '<td>' + tipoLabel + '</td>' +
       '<td>' + valorTxt + '</td>' +
-      '<td><code style="background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--gold)">' + esc(p.codigo || '—') + '</code></td>' +
+      '<td><code style="background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--gold)">' + esc(p.codigo || '\u2014') + '</code></td>' +
       '<td class="text-sm text-muted">' + vigencia + '</td>' +
       '<td><span class="' + estadoCls + ' fw7">' + estadoTxt + '</span></td>' +
       '<td style="white-space:nowrap">' +
         '<button class="btn btn-sm btn-outline" onclick="Pages._editarPromocion(\'' + p._key + '\')">Editar</button> ' +
-        '<button class="btn btn-sm ' + (p.activa === false ? 'btn-gold' : 'btn-outline') + '" onclick="Pages._togglePromocion(\'' + p._key + '\')" title="' + (p.activa === false ? 'Activar' : 'Pausar') + '">' + (p.activa === false ? '▶' : '⏸') + '</button> ' +
+        '<button class="btn btn-sm ' + (p.activa === false ? 'btn-gold' : 'btn-outline') + '" onclick="Pages._togglePromocion(\'' + p._key + '\')" title="' + (p.activa === false ? 'Activar' : 'Pausar') + '">' + (p.activa === false ? '\u25B6' : '\u23F8') + '</button> ' +
         '<button class="btn btn-sm btn-red" onclick="Pages._deletePromocion(\'' + p._key + '\')">X</button>' +
       '</td>' +
     '</tr>';
@@ -9927,22 +9927,22 @@ Pages._editarPromocion = function(key) {
   }
   var p = promo || {};
   var body =
-    '<div class="form-group"><label>Título</label>' +
+    '<div class="form-group"><label>T\u00EDtulo</label>' +
       '<input class="input" id="pm-titulo" value="' + esc(p.titulo || '') + '" placeholder="Ej: 10% off en tu primera compra"></div>' +
     '<div class="g2">' +
       '<div class="form-group"><label>Tipo de descuento</label>' +
         '<select class="input" id="pm-tipo">' +
           '<option value="porcentaje"' + (p.tipo === 'porcentaje' ? ' selected' : '') + '>Porcentaje (%)</option>' +
           '<option value="monto"' + (p.tipo === 'monto' ? ' selected' : '') + '>Monto fijo ($)</option>' +
-          '<option value="envio"' + (p.tipo === 'envio' ? ' selected' : '') + '>Envío gratis</option>' +
+          '<option value="envio"' + (p.tipo === 'envio' ? ' selected' : '') + '>Env\u00EDo gratis</option>' +
           '<option value="producto"' + (p.tipo === 'producto' ? ' selected' : '') + '>Producto gratis</option>' +
         '</select></div>' +
       '<div class="form-group"><label>Valor</label>' +
         '<input class="input" id="pm-valor" type="number" value="' + (p.valor || '') + '" placeholder="Ej: 10 (porcentaje) o 5000 (monto)"></div>' +
     '</div>' +
-    '<div class="form-group"><label>Código promocional (opcional)</label>' +
+    '<div class="form-group"><label>C\u00F3digo promocional (opcional)</label>' +
       '<input class="input" id="pm-codigo" value="' + esc(p.codigo || '') + '" placeholder="Ej: BIENVENIDA10 (sin espacios)"></div>' +
-    '<div class="form-group"><label>Descripción (opcional)</label>' +
+    '<div class="form-group"><label>Descripci\u00F3n (opcional)</label>' +
       '<textarea class="input" id="pm-descripcion" placeholder="Detalles de la promo...">' + esc(p.descripcion || '') + '</textarea></div>' +
     '<div class="g2">' +
       '<div class="form-group"><label>Vigencia desde (opcional)</label>' +
@@ -9958,7 +9958,7 @@ Pages._editarPromocion = function(key) {
       '<button class="btn btn-gold" onclick="Pages._guardarPromocion(' + (key ? '\'' + key + '\'' : 'null') + ')">Guardar</button>' +
       '<button class="btn btn-outline" onclick="closeModal()">Cancelar</button>' +
     '</div>';
-  openModal(key ? 'Editar promoción' : 'Nueva promoción', body);
+  openModal(key ? 'Editar promoci\u00F3n' : 'Nueva promoci\u00F3n', body);
 };
 
 Pages._guardarPromocion = function(key) {
@@ -9972,7 +9972,7 @@ Pages._guardarPromocion = function(key) {
   var fechaFin = document.getElementById('pm-fechafin').value;
   var destacada = document.getElementById('pm-destacada').checked;
   var activa = document.getElementById('pm-activa').checked;
-  if (!titulo) { alert('El título es obligatorio'); return; }
+  if (!titulo) { alert('El t\u00EDtulo es obligatorio'); return; }
   if ((tipo === 'porcentaje' || tipo === 'monto') && valor <= 0) { alert('El valor debe ser mayor a 0'); return; }
   var data = {
     titulo: titulo, tipo: tipo, valor: valor, codigo: codigo,
@@ -9983,7 +9983,7 @@ Pages._guardarPromocion = function(key) {
   if (key) data._key = key;
   ArcanoDB.savePromocion(data);
   closeModal();
-  toast(key ? 'Promoción actualizada' : 'Promoción creada');
+  toast(key ? 'Promoci\u00F3n actualizada' : 'Promoci\u00F3n creada');
   App.renderPage('promociones');
 };
 
@@ -9997,7 +9997,7 @@ Pages._togglePromocion = function(key) {
 };
 
 Pages._deletePromocion = function(key) {
-  if (!confirm('¿Eliminar esta promoción?')) return;
+  if (!confirm('\u00BFEliminar esta promoci\u00F3n?')) return;
   ArcanoDB.deletePromocion(key);
   App.renderPage('promociones');
 };
@@ -10017,11 +10017,11 @@ Pages.renderCarritos = function(el) {
   h += '<div class="stat-card"><div class="stat-value text-green">' + activos.length + '</div><div class="stat-label">Activos</div></div>';
   h += '<div class="stat-card"><div class="stat-value text-yellow">' + abandonados.length + '</div><div class="stat-label">Abandonados</div></div>';
   h += '<div class="stat-card"><div class="stat-value text-gold">' + convertidos.length + '</div><div class="stat-label">Convertidos</div></div>';
-  h += '<div class="stat-card"><div class="stat-value text-muted">' + vacios.length + '</div><div class="stat-label">Vacíos</div></div>';
+  h += '<div class="stat-card"><div class="stat-value text-muted">' + vacios.length + '</div><div class="stat-label">Vac\u00EDos</div></div>';
   h += '</div>';
 
   if (carritos.length === 0) {
-    h += '<div class="card mt-16"><div class="card-body"><p class="text-center text-muted">Todavía no hay carritos registrados. Cuando un cliente agregue productos al carrito en la tienda, aparecerá aquí automáticamente.</p></div></div>';
+    h += '<div class="card mt-16"><div class="card-body"><p class="text-center text-muted">Todav\u00EDa no hay carritos registrados. Cuando un cliente agregue productos al carrito en la tienda, aparecer\u00E1 aqu\u00ED autom\u00E1ticamente.</p></div></div>';
     el.innerHTML = h;
     return;
   }
@@ -10036,7 +10036,7 @@ Pages.renderCarritos = function(el) {
     var nItems = (c.items || []).length;
     var cant = c.itemCount || 0;
     var estadoColors = { activo: 'text-green', abandonado: 'text-yellow', convertido: 'text-gold', vacio: 'text-muted' };
-    var estadoLabels = { activo: 'Activo', abandonado: 'Abandonado', convertido: 'Convertido', vacio: 'Vacío' };
+    var estadoLabels = { activo: 'Activo', abandonado: 'Abandonado', convertido: 'Convertido', vacio: 'Vac\u00EDo' };
     h += '<tr>' +
       '<td class="text-sm">' + actualizado + '</td>' +
       '<td class="fw7">' + esc(cliente.nombre || 'Invitado') + '</td>' +
@@ -10069,7 +10069,7 @@ Pages._verCarrito = function(key) {
       '<div><div class="text-sm text-muted">Cliente</div><b>' + esc(cliente.nombre || 'Invitado') + '</b></div>' +
       '<div><div class="text-sm text-muted">WhatsApp</div><a href="' + waLink + '" target="_blank" style="color:var(--gold)">' + esc(cliente.telefono || '-') + '</a></div>' +
       '<div><div class="text-sm text-muted">Creado</div>' + (c.creado ? new Date(c.creado).toLocaleString('es-CO') : '-') + '</div>' +
-      '<div><div class="text-sm text-muted">Última actualización</div>' + (c.actualizado ? new Date(c.actualizado).toLocaleString('es-CO') : '-') + '</div>' +
+      '<div><div class="text-sm text-muted">\u00DAltima actualizaci\u00F3n</div>' + (c.actualizado ? new Date(c.actualizado).toLocaleString('es-CO') : '-') + '</div>' +
       '<div><div class="text-sm text-muted">Estado</div><b>' + esc(c.estado || '?') + '</b></div>' +
       '<div><div class="text-sm text-muted">Total</div><b class="text-gold">$' + (c.total || 0).toLocaleString() + '</b></div>' +
     '</div>' +
@@ -10085,7 +10085,7 @@ Pages._verCarrito = function(key) {
     body += '</tbody></table></div>';
     if (telNorm) {
       body += '<div style="margin-top:14px;display:flex;gap:8px">' +
-        '<a href="' + waLink + '?text=' + encodeURIComponent('Hola ' + (cliente.nombre || '') + '! Vimos que dejaste productos en tu carrito de Arcano Especias. ¿Te ayudamos a completar tu pedido?') + '" target="_blank" class="btn btn-gold">Recuperar por WhatsApp</a>' +
+        '<a href="' + waLink + '?text=' + encodeURIComponent('Hola ' + (cliente.nombre || '') + '! Vimos que dejaste productos en tu carrito de Arcano Especias. \u00BFTe ayudamos a completar tu pedido?') + '" target="_blank" class="btn btn-gold">Recuperar por WhatsApp</a>' +
       '</div>';
     }
   }
@@ -10093,12 +10093,12 @@ Pages._verCarrito = function(key) {
 };
 
 Pages._deleteCarrito = function(key) {
-  if (!confirm('¿Eliminar este carrito del tracking?')) return;
+  if (!confirm('\u00BFEliminar este carrito del tracking?')) return;
   ArcanoDB.deleteCarrito(key);
   App.renderPage('carritos');
 };
 
-/* ==================== DISEÑO DINÁMICO (admin tienda config) ==================== */
+/* ==================== DISE\u00D1O DIN\u00C1MICO (admin tienda config) ==================== */
 Pages._guardarDisenoDinamico = function() {
   var data = {
     habilitado: document.getElementById('din-habilitado').checked,
@@ -10112,12 +10112,12 @@ Pages._guardarDisenoDinamico = function() {
   var status = document.getElementById('din-status');
   if (status) status.innerHTML = '<span style="color:var(--gold)">Guardando...</span>';
   ArcanoDB.saveTiendaConfig({ dinamico: data });
-  if (status) status.innerHTML = '<span style="color:var(--green)">✓ Guardado. Visita la tienda para ver los cambios.</span>';
-  toast('Diseño dinámico guardado');
+  if (status) status.innerHTML = '<span style="color:var(--green)">\u2713 Guardado. Visita la tienda para ver los cambios.</span>';
+  toast('Dise\u00F1o din\u00E1mico guardado');
 };
 
 Pages._resetDisenoDinamico = function() {
-  if (!confirm('¿Restablecer la configuración de diseño a los valores por defecto?')) return;
+  if (!confirm('\u00BFRestablecer la configuraci\u00F3n de dise\u00F1o a los valores por defecto?')) return;
   var defaults = {
     habilitado: true,
     tipoParticulas: 'dust',
@@ -10128,20 +10128,20 @@ Pages._resetDisenoDinamico = function() {
     vignette: true
   };
   ArcanoDB.saveTiendaConfig({ dinamico: defaults });
-  toast('Configuración restablecida');
+  toast('Configuraci\u00F3n restablecida');
   App.renderPage('tienda');
 };
 
 /* ==================== MENSAJES WHATSAPP (admin) ====================
    Permite al admin:
-   1. Configurar mensaje automático para carritos abandonados (con tiempo).
+   1. Configurar mensaje autom\u00E1tico para carritos abandonados (con tiempo).
    2. Seleccionar clientes y enviarles mensajes manuales.
    3. Ver carritos abandonados pendientes de notificar.
    Config persistida en tiendaConfig.mensajesWhatsApp.
    ================================================================== */
 
 /* =================================================================
-   CAMPAÑAS — Colección Arcano
+   CAMPA\u00D1AS \u2014 Colecci\u00F3n Arcano
    ================================================================= */
 Pages.renderCampanas = function(el) {
   var colecciones = ArcanoDB.getColecciones();
@@ -10156,7 +10156,7 @@ Pages.renderCampanas = function(el) {
     else { badge.style.display = 'none'; }
   }
 
-  var h = '<div class="page-header"><h2>🏅 Campañas</h2></div>';
+  var h = '<div class="page-header"><h2>\u{1F3C5} Campa\u00F1as</h2></div>';
 
   // KPIs
   h += '<div class="g4 mb-16">';
@@ -10179,7 +10179,7 @@ Pages.renderCampanas = function(el) {
   else if (filter === 'activos') lista = activas;
 
   if (lista.length === 0) {
-    h += '<div class="card" style="padding:40px;text-align:center;color:var(--text-sec)"><p>No hay cartones en esta categoría.</p></div>';
+    h += '<div class="card" style="padding:40px;text-align:center;color:var(--text-sec)"><p>No hay cartones en esta categor\u00EDa.</p></div>';
     el.innerHTML = h;
     return;
   }
@@ -10201,9 +10201,9 @@ Pages.renderCampanas = function(el) {
     var bar = '<div style="display:flex;gap:3px">';
     for (var s = 0; s < 10; s++) {
       var lit = s < casilleros;
-      bar += '<div style="width:18px;height:18px;border-radius:4px;background:' + (lit ? 'var(--gold)' : 'var(--surface)') + ';border:1px solid ' + (lit ? 'var(--gold)' : 'var(--border)') + ';display:flex;align-items:center;justify-content:center;font-size:10px">' + (lit ? '✦' : '') + '</div>';
+      bar += '<div style="width:18px;height:18px;border-radius:4px;background:' + (lit ? 'var(--gold)' : 'var(--surface)') + ';border:1px solid ' + (lit ? 'var(--gold)' : 'var(--border)') + ';display:flex;align-items:center;justify-content:center;font-size:10px">' + (lit ? '\u2726' : '') + '</div>';
     }
-    bar += '</div><div style="font-size:0.78rem;color:var(--text-sec);margin-top:4px">' + casilleros + '/10 blends pequeños</div>';
+    bar += '</div><div style="font-size:0.78rem;color:var(--text-sec);margin-top:4px">' + casilleros + '/10 blends peque\u00F1os</div>';
 
     h += '<tr>';
     h += '<td class="fw7">' + esc(nombre) + '</td>';
@@ -10240,10 +10240,10 @@ Pages.renderCampanas = function(el) {
 
 Pages._verColeccion = function(wa) {
   var c = ArcanoDB.getColeccion(wa);
-  if (!c) { toast('Colección no encontrada', 'err'); return; }
+  if (!c) { toast('Colecci\u00F3n no encontrada', 'err'); return; }
   var h = '<div class="modal-overlay" id="coleccion-modal" onclick="if(event.target===this)this.remove()">';
   h += '<div class="modal" style="max-width:500px">';
-  h += '<div class="modal-header"><h3>Cartón de ' + esc(c.nombre || wa) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>';
+  h += '<div class="modal-header"><h3>Cart\u00F3n de ' + esc(c.nombre || wa) + '</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>';
   h += '<div class="modal-body">';
   // Visual card with 10 slots
   h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">';
@@ -10254,9 +10254,9 @@ Pages._verColeccion = function(wa) {
     h += '</div>';
   }
   h += '</div>';
-  h += '<div style="text-align:center;margin-bottom:20px"><b style="font-size:1.5rem;color:var(--gold)">' + (c.casilleros || 0) + '/10</b><br><span class="text-sm text-muted">Blends pequeños comprados</span></div>';
+  h += '<div style="text-align:center;margin-bottom:20px"><b style="font-size:1.5rem;color:var(--gold)">' + (c.casilleros || 0) + '/10</b><br><span class="text-sm text-muted">Blends peque\u00F1os comprados</span></div>';
   if (c.casilleros >= 10 && !c.canjeado) {
-    h += '<div style="background:var(--gold-light);padding:16px;border-radius:8px;text-align:center;margin-bottom:16px"><b style="color:var(--gold)">¡Cartón completado!</b><br><span class="text-sm">Este cliente tiene derecho a 1 Blend Grande gratis.</span></div>';
+    h += '<div style="background:var(--gold-light);padding:16px;border-radius:8px;text-align:center;margin-bottom:16px"><b style="color:var(--gold)">\u00A1Cart\u00F3n completado!</b><br><span class="text-sm">Este cliente tiene derecho a 1 Blend Grande gratis.</span></div>';
   }
   // Historial
   h += '<h4>Historial</h4>';
@@ -10280,18 +10280,18 @@ Pages._verColeccion = function(wa) {
 };
 
 Pages._canjearColeccion = function(wa) {
-  if (!confirm('¿Marcar como canjeado? El cliente recibió su Blend Grande gratis.\n\n¿Reiniciar el cartón a 0 para una nueva colección?')) return;
-  var reset = confirm('¿Reiniciar cartón a 0? (Cancelar = dejar completado sin reiniciar)');
+  if (!confirm('\u00BFMarcar como canjeado? El cliente recibi\u00F3 su Blend Grande gratis.\n\n\u00BFReiniciar el cart\u00F3n a 0 para una nueva colecci\u00F3n?')) return;
+  var reset = confirm('\u00BFReiniciar cart\u00F3n a 0? (Cancelar = dejar completado sin reiniciar)');
   ArcanoDB.canjearColeccion(wa, reset);
-  toast('✓ Colección canjeada' + (reset ? ' y reiniciada' : ''), 'ok');
+  toast('\u2713 Colecci\u00F3n canjeada' + (reset ? ' y reiniciada' : ''), 'ok');
   App.renderPage('campanas');
 };
 
 Pages._addManual = function(wa) {
-  var cantidad = parseInt(prompt('¿Cuántos blends pequeños agregar al cartón de ' + wa + '?', '1'));
+  var cantidad = parseInt(prompt('\u00BFCu\u00E1ntos blends peque\u00F1os agregar al cart\u00F3n de ' + wa + '?', '1'));
   if (!cantidad || cantidad < 1) return;
   ArcanoDB.addBlendsToColeccion(wa, cantidad, 'manual', []);
-  toast('✓ ' + cantidad + ' blend(s) agregado(s)', 'ok');
+  toast('\u2713 ' + cantidad + ' blend(s) agregado(s)', 'ok');
   App.renderPage('campanas');
 };
 
@@ -10303,7 +10303,7 @@ Pages.renderMensajes = function(el) {
   var carritos = ArcanoDB.getCarritos();
   var ahora = Date.now();
 
-  // Carritos abandonados pendientes de notificar (no notificados aún)
+  // Carritos abandonados pendientes de notificar (no notificados a\u00FAn)
   var abandonadosPendientes = carritos.filter(function(c) {
     if (c.estado !== 'abandonado') return false;
     if (c.notificadoEn) return false;
@@ -10313,18 +10313,18 @@ Pages.renderMensajes = function(el) {
 
   var h = '<div class="page-header"><h2>Mensajes WhatsApp</h2></div>';
 
-  // === SECCIÓN 0: Códigos OTP pendientes de enviar (clientes nuevos solicitando acceso) ===
+  // === SECCI\u00D3N 0: C\u00F3digos OTP pendientes de enviar (clientes nuevos solicitando acceso) ===
   var otpPendientes = ArcanoDB.getOtpPendientes();
   var otpNoEnviados = otpPendientes.filter(function(o) { return !o.enviado; });
-  h += '<div class="card mt-16"><div class="card-header"><h3>🔐 Códigos OTP pendientes (' + otpNoEnviados.length + ')</h3><p class="text-xs text-muted">Clientes que solicitaron acceso a "Mi Cuenta". Envíales el código por WhatsApp para que puedan verificar su número.</p></div><div class="card-body">';
+  h += '<div class="card mt-16"><div class="card-header"><h3>\u{1F510} C\u00F3digos OTP pendientes (' + otpNoEnviados.length + ')</h3><p class="text-xs text-muted">Clientes que solicitaron acceso a "Mi Cuenta". Env\u00EDales el c\u00F3digo por WhatsApp para que puedan verificar su n\u00FAmero.</p></div><div class="card-body">';
   if (otpPendientes.length === 0) {
-    h += '<p class="text-center text-muted">No hay códigos pendientes. Cuando un cliente haga click en "Inscribirme" en la tienda, aparecerá aquí.</p>';
+    h += '<p class="text-center text-muted">No hay c\u00F3digos pendientes. Cuando un cliente haga click en "Inscribirme" en la tienda, aparecer\u00E1 aqu\u00ED.</p>';
   } else {
-    h += '<div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Código</th><th>Solicitado</th><th>Estado</th><th></th></tr></thead><tbody>';
+    h += '<div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>C\u00F3digo</th><th>Solicitado</th><th>Estado</th><th></th></tr></thead><tbody>';
     for (var oi = 0; oi < otpPendientes.length; oi++) {
       var o = otpPendientes[oi];
       var telNorm = o.telNorm || '';
-      var waLink = telNorm ? Pages._buildWaLink(telNorm, 'Hola ' + (o.nombre || '') + '! Tu código de acceso a Arcano Especias es: ' + o.codigo + '. Ingrésalo en la tienda para activar tu cuenta.') : '#';
+      var waLink = telNorm ? Pages._buildWaLink(telNorm, 'Hola ' + (o.nombre || '') + '! Tu c\u00F3digo de acceso a Arcano Especias es: ' + o.codigo + '. Ingr\u00E9salo en la tienda para activar tu cuenta.') : '#';
       var tiempoStr = o.creado ? Pages._formatearTiempo(Date.now() - new Date(o.creado).getTime()) : '-';
       var estadoCls = o.enviado ? 'text-green' : 'text-yellow';
       var estadoTxt = o.enviado ? 'Enviado' : 'Pendiente';
@@ -10336,12 +10336,12 @@ Pages.renderMensajes = function(el) {
         '<td><span class="' + estadoCls + ' fw7">' + estadoTxt + '</span></td>' +
         '<td style="white-space:nowrap">' +
           (o.enviado ?
-            '<button class="btn btn-sm btn-outline" onclick="Pages._reactivarOtp(\'' + o._key + '\')" title="Reenviar">↻</button>' :
+            '<button class="btn btn-sm btn-outline" onclick="Pages._reactivarOtp(\'' + o._key + '\')" title="Reenviar">\u21BB</button>' :
             '<a href="' + waLink + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>' +
               'Enviar' +
             '</a> ' +
-            '<button class="btn btn-sm btn-outline" onclick="Pages._markOtpEnviado(\'' + o._key + '\')" title="Marcar como enviado">✓</button>'
+            '<button class="btn btn-sm btn-outline" onclick="Pages._markOtpEnviado(\'' + o._key + '\')" title="Marcar como enviado">\u2713</button>'
           ) +
           ' <button class="btn btn-sm btn-red" onclick="Pages._deleteOtpPendiente(\'' + o._key + '\')" title="Eliminar">X</button>' +
         '</td>' +
@@ -10351,33 +10351,33 @@ Pages.renderMensajes = function(el) {
   }
   h += '</div></div>';
 
-  // === SECCIÓN 1: Carrito abandonado automático ===
-  h += '<div class="card mt-16"><div class="card-header"><h3>🔔 Carrito abandonado automático</h3><p class="text-xs text-muted">Cuando un cliente deja productos en el carrito sin completar el pedido, envíale un recordatorio automático por WhatsApp.</p></div><div class="card-body">';
+  // === SECCI\u00D3N 1: Carrito abandonado autom\u00E1tico ===
+  h += '<div class="card mt-16"><div class="card-header"><h3>\u{1F514} Carrito abandonado autom\u00E1tico</h3><p class="text-xs text-muted">Cuando un cliente deja productos en el carrito sin completar el pedido, env\u00EDale un recordatorio autom\u00E1tico por WhatsApp.</p></div><div class="card-body">';
   h += '<div class="g2">' +
     '<div class="form-group"><label>Tiempo de abandono (minutos)</label>' +
       '<input class="input" id="mw-tiempo" type="number" min="5" max="1440" value="' + (mw.tiempoAbandonoMin || 30) + '" placeholder="30">' +
-      '<p class="text-xs text-muted mt-4">Después de X minutos sin actividad, el carrito se considera abandonado y se notifica al admin.</p>' +
+      '<p class="text-xs text-muted mt-4">Despu\u00E9s de X minutos sin actividad, el carrito se considera abandonado y se notifica al admin.</p>' +
     '</div>' +
-    '<div class="form-group"><label>Activar notificación automática</label>' +
+    '<div class="form-group"><label>Activar notificaci\u00F3n autom\u00E1tica</label>' +
       '<select class="input" id="mw-activo">' +
         '<option value="true"' + (mw.notifActiva !== false ? ' selected' : '') + '>Activado</option>' +
         '<option value="false"' + (mw.notifActiva === false ? ' selected' : '') + '>Desactivado</option>' +
       '</select></div>' +
   '</div>';
 
-  h += '<div class="form-group mt-12"><label>Mensaje automático (usa {nombre} y {total})</label>' +
-    '<textarea class="input" id="mw-mensaje" rows="4" placeholder="Hola {nombre}! Vimos que dejaste productos en tu carrito de Arcano Especias por ${total}. ¿Te ayudamos a completar tu pedido?">' + esc(mw.mensajeAbandono || '') + '</textarea>' +
+  h += '<div class="form-group mt-12"><label>Mensaje autom\u00E1tico (usa {nombre} y {total})</label>' +
+    '<textarea class="input" id="mw-mensaje" rows="4" placeholder="Hola {nombre}! Vimos que dejaste productos en tu carrito de Arcano Especias por ${total}. \u00BFTe ayudamos a completar tu pedido?">' + esc(mw.mensajeAbandono || '') + '</textarea>' +
     '<p class="text-xs text-muted mt-4">Variables disponibles: <code>{nombre}</code>, <code>{total}</code>, <code>{items}</code></p>' +
   '</div>';
 
   h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center">' +
-    '<button class="btn btn-gold" onclick="Pages._guardarMensajesWA()">Guardar configuración</button>' +
+    '<button class="btn btn-gold" onclick="Pages._guardarMensajesWA()">Guardar configuraci\u00F3n</button>' +
     '<span id="mw-status" class="text-sm text-muted ml-8"></span>' +
   '</div>';
   h += '</div></div>';
 
-  // === SECCIÓN 2: Carritos abandonados pendientes ===
-  h += '<div class="card mt-16"><div class="card-header"><h3>🛒 Carritos abandonados pendientes (' + abandonadosPendientes.length + ')</h3></div><div class="card-body">';
+  // === SECCI\u00D3N 2: Carritos abandonados pendientes ===
+  h += '<div class="card mt-16"><div class="card-header"><h3>\u{1F6D2} Carritos abandonados pendientes (' + abandonadosPendientes.length + ')</h3></div><div class="card-body">';
   if (abandonadosPendientes.length === 0) {
     h += '<p class="text-center text-muted">No hay carritos abandonados pendientes de notificar.</p>';
   } else {
@@ -10391,7 +10391,7 @@ Pages.renderMensajes = function(el) {
       var nombreVar = cliente.nombre || 'Cliente';
       var totalVar = (c.total || 0).toLocaleString();
       var itemsVar = (c.items || []).map(function(it) { return (it.nombre || '?') + ' x' + (it.qty || 1); }).join(', ');
-      var mensaje = (mw.mensajeAbandono || 'Hola {nombre}! Vimos que dejaste productos en tu carrito de Arcano Especias por ${total}. ¿Te ayudamos a completar tu pedido?')
+      var mensaje = (mw.mensajeAbandono || 'Hola {nombre}! Vimos que dejaste productos en tu carrito de Arcano Especias por ${total}. \u00BFTe ayudamos a completar tu pedido?')
         .replace(/\{nombre\}/g, nombreVar)
         .replace(/\{total\}/g, '$' + totalVar)
         .replace(/\{items\}/g, itemsVar);
@@ -10407,7 +10407,7 @@ Pages.renderMensajes = function(el) {
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>' +
             'Enviar' +
           '</a> ' +
-          '<button class="btn btn-sm btn-outline" onclick="Pages._marcarNotificado(\'' + c._key + '\')" title="Marcar como notificado">✓</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._marcarNotificado(\'' + c._key + '\')" title="Marcar como notificado">\u2713</button>' +
         '</td>' +
       '</tr>';
     }
@@ -10415,8 +10415,8 @@ Pages.renderMensajes = function(el) {
   }
   h += '</div></div>';
 
-  // === SECCIÓN 3: Envío manual a clientes seleccionados ===
-  h += '<div class="card mt-16"><div class="card-header"><h3>📤 Envío manual a clientes</h3><p class="text-xs text-muted">Selecciona clientes y envíales un mensaje personalizado por WhatsApp.</p></div><div class="card-body">';
+  // === SECCI\u00D3N 3: Env\u00EDo manual a clientes seleccionados ===
+  h += '<div class="card mt-16"><div class="card-header"><h3>\u{1F4E4} Env\u00EDo manual a clientes</h3><p class="text-xs text-muted">Selecciona clientes y env\u00EDales un mensaje personalizado por WhatsApp.</p></div><div class="card-body">';
 
   h += '<div class="form-group"><label>Mensaje manual (usa {nombre})</label>' +
     '<textarea class="input" id="mw-mensaje-manual" rows="3" placeholder="Hola {nombre}! Tenemos una promo especial para ti...">' + esc(mw.mensajeManual || '') + '</textarea>' +
@@ -10424,14 +10424,14 @@ Pages.renderMensajes = function(el) {
 
   h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
     '<button class="btn btn-outline btn-sm" onclick="Pages._selectAllClientesWA(true)">Seleccionar todos</button>' +
-    '<button class="btn btn-outline btn-sm" onclick="Pages._selectAllClientesWA(false)">Quitar selección</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="Pages._selectAllClientesWA(false)">Quitar selecci\u00F3n</button>' +
     '<span class="text-sm text-muted ml-8" id="mw-seleccionados-count">0 seleccionados</span>' +
   '</div>';
 
   if (clientes.length === 0) {
-    h += '<p class="text-center text-muted mt-12">No hay clientes registrados aún.</p>';
+    h += '<p class="text-center text-muted mt-12">No hay clientes registrados a\u00FAn.</p>';
   } else {
-    h += '<div class="table-wrap mt-12"><table class="table"><thead><tr><th><input type="checkbox" onchange="Pages._toggleAllClientesWA(this.checked)"></th><th>Nombre</th><th>WhatsApp</th><th>Pedidos</th><th>Total comprado</th><th>Último pedido</th></tr></thead><tbody>';
+    h += '<div class="table-wrap mt-12"><table class="table"><thead><tr><th><input type="checkbox" onchange="Pages._toggleAllClientesWA(this.checked)"></th><th>Nombre</th><th>WhatsApp</th><th>Pedidos</th><th>Total comprado</th><th>\u00DAltimo pedido</th></tr></thead><tbody>';
     var totalPorCliente = {};
     var pedidos = ArcanoDB.getPedidos();
     for (var pi = 0; pi < pedidos.length; pi++) {
@@ -10459,7 +10459,7 @@ Pages.renderMensajes = function(el) {
       '<button class="btn btn-gold" onclick="Pages._enviarMensajesWA()">Enviar a seleccionados</button>' +
       '<span id="mw-envio-status" class="text-sm text-muted ml-8"></span>' +
     '</div>';
-    h += '<p class="text-xs text-muted mt-8">💡 Se abrirá una pestaña de WhatsApp por cada cliente seleccionado, con el mensaje personalizado pre-cargado. Solo tienes que enviar cada uno.</p>';
+    h += '<p class="text-xs text-muted mt-8">\u{1F4A1} Se abrir\u00E1 una pesta\u00F1a de WhatsApp por cada cliente seleccionado, con el mensaje personalizado pre-cargado. Solo tienes que enviar cada uno.</p>';
   }
   h += '</div></div>';
 
@@ -10475,8 +10475,8 @@ Pages._guardarMensajesWA = function() {
   };
   ArcanoDB.saveTiendaConfig({ mensajesWhatsApp: data });
   var status = document.getElementById('mw-status');
-  if (status) status.innerHTML = '<span style="color:var(--green)">✓ Guardado</span>';
-  toast('Configuración de mensajes guardada');
+  if (status) status.innerHTML = '<span style="color:var(--green)">\u2713 Guardado</span>';
+  toast('Configuraci\u00F3n de mensajes guardada');
   setTimeout(function() { if (status) status.innerHTML = ''; }, 3000);
 };
 
@@ -10527,8 +10527,8 @@ Pages._enviarMensajesWA = function() {
     enviados++;
   }
   var status = document.getElementById('mw-envio-status');
-  if (status) status.innerHTML = '<span style="color:var(--green)">' + enviados + ' mensaje(s) abiertos en WhatsApp. Envíalos manualmente.</span>';
-  toast(enviados + ' mensajes preparados en pestañas de WhatsApp');
+  if (status) status.innerHTML = '<span style="color:var(--green)">' + enviados + ' mensaje(s) abiertos en WhatsApp. Env\u00EDalos manualmente.</span>';
+  toast(enviados + ' mensajes preparados en pesta\u00F1as de WhatsApp');
 };
 
 Pages._formatearTiempo = function(ms) {
@@ -10555,7 +10555,7 @@ Pages._reactivarOtp = function(key) {
     if (pendientes[i]._key === key) { otp = pendientes[i]; break; }
   }
   if (!otp) return;
-  var waLink = Pages._buildWaLink(otp.telNorm, 'Hola ' + (otp.nombre || '') + '! Tu código de acceso a Arcano Especias es: ' + otp.codigo + '. Ingrésalo en la tienda para activar tu cuenta.');
+  var waLink = Pages._buildWaLink(otp.telNorm, 'Hola ' + (otp.nombre || '') + '! Tu c\u00F3digo de acceso a Arcano Especias es: ' + otp.codigo + '. Ingr\u00E9salo en la tienda para activar tu cuenta.');
   window.open(waLink, '_blank');
   // Re-marcar como pendiente
   try {
@@ -10564,7 +10564,7 @@ Pages._reactivarOtp = function(key) {
 };
 
 Pages._deleteOtpPendiente = function(key) {
-  if (!confirm('¿Eliminar este OTP pendiente?')) return;
+  if (!confirm('\u00BFEliminar este OTP pendiente?')) return;
   ArcanoDB.deleteOtpPendiente(key);
 };
 
@@ -10593,11 +10593,11 @@ Pages.renderCostales = function(el) {
   h += '<div class="stat-card"><div class="stat-value">' + totalCostales + '</div><div class="stat-label">Total</div></div>';
   h += '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value text-green">' + abiertos + '</div><div class="stat-label">Abiertos</div></div>';
   h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value text-gold">' + gramosTotales.toLocaleString() + 'g</div><div class="stat-label">Gramos disponibles</div></div>';
-  h += '<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-value text-muted">' + vacios + '</div><div class="stat-label">Vacíos</div></div>';
+  h += '<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-value text-muted">' + vacios + '</div><div class="stat-label">Vac\u00EDos</div></div>';
   h += '</div>';
 
   if (totalCostales === 0) {
-    h += '<div class="card mt-16"><div class="card-body"><p class="text-center text-muted">No hay costales. Crea el primero con el botón de arriba.</p></div></div>';
+    h += '<div class="card mt-16"><div class="card-body"><p class="text-center text-muted">No hay costales. Crea el primero con el bot\u00F3n de arriba.</p></div></div>';
     el.innerHTML = h;
     return;
   }
@@ -10626,7 +10626,7 @@ Pages.renderCostales = function(el) {
       '<td>' + palasAprox + '</td>' +
       '<td><span class="' + estadoCls + ' fw7">' + esc(c.estado || 'abierto') + '</span></td>' +
       '<td style="white-space:nowrap">' +
-        '<button class="btn btn-sm btn-outline" onclick="Pages._formCostal(\'' + c.id + '\')" title="Editar">✎</button> ' +
+        '<button class="btn btn-sm btn-outline" onclick="Pages._formCostal(\'' + c.id + '\')" title="Editar">\u270E</button> ' +
         '<button class="btn btn-sm btn-red" onclick="Pages._deleteCostal(\'' + c.id + '\')" title="Eliminar">X</button>' +
       '</td>' +
     '</tr>';
@@ -10669,7 +10669,7 @@ Pages._formCostal = function(id) {
 
   var body =
     '<div class="form-group"><label>Nombre del costal</label>' +
-      '<input class="input" id="ct-nombre" value="' + esc(c.nombre || '') + '" placeholder="Ej: Costal Caribe Costeño, Cúrcuma Pura..."></div>' +
+      '<input class="input" id="ct-nombre" value="' + esc(c.nombre || '') + '" placeholder="Ej: Costal Caribe Coste\u00F1o, C\u00FArcuma Pura..."></div>' +
     '<div class="g2">' +
       '<div class="form-group"><label>Precio por pala ($)</label>' +
         '<input class="input" id="ct-precio" type="number" value="' + (c.precioPala || 2000) + '" min="0" step="500"></div>' +
@@ -10698,11 +10698,11 @@ Pages._addCostalEspecia = function() {
   if (!sel || !sel.value) return;
   var especiaId = sel.value;
   var especiaNombre = sel.options[sel.selectedIndex].dataset.nombre;
-  // Verificar que no esté ya agregada
+  // Verificar que no est\u00E9 ya agregada
   var existing = document.querySelectorAll('.costal-item-gramos');
   for (var i = 0; i < existing.length; i++) {
     if (existing[i].dataset.especiaId === especiaId) {
-      alert('Esta especia ya está en el costal');
+      alert('Esta especia ya est\u00E1 en el costal');
       sel.value = '';
       return;
     }
@@ -10769,7 +10769,7 @@ Pages._saveCostal = function(id) {
 };
 
 Pages._deleteCostal = function(id) {
-  if (!confirm('¿Eliminar este costal?')) return;
+  if (!confirm('\u00BFEliminar este costal?')) return;
   ArcanoDB.deleteCostal(parseInt(id, 10));
   toast('Costal eliminado');
   App.renderPage('costales');
@@ -10801,7 +10801,7 @@ Pages._guardarPopup = function() {
   if (imgPreview) data.imagen = imgPreview.src;
   ArcanoDB.saveTiendaConfig({ popupTienda: data });
   var status = document.getElementById('pp-status');
-  if (status) status.innerHTML = '<span style="color:var(--green)">✓ Guardado</span>';
+  if (status) status.innerHTML = '<span style="color:var(--green)">\u2713 Guardado</span>';
   toast('Popup guardado');
   setTimeout(function() { if (status) status.innerHTML = ''; }, 3000);
 };
@@ -10860,7 +10860,7 @@ Pages._removePopupImg = function() {
   if (btn) btn.remove();
 };
 
-/* ==================== ENVÍOS (SERVIENTREGA) ==================== */
+/* ==================== ENV\u00CDOS (SERVIENTREGA) ==================== */
 
 Pages.renderEnvios = function(container) {
   var cfg = ArcanoDB.getTiendaConfig();
@@ -10877,13 +10877,13 @@ Pages.renderEnvios = function(container) {
 
   // Tarifas Servientrega (vigencia ago 2026)
   var tarifas = [
-    { cat: 'urbano',   label: 'Urbano (Medellín ciudad)',          base: 7800, adicional: 3600 },
-    { cat: 'zonal',    label: 'Zonal (Área Metropolitana AMVA)',   base: 11500, adicional: 4400 },
+    { cat: 'urbano',   label: 'Urbano (Medell\u00EDn ciudad)',          base: 7800, adicional: 3600 },
+    { cat: 'zonal',    label: 'Zonal (\u00C1rea Metropolitana AMVA)',   base: 11500, adicional: 4400 },
     { cat: 'capital',  label: 'Capital (capitales departamentales)', base: 16950, adicional: 4750 },
     { cat: 'especial', label: 'Especial (capitales remotas/insular)', base: 34500, adicional: 12000 }
   ];
 
-  // Tab de la página: 'envios' (listado) o 'config' (configuración)
+  // Tab de la p\u00E1gina: 'envios' (listado) o 'config' (configuraci\u00F3n)
   if (!Pages._enviosTab) Pages._enviosTab = 'envios';
   var tab = Pages._enviosTab;
 
@@ -10891,8 +10891,8 @@ Pages.renderEnvios = function(container) {
 
   // Tabs
   h += '<div class="mt-12" style="display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:16px">';
-  h += '<button class="tab ' + (tab === 'envios' ? 'active' : '') + '" onclick="Pages._enviosTab=\'envios\';App.renderPage(\'envios\')">📋 Listado de envíos</button>';
-  h += '<button class="tab ' + (tab === 'config' ? 'active' : '') + '" onclick="Pages._enviosTab=\'config\';App.renderPage(\'envios\')">⚙ Configuración</button>';
+  h += '<button class="tab ' + (tab === 'envios' ? 'active' : '') + '" onclick="Pages._enviosTab=\'envios\';App.renderPage(\'envios\')">\u{1F4CB} Listado de env\u00EDos</button>';
+  h += '<button class="tab ' + (tab === 'config' ? 'active' : '') + '" onclick="Pages._enviosTab=\'config\';App.renderPage(\'envios\')">\u2699 Configuraci\u00F3n</button>';
   h += '</div>';
 
   // ---- KPIs comunes ----
@@ -10908,13 +10908,13 @@ Pages.renderEnvios = function(container) {
   // ---- Tab LISTADO ----
   if (tab === 'envios') {
     h += '<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr)">' +
-      '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">' + totalEnvios + '</div><div class="stat-label">Pedidos con envío</div></div>' +
+      '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value">' + totalEnvios + '</div><div class="stat-label">Pedidos con env\u00EDo</div></div>' +
       '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value">$' + totalCostoEnvios.toLocaleString() + '</div><div class="stat-label">Costo total cobrado</div></div>' +
-      '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">' + totalGratis + '</div><div class="stat-label">Envíos gratis</div></div>' +
-      '<div class="stat-card"><div class="stat-value">' + (totalEnvios - totalGratis) + '</div><div class="stat-label">Envíos pagados</div></div>' +
+      '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-value">' + totalGratis + '</div><div class="stat-label">Env\u00EDos gratis</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + (totalEnvios - totalGratis) + '</div><div class="stat-label">Env\u00EDos pagados</div></div>' +
       '</div>';
 
-    h += '<div class="card mt-16"><div class="card-header"><h3>Envíos por pedido</h3></div><div class="card-body">';
+    h += '<div class="card mt-16"><div class="card-header"><h3>Env\u00EDos por pedido</h3></div><div class="card-body">';
     var conEnvio = [];
     for (var i = 0; i < pedidos.length; i++) {
       if (pedidos[i].envio) conEnvio.push(pedidos[i]);
@@ -10922,11 +10922,11 @@ Pages.renderEnvios = function(container) {
     conEnvio.sort(function(a, b) { return (b.creado || '').localeCompare(a.creado || ''); });
 
     if (conEnvio.length === 0) {
-      h += '<p class="text-muted text-center">Aún no hay pedidos con envío registrado.</p>';
+      h += '<p class="text-muted text-center">A\u00FAn no hay pedidos con env\u00EDo registrado.</p>';
     } else {
       h += '<div class="table-wrap"><table class="table"><thead><tr>' +
-        '<th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Categoría</th><th>Peso</th>' +
-        '<th>Costo envío</th><th>Gratis</th><th>Carrier</th><th>Estado pedido</th><th></th>' +
+        '<th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Categor\u00EDa</th><th>Peso</th>' +
+        '<th>Costo env\u00EDo</th><th>Gratis</th><th>Carrier</th><th>Estado pedido</th><th></th>' +
         '</tr></thead><tbody>';
       for (var i = 0; i < conEnvio.length; i++) {
         var p = conEnvio[i];
@@ -10941,7 +10941,7 @@ Pages.renderEnvios = function(container) {
           '<td><span class="badge ' + _arcanoCategoriaBadgeClass(e.categoria) + '">' + (e.categoria || '?') + '</span></td>' +
           '<td>' + (e.pesoKg ? e.pesoKg + ' kg' : (e.pesoGramos ? Math.ceil(e.pesoGramos/1000) + ' kg' : '-')) + '</td>' +
           '<td class="text-gold fw7">' + (e.gratis ? '$0' : '$' + (e.costo || 0).toLocaleString()) + '</td>' +
-          '<td>' + (e.gratis ? '<span class="badge text-green">SÍ</span>' : '<span class="badge text-muted">no</span>') + '</td>' +
+          '<td>' + (e.gratis ? '<span class="badge text-green">S\u00CD</span>' : '<span class="badge text-muted">no</span>') + '</td>' +
           '<td>' + (e.carrier || 'Servientrega') + '</td>' +
           '<td>' + _arcanoEstadoPedidoLabel(p.estado) + '</td>' +
           '<td><button class="btn btn-sm btn-gold" onclick="Pages.verPedido(\'' + p._key + '\')">Ver</button></td>' +
@@ -10952,36 +10952,36 @@ Pages.renderEnvios = function(container) {
     h += '</div></div>';
 
     // Tarifas Servientrega (referencia)
-    h += '<div class="card mt-16"><div class="card-header"><h3>Tarifas Servientrega vigentes</h3><p class="text-xs text-muted">Modalidad: Contado - Normal - Terrestre. Vigencia: desde agosto 2026. Origen: Medellín.</p></div><div class="card-body">';
-    h += '<div class="table-wrap"><table class="table"><thead><tr><th>Categoría</th><th>Kilo inicial</th><th>Kilo adicional</th></tr></thead><tbody>';
+    h += '<div class="card mt-16"><div class="card-header"><h3>Tarifas Servientrega vigentes</h3><p class="text-xs text-muted">Modalidad: Contado - Normal - Terrestre. Vigencia: desde agosto 2026. Origen: Medell\u00EDn.</p></div><div class="card-body">';
+    h += '<div class="table-wrap"><table class="table"><thead><tr><th>Categor\u00EDa</th><th>Kilo inicial</th><th>Kilo adicional</th></tr></thead><tbody>';
     for (var t = 0; t < tarifas.length; t++) {
       h += '<tr><td class="fw7">' + tarifas[t].label + '</td><td class="text-gold">$' + tarifas[t].base.toLocaleString() + '</td><td>$' + tarifas[t].adicional.toLocaleString() + '</td></tr>';
     }
     h += '</tbody></table></div>';
-    h += '<p class="text-xs text-muted mt-8">El sobreflete (1% sobre valor declarado, mín $80.000) es absorbido por Arcano y NO se suma al cliente.</p>';
+    h += '<p class="text-xs text-muted mt-8">El sobreflete (1% sobre valor declarado, m\u00EDn $80.000) es absorbido por Arcano y NO se suma al cliente.</p>';
     h += '</div></div>';
   }
 
-  // ---- Tab CONFIGURACIÓN ----
+  // ---- Tab CONFIGURACI\u00D3N ----
   if (tab === 'config') {
-    h += '<div class="card"><div class="card-header"><h3>Configuración de envíos</h3><p class="text-xs text-muted">Estos valores se guardan en Firebase (tiendaConfig.configEnvio) y se usan automáticamente en el checkout de la tienda. Si vaciás un campo, se vuelve al default.</p></div><div class="card-body">';
+    h += '<div class="card"><div class="card-header"><h3>Configuraci\u00F3n de env\u00EDos</h3><p class="text-xs text-muted">Estos valores se guardan en Firebase (tiendaConfig.configEnvio) y se usan autom\u00E1ticamente en el checkout de la tienda. Si vaci\u00E1s un campo, se vuelve al default.</p></div><div class="card-body">';
 
     // Pesos
     h += '<h4 class="mt-8">Pesos por unidad (gramos)</h4>';
-    h += '<p class="text-sm text-muted mb-12">El cálculo de peso es automático y oculto para el cliente. El peso del pedido = empaque + sumatoria de (peso unitario × cantidad) de cada item.</p>';
+    h += '<p class="text-sm text-muted mb-12">El c\u00E1lculo de peso es autom\u00E1tico y oculto para el cliente. El peso del pedido = empaque + sumatoria de (peso unitario \u00D7 cantidad) de cada item.</p>';
     h += '<div class="g4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">';
-    h += '<div class="form-group"><label>Frasco pequeño</label><input type="number" class="form-input" id="cfg-pq" value="' + frascoPequeno + '" min="0" max="2000"><p class="text-xs text-muted">Default: 145g (140-150g)</p></div>';
+    h += '<div class="form-group"><label>Frasco peque\u00F1o</label><input type="number" class="form-input" id="cfg-pq" value="' + frascoPequeno + '" min="0" max="2000"><p class="text-xs text-muted">Default: 145g (140-150g)</p></div>';
     h += '<div class="form-group"><label>Frasco grande</label><input type="number" class="form-input" id="cfg-gr" value="' + frascoGrande + '" min="0" max="2000"><p class="text-xs text-muted">Default: 230g (220-240g)</p></div>';
     h += '<div class="form-group"><label>Pack</label><input type="number" class="form-input" id="cfg-pk" value="' + pack + '" min="0" max="5000"><p class="text-xs text-muted">Default: 600g</p></div>';
     h += '<div class="form-group"><label>Empaque (caja + relleno)</label><input type="number" class="form-input" id="cfg-emp" value="' + empaque + '" min="0" max="2000"><p class="text-xs text-muted">Default: 200g</p></div>';
     h += '</div>';
 
-    // Envío gratis
-    h += '<h4 class="mt-16">Envío gratis</h4>';
-    h += '<p class="text-sm text-muted mb-12">Define desde qué monto se aplica envío gratis y en qué categorías de destino. Para desactivar envío gratis, subí el monto a un valor muy alto.</p>';
+    // Env\u00EDo gratis
+    h += '<h4 class="mt-16">Env\u00EDo gratis</h4>';
+    h += '<p class="text-sm text-muted mb-12">Define desde qu\u00E9 monto se aplica env\u00EDo gratis y en qu\u00E9 categor\u00EDas de destino. Para desactivar env\u00EDo gratis, sub\u00ED el monto a un valor muy alto.</p>';
     h += '<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
-    h += '<div class="form-group"><label>Monto mínimo (COP)</label><input type="number" class="form-input" id="cfg-monto-gratis" value="' + montoMinimoGratis + '" min="0" step="1000"><p class="text-xs text-muted">Default: $60.000</p></div>';
-    h += '<div class="form-group"><label>Categorías que aplican</label><div style="display:flex;flex-direction:column;gap:6px;padding-top:6px">';
+    h += '<div class="form-group"><label>Monto m\u00EDnimo (COP)</label><input type="number" class="form-input" id="cfg-monto-gratis" value="' + montoMinimoGratis + '" min="0" step="1000"><p class="text-xs text-muted">Default: $60.000</p></div>';
+    h += '<div class="form-group"><label>Categor\u00EDas que aplican</label><div style="display:flex;flex-direction:column;gap:6px;padding-top:6px">';
     for (var t = 0; t < tarifas.length; t++) {
       var checked = categoriasGratis.indexOf(tarifas[t].cat) !== -1 ? 'checked' : '';
       h += '<label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer"><input type="checkbox" name="cfg-cat-gratis" value="' + tarifas[t].cat + '" ' + checked + '> ' + tarifas[t].label + '</label>';
@@ -10989,9 +10989,9 @@ Pages.renderEnvios = function(container) {
     h += '</div></div>';
     h += '</div>';
 
-    // Botón guardar
+    // Bot\u00F3n guardar
     h += '<div class="mt-16" style="display:flex;gap:8px;align-items:center">';
-    h += '<button class="btn btn-gold" onclick="Pages.guardarConfigEnvio()">Guardar configuración</button>';
+    h += '<button class="btn btn-gold" onclick="Pages.guardarConfigEnvio()">Guardar configuraci\u00F3n</button>';
     h += '<button class="btn btn-outline" onclick="Pages.restaurarDefaultsEnvio()">Restaurar defaults</button>';
     h += '<span id="cfg-envio-status" class="text-sm ml-8"></span>';
     h += '</div>';
@@ -10999,15 +10999,15 @@ Pages.renderEnvios = function(container) {
     h += '</div></div>';
 
     // Simulador
-    h += '<div class="card mt-16"><div class="card-header"><h3>Simulador de envío</h3><p class="text-xs text-muted">Probá combinaciones para verificar que el cálculo esté bien.</p></div><div class="card-body">';
+    h += '<div class="card mt-16"><div class="card-header"><h3>Simulador de env\u00EDo</h3><p class="text-xs text-muted">Prob\u00E1 combinaciones para verificar que el c\u00E1lculo est\u00E9 bien.</p></div><div class="card-body">';
     h += '<div class="g3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
     h += '<div class="form-group"><label>Ciudad destino</label><select class="form-input" id="sim-ciudad">';
-    var ciudades = ['Medellín','Bello','Envigado','Bogotá','Cali','Barranquilla','Cartagena','Bucaramanga','Pereira','Manizales','Cúcuta','Santa Marta','Ibagué','Villavicencio','Armenia','Neiva','Sincelejo','Popayán','Tunja','Montería','Valledupar','Riohacha','Pasto','Quibdó','Florencia','Yopal','Arauca','Leticia','San Andrés','Mocoa'];
+    var ciudades = ['Medell\u00EDn','Bello','Envigado','Bogot\u00E1','Cali','Barranquilla','Cartagena','Bucaramanga','Pereira','Manizales','C\u00FAcuta','Santa Marta','Ibagu\u00E9','Villavicencio','Armenia','Neiva','Sincelejo','Popay\u00E1n','Tunja','Monter\u00EDa','Valledupar','Riohacha','Pasto','Quibd\u00F3','Florencia','Yopal','Arauca','Leticia','San Andr\u00E9s','Mocoa'];
     for (var ci = 0; ci < ciudades.length; ci++) {
       h += '<option value="' + ciudades[ci] + '">' + ciudades[ci] + '</option>';
     }
     h += '</select></div>';
-    h += '<div class="form-group"><label>Frascos pequeños</label><input type="number" class="form-input" id="sim-pq" value="2" min="0" max="50"></div>';
+    h += '<div class="form-group"><label>Frascos peque\u00F1os</label><input type="number" class="form-input" id="sim-pq" value="2" min="0" max="50"></div>';
     h += '<div class="form-group"><label>Frascos grandes</label><input type="number" class="form-input" id="sim-gr" value="1" min="0" max="50"></div>';
     h += '</div>';
     h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center">';
@@ -11029,17 +11029,17 @@ Pages.guardarConfigEnvio = function() {
   var montoMinimoGratis = parseInt(document.getElementById('cfg-monto-gratis').value, 10);
 
   // Validaciones
-  if (isNaN(frascoPequeno) || frascoPequeno < 0) { alert('Peso frasco pequeño inválido'); return; }
-  if (isNaN(frascoGrande) || frascoGrande < 0) { alert('Peso frasco grande inválido'); return; }
-  if (isNaN(pack) || pack < 0) { alert('Peso pack inválido'); return; }
-  if (isNaN(empaque) || empaque < 0) { alert('Peso empaque inválido'); return; }
-  if (isNaN(montoMinimoGratis) || montoMinimoGratis < 0) { alert('Monto mínimo envío gratis inválido'); return; }
+  if (isNaN(frascoPequeno) || frascoPequeno < 0) { alert('Peso frasco peque\u00F1o inv\u00E1lido'); return; }
+  if (isNaN(frascoGrande) || frascoGrande < 0) { alert('Peso frasco grande inv\u00E1lido'); return; }
+  if (isNaN(pack) || pack < 0) { alert('Peso pack inv\u00E1lido'); return; }
+  if (isNaN(empaque) || empaque < 0) { alert('Peso empaque inv\u00E1lido'); return; }
+  if (isNaN(montoMinimoGratis) || montoMinimoGratis < 0) { alert('Monto m\u00EDnimo env\u00EDo gratis inv\u00E1lido'); return; }
 
   var catsChecked = document.querySelectorAll('input[name="cfg-cat-gratis"]:checked');
   var categoriasGratis = [];
   for (var i = 0; i < catsChecked.length; i++) categoriasGratis.push(catsChecked[i].value);
   if (categoriasGratis.length === 0) {
-    if (!confirm('No seleccionaste ninguna categoría para envío gratis. ¿Continuar de todas formas?')) return;
+    if (!confirm('No seleccionaste ninguna categor\u00EDa para env\u00EDo gratis. \u00BFContinuar de todas formas?')) return;
   }
 
   var configEnvio = {
@@ -11057,15 +11057,15 @@ Pages.guardarConfigEnvio = function() {
   ArcanoDB.saveTiendaConfig({ configEnvio: configEnvio });
 
   if (status) {
-    status.textContent = '✓ Guardado en Firebase';
+    status.textContent = '\u2713 Guardado en Firebase';
     status.style.color = 'var(--green)';
     setTimeout(function() { if (status) status.textContent = ''; }, 3000);
   }
-  toast('Configuración de envío guardada');
+  toast('Configuraci\u00F3n de env\u00EDo guardada');
 };
 
 Pages.restaurarDefaultsEnvio = function() {
-  if (!confirm('¿Restaurar los valores por defecto? Esto sobreescribe tu configuración actual.')) return;
+  if (!confirm('\u00BFRestaurar los valores por defecto? Esto sobreescribe tu configuraci\u00F3n actual.')) return;
   ArcanoDB.saveTiendaConfig({
     configEnvio: {
       frascoPequeno: 145,
@@ -11088,10 +11088,10 @@ Pages.simularEnvio = function() {
 
   // Items simulados
   var items = [];
-  if (pq > 0) items.push({ talla: 'pequeño', qty: pq });
+  if (pq > 0) items.push({ talla: 'peque\u00F1o', qty: pq });
   if (gr > 0) items.push({ talla: 'grande', qty: gr });
 
-  // Cálculo en vivo (usa la misma lógica que el front)
+  // C\u00E1lculo en vivo (usa la misma l\u00F3gica que el front)
   var cfg = ArcanoDB.getTiendaConfig();
   var ce = (cfg && cfg.configEnvio) ? cfg.configEnvio : {};
   var ePq = ce.frascoPequeno || 145;
@@ -11101,14 +11101,14 @@ Pages.simularEnvio = function() {
   var eCats = (ce.categoriasGratis && ce.categoriasGratis.length) ? ce.categoriasGratis : ['urbano'];
 
   var CATEGORIAS = {
-    'Medellín':'urbano','Bello':'zonal','Itagüí':'zonal','Envigado':'zonal','Sabaneta':'zonal',
+    'Medell\u00EDn':'urbano','Bello':'zonal','Itag\u00FC\u00ED':'zonal','Envigado':'zonal','Sabaneta':'zonal',
     'La Estrella':'zonal','Caldas':'zonal','Copacabana':'zonal','Girardota':'zonal','Barbosa':'zonal',
-    'Bogotá':'capital','Cali':'capital','Barranquilla':'capital','Cartagena':'capital','Bucaramanga':'capital',
-    'Pereira':'capital','Manizales':'capital','Cúcuta':'capital','Santa Marta':'capital','Ibagué':'capital',
-    'Villavicencio':'capital','Armenia':'capital','Neiva':'capital','Sincelejo':'capital','Popayán':'capital',
-    'Tunja':'capital','Montería':'capital','Valledupar':'capital','Riohacha':'capital','Pasto':'capital',
-    'Quibdó':'capital','Florencia':'capital','Yopal':'capital','Arauca':'capital',
-    'Leticia':'especial','San Andrés':'especial','Mocoa':'especial'
+    'Bogot\u00E1':'capital','Cali':'capital','Barranquilla':'capital','Cartagena':'capital','Bucaramanga':'capital',
+    'Pereira':'capital','Manizales':'capital','C\u00FAcuta':'capital','Santa Marta':'capital','Ibagu\u00E9':'capital',
+    'Villavicencio':'capital','Armenia':'capital','Neiva':'capital','Sincelejo':'capital','Popay\u00E1n':'capital',
+    'Tunja':'capital','Monter\u00EDa':'capital','Valledupar':'capital','Riohacha':'capital','Pasto':'capital',
+    'Quibd\u00F3':'capital','Florencia':'capital','Yopal':'capital','Arauca':'capital',
+    'Leticia':'especial','San Andr\u00E9s':'especial','Mocoa':'especial'
   };
   var TARIFAS = {
     urbano:   { base: 7800,  adicional: 3600  },
@@ -11127,33 +11127,33 @@ Pages.simularEnvio = function() {
 
   var html = '';
   if (!categoria) {
-    html = '<div style="color:var(--red)">⚠ Sin cobertura para ' + ciudad + '</div>';
+    html = '<div style="color:var(--red)">\u26A0 Sin cobertura para ' + ciudad + '</div>';
   } else {
     html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">';
     html += '<div><div class="text-xs text-muted">Ciudad</div><div class="fw7">' + ciudad + '</div></div>';
-    html += '<div><div class="text-xs text-muted">Categoría</div><div class="fw7">' + categoria + '</div></div>';
+    html += '<div><div class="text-xs text-muted">Categor\u00EDa</div><div class="fw7">' + categoria + '</div></div>';
     html += '<div><div class="text-xs text-muted">Peso calculado</div><div class="fw7">' + pesoGramos + 'g = ' + pesoKg + 'kg</div></div>';
     html += '<div><div class="text-xs text-muted">Kilos adicionales</div><div class="fw7">' + kilosAdic + '</div></div>';
     html += '</div>';
     html += '<div class="mt-8" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:12px;border-top:1px solid var(--border)">';
     if (aplicaGratis) {
-      html += '<div><div class="text-xs text-muted">Envío</div><div class="fw7 text-green">¡GRATIS!</div></div>';
+      html += '<div><div class="text-xs text-muted">Env\u00EDo</div><div class="fw7 text-green">\u00A1GRATIS!</div></div>';
     } else {
-      html += '<div><div class="text-xs text-muted">Envío</div><div class="fw7 text-gold">$' + costo.toLocaleString() + '</div></div>';
+      html += '<div><div class="text-xs text-muted">Env\u00EDo</div><div class="fw7 text-gold">$' + costo.toLocaleString() + '</div></div>';
     }
     html += '<div><div class="text-xs text-muted">Subtotal</div><div class="fw7">$' + subtotal.toLocaleString() + '</div></div>';
     html += '<div><div class="text-xs text-muted">Total a cobrar</div><div class="fw7" style="font-size:1.15rem">$' + totalFinal.toLocaleString() + '</div></div>';
     html += '</div>';
     if (!aplicaGratis && categoria === 'urbano' && eMonto > subtotal) {
       var faltan = eMonto - subtotal;
-      html += '<div class="mt-8 text-sm" style="color:var(--gold);font-style:italic">Te faltan $' + faltan.toLocaleString() + ' para tener envío gratis.</div>';
+      html += '<div class="mt-8 text-sm" style="color:var(--gold);font-style:italic">Te faltan $' + faltan.toLocaleString() + ' para tener env\u00EDo gratis.</div>';
     }
   }
   var res = document.getElementById('sim-result');
   if (res) res.innerHTML = html;
 };
 
-// Helpers de badges para la tabla de envíos
+// Helpers de badges para la tabla de env\u00EDos
 function _arcanoCategoriaBadgeClass(cat) {
   if (cat === 'urbano') return 'badge-green';
   if (cat === 'zonal') return 'badge-blue';
@@ -11167,7 +11167,7 @@ function _arcanoEstadoPedidoLabel(estado) {
 }
 
 /* ============================================================
-   MAKING BLENDS — Panel interactivo de producción
+   MAKING BLENDS \u2014 Panel interactivo de producci\u00F3n
    Integrado en el admin, usa datos de ArcanoDB
    ============================================================ */
 
@@ -11205,10 +11205,10 @@ Pages._renderMakingBlends = function() {
   h += '</div>';
 
   if (mb.step === 1) {
-    // ========== STEP 1: Selección de blend ==========
+    // ========== STEP 1: Selecci\u00F3n de blend ==========
     h += '<div class="mb-section">';
-    h += '<h3 class="mb-section-title">Elegí el blend a producir</h3>';
-    h += '<input type="text" class="input mb-search" id="mb-search" placeholder="🔍 Buscar blend..." oninput="Pages._mbFilterBlends()">';
+    h += '<h3 class="mb-section-title">Eleg\u00ED el blend a producir</h3>';
+    h += '<input type="text" class="input mb-search" id="mb-search" placeholder="\u{1F50D} Buscar blend..." oninput="Pages._mbFilterBlends()">';
     h += '<div class="mb-blend-grid" id="mb-blend-grid">';
     for (var i = 0; i < blendsConIng.length; i++) {
       var b = blendsConIng[i];
@@ -11216,7 +11216,7 @@ Pages._renderMakingBlends = function() {
     }
     h += '</div>';
     if (blendsConIng.length === 0) {
-      h += '<p class="text-muted text-center">No hay blends con ingredientes definidos. Primero editá un blend y agregale ingredientes.</p>';
+      h += '<p class="text-muted text-center">No hay blends con ingredientes definidos. Primero edit\u00E1 un blend y agregale ingredientes.</p>';
     }
     h += '</div>';
   }
@@ -11322,27 +11322,27 @@ Pages._mbRenderStep2 = function() {
   var allOk = especiasOk && envasesDisp >= qty && bolsasDisp >= qty && cintas >= qty && stkStock >= qty;
 
   var h = '<div class="mb-section">';
-  h += '<div class="mb-step-header"><h3 class="mb-section-title">Configurá la producción</h3>';
-  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(1)">← Volver</button></div>';
+  h += '<div class="mb-step-header"><h3 class="mb-section-title">Configur\u00E1 la producci\u00F3n</h3>';
+  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(1)">\u2190 Volver</button></div>';
 
   h += '<div class="mb-config-card">';
   h += '<div class="mb-blend-selected"><div class="mb-blend-selected-name">' + esc(blend.nombre) + '</div><div class="mb-blend-selected-cat">' + esc(blend.categoria || '') + '</div></div>';
 
-  // Tamaño + Cantidad
+  // Tama\u00F1o + Cantidad
   h += '<div class="mb-config-row">';
-  h += '<div class="form-group"><label>Tamaño del frasco</label>';
+  h += '<div class="form-group"><label>Tama\u00F1o del frasco</label>';
   h += '<div class="mb-size-toggle">';
-  h += '<button class="mb-size-btn ' + (size === 'chico' ? 'active' : '') + '" onclick="Pages._mbSetSize(\'chico\')"><span class="mb-size-icon">🫙</span><span class="mb-size-name">Pequeño</span><span class="mb-size-weight">' + pesoFrasco + 'g</span></button>';
-  // Recalcular peso grande si está en chico
+  h += '<button class="mb-size-btn ' + (size === 'chico' ? 'active' : '') + '" onclick="Pages._mbSetSize(\'chico\')"><span class="mb-size-icon">\u{1FAD9}</span><span class="mb-size-name">Peque\u00F1o</span><span class="mb-size-weight">' + pesoFrasco + 'g</span></button>';
+  // Recalcular peso grande si est\u00E1 en chico
   var pesoFrascoGrande = 0;
   for (var i = 0; i < ingredientes.length; i++) {
     pesoFrascoGrande += Number(ingredientes[i].gramosGrande) || 0;
   }
-  h += '<button class="mb-size-btn ' + (size === 'grande' ? 'active' : '') + '" onclick="Pages._mbSetSize(\'grande\')"><span class="mb-size-icon">🫙</span><span class="mb-size-name">Grande</span><span class="mb-size-weight">' + (size === 'grande' ? pesoFrasco : pesoFrascoGrande) + 'g</span></button>';
+  h += '<button class="mb-size-btn ' + (size === 'grande' ? 'active' : '') + '" onclick="Pages._mbSetSize(\'grande\')"><span class="mb-size-icon">\u{1FAD9}</span><span class="mb-size-name">Grande</span><span class="mb-size-weight">' + (size === 'grande' ? pesoFrasco : pesoFrascoGrande) + 'g</span></button>';
   h += '</div></div>';
 
   h += '<div class="form-group"><label>Cantidad de frascos</label>';
-  h += '<div class="mb-qty-selector"><button onclick="Pages._mbAdjustQty(-1)">−</button>';
+  h += '<div class="mb-qty-selector"><button onclick="Pages._mbAdjustQty(-1)">\u2212</button>';
   h += '<input type="number" id="mb-qty-input" value="' + qty + '" min="1" max="500" oninput="Pages._mbOnQtyChange()">';
   h += '<button onclick="Pages._mbAdjustQty(1)">+</button></div>';
   h += '<div class="mb-qty-presets"><button onclick="Pages._mbSetQty(5)">5</button><button onclick="Pages._mbSetQty(10)">10</button><button onclick="Pages._mbSetQty(25)">25</button><button onclick="Pages._mbSetQty(50)">50</button><button onclick="Pages._mbSetQty(100)">100</button></div>';
@@ -11356,29 +11356,29 @@ Pages._mbRenderStep2 = function() {
   h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso total</div><div class="mb-summary-value">' + pesoTotal.toLocaleString() + 'g</div></div>';
   h += '</div>';
 
-  // Verificación de stock
+  // Verificaci\u00F3n de stock
   h += '<div class="mb-stock-check">';
-  h += '<h4>Verificación de stock</h4>';
+  h += '<h4>Verificaci\u00F3n de stock</h4>';
   h += '<div class="mb-stock-list">';
   for (var i = 0; i < especiasDetalle.length; i++) {
     var d = especiasDetalle[i];
     var color = d.ok ? 'var(--green)' : 'var(--red)';
-    var icon = d.ok ? '✓' : '⚠';
-    h += '<div class="mb-stock-item"><span class="mb-stock-name">' + esc(d.nombre) + '</span><span class="mb-stock-detail" style="color:' + color + '">' + icon + ' necesita ' + d.needed + 'g · disponible ' + d.avail + 'g</span></div>';
+    var icon = d.ok ? '\u2713' : '\u26A0';
+    h += '<div class="mb-stock-item"><span class="mb-stock-name">' + esc(d.nombre) + '</span><span class="mb-stock-detail" style="color:' + color + '">' + icon + ' necesita ' + d.needed + 'g \u00B7 disponible ' + d.avail + 'g</span></div>';
   }
-  h += '<div class="mb-stock-item"><span class="mb-stock-name">Envases ' + size + '</span><span class="mb-stock-detail" style="color:' + (envasesDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + (envasesDisp >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + envasesDisp + '</span></div>';
-  h += '<div class="mb-stock-item"><span class="mb-stock-name">Bolsas ' + size + '</span><span class="mb-stock-detail" style="color:' + (bolsasDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + (bolsasDisp >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + bolsasDisp + '</span></div>';
-  h += '<div class="mb-stock-item"><span class="mb-stock-name">Stickers</span><span class="mb-stock-detail" style="color:' + (stkStock >= qty ? 'var(--green)' : 'var(--red)') + '">' + (stkStock >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + stkStock + '</span></div>';
-  h += '<div class="mb-stock-item"><span class="mb-stock-name">Cintas</span><span class="mb-stock-detail" style="color:' + (cintas >= qty ? 'var(--green)' : 'var(--red)') + '">' + (cintas >= qty ? '✓' : '⚠') + ' necesita ' + qty + ' · disponible ' + cintas + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Envases ' + size + '</span><span class="mb-stock-detail" style="color:' + (envasesDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + (envasesDisp >= qty ? '\u2713' : '\u26A0') + ' necesita ' + qty + ' \u00B7 disponible ' + envasesDisp + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Bolsas ' + size + '</span><span class="mb-stock-detail" style="color:' + (bolsasDisp >= qty ? 'var(--green)' : 'var(--red)') + '">' + (bolsasDisp >= qty ? '\u2713' : '\u26A0') + ' necesita ' + qty + ' \u00B7 disponible ' + bolsasDisp + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Stickers</span><span class="mb-stock-detail" style="color:' + (stkStock >= qty ? 'var(--green)' : 'var(--red)') + '">' + (stkStock >= qty ? '\u2713' : '\u26A0') + ' necesita ' + qty + ' \u00B7 disponible ' + stkStock + '</span></div>';
+  h += '<div class="mb-stock-item"><span class="mb-stock-name">Cintas</span><span class="mb-stock-detail" style="color:' + (cintas >= qty ? 'var(--green)' : 'var(--red)') + '">' + (cintas >= qty ? '\u2713' : '\u26A0') + ' necesita ' + qty + ' \u00B7 disponible ' + cintas + '</span></div>';
   h += '</div>';
   h += '</div>';
 
   if (!allOk) {
-    h += '<div class="mb-warn-box">⚠ Stock insuficiente para producir. Reabastecé antes de continuar o ajustá la cantidad.</div>';
+    h += '<div class="mb-warn-box">\u26A0 Stock insuficiente para producir. Reabastec\u00E9 antes de continuar o ajust\u00E1 la cantidad.</div>';
   }
 
   h += '<div class="mb-actions"><button class="btn btn-outline" onclick="Pages._mbGoStep(1)">Volver</button>';
-  h += '<button class="btn btn-gold" onclick="Pages._mbStartProduction()" ' + (allOk ? '' : 'disabled') + '>Iniciar producción →</button></div>';
+  h += '<button class="btn btn-gold" onclick="Pages._mbStartProduction()" ' + (allOk ? '' : 'disabled') + '>Iniciar producci\u00F3n \u2192</button></div>';
 
   h += '</div>';
   h += '</div>';
@@ -11469,20 +11469,20 @@ Pages._mbRenderStep3 = function() {
   var recipe = mb.recipe;
 
   var h = '<div class="mb-section">';
-  h += '<div class="mb-step-header"><h3 class="mb-section-title">Producción en curso</h3>';
-  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(2)">← Volver</button></div>';
+  h += '<div class="mb-step-header"><h3 class="mb-section-title">Producci\u00F3n en curso</h3>';
+  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(2)">\u2190 Volver</button></div>';
 
   h += '<div class="mb-production-layout">';
   // Recipe panel (izquierda)
   h += '<div class="mb-recipe-panel">';
   h += '<h4 class="mb-recipe-title">Receta total</h4>';
-  h += '<div class="mb-recipe-meta">' + esc(blend.nombre) + ' · ' + (size === 'grande' ? 'Frascos grandes' : 'Frascos pequeños') + ' · ' + qty + ' unid.</div>';
+  h += '<div class="mb-recipe-meta">' + esc(blend.nombre) + ' \u00B7 ' + (size === 'grande' ? 'Frascos grandes' : 'Frascos peque\u00F1os') + ' \u00B7 ' + qty + ' unid.</div>';
   h += '<div class="mb-recipe-list" id="mb-recipe-list">';
   for (var i = 0; i < recipe.length; i++) {
     var r = recipe[i];
     h += '<div class="mb-recipe-item" id="mb-recipe-item-' + i + '">' +
       '<div><div class="mb-recipe-item-name">' + esc(r.nombre) + '</div>' +
-      '<div class="mb-recipe-item-pct">' + r.porcentaje.toFixed(1) + '% · ' + r.gramosPorFrasco + 'g c/u</div></div>' +
+      '<div class="mb-recipe-item-pct">' + r.porcentaje.toFixed(1) + '% \u00B7 ' + r.gramosPorFrasco + 'g c/u</div></div>' +
       '<div class="mb-recipe-item-weight">' + r.gramosTotal.toLocaleString() + 'g</div>' +
     '</div>';
   }
@@ -11492,7 +11492,7 @@ Pages._mbRenderStep3 = function() {
 
   // Mixing station (derecha)
   h += '<div class="mb-mixing-station">';
-  h += '<div class="mb-bowl-container"><div class="mb-bowl' + (mb.totalWeight > 0 ? ' filling' : '') + '" id="mb-bowl"><div class="mb-bowl-content" id="mb-bowl-content"></div><div class="mb-bowl-shine"></div></div><div class="mb-bowl-label" id="mb-bowl-label">Tazón vacío</div></div>';
+  h += '<div class="mb-bowl-container"><div class="mb-bowl' + (mb.totalWeight > 0 ? ' filling' : '') + '" id="mb-bowl"><div class="mb-bowl-content" id="mb-bowl-content"></div><div class="mb-bowl-shine"></div></div><div class="mb-bowl-label" id="mb-bowl-label">Taz\u00F3n vac\u00EDo</div></div>';
 
   var addedCount = 0;
   for (var i = 0; i < recipe.length; i++) if (recipe[i].added) addedCount++;
@@ -11507,7 +11507,7 @@ Pages._mbRenderStep3 = function() {
   for (var i = 0; i < recipe.length; i++) {
     var r = recipe[i];
     h += '<div class="mb-spice-jar' + (r.added ? ' added' : '') + '" id="mb-spice-jar-' + i + '" onclick="Pages._mbAddSpice(' + i + ')">' +
-      '<span class="mb-spice-jar-icon">🫙</span>' +
+      '<span class="mb-spice-jar-icon">\u{1FAD9}</span>' +
       '<div class="mb-spice-jar-name">' + esc(r.nombre) + '</div>' +
       '<div class="mb-spice-jar-weight">' + r.gramosTotal.toLocaleString() + 'g <small>(' + r.gramosPorFrasco + 'g c/u)</small></div>' +
     '</div>';
@@ -11516,14 +11516,14 @@ Pages._mbRenderStep3 = function() {
 
   h += '<div class="mb-prod-actions">';
   h += '<button class="btn btn-outline" onclick="Pages._mbResetProduction()">Reiniciar</button>';
-  h += '<button class="btn btn-gold" id="mb-complete-btn" onclick="Pages._mbGoToRecuento()" ' + (addedCount === recipe.length ? '' : 'disabled') + '>Ver recuento →</button>';
+  h += '<button class="btn btn-gold" id="mb-complete-btn" onclick="Pages._mbGoToRecuento()" ' + (addedCount === recipe.length ? '' : 'disabled') + '>Ver recuento \u2192</button>';
   h += '</div>';
 
   h += '</div></div></div>';
   return h;
 };
 
-// Llenar el bowl dinámicamente después del render
+// Llenar el bowl din\u00E1micamente despu\u00E9s del render
 Pages._mbUpdateBowlVisual = function() {
   var self = Pages;
   var mb = self._mb;
@@ -11602,7 +11602,7 @@ Pages._mbConfirmWeight = function() {
 
   var inputVal = parseFloat(document.getElementById('mb-modal-input').value);
   if (isNaN(inputVal) || inputVal <= 0) {
-    toast('Ingresá un peso válido', 'error');
+    toast('Ingres\u00E1 un peso v\u00E1lido', 'error');
     return;
   }
 
@@ -11610,7 +11610,7 @@ Pages._mbConfirmWeight = function() {
   r.actualGramos = inputVal;
   mb.totalWeight += inputVal;
 
-  // Actualizar UI sin recargar todo (más fluido)
+  // Actualizar UI sin recargar todo (m\u00E1s fluido)
   var jar = document.getElementById('mb-spice-jar-' + idx);
   if (jar) jar.classList.add('added');
 
@@ -11619,13 +11619,13 @@ Pages._mbConfirmWeight = function() {
 
   self._mbUpdateBowlVisual();
 
-  // Animación de tarro cayendo
+  // Animaci\u00F3n de tarro cayendo
   var jarEl = document.getElementById('mb-spice-jar-' + idx);
   var bowlEl = document.getElementById('mb-bowl');
   if (jarEl && bowlEl) {
     var drop = document.createElement('div');
     drop.className = 'mb-spice-drop';
-    drop.textContent = '🫙';
+    drop.textContent = '\u{1FAD9}';
     var jarRect = jarEl.getBoundingClientRect();
     var bowlRect = bowlEl.getBoundingClientRect();
     drop.style.left = (bowlRect.left + bowlRect.width/2 - 12) + 'px';
@@ -11637,17 +11637,17 @@ Pages._mbConfirmWeight = function() {
   }
 
   self._mbCloseWeightModal();
-  toast('✓ ' + r.nombre + ': ' + inputVal.toLocaleString() + 'g agregados');
+  toast('\u2713 ' + r.nombre + ': ' + inputVal.toLocaleString() + 'g agregados');
 
   var addedCount = 0;
   for (var i = 0; i < recipe.length; i++) if (recipe[i].added) addedCount++;
   if (addedCount === recipe.length) {
-    setTimeout(function() { toast('¡Receta completa! Ya podés finalizar.'); }, 600);
+    setTimeout(function() { toast('\u00A1Receta completa! Ya pod\u00E9s finalizar.'); }, 600);
   }
 };
 
 Pages._mbResetProduction = function() {
-  if (!confirm('¿Reiniciar la producción? Vas a perder el progreso actual.')) return;
+  if (!confirm('\u00BFReiniciar la producci\u00F3n? Vas a perder el progreso actual.')) return;
   Pages._mbStartProduction();
 };
 
@@ -11667,7 +11667,7 @@ Pages._mbGoToRecuento = function() {
 };
 
 Pages._mbCompleteProduction = function() {
-  // Mantenido por compatibilidad — redirige al recuento
+  // Mantenido por compatibilidad \u2014 redirige al recuento
   Pages._mbGoToRecuento();
 };
 
@@ -11700,16 +11700,16 @@ Pages._mbRenderStep4 = function() {
   var costoSticker = size === 'grande' ? (costos.stickerGrande || 0) : (costos.stickerChico || 0);
 
   var h = '<div class="mb-section">';
-  h += '<div class="mb-step-header"><h3 class="mb-section-title">Recuento y verificación</h3>';
-  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(3)">← Volver</button></div>';
+  h += '<div class="mb-step-header"><h3 class="mb-section-title">Recuento y verificaci\u00F3n</h3>';
+  h += '<button class="btn btn-sm btn-outline" onclick="Pages._mbGoStep(3)">\u2190 Volver</button></div>';
 
   h += '<div class="mb-recuento-card">';
-  h += '<div class="mb-blend-selected"><div class="mb-blend-selected-name">' + esc(blend.nombre) + '</div><div class="mb-blend-selected-cat">' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos pequeños') + '</div></div>';
+  h += '<div class="mb-blend-selected"><div class="mb-blend-selected-name">' + esc(blend.nombre) + '</div><div class="mb-blend-selected-cat">' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos peque\u00F1os') + '</div></div>';
 
   // Tabla de especias con pesos objetivo vs real + costos
   h += '<h4 class="mb-recuento-title">Especias utilizadas</h4>';
   h += '<div class="table-wrap"><table class="table mb-recuento-table"><thead><tr>';
-  h += '<th>Especia</th><th class="text-center">Objetivo</th><th class="text-center">Real</th><th class="text-center">Δ</th><th class="text-center">Costo/g</th><th class="text-center">Costo total</th><th class="text-center">Stock</th>';
+  h += '<th>Especia</th><th class="text-center">Objetivo</th><th class="text-center">Real</th><th class="text-center">\u0394</th><th class="text-center">Costo/g</th><th class="text-center">Costo total</th><th class="text-center">Stock</th>';
   h += '</tr></thead><tbody>';
 
   var totalCostoEspecias = 0;
@@ -11734,7 +11734,7 @@ Pages._mbRenderStep4 = function() {
     var deltaColor = Math.abs(delta) < 1 ? 'var(--green)' : (Math.abs(delta) > r.gramosTotal * 0.05 ? 'var(--red)' : 'var(--gold)');
     var deltaTxt = delta > 0 ? '+' + delta.toFixed(1) + 'g' : delta.toFixed(1) + 'g';
     var stockColor = stockSuficiente ? 'var(--green)' : 'var(--red)';
-    var stockIcon = stockSuficiente ? '✓' : '⚠';
+    var stockIcon = stockSuficiente ? '\u2713' : '\u26A0';
 
     h += '<tr>' +
       '<td class="fw7">' + esc(r.nombre) + '</td>' +
@@ -11785,16 +11785,16 @@ Pages._mbRenderStep4 = function() {
   h += '<div class="mb-resumen-item" style="color:' + (margen > 0 ? 'var(--green)' : 'var(--red)') + '"><div class="mb-resumen-label">Margen (' + margenPct.toFixed(0) + '%)</div><div class="mb-resumen-value">$' + margen.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div></div>';
   h += '</div>';
 
-  // Estado de verificación
+  // Estado de verificaci\u00F3n
   if (!allStockOk || envasesDisp < qty || bolsasDisp < qty || stkStock < qty || cintas < qty) {
-    h += '<div class="mb-warn-box">⚠ Stock insuficiente para completar la producción. Reabastecé los insumos marcados en rojo antes de continuar.</div>';
+    h += '<div class="mb-warn-box">\u26A0 Stock insuficiente para completar la producci\u00F3n. Reabastec\u00E9 los insumos marcados en rojo antes de continuar.</div>';
   } else {
-    h += '<div class="mb-ok-box">✓ Todo el stock necesario está disponible. Al confirmar se descontarán los insumos y se sumarán ' + qty + ' frascos al stock del blend.</div>';
+    h += '<div class="mb-ok-box">\u2713 Todo el stock necesario est\u00E1 disponible. Al confirmar se descontar\u00E1n los insumos y se sumar\u00E1n ' + qty + ' frascos al stock del blend.</div>';
   }
 
   h += '<div class="mb-actions mt-16">';
-  h += '<button class="btn btn-outline" onclick="Pages._mbGoStep(3)">← Volver a producir</button>';
-  h += '<button class="btn btn-gold btn-lg" onclick="Pages._mbConfirmProduction()" ' + (allStockOk && envasesDisp >= qty && bolsasDisp >= qty && stkStock >= qty && cintas >= qty ? '' : 'disabled') + '>✓ Confirmar y producir</button>';
+  h += '<button class="btn btn-outline" onclick="Pages._mbGoStep(3)">\u2190 Volver a producir</button>';
+  h += '<button class="btn btn-gold btn-lg" onclick="Pages._mbConfirmProduction()" ' + (allStockOk && envasesDisp >= qty && bolsasDisp >= qty && stkStock >= qty && cintas >= qty ? '' : 'disabled') + '>\u2713 Confirmar y producir</button>';
   h += '</div>';
 
   h += '</div>';
@@ -11802,7 +11802,7 @@ Pages._mbRenderStep4 = function() {
   return h;
 };
 
-// Step 5: Éxito final
+// Step 5: \u00C9xito final
 Pages._mbRenderStep5 = function() {
   var self = Pages;
   var mb = self._mb;
@@ -11817,9 +11817,9 @@ Pages._mbRenderStep5 = function() {
 
   var h = '<div class="mb-section">';
   h += '<div class="mb-completion-screen">';
-  h += '<div class="mb-completion-check">✓</div>';
-  h += '<h3 class="mb-completion-title">¡Producción completada!</h3>';
-  h += '<div class="mb-completion-blend">' + esc(blend.nombre) + ' · ' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos pequeños') + '</div>';
+  h += '<div class="mb-completion-check">\u2713</div>';
+  h += '<h3 class="mb-completion-title">\u00A1Producci\u00F3n completada!</h3>';
+  h += '<div class="mb-completion-blend">' + esc(blend.nombre) + ' \u00B7 ' + qty + ' ' + (size === 'grande' ? 'frascos grandes' : 'frascos peque\u00F1os') + '</div>';
   h += '<div class="mb-completion-summary">';
   h += '<div class="mb-summary-item"><div class="mb-summary-label">Especias</div><div class="mb-summary-value">' + recipe.length + '</div></div>';
   h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso total</div><div class="mb-summary-value">' + totalActual.toLocaleString() + 'g</div></div>';
@@ -11827,23 +11827,23 @@ Pages._mbRenderStep5 = function() {
   h += '</div>';
   if (prod.id) {
     h += '<div class="mb-prod-info">';
-    h += '<div>📋 Producción #' + prod.id + '</div>';
-    h += '<div>📅 ' + (prod.fecha || '') + '</div>';
-    h += '<div>✓ Se descontaron ' + (prod.gramosTotal || 0) + 'g de especias</div>';
-    h += '<div>✓ Se sumaron ' + qty + ' frascos al stock del blend</div>';
+    h += '<div>\u{1F4CB} Producci\u00F3n #' + prod.id + '</div>';
+    h += '<div>\u{1F4C5} ' + (prod.fecha || '') + '</div>';
+    h += '<div>\u2713 Se descontaron ' + (prod.gramosTotal || 0) + 'g de especias</div>';
+    h += '<div>\u2713 Se sumaron ' + qty + ' frascos al stock del blend</div>';
     h += '</div>';
   }
   h += '<div class="mb-completion-actions">';
   h += '<button class="btn btn-outline" onclick="Pages._mbGoStep(1)">Hacer otro blend</button>';
-  h += '<button class="btn btn-outline" onclick="Pages._mbPrintRecipe()">🖨️ Imprimir receta</button>';
-  h += '<button class="btn btn-gold" onclick="App.renderPage(\'produccion\')">Ver historial →</button>';
+  h += '<button class="btn btn-outline" onclick="Pages._mbPrintRecipe()">\u{1F5A8}\uFE0F Imprimir receta</button>';
+  h += '<button class="btn btn-gold" onclick="App.renderPage(\'produccion\')">Ver historial \u2192</button>';
   h += '</div>';
   h += '</div>';
   h += '</div>';
   return h;
 };
 
-// Confirmación final: descuenta stock y guarda producción
+// Confirmaci\u00F3n final: descuenta stock y guarda producci\u00F3n
 Pages._mbConfirmProduction = function() {
   var self = Pages;
   var mb = self._mb;
@@ -11851,16 +11851,16 @@ Pages._mbConfirmProduction = function() {
   var size = mb.size;
   var qty = mb.qty;
 
-  if (!confirm('Confirmar producción de ' + qty + ' frascos ' + (size === 'grande' ? 'grandes' : 'pequeños') + ' de "' + blend.nombre + '"?\n\nSe van a descontar los insumos y sumar al stock del blend.')) return;
+  if (!confirm('Confirmar producci\u00F3n de ' + qty + ' frascos ' + (size === 'grande' ? 'grandes' : 'peque\u00F1os') + ' de "' + blend.nombre + '"?\n\nSe van a descontar los insumos y sumar al stock del blend.')) return;
 
   try {
     var result = ArcanoDB.producirBlend(blend.id, size, qty);
     mb.lastProduccion = result.produccion;
     mb.step = 5;
     App.renderPage('produccion');
-    toast('✓ Producción #' + result.produccion.id + ' guardada. Stock actualizado.');
+    toast('\u2713 Producci\u00F3n #' + result.produccion.id + ' guardada. Stock actualizado.');
   } catch (err) {
-    alert('Error al guardar la producción: ' + err.message);
+    alert('Error al guardar la producci\u00F3n: ' + err.message);
   }
 };
 
@@ -11873,22 +11873,22 @@ Pages._mbPrintRecipe = function() {
   var qty = mb.qty;
 
   var w = window.open('', '_blank');
-  var html = '<!DOCTYPE html><html><head><title>Receta — ' + esc(blend.nombre) + '</title>' +
+  var html = '<!DOCTYPE html><html><head><title>Receta \u2014 ' + esc(blend.nombre) + '</title>' +
     '<style>body{font-family:sans-serif;padding:32px;max-width:600px;margin:auto;color:#333}' +
     'h1{color:#c9a84c}table{width:100%;border-collapse:collapse;margin-top:16px}' +
     'th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}' +
     'th{background:#f5f5f5}.total{font-weight:bold;background:#fff8e1}' +
     '</style></head><body>' +
     '<h1>' + esc(blend.nombre) + '</h1>' +
-    '<p><strong>Tamaño:</strong> ' + (size === 'grande' ? 'Grande' : 'Pequeño') + ' · ' +
+    '<p><strong>Tama\u00F1o:</strong> ' + (size === 'grande' ? 'Grande' : 'Peque\u00F1o') + ' \u00B7 ' +
     '<strong>Cantidad:</strong> ' + qty + ' frascos</p>' +
     '<table><thead><tr><th>Especia</th><th>g por frasco</th><th>g totales</th><th>%</th></tr></thead><tbody>';
   for (var i = 0; i < recipe.length; i++) {
     var r = recipe[i];
     html += '<tr><td>' + esc(r.nombre) + '</td><td>' + r.gramosPorFrasco + 'g</td><td>' + r.gramosTotal + 'g</td><td>' + r.porcentaje.toFixed(1) + '%</td></tr>';
   }
-  html += '</tbody><tfoot><tr class="total"><td>Total</td><td>—</td><td>' + mb.targetWeight + 'g</td><td>100%</td></tr></tfoot></table>' +
-    '<p style="margin-top:24px;color:#888;font-size:12px">Generado por Making Blends · ' + new Date().toLocaleString('es-CO') + '</p>' +
+  html += '</tbody><tfoot><tr class="total"><td>Total</td><td>\u2014</td><td>' + mb.targetWeight + 'g</td><td>100%</td></tr></tfoot></table>' +
+    '<p style="margin-top:24px;color:#888;font-size:12px">Generado por Making Blends \u00B7 ' + new Date().toLocaleString('es-CO') + '</p>' +
     '</body></html>';
   w.document.write(html);
   w.document.close();
@@ -11897,8 +11897,8 @@ Pages._mbPrintRecipe = function() {
 
 /* ============================================================
    REGENERAR SEO COMPLETO
-   Genera todas las páginas /blends/, /blends-para/, sitemap,
-   merchant feed y actualiza /p/*.html — todo desde el navegador
+   Genera todas las p\u00E1ginas /blends/, /blends-para/, sitemap,
+   merchant feed y actualiza /p/*.html \u2014 todo desde el navegador
    Sube todo a GitHub en un solo commit usando Git Data API
    ============================================================ */
 
@@ -11923,7 +11923,7 @@ Pages.regenerarSEOCompleto = function() {
     if (statusEl) statusEl.innerHTML = '<span style="color:' + (color || 'var(--text3)') + '">' + msg + '</span>';
   }
 
-  log('Iniciando regeneración SEO completa...');
+  log('Iniciando regeneraci\u00F3n SEO completa...');
 
   // Token y config (mismos que regenerarSEO)
   var _gt='jksbZrZsYRI8E5<phRNgs]7wPot<M{yd;W63t6ZP';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
@@ -11958,7 +11958,7 @@ Pages.regenerarSEOCompleto = function() {
   }
 
   // Paso 1: Generar todos los archivos en memoria
-  log('Leyendo catálogo desde Firebase (en memoria)...');
+  log('Leyendo cat\u00E1logo desde Firebase (en memoria)...');
   var db = ArcanoDB.getDB();
 
   // Obtener URLs existentes del sitemap actual (para preservar recetas, blog)
@@ -11981,19 +11981,19 @@ Pages.regenerarSEOCompleto = function() {
     })
     .then(function() {
       // Generar archivos con ArcanoSEO
-      log('Generando páginas SEO...');
+      log('Generando p\u00E1ginas SEO...');
       var result = ArcanoSEO.generateAll(db, existingUrls, []);
-      log('Generadas: ' + result.blendsPages.length + ' páginas /blends/, ' + result.categoryPages.length + ' categorías, sitemap, feeds', 'ok');
+      log('Generadas: ' + result.blendsPages.length + ' p\u00E1ginas /blends/, ' + result.categoryPages.length + ' categor\u00EDas, sitemap, feeds', 'ok');
 
       // Reportar productos incompletos
       if (result.stats.incompletos && result.stats.incompletos.length) {
-        log('⚠ ' + result.stats.incompletos.length + ' productos con info incompleta:', 'warn');
+        log('\u26A0 ' + result.stats.incompletos.length + ' productos con info incompleta:', 'warn');
         for (var i = 0; i < Math.min(5, result.stats.incompletos.length); i++) {
           var inc = result.stats.incompletos[i];
           log('  - [' + inc.id + '] ' + inc.nombre + ': ' + inc.issues.join(', '), 'warn');
         }
         if (result.stats.incompletos.length > 5) {
-          log('  ... y ' + (result.stats.incompletos.length - 5) + ' más', 'warn');
+          log('  ... y ' + (result.stats.incompletos.length - 5) + ' m\u00E1s', 'warn');
         }
       }
 
@@ -12040,9 +12040,9 @@ Pages.regenerarSEOCompleto = function() {
       var result = ArcanoSEO.generateAll(db2, [], pFiles);
 
       log('Archivos a subir:', 'ok');
-      log('  - ' + result.blendsPages.length + ' páginas /blends/<slug>/index.html');
-      log('  - ' + result.categoryPages.length + ' páginas /blends-para/<cat>/index.html');
-      log('  - 1 índice /blends-para/index.html');
+      log('  - ' + result.blendsPages.length + ' p\u00E1ginas /blends/<slug>/index.html');
+      log('  - ' + result.categoryPages.length + ' p\u00E1ginas /blends-para/<cat>/index.html');
+      log('  - 1 \u00EDndice /blends-para/index.html');
       log('  - ' + result.pHtmlUpdates.length + ' archivos /p/*.html actualizados');
       log('  - sitemap.xml, merchant_feed.xml, merchant_feed.tsv');
 
@@ -12092,7 +12092,7 @@ Pages.regenerarSEOCompleto = function() {
         return {path: b.path, mode: '100644', type: 'blob', sha: b.sha};
       });
 
-      // Obtener el SHA del último commit y su tree base
+      // Obtener el SHA del \u00FAltimo commit y su tree base
       return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/refs/heads/' + GH_BRANCH)
         .then(function(ref) {
           var commitSha = ref.object.sha;
@@ -12115,7 +12115,7 @@ Pages.regenerarSEOCompleto = function() {
       log('Creando commit...');
       var today = new Date().toISOString().substring(0, 10);
       return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/commits', {
-        message: 'SEO: regenerar páginas /blends/ y /blends-para/ (' + today + ')\n\nGenerado automáticamente desde el admin.',
+        message: 'SEO: regenerar p\u00E1ginas /blends/ y /blends-para/ (' + today + ')\n\nGenerado autom\u00E1ticamente desde el admin.',
         tree: data.treeSha,
         parents: [data.commitSha]
       }).then(function(newCommit) {
@@ -12141,7 +12141,7 @@ Pages.regenerarSEOCompleto = function() {
       }
       log('Subiendo ' + data.pUpdates.length + ' actualizaciones de /p/*.html...');
 
-      // Subir en lotes de 3 (PUT es más lento)
+      // Subir en lotes de 3 (PUT es m\u00E1s lento)
       var batches = [];
       for (var i = 0; i < data.pUpdates.length; i += 3) {
         batches.push(data.pUpdates.slice(i, i + 3));
@@ -12152,7 +12152,7 @@ Pages.regenerarSEOCompleto = function() {
         seqProm = seqProm.then(function() {
           var proms = batch.map(function(pf) {
             return ghFetch('PUT', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + pf.path, {
-              message: 'SEO: actualizar canonical /p/ → /blends/',
+              message: 'SEO: actualizar canonical /p/ \u2192 /blends/',
               content: toBase64(pf.content),
               sha: pf.sha,
               branch: GH_BRANCH
@@ -12170,26 +12170,26 @@ Pages.regenerarSEOCompleto = function() {
     })
     .then(function() {
       log('========================================', 'ok');
-      log('✓ SEO COMPLETO REGENERADO', 'ok');
-      log('GitHub Pages publicará en 1-2 minutos', 'ok');
-      setStatus('✓ Completado — GitHub Pages actualizando', 'var(--green)');
-      toast('✓ SEO regenerado correctamente', 'ok');
+      log('\u2713 SEO COMPLETO REGENERADO', 'ok');
+      log('GitHub Pages publicar\u00E1 en 1-2 minutos', 'ok');
+      setStatus('\u2713 Completado \u2014 GitHub Pages actualizando', 'var(--green)');
+      toast('\u2713 SEO regenerado correctamente', 'ok');
       if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
     })
     .catch(function(err) {
       log('ERROR: ' + err.message, 'error');
-      setStatus('✗ Error: ' + err.message, 'var(--red)');
+      setStatus('\u2717 Error: ' + err.message, 'var(--red)');
       toast('Error: ' + err.message, 'err');
       if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
     });
 };
 
 /* ============================================================
-   Marcar envío como "sin cargo" en un pedido
-   Quita el costo de envío, lo marca como gratis, recalcula total
+   Marcar env\u00EDo como "sin cargo" en un pedido
+   Quita el costo de env\u00EDo, lo marca como gratis, recalcula total
    ============================================================ */
 Pages.marcarEnvioSinCargo = function(pedidoKey) {
-  if (!confirm('¿Marcar envío como sin cargo?\n\nSe quitará el costo de envío y el total se recalculará solo con productos.')) return;
+  if (!confirm('\u00BFMarcar env\u00EDo como sin cargo?\n\nSe quitar\u00E1 el costo de env\u00EDo y el total se recalcular\u00E1 solo con productos.')) return;
 
   var pedidos = ArcanoDB.getPedidos();
   var p = null;
@@ -12210,29 +12210,29 @@ Pages.marcarEnvioSinCargo = function(pedidoKey) {
   updates[pedidoKey + '/envioGratis'] = true;
   updates[pedidoKey + '/envioCosto'] = 0;
 
-  // Recalcular total = subtotal (productos) + 0 (envío gratis)
+  // Recalcular total = subtotal (productos) + 0 (env\u00EDo gratis)
   var subtotal = p.subtotal;
   if (subtotal == null) {
-    // Si no hay subtotal explícito, calcularlo desde items
+    // Si no hay subtotal expl\u00EDcito, calcularlo desde items
     subtotal = 0;
     if (p.items) {
       for (var i = 0; i < p.items.length; i++) {
         subtotal += (p.items[i].subtotal || 0);
       }
     }
-    // Si no hay items con subtotal, el subtotal era total - envío
+    // Si no hay items con subtotal, el subtotal era total - env\u00EDo
     if (subtotal === 0 && p.total) subtotal = p.total - costoOriginal;
   }
   updates[pedidoKey + '/subtotal'] = subtotal;
-  updates[pedidoKey + '/total'] = subtotal; // Total = solo productos, sin envío
+  updates[pedidoKey + '/total'] = subtotal; // Total = solo productos, sin env\u00EDo
 
   // Enviar a Firebase
   var _pedidosRef = firebase.database().ref('arcano/db/pedidos');
   _pedidosRef.update(updates, function(error) {
     if (error) {
-      toast('Error al actualizar envío: ' + error.message, 'err');
+      toast('Error al actualizar env\u00EDo: ' + error.message, 'err');
     } else {
-      toast('✓ Envío marcado como sin cargo. Total: $' + subtotal.toLocaleString(), 'ok');
+      toast('\u2713 Env\u00EDo marcado como sin cargo. Total: $' + subtotal.toLocaleString(), 'ok');
       // Cerrar modal y recargar
       var modal = document.getElementById('pedido-modal');
       if (modal) modal.remove();
