@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcano-tienda-v5';
+const CACHE_NAME = 'arcano-tienda-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -16,7 +16,19 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(STATIC_ASSETS)));
+  // Cacheo tolerante a fallos: si algún asset falla (404, etc.), no rompe el install
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      // addAll falla si UNO solo falla. Usamos Promise.allSettled para que no.
+      return Promise.allSettled(
+        STATIC_ASSETS.map(function(url) {
+          return cache.add(url).catch(function(err) {
+            console.warn('[SW] No se pudo cachear ' + url + ':', err.message);
+          });
+        })
+      );
+    })
+  );
   self.skipWaiting();
 });
 
