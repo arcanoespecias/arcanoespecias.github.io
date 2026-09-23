@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcano-tienda-v4';
+const CACHE_NAME = 'arcano-tienda-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -27,6 +27,82 @@ self.addEventListener('activate', e => {
     )
   );
   self.clients.claim();
+});
+
+// === PUSH NOTIFICATIONS (para el admin, pero con scope / para que funcione en cualquier página) ===
+self.addEventListener('push', function(event) {
+  console.log('[SW Push] Evento push recibido:', event);
+  var data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+    console.log('[SW Push] Data parseada:', data);
+  } catch (e) {
+    try { data = { mensaje: event.data ? event.data.text() : '' }; } catch (e2) {
+      console.error('[SW Push] Error parseando data:', e2);
+      data = { mensaje: 'Notificación de Arcano Especias' };
+    }
+  }
+
+  var titulo = data.titulo || '🔔 Arcano Especias';
+  var mensaje = data.mensaje || 'Tienes una nueva notificación';
+  var evento = data.evento || 'generico';
+
+  var icon = '/icons/icon-192.png';
+  var badge = '/icons/favicon.png';
+  var tag = 'arcano-' + evento;
+  var vibrate = [200, 100, 200, 100, 400];
+  var requireInteraction = false;
+
+  if (evento === 'pedido' || evento === 'test') {
+    requireInteraction = true;
+    vibrate = [300, 100, 300, 100, 300, 100, 600];
+  }
+
+  var options = {
+    body: mensaje,
+    icon: icon,
+    badge: badge,
+    tag: tag,
+    renotify: true,
+    vibrate: vibrate,
+    requireInteraction: requireInteraction,
+    data: {
+      url: data.data && data.data.url ? data.data.url : '/admin/',
+      evento: evento,
+      timestamp: Date.now()
+    }
+  };
+
+  console.log('[SW Push] Mostrando notificación:', titulo, mensaje);
+  event.waitUntil(
+    self.registration.showNotification(titulo, options).then(function() {
+      console.log('[SW Push] Notificación mostrada OK');
+    }).catch(function(err) {
+      console.error('[SW Push] Error mostrando notificación:', err);
+    })
+  );
+});
+
+// === Click en notificación: abrir la página correspondiente ===
+self.addEventListener('notificationclick', function(event) {
+  console.log('[SW Push] Click en notificación:', event.notification);
+  event.notification.close();
+  var targetUrl = (event.notification.data && event.notification.data.url) || '/admin/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url.includes('arcano') && 'focus' in client) {
+          if ('navigate' in client) {
+            client.navigate(targetUrl).catch(function() {});
+          }
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
+  );
 });
 
 self.addEventListener('fetch', e => {

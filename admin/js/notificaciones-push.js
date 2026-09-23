@@ -276,13 +276,16 @@ var NotificacionesPush = (function() {
         alert('Permiso denegado. No vas poder recibir notificaciones.');
         return;
       }
-      // 2. Registrar service worker si no está
+      // 2. Usar el SW RAÍZ (scope /) para push, no el del admin
+      // Esto es CRÍTICO: el push solo funciona si el SW tiene scope /
       if (!('serviceWorker' in navigator)) {
         alert('Tu navegador no soporta service workers. No se puede activar push.');
         return;
       }
-      var reg = await navigator.serviceWorker.ready;
-      // 3. Suscribirse a push
+      // Registrar el SW raíz explícitamente
+      var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      await navigator.serviceWorker.ready;
+      // 3. Suscribirse a push usando el SW raíz
       var applicationServerKey = _urlBase64ToUint8Array(_vapidPublicKey);
       var subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -304,12 +307,6 @@ var NotificacionesPush = (function() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(subData)
       });
-      // 5. Registrar periodic sync (si está soportado)
-      if ('periodicSync' in reg) {
-        try {
-          var ps = await reg.periodicSync.register('check-pedidos', { minInterval: 12 * 60 * 60 * 1000 });
-        } catch (e) {}
-      }
       toast('Notificaciones activadas en este dispositivo');
       loadStatus();
       loadDevices();
