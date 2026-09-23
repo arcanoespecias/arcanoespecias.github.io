@@ -31,27 +31,27 @@ var WhatsAppNotifications = (function() {
 
   var PLANTILLAS_DEFAULT = {
     nuevo: {
-      mensaje: '\u00A1Hola {nombre}! \u{1F33F} Recibimos tu pedido #{id} en Arcano Especias por ${total}. Lo estamos revisando y te confirmamos en breve.',
+      mensaje: 'Hola {nombre}! Recibimos tu pedido #{id} en Arcano Especias por ${total}. Lo estamos revisando y te confirmamos en breve.',
       activo: true
     },
     confirmado: {
-      mensaje: '\u00A1Hola {nombre}! \u2705 Confirmamos tu pedido #{id} por ${total}. Lo estamos preparando con cuidado. Te avisamos cuando salga \u{1F4E6}',
+      mensaje: 'Hola {nombre}! Confirmamos tu pedido #{id} por ${total}. Lo estamos preparando con cuidado. Te avisamos cuando salga.',
       activo: true
     },
     enviado: {
-      mensaje: '\u{1F69A} {nombre}, tu pedido #{id} est\u00E1 en viaje! Lo recibir\u00E1s pronto. Si tienes dudas, escr\u00EDbenos por aqu\u00ED \u{1F33F}',
+      mensaje: '{nombre}, tu pedido #{id} esta en viaje! Lo recibiras pronto. Si tienes dudas, escribenos por aqui.',
       activo: true
     },
     entregado: {
-      mensaje: '\u00A1Hola {nombre}! \u{1F4E6} Tu pedido #{id} fue entregado. Esperamos que disfrutes tus blends. \u00BFC\u00F3mo fue tu experiencia? Cu\u00E9ntanos por aqu\u00ED \u{1F31F}',
+      mensaje: 'Hola {nombre}! Tu pedido #{id} fue entregado. Esperamos que disfrutes tus blends. Como fue tu experiencia? Escribenos por aqui.',
       activo: true
     },
     cancelado: {
-      mensaje: 'Hola {nombre}, tu pedido #{id} fue cancelado. Si tienes dudas o quieres reactivarlo, escr\u00EDbenos por aqu\u00ED \u{1F33F}',
+      mensaje: 'Hola {nombre}, tu pedido #{id} fue cancelado. Si tienes dudas o quieres reactivarlo, escribenos por aqui.',
       activo: false
     },
     pago_recibido: {
-      mensaje: '\u{1F4B0} \u00A1Gracias {nombre}! Recibimos tu pago de ${total} por el pedido #{id}. Lo estamos preparando para env\u00EDo \u{1F33F}',
+      mensaje: 'Gracias {nombre}! Recibimos tu pago de ${total} por el pedido #{id}. Lo estamos preparando para envio.',
       activo: true
     }
   };
