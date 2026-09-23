@@ -2,14 +2,18 @@ const Pages = {
   _qrPagoImage: localStorage.getItem('arcano_qr_pago_image') || '',
 
   // Helper global para construir links de WhatsApp con encoding UTF-8 correcto (emojis y acentos)
+  // IMPORTANTE: usar api.whatsapp.com directamente, NO wa.me
+  // wa.me rompe los emojis en el redirect 302 (los convierte a U+FFFD)
   _buildWaLink: function(telNorm, mensaje) {
     if (!telNorm) return '#';
     try {
       var params = new URLSearchParams();
       params.set('text', mensaje);
-      return 'https://wa.me/' + telNorm + '?' + params.toString();
+      params.set('phone', telNorm);
+      params.set('type', 'phone_number');
+      return 'https://api.whatsapp.com/send/?' + params.toString();
     } catch (e) {
-      return 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(mensaje);
+      return 'https://api.whatsapp.com/send/?phone=' + telNorm + '&text=' + encodeURIComponent(mensaje) + '&type=phone_number';
     }
   },
 
@@ -9723,7 +9727,7 @@ Pages.renderClientes = function(el) {
     for (var ri = 0; ri < recientes.length; ri++) {
       var r = recientes[ri];
       var telNorm = r.telNorm || '';
-      var waLink = telNorm ? 'https://wa.me/' + telNorm : '#';
+      var waLink = telNorm ? ('https://api.whatsapp.com/send/?phone=' + telNorm + '&type=phone_number') : '#';
       var tiempoStr = Pages._formatearTiempo(Date.now() - new Date(r.creado).getTime());
       h += '<tr>' +
         '<td class="fw7">' + esc(r.nombre || 'Sin nombre') + '</td>' +
@@ -9764,7 +9768,7 @@ Pages._renderClientesTable = function(clientes, totalPorCliente) {
     var ultimoPed = c.ultimoPedido ? new Date(c.ultimoPedido).toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '-';
     var tel = c.telefono || '';
     var telNorm = c.telNorm || '';
-    var waLink = telNorm ? 'https://wa.me/' + telNorm : '#';
+    var waLink = telNorm ? ('https://api.whatsapp.com/send/?phone=' + telNorm + '&type=phone_number') : '#';
     h += '<tr class="cliente-row" data-nombre="' + esc((c.nombre || '').toLowerCase()) + '" data-tel="' + esc(tel.toLowerCase()) + '" data-email="' + esc((c.email || '').toLowerCase()) + '">' +
       '<td class="fw7">' + esc(c.nombre || 'Sin nombre') + '</td>' +
       '<td><a href="' + waLink + '" target="_blank" style="color:var(--gold)">' + esc(tel) + '</a></td>' +

@@ -653,14 +653,17 @@ var WhatsAppNotifications = (function() {
   }
 
   function _buildWaLink(telNorm, mensaje) {
-    // Usar URLSearchParams para garantizar encoding UTF-8 correcto de emojis y acentos
+    // IMPORTANTE: usar api.whatsapp.com directamente, NO wa.me
+    // wa.me rompe los emojis en el redirect 302 (los convierte a U+FFFD �)
+    // api.whatsapp.com preserva los emojis correctamente
     try {
       var params = new URLSearchParams();
       params.set('text', mensaje);
-      return 'https://wa.me/' + telNorm + '?' + params.toString();
+      params.set('phone', telNorm);
+      params.set('type', 'phone_number');
+      return 'https://api.whatsapp.com/send/?' + params.toString();
     } catch (e) {
-      // Fallback
-      return 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(mensaje);
+      return 'https://api.whatsapp.com/send/?phone=' + telNorm + '&text=' + encodeURIComponent(mensaje) + '&type=phone_number';
     }
   }
 
