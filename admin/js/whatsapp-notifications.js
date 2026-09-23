@@ -59,7 +59,7 @@ var WhatsAppNotifications = (function() {
   var VARIABLES = [
     { var: '{nombre}', desc: 'Nombre del cliente' },
     { var: '{id}', desc: 'ID corto del pedido (\u00FAltimos 6 caracteres)' },
-    { var: '{total}', desc: 'Total del pedido en COP' },
+    { var: '{total}', desc: 'Total del pedido (numero sin $). Usar ${total} para incluir signo' },
     { var: '{estado}', desc: 'Estado actual del pedido' },
     { var: '{items}', desc: 'Lista de productos del pedido' },
     { var: '{cantidad}', desc: 'Cantidad total de items' },
@@ -461,7 +461,7 @@ var WhatsAppNotifications = (function() {
     var telNorm = _normalizeTel(tel);
     var mensaje = applyVariables(plantilla.mensaje, {
       nombre: cl.nombre || 'Cliente',
-      id: pedido._key,
+      id: (pedido._key || '').slice(-6).toUpperCase(),
       total: (pedido.total || 0).toLocaleString('es-CO'),
       estado: nuevoEstado,
       items: (pedido.items || []).map(function(it) { return (it.nombre || '?') + ' x' + (it.qty || 1); }).join(', '),
@@ -638,10 +638,11 @@ var WhatsAppNotifications = (function() {
   }
 
   function applyVariables(msg, data) {
+    // El total ya viene formateado como string. Solo reemplazamos la variable.
     return (msg || '')
       .replace(/\{nombre\}/g, data.nombre || 'Cliente')
       .replace(/\{id\}/g, data.id || '')
-      .replace(/\{total\}/g, '$' + (data.total || '0'))
+      .replace(/\{total\}/g, data.total || '0')
       .replace(/\{estado\}/g, data.estado || '')
       .replace(/\{items\}/g, data.items || '')
       .replace(/\{cantidad\}/g, data.cantidad || '0')
