@@ -477,7 +477,16 @@ function renderProducts(filter) {
     grid.innerHTML = '<div class="empty-state"><p>No hay productos disponibles.</p></div>';
     return;
   }
-  var filtered = filter && filter !== 'Todos' ? products.filter(function(p) { return (p.categorias || []).indexOf(filter) >= 0; }) : products;
+  var filtered;
+  if (!filter || filter === 'Todos') {
+    // "Todos" muestra todo excepto especias (se ven en su propio filtro)
+    filtered = products.filter(function(p) { return p.tipo !== 'especia'; });
+  } else if (filter === 'Especias') {
+    // Filtro "Especias" muestra solo productos de tipo especia
+    filtered = products.filter(function(p) { return p.tipo === 'especia'; });
+  } else {
+    filtered = products.filter(function(p) { return (p.categorias || []).indexOf(filter) >= 0; });
+  }
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="empty-state"><p>No hay productos en esta categoria.</p></div>';
     return;
