@@ -1,9 +1,0 @@
-{
-  "name": "arcanoespecias",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Arcano Especias — tienda online de especias y blends",
-  "dependencies": {
-    "webcrypto-web-push": "^1.0.2"
-  }
-}

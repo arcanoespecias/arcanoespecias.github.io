@@ -1,7 +1,6 @@
 /* ===================== CHATBOT ARCANO — WIDGET TIENDA =====================
- * Llama directamente a Gemini API desde el navegador.
+ * Llama directamente a Mistral AI desde el navegador.
  * Lee API key y config desde Firebase (configurable desde admin).
- * No depende de Cloudflare Pages Functions.
  */
 
 (function() {
@@ -228,36 +227,45 @@
       var config = (_config && _config.config) || {};
       var apiKey = config.apiKey;
 
-      if (!apiKey || !(apiKey.startsWith('AIzaSy') || apiKey.startsWith('AQ.'))) {
+      if (!apiKey) {
         removeTyping();
         _isTyping = false;
-        addMessage('bot', ' 🔮 El Guardián aún no despierta. Pedile al administrador que configure la API key de Gemini en el panel del chatbot. 🌿');
+        addMessage('bot', ' 🔮 El Guardián aún no despierta. Pedile al administrador que configure la API key en el panel del chatbot. 🌿');
         return;
       }
 
       var history = _messages.slice(-10).map(function(m) {
-        return { role: m.role === 'assistant' ? 'model' : 'user', content: m.content };
+        return { role: m.role === 'bot' ? 'assistant' : 'user', content: m.content };
       });
-      // Quitar el último user message (lo mandamos como nuevo contents)
+      // Quitar el último user message (lo mandamos como nuevo messages)
       history.pop();
 
       var systemPrompt = buildSystemPrompt(config, _catalogo);
 
-      // Llamar a Gemini directamente desde el navegador
-      var modelName = config.modelo || 'gemini-3.6-flash';
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
+      // Llamar a Mistral AI directamente desde el navegador
+      var modelName = config.modelo || 'mistral-small-latest';
+      var url = 'https://api.mistral.ai/v1/chat/completions';
+
+      // Mistral usa formato OpenAI: messages = [{role, content}]
+      var messages = [{ role: 'system', content: systemPrompt }];
+      if (history.length > 0) {
+        messages = messages.concat(history);
+      } else {
+        messages.push({ role: 'user', content: text });
+      }
 
       var resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: history.length > 0 ? history : [{ role: 'user', parts: [{ text: text }] }],
-          generationConfig: {
-            temperature: Number(config.temperature) || 0.7,
-            maxOutputTokens: 1200,
-            topP: 0.9
-          }
+          model: modelName,
+          messages: messages,
+          temperature: Number(config.temperature) || 0.7,
+          max_tokens: 1200,
+          top_p: 0.9
         })
       });
 
@@ -266,16 +274,16 @@
       _isTyping = false;
 
       if (!resp.ok) {
-        console.error('[chatbot] Gemini error:', data);
+        console.error('[chatbot] Mistral error:', data);
         var errMsg = 'Disculpá, tuve un problema técnico. ';
         if (resp.status === 429) errMsg += 'Límite de consultas alcanzado. Intentá de nuevo en unos minutos. 🌿';
-        else if (resp.status === 400) errMsg += 'Error en la configuración del bot. 🌿';
+        else if (resp.status === 401) errMsg += 'API key inválida. Avisale al administrador. 🌿';
         else errMsg += 'Intentá de nuevo en un momento. 🌿';
         addMessage('bot', errMsg);
         return;
       }
 
-      var reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Disculpá, no pude procesar tu consulta. 🌿';
+      var reply = data?.choices?.[0]?.message?.content || 'Disculpá, no pude procesar tu consulta. 🌿';
       var mentionedIds = extractBlendIds(reply, _catalogo);
       var cleanReply = reply.replace(/\[ID:\d+\]/g, '').trim();
       addMessage('bot', cleanReply, mentionedIds);
@@ -383,7 +391,7 @@
       }).join('\n');
     }
 
-    return personalidad + '\n\nREGLAS:\n- Respondé en español rioplatense neutro, tono cálido y místico.\n- Recomendá SIEMPRE blends del catálogo (no inventes productos).\n- Máximo 3 blends por respuesta. Si recomendás más de uno, explicá la diferencia.\n- Si mencionás un blend, incluí su ID entre corchetes [ID:N] para que el frontend muestre la tarjeta. Ejemplo: "Para pollo a la parrilla te recomiendo [ID:34] Garam Masala Clásico...".\n- Si la consulta no es sobre cocina/especias, derivá a WhatsApp.\n- Nunca des precios en USD, siempre COP con $.\n- No uses markdown con ## o **, usá texto plano con emojis 🌶🌿.\n- Si el usuario pregunta por envíos, pagos o pedidos, derivá a WhatsApp.\n\nPALABRAS BLOQUEADAS: ' + (bloqueadas || 'ninguna') + '\n\nCATÁLOGO DE BLENDS:\n' + catalogoStr;
+    return personalidad + '\n\nREGLAS:\n- Respondé SIEMPRE en español neutro internacional (sin argentinismos, sin "vos", sin "che"). Usá "tú" y "usted" según convenga.\n- Tono cálido, místico, pero profesional.\n- Recomendá SIEMPRE blends del catálogo (no inventes productos).\n- Máximo 3 blends por respuesta. Si recomendás más de uno, explicá la diferencia.\n- Si mencionás un blend, incluí su ID entre corchetes [ID:N] para que el frontend muestre la tarjeta. Ejemplo: "Para pollo a la parrilla te recomiendo [ID:34] Garam Masala Clásico...".\n- Si la consulta no es sobre cocina/especias, derivá a WhatsApp.\n- Nunca des precios en USD, siempre COP con $.\n- No uses markdown con ## o **, usá texto plano con emojis 🌶🌿.\n- Si el usuario pregunta por envíos, pagos o pedidos, derivá a WhatsApp.\n\nPALABRAS BLOQUEADAS: ' + (bloqueadas || 'ninguna') + '\n\nCATÁLOGO DE BLENDS:\n' + catalogoStr;
   }
 
   function extractBlendIds(text, catalogo) {

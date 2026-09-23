@@ -52,8 +52,8 @@ var ChatbotPanel = (function() {
         '</div>' +
         '<div id="cb-config-section" class="cb-section">' +
           '<h3>⚙️ Configuración</h3>' +
-          '<div class="cb-row"><label>API Key de Gemini</label><input type="password" id="cb-apikey" placeholder="AIzaSy... (de aistudio.google.com/apikey)"><button class="cb-btn sec" onclick="ChatbotPanel.saveApiKey()">Guardar</button></div>' +
-          '<div class="cb-row"><label>Modelo</label><select id="cb-modelo"><option value="gemini-3.6-flash">gemini-3.6-flash (recomendado)</option><option value="gemini-2.5-flash">gemini-2.5-flash</option><option value="gemini-2.0-flash">gemini-2.0-flash (legacy)</option><option value="gemini-1.5-flash">gemini-1.5-flash (legacy)</option></select></div>' +
+          '<div class="cb-row"><label>API Key de Mistral AI</label><input type="password" id="cb-apikey" placeholder="mstrl_... (de console.mistral.ai)"><button class="cb-btn sec" onclick="ChatbotPanel.saveApiKey()">Guardar</button></div>' +
+          '<div class="cb-row"><label>Modelo</label><select id="cb-modelo"><option value="mistral-small-latest">mistral-small-latest (recomendado, rápido)</option><option value="mistral-medium-latest">mistral-medium-latest (equilibrio)</option><option value="mistral-large-latest">mistral-large-latest (avanzado)</option><option value="open-mistral-nemo">open-mistral-nemo (open source)</option></select></div>' +
           '<div class="cb-row"><label>Creatividad (0-1)</label><input type="range" id="cb-temp" min="0" max="1" step="0.1" value="0.7"><span id="cb-temp-val">0.7</span></div>' +
           '<div class="cb-row"><label>Saludo inicial</label><textarea id="cb-saludo" rows="2"></textarea></div>' +
           '<div class="cb-row"><label>Personalidad</label><textarea id="cb-personalidad" rows="4"></textarea></div>' +
@@ -108,8 +108,7 @@ var ChatbotPanel = (function() {
     var api = document.getElementById('cb-api-status');
     if (api) {
       var key = _config.config?.apiKey;
-      // Aceptar formatos AIzaSy... y AQ.Ab8RN6K... (nuevo Gemini 2026)
-      if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) api.innerHTML = '<span style="color:#4ade80">✓ Key configurada</span>';
+      if (key && key.startsWith('mstrl_')) api.innerHTML = '<span style="color:#4ade80">✓ Key Mistral configurada</span>';
       else api.innerHTML = '<span style="color:#f87171">✗ Sin configurar</span>';
     }
   }
@@ -117,7 +116,7 @@ var ChatbotPanel = (function() {
   function renderConfig() {
     var c = _config.config || {};
     setVal('cb-apikey', c.apiKey || '');
-    setVal('cb-modelo', c.modelo || 'gemini-3.6-flash');
+    setVal('cb-modelo', c.modelo || 'mistral-small-latest');
     setVal('cb-temp', c.temperature ?? 0.7);
     document.getElementById('cb-temp-val').textContent = c.temperature ?? 0.7;
     setVal('cb-saludo', c.saludo || 'Bienvenido, viajero. Soy el Guardián de Arcano. Contame qué vas a cocinar y te guiaré hacia el blend perfecto.');
@@ -155,9 +154,8 @@ var ChatbotPanel = (function() {
   async function saveApiKey() {
     var key = getVal('cb-apikey').trim();
     if (!key) { alert('Ingresá la API key'); return; }
-    // Aceptar formatos AIzaSy... (legacy) y AQ.Ab8RN6K... (nuevo formato Gemini 2026)
-    if (!key.startsWith('AIzaSy') && !key.startsWith('AQ.')) {
-      if (!confirm('La key no empieza con "AIzaSy" ni "AQ.". ¿Estás seguro que es una API key de Gemini válida?')) return;
+    if (!key.startsWith('mstrl_')) {
+      if (!confirm('La key no empieza con "mstrl_". ¿Estás seguro que es una API key de Mistral AI válida?')) return;
     }
     try {
       await fetch(FB_URL + '/config/apiKey.json', {
@@ -291,26 +289,34 @@ var ChatbotPanel = (function() {
     try {
       var config = _config.config || {};
       var apiKey = config.apiKey;
-      if (!apiKey || !(apiKey.startsWith('AIzaSy') || apiKey.startsWith('AQ.'))) {
-        alert('Error: API key no configurada. Pegala arriba y hacé clic en "Guardar".');
+      if (!apiKey || !apiKey.startsWith('mstrl_')) {
+        alert('Error: API key de Mistral no configurada. Pegala arriba y hacé clic en "Guardar".');
         return;
       }
-      var modelName = config.modelo || 'gemini-3.6-flash';
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
+      var modelName = config.modelo || 'mistral-small-latest';
+      var url = 'https://api.mistral.ai/v1/chat/completions';
       var resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Hola, recomendame un blend para pollo. Respondé en español, máx 3 oraciones.' }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
+          model: modelName,
+          messages: [
+            { role: 'system', content: 'Sos un asesor culinario que responde en español neutro internacional (sin argentinismos, sin vos). Máx 3 oraciones.' },
+            { role: 'user', content: 'Hola, recomendame un blend para pollo' }
+          ],
+          temperature: 0.7,
+          max_tokens: 300
         })
       });
       var data = await resp.json();
       if (!resp.ok) {
         console.error('[chatbot] test error:', data);
-        alert('Error ' + resp.status + ': ' + (data?.error?.message || 'Error desconocido'));
+        alert('Error ' + resp.status + ': ' + (data?.message || data?.error?.message || 'Error desconocido'));
       } else {
-        var reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '(sin respuesta)';
+        var reply = data?.choices?.[0]?.message?.content || '(sin respuesta)';
         alert('✅ Bot funcionando:\n\n' + reply);
       }
     } catch (e) {
