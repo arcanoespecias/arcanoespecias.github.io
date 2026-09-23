@@ -178,7 +178,12 @@ var ArcanoSEO = (function() {
     }
     var title = nombre + ' | ' + titleSuffix + ' | Arcano Colombia';
     var metaDesc = descripcion;
-    if (metaDesc.length > 155) metaDesc = metaDesc.substring(0, 152).replace(/\s+\S*$/, '') + '...';
+    if (metaDesc.length > 155) {
+      metaDesc = metaDesc.substring(0, 155);
+      var lastSpace = metaDesc.lastIndexOf(' ');
+      if (lastSpace > 100) metaDesc = metaDesc.substring(0, lastSpace);
+      metaDesc = metaDesc.replace(/[,\s]+$/, '') + '...';
+    }
     if (!metaDesc) metaDesc = nombre + ' — mezcla de especias artesanal sin conservantes. Compra online con envíos a toda Colombia.';
 
     var h1 = nombre;
@@ -195,6 +200,8 @@ var ArcanoSEO = (function() {
       name: nombre,
       description: descripcion || metaDesc,
       image: urlImagen,
+      sku: String(blend.id),
+      mpn: String(blend.id),
       brand: {'@type':'Brand', name:'Arcano Especias'},
       category: categoria,
       offers: {
@@ -202,7 +209,8 @@ var ArcanoSEO = (function() {
         url: urlCanonical,
         priceCurrency: 'COP',
         price: String(precioChico),
-        availability: 'https://schema.org/InStock'
+        availability: 'https://schema.org/InStock',
+        itemCondition: 'https://schema.org/NewCondition'
       }
     };
     if (precioGrande > 0) {
@@ -397,7 +405,13 @@ var ArcanoSEO = (function() {
     ];
 
     var title = label + ' | Arcano Colombia';
-    var metaDesc = intro.substring(0, 155);
+    var metaDesc = intro;
+    if (metaDesc.length > 155) {
+      metaDesc = metaDesc.substring(0, 155);
+      var ls = metaDesc.lastIndexOf(' ');
+      if (ls > 100) metaDesc = metaDesc.substring(0, ls);
+      metaDesc = metaDesc.replace(/[,\s]+$/, '') + '...';
+    }
     if (intro.length < 130) metaDesc += ' Envíos a toda Colombia.';
 
     // JSON-LD ItemList
