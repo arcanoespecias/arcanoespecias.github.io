@@ -13,11 +13,12 @@
 /js/*
   Cache-Control: public, max-age=31536000, immutable
   Content-Type: application/javascript; charset=utf-8
+# Admin JS/CSS: cache corto (sin immutable) para que tome cambios rápido
 /admin/css/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=0, must-revalidate
   Content-Type: text/css; charset=utf-8
 /admin/js/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=0, must-revalidate
   Content-Type: application/javascript; charset=utf-8
 
 # Imágenes: cache largo

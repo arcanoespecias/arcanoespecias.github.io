@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcano-admin-v1';
+const CACHE_NAME = 'arcano-admin-v2';
 const BASE_PATH = '/admin/';
 const STATIC_ASSETS = [
   BASE_PATH,
