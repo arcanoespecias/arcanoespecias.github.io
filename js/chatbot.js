@@ -244,7 +244,7 @@
       var systemPrompt = buildSystemPrompt(config, _catalogo);
 
       // Llamar a Gemini directamente desde el navegador
-      var modelName = config.modelo || 'gemini-2.0-flash';
+      var modelName = config.modelo || 'gemini-3.6-flash';
       var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
 
       var resp = await fetch(url, {

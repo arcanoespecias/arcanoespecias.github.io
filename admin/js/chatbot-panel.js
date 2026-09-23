@@ -53,7 +53,7 @@ var ChatbotPanel = (function() {
         '<div id="cb-config-section" class="cb-section">' +
           '<h3>⚙️ Configuración</h3>' +
           '<div class="cb-row"><label>API Key de Gemini</label><input type="password" id="cb-apikey" placeholder="AIzaSy... (de aistudio.google.com/apikey)"><button class="cb-btn sec" onclick="ChatbotPanel.saveApiKey()">Guardar</button></div>' +
-          '<div class="cb-row"><label>Modelo</label><select id="cb-modelo"><option value="gemini-2.0-flash">gemini-2.0-flash (rápido)</option><option value="gemini-2.5-flash">gemini-2.5-flash (avanzado)</option><option value="gemini-1.5-flash">gemini-1.5-flash (legacy)</option></select></div>' +
+          '<div class="cb-row"><label>Modelo</label><select id="cb-modelo"><option value="gemini-3.6-flash">gemini-3.6-flash (recomendado)</option><option value="gemini-2.5-flash">gemini-2.5-flash</option><option value="gemini-2.0-flash">gemini-2.0-flash (legacy)</option><option value="gemini-1.5-flash">gemini-1.5-flash (legacy)</option></select></div>' +
           '<div class="cb-row"><label>Creatividad (0-1)</label><input type="range" id="cb-temp" min="0" max="1" step="0.1" value="0.7"><span id="cb-temp-val">0.7</span></div>' +
           '<div class="cb-row"><label>Saludo inicial</label><textarea id="cb-saludo" rows="2"></textarea></div>' +
           '<div class="cb-row"><label>Personalidad</label><textarea id="cb-personalidad" rows="4"></textarea></div>' +
@@ -117,7 +117,7 @@ var ChatbotPanel = (function() {
   function renderConfig() {
     var c = _config.config || {};
     setVal('cb-apikey', c.apiKey || '');
-    setVal('cb-modelo', c.modelo || 'gemini-2.0-flash');
+    setVal('cb-modelo', c.modelo || 'gemini-3.6-flash');
     setVal('cb-temp', c.temperature ?? 0.7);
     document.getElementById('cb-temp-val').textContent = c.temperature ?? 0.7;
     setVal('cb-saludo', c.saludo || 'Bienvenido, viajero. Soy el Guardián de Arcano. Contame qué vas a cocinar y te guiaré hacia el blend perfecto.');
@@ -295,7 +295,7 @@ var ChatbotPanel = (function() {
         alert('Error: API key no configurada. Pegala arriba y hacé clic en "Guardar".');
         return;
       }
-      var modelName = config.modelo || 'gemini-2.0-flash';
+      var modelName = config.modelo || 'gemini-3.6-flash';
       var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
       var resp = await fetch(url, {
         method: 'POST',
