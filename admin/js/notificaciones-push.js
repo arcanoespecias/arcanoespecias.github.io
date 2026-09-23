@@ -30,6 +30,7 @@ var NotificacionesPush = (function() {
             '<div class="notif-actions">' +
               '<button class="notif-btn notif-btn-gold" id="notif-enable-btn" onclick="NotificacionesPush.activar()">Activar notificaciones</button>' +
               '<button class="notif-btn notif-btn-outline" id="notif-test-btn" onclick="NotificacionesPush.enviarTest()" style="display:none">🔔 Probar notificación</button>' +
+              '<button class="notif-btn notif-btn-outline" onclick="NotificacionesPush.diagnosticar()">🔍 Diagnosticar</button>' +
               '<button class="notif-btn notif-btn-sec" id="notif-disable-btn" onclick="NotificacionesPush.desactivar()" style="display:none">Desactivar</button>' +
             '</div>' +
           '</div>' +
@@ -354,14 +355,95 @@ var NotificacionesPush = (function() {
       var data = await r.json();
       if (data.ok) {
         toast('Notificación enviada. Debería llegar en unos segundos.');
+        // Mostrar detalle en consola para debug
+        console.log('[Push] Test enviado:', data);
       } else {
-        alert('No se pudo enviar: ' + (data.error || JSON.stringify(data)));
+        var errMsg = data.error || JSON.stringify(data);
+        alert('No se pudo enviar: ' + errMsg);
+        console.error('[Push] Error enviando test:', data);
       }
     } catch (e) {
       alert('Error: ' + e.message);
+      console.error('[Push] Exception:', e);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '🔔 Probar notificación'; }
     }
+  }
+
+  async function diagnosticar() {
+    var output = [];
+    output.push('=== DIAGNÓSTICO DE NOTIFICACIONES PUSH ===\n');
+    
+    // 1. Service Worker
+    output.push('1. Service Worker:');
+    if (!('serviceWorker' in navigator)) {
+      output.push('   ✗ No soportado');
+    } else {
+      var regs = await navigator.serviceWorker.getRegistrations();
+      output.push('   Registrations encontradas: ' + regs.length);
+      for (var i = 0; i < regs.length; i++) {
+        output.push('   - scope: ' + regs[i].scope);
+        output.push('     active: ' + (regs[i].active ? 'sí' : 'no'));
+        output.push('     scriptURL: ' + regs[i].active?.scriptURL);
+      }
+      var reg = await navigator.serviceWorker.ready;
+      output.push('   SW ready: ' + (reg ? 'sí' : 'no'));
+    }
+    output.push('');
+    
+    // 2. Permiso de notificaciones
+    output.push('2. Permiso de notificaciones:');
+    if (!('Notification' in window)) {
+      output.push('   ✗ No soportado');
+    } else {
+      output.push('   Permission: ' + Notification.permission);
+    }
+    output.push('');
+    
+    // 3. Push subscription
+    output.push('3. Push subscription:');
+    if ('serviceWorker' in navigator) {
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        output.push('   ✓ Suscripto');
+        output.push('   endpoint: ' + sub.endpoint);
+        output.push('   expirationTime: ' + sub.expirationTime);
+      } else {
+        output.push('   ✗ No hay suscripción');
+      }
+    }
+    output.push('');
+    
+    // 4. VAPID key configurada
+    output.push('4. VAPID key:');
+    try {
+      var r = await fetch(FB_BASE + '/pushConfig.json');
+      var data = r.ok ? await r.json() : null;
+      if (data && data.vapidPublicKey) {
+        output.push('   ✓ Configurada (len=' + data.vapidPublicKey.length + ')');
+        output.push('   Public key (primeros 30): ' + data.vapidPublicKey.substring(0, 30) + '...');
+      } else {
+        output.push('   ✗ No configurada');
+      }
+    } catch (e) {
+      output.push('   ✗ Error: ' + e.message);
+    }
+    output.push('');
+    
+    // 5. Llamar al status del API
+    output.push('5. Estado del API (/api/notify-admin?action=status):');
+    try {
+      var r = await fetch(PUSH_API + '?action=status');
+      var data = await r.json();
+      output.push('   ' + JSON.stringify(data, null, 2).split('\n').join('\n   '));
+    } catch (e) {
+      output.push('   ✗ Error: ' + e.message);
+    }
+    
+    var report = output.join('\n');
+    console.log(report);
+    alert(report);
   }
 
   function _urlBase64ToUint8Array(base64String) {
@@ -423,6 +505,7 @@ var NotificacionesPush = (function() {
     activar: activar,
     desactivar: desactivar,
     enviarTest: enviarTest,
+    diagnosticar: diagnosticar,
     guardarVapidKey: guardarVapidKey,
     mostrarPrivate: mostrarPrivate,
     borrarDispositivo: borrarDispositivo
