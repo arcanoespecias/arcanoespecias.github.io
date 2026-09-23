@@ -933,6 +933,7 @@ function getVentas() {
 function saveEspecia(data) {
   _ensureStructure();
   var isNew = !data.id;
+  var oldImagen = null;
   if (isNew) {
     data.id = nextId('especias');
     data.creado = new Date().toISOString();
@@ -945,7 +946,12 @@ function saveEspecia(data) {
         }
       }
       data.creado = existing.creado;
+      oldImagen = existing.imagen || null;
     }
+  }
+  // Si la imagen cambio, registrar timestamp para cache-busting en la tienda
+  if (data.imagen && data.imagen !== oldImagen) {
+    data.imagenUpdatedAt = Date.now();
   }
   data.nombre = (data.nombre || '').trim();
   if (Array.isArray(data.categorias) && data.categorias.length > 0) {
@@ -980,6 +986,7 @@ function deleteEspecia(id) {
 function saveBlend(data) {
   _ensureStructure();
   var isNew = !data.id;
+  var oldImagen = null;
   if (isNew) {
     data.id = nextId('blends');
     data.creado = new Date().toISOString();
@@ -992,7 +999,12 @@ function saveBlend(data) {
         }
       }
       data.creado = existing.creado;
+      oldImagen = existing.imagen || null;
     }
+  }
+  // Si la imagen cambio, registrar timestamp para cache-busting en la tienda
+  if (data.imagen && data.imagen !== oldImagen) {
+    data.imagenUpdatedAt = Date.now();
   }
   data.nombre = (data.nombre || '').trim();
   if (Array.isArray(data.categorias) && data.categorias.length > 0) {

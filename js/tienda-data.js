@@ -23,11 +23,12 @@ function initTienda() {
 
     // === CACHE LOCAL: cargar datos cacheados instant\u00E1neamente ===
     var CACHE_KEY = 'arcano_tienda_cache';
+    var CACHE_TTL = 2 * 60 * 1000; // 2 minutos (antes 5) para ver cambios mas rapido
     var cacheValid = false;
     try {
       var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-      if (cached.timestamp && (Date.now() - cached.timestamp) < 5 * 60 * 1000) {
-        // Cache v\u00E1lido por 5 minutos
+      if (cached.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL) {
+        // Cache v\u00E1lido por 2 minutos
         for (var cp = 0; cp < neededPaths.length; cp++) {
           var path = neededPaths[cp];
           if (cached[path]) {
@@ -630,9 +631,17 @@ function getTiendaConfig() {
 }
 
 /* === FIX DE URLs: reemplazar dominio viejo por nuevo en im\u00E1genes === */
-function _fixImageUrl(url) {
+function _fixImageUrl(url, updatedAt) {
   if (!url) return '';
-  return url.replace(/https?:\/\/arcanoespecias\.github\.io/g, 'https://arcanoespecias.com');
+  var fixed = url.replace(/https?:\/\/arcanoespecias\.github\.io/g, 'https://arcanoespecias.com');
+  // Cache-busting: si la imagen fue actualizada recientemente, agregar ?v=timestamp
+  // para evitar que el navegador muestre la imagen vieja cacheada
+  if (updatedAt && (Date.now() - updatedAt) < 24 * 60 * 60 * 1000) {
+    // Solo agregar cache-buster si la imagen fue actualizada en las ultimas 24h
+    var separator = fixed.indexOf('?') >= 0 ? '&' : '?';
+    fixed = fixed + separator + 'v=' + updatedAt;
+  }
+  return fixed;
 }
 
 function getStoreProducts() {
@@ -642,24 +651,28 @@ function getStoreProducts() {
   for (var i = 0; i < ek.length; i++) {
     var e = _sDb.especias[ek[i]];
     if (!e || !e.enTienda) continue;
+    var eUpdated = e.imagenUpdatedAt || e.actualizadoEn || e.creado || 0;
+    if (typeof eUpdated === 'string') eUpdated = new Date(eUpdated).getTime() || 0;
     products.push({
       id: e.id, nombre: e.nombre, tipo: 'especia', categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
       precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
       stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0, stockPala: e.stockBolsa || 0, enBlend: e.enBlend !== false,
-      region: '', uso: e.uso || '', descripcion: e.descripcion || '', imagen: _fixImageUrl(e.imagen), tags: e.tags || []
+      region: '', uso: e.uso || '', descripcion: e.descripcion || '', imagen: _fixImageUrl(e.imagen, eUpdated), tags: e.tags || []
     });
   }
   var bk = Object.keys(_sDb.blends || {});
   for (var i = 0; i < bk.length; i++) {
     var b = _sDb.blends[bk[i]];
     if (!b || !b.enTienda) continue;
+    var bUpdated = b.imagenUpdatedAt || b.actualizadoEn || b.creado || 0;
+    if (typeof bUpdated === 'string') bUpdated = new Date(bUpdated).getTime() || 0;
     products.push({
       id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
       stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
-      region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: _fixImageUrl(b.imagen), tags: b.tags || [],
+      region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: _fixImageUrl(b.imagen, bUpdated), tags: b.tags || [],
       ingredientes: b.ingredientes || []
     });
   }
@@ -669,11 +682,13 @@ function getStoreProducts() {
     if (!pk || !pk.enTienda) continue;
     var packStock = pk.stock || 0;
     if (packStock <= 0) continue;
+    var pkUpdated = pk.imagenUpdatedAt || pk.actualizadoEn || pk.creado || 0;
+    if (typeof pkUpdated === 'string') pkUpdated = new Date(pkUpdated).getTime() || 0;
     products.push({
       id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
       precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
       stockChico: 0, stockGrande: 0, stock: packStock,
-      region: '', uso: '', descripcion: pk.descripcion || '', imagen: _fixImageUrl(pk.imagen), tags: pk.tags || [],
+      region: '', uso: '', descripcion: pk.descripcion || '', imagen: _fixImageUrl(pk.imagen, pkUpdated), tags: pk.tags || [],
       blendItems: pk.blendItems || []
     });
   }
