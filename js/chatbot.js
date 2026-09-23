@@ -1,6 +1,7 @@
 /* ===================== CHATBOT ARCANO — WIDGET TIENDA =====================
- * Carga el chat, dialoga con /api/chat, recomienda blends del catálogo.
- * Lee configuración desde Firebase (chatbot/activo, chatbot/config).
+ * Llama directamente a Gemini API desde el navegador.
+ * Lee API key y config desde Firebase (configurable desde admin).
+ * No depende de Cloudflare Pages Functions.
  */
 
 (function() {
@@ -8,7 +9,8 @@
 
   var SESSION_KEY = 'arcano_chat_session';
   var SESSION_ID_KEY = 'arcano_chat_sid';
-  var CONFIG_CACHE_TTL = 5 * 60 * 1000; // 5 min
+  var CONFIG_CACHE_TTL = 5 * 60 * 1000;
+  var FB_URL = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
   var _config = null;
   var _configTs = 0;
   var _catalogo = null;
@@ -16,18 +18,12 @@
   var _sessionId = null;
   var _messages = [];
   var _isTyping = false;
-  var _lastConfigCheck = 0;
 
-  // Elementos DOM
   var $toggle, $window, $messages, $input, $send, $quickReplies;
 
   function init() {
-    // No inicializar si estamos en admin
     if (window.location.pathname.startsWith('/admin')) return;
-
-    // Cargar config desde Firebase y crear widget si está activo
     checkAndRender();
-    // Recheck cada 2 min por si el admin lo activa/desactiva
     setInterval(checkAndRender, 2 * 60 * 1000);
   }
 
@@ -46,7 +42,7 @@
   async function loadConfig() {
     if (_config && (Date.now() - _configTs) < CONFIG_CACHE_TTL) return _config;
     try {
-      var r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot.json');
+      var r = await fetch(FB_URL + '/chatbot.json');
       if (!r.ok) return null;
       var data = await r.json();
       _config = data || { activo: false, config: {} };
@@ -59,7 +55,6 @@
   }
 
   function renderWidget() {
-    // CSS
     if (!document.getElementById('arcano-chatbot-css')) {
       var link = document.createElement('link');
       link.id = 'arcano-chatbot-css';
@@ -68,7 +63,6 @@
       document.head.appendChild(link);
     }
 
-    // Toggle button
     $toggle = document.createElement('button');
     $toggle.className = 'arcano-chat-toggle';
     $toggle.setAttribute('aria-label', 'Abrir chat de Arcano');
@@ -76,7 +70,6 @@
     $toggle.addEventListener('click', toggleChat);
     document.body.appendChild($toggle);
 
-    // Chat window
     $window = document.createElement('div');
     $window.className = 'arcano-chat-window';
     $window.innerHTML =
@@ -112,15 +105,12 @@
       }
     });
 
-    // Restaurar sesión previa
     loadSession();
     if (_messages.length === 0) {
-      // Saludo inicial del bot
       var saludo = (_config.config && _config.config.saludo) || 'Bienvenido, viajero. Soy el Guardián de Arcano. Contame qué vas a cocinar y te guiaré hacia el blend perfecto.';
       addMessage('bot', saludo);
       showQuickReplies(getDefaultQuickReplies());
     } else {
-      // Re-renderizar mensajes
       _messages.forEach(function(m) {
         renderMessage(m.role, m.content, m.productos);
       });
@@ -132,7 +122,6 @@
     $toggle.classList.toggle('open', _isOpen);
     $window.classList.toggle('open', _isOpen);
     if (_isOpen) {
-      // Marcar como leído
       var badge = $toggle.querySelector('.arcano-chat-toggle-badge');
       if (badge) badge.classList.remove('show');
       setTimeout(function() { $messages.scrollTop = $messages.scrollHeight; }, 100);
@@ -179,7 +168,6 @@
     div.textContent = content;
     $messages.appendChild(div);
 
-    // Renderizar tarjetas de producto si mencionó IDs
     if (role === 'bot' && productos && productos.length) {
       productos.forEach(function(pid) {
         var p = findProductById(pid);
@@ -209,13 +197,11 @@
   }
 
   function addToCart(product) {
-    // Hook a la función de carrito existente
     if (typeof window.addToCart === 'function') {
       window.addToCart(product.id, 'chico');
     } else if (typeof window.ArcanoCart === 'object' && window.ArcanoCart.add) {
       window.ArcanoCart.add(product.id, 1, 'chico');
     } else {
-      // Disparar evento para que la tienda lo capture
       document.dispatchEvent(new CustomEvent('arcano:addToCart', { detail: { productId: product.id, talla: 'chico' } }));
     }
   }
@@ -228,7 +214,6 @@
     $input.value = '';
     $quickReplies.innerHTML = '';
 
-    // Typing indicator
     _isTyping = true;
     var typing = document.createElement('div');
     typing.className = 'arcano-msg bot arcano-typing';
@@ -238,61 +223,87 @@
     $messages.scrollTop = $messages.scrollHeight;
 
     try {
-      // Cargar catálogo si no está cargado
       if (!_catalogo) _catalogo = await loadCatalogo();
 
-      // Preparar mensajes para Gemini (últimos 10)
+      var config = (_config && _config.config) || {};
+      var apiKey = config.apiKey;
+
+      if (!apiKey || !(apiKey.startsWith('AIzaSy') || apiKey.startsWith('AQ.'))) {
+        removeTyping();
+        _isTyping = false;
+        addMessage('bot', ' 🔮 El Guardián aún no despierta. Pedile al administrador que configure la API key de Gemini en el panel del chatbot. 🌿');
+        return;
+      }
+
       var history = _messages.slice(-10).map(function(m) {
-        return { role: m.role, content: m.content };
+        return { role: m.role === 'assistant' ? 'model' : 'user', content: m.content };
       });
-      // Quitar el último (que ya es el que mandamos y va de nuevo)
+      // Quitar el último user message (lo mandamos como nuevo contents)
       history.pop();
 
-      var config = (_config && _config.config) || {};
+      var systemPrompt = buildSystemPrompt(config, _catalogo);
 
-      var resp = await fetch('/api/chat', {
+      // Llamar a Gemini directamente desde el navegador
+      var modelName = config.modelo || 'gemini-2.0-flash';
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
+
+      var resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: history,
-          catalogo: _catalogo,
-          config: config,
-          sessionId: _sessionId
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: history.length > 0 ? history : [{ role: 'user', parts: [{ text: text }] }],
+          generationConfig: {
+            temperature: Number(config.temperature) || 0.7,
+            maxOutputTokens: 1200,
+            topP: 0.9
+          }
         })
       });
 
       var data = await resp.json();
-      var typingEl = document.getElementById('arcano-typing');
-      if (typingEl) typingEl.remove();
+      removeTyping();
       _isTyping = false;
 
-      if (data.error) {
-        addMessage('bot', 'Disculpá, tuve un problema técnico. Intentá de nuevo en un momento. 🌿');
-      } else {
-        // Limpiar [ID:N] del texto visible (lo usamos internamente)
-        var cleanReply = data.reply.replace(/\[ID:\d+\]/g, '').trim();
-        addMessage('bot', cleanReply, data.productosMencionados || []);
+      if (!resp.ok) {
+        console.error('[chatbot] Gemini error:', data);
+        var errMsg = 'Disculpá, tuve un problema técnico. ';
+        if (resp.status === 429) errMsg += 'Límite de consultas alcanzado. Intentá de nuevo en unos minutos. 🌿';
+        else if (resp.status === 400) errMsg += 'Error en la configuración del bot. 🌿';
+        else errMsg += 'Intentá de nuevo en un momento. 🌿';
+        addMessage('bot', errMsg);
+        return;
+      }
 
-        // Mostrar quick replies genéricos después de la 1era respuesta
-        if (_messages.length <= 2) {
-          showQuickReplies([
-            { label: 'Ver más blends', text: 'Mostrame más opciones' },
-            { label: 'Por categoría', text: '¿Qué categorías de blends tienen?' },
-            { label: 'Cómo usarlo', text: '¿Cómo uso los blends?' }
-          ]);
-        }
+      var reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Disculpá, no pude procesar tu consulta. 🌿';
+      var mentionedIds = extractBlendIds(reply, _catalogo);
+      var cleanReply = reply.replace(/\[ID:\d+\]/g, '').trim();
+      addMessage('bot', cleanReply, mentionedIds);
+
+      // Log asíncrono a Firebase (fire and forget)
+      logConversation(_sessionId, text, reply, mentionedIds);
+
+      if (_messages.length <= 2) {
+        showQuickReplies([
+          { label: 'Ver más blends', text: 'Mostrame más opciones' },
+          { label: 'Por categoría', text: '¿Qué categorías de blends tienen?' },
+          { label: 'Cómo usarlo', text: '¿Cómo uso los blends?' }
+        ]);
       }
     } catch (e) {
       console.error('[chatbot] send error:', e);
-      var typingEl = document.getElementById('arcano-typing');
-      if (typingEl) typingEl.remove();
+      removeTyping();
       _isTyping = false;
-      addMessage('bot', 'Disculpá, hubo un problema de conexión. 🌿');
+      addMessage('bot', ' 🔌 Hubo un problema de conexión. Intentá de nuevo. 🌿');
     }
   }
 
+  function removeTyping() {
+    var t = document.getElementById('arcano-typing');
+    if (t) t.remove();
+  }
+
   async function loadCatalogo() {
-    // Reutilizar catálogo ya cargado en la tienda
     if (typeof getProducts === 'function') return getProducts();
     if (window._sDb && window._sDb.blends) {
       var productos = [];
@@ -322,9 +333,8 @@
       }
       return productos;
     }
-    // Fallback: leer de Firebase
     try {
-      var r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/blends.json');
+      var r = await fetch(FB_URL + '/blends.json');
       var blends = await r.json();
       var out = [];
       if (Array.isArray(blends)) {
@@ -361,7 +371,70 @@
     } catch (e) {}
   }
 
-  // Init when DOM ready
+  function buildSystemPrompt(config, catalogo) {
+    var personalidad = config?.personalidad || 'Sos el "Guardián de Arcano", asesor culinario místico de Arcano Especias, tienda colombiana de especias y blends artesanales.';
+    var saludo = config?.saludo || '';
+    var bloqueadas = (config?.palabrasBloqueadas || []).join(', ');
+
+    var catalogoStr = 'Ninguno';
+    if (catalogo && catalogo.length) {
+      catalogoStr = catalogo.map(function(b) {
+        return 'ID:' + b.id + ' | ' + b.nombre + ' | ' + b.categoria + ' | ' + (b.uso || '') + ' | $' + b.precioChico + '/$' + b.precioGrande + ' | ' + (b.descripcion?.slice(0, 200) || '');
+      }).join('\n');
+    }
+
+    return personalidad + '\n\nREGLAS:\n- Respondé en español rioplatense neutro, tono cálido y místico.\n- Recomendá SIEMPRE blends del catálogo (no inventes productos).\n- Máximo 3 blends por respuesta. Si recomendás más de uno, explicá la diferencia.\n- Si mencionás un blend, incluí su ID entre corchetes [ID:N] para que el frontend muestre la tarjeta. Ejemplo: "Para pollo a la parrilla te recomiendo [ID:34] Garam Masala Clásico...".\n- Si la consulta no es sobre cocina/especias, derivá a WhatsApp.\n- Nunca des precios en USD, siempre COP con $.\n- No uses markdown con ## o **, usá texto plano con emojis 🌶🌿.\n- Si el usuario pregunta por envíos, pagos o pedidos, derivá a WhatsApp.\n\nPALABRAS BLOQUEADAS: ' + (bloqueadas || 'ninguna') + '\n\nCATÁLOGO DE BLENDS:\n' + catalogoStr;
+  }
+
+  function extractBlendIds(text, catalogo) {
+    var ids = new Set();
+    var matches = text.match(/\[ID:(\d+)\]/g) || [];
+    matches.forEach(function(m) {
+      var id = parseInt(m.match(/\d+/)[0]);
+      if (catalogo?.find(function(b) { return b.id === id; })) ids.add(id);
+    });
+    return Array.from(ids);
+  }
+
+  function logConversation(sessionId, userMsg, botReply, mentionedIds) {
+    try {
+      var logRef = FB_URL + '/chatbot/conversaciones/' + sessionId + '.json';
+      fetch(logRef).then(function(r) { return r.json(); }).then(function(existing) {
+        var mensajes = existing?.mensajes || [];
+        mensajes.push({ role: 'user', content: userMsg, ts: Date.now() });
+        mensajes.push({ role: 'assistant', content: botReply, productosMencionados: mentionedIds, ts: Date.now() + 1 });
+        var payload = {
+          sessionId: sessionId,
+          inicio: existing?.inicio || Date.now(),
+          ultimoMensaje: Date.now(),
+          mensajes: mensajes.slice(-20),
+          productosRecomendados: [...new Set([...(existing?.productosRecomendados || []), ...mentionedIds])],
+          cantMensajes: mensajes.length
+        };
+        return fetch(logRef, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }).then(function() {
+        // Incrementar métricas diarias
+        var hoy = new Date().toISOString().slice(0, 10);
+        var metricRef = FB_URL + '/chatbot/estadisticas/porDia/' + hoy + '.json';
+        return fetch(metricRef).then(function(r) { return r.json(); }).then(function(cur) {
+          cur = cur || {};
+          return fetch(metricRef, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mensajes: (cur.mensajes || 0) + 1,
+              conversaciones: existing ? (cur.conversaciones || 0) : (cur.conversaciones || 0) + 1
+            })
+          });
+        });
+      }).catch(function() {});
+    } catch (e) {}
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

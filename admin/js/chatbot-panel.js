@@ -289,21 +289,32 @@ var ChatbotPanel = (function() {
     var btn = event?.target;
     if (btn) { btn.disabled = true; btn.textContent = 'Probando...'; }
     try {
-      var r = await fetch('/api/chat', {
+      var config = _config.config || {};
+      var apiKey = config.apiKey;
+      if (!apiKey || !(apiKey.startsWith('AIzaSy') || apiKey.startsWith('AQ.'))) {
+        alert('Error: API key no configurada. Pegala arriba y hacé clic en "Guardar".');
+        return;
+      }
+      var modelName = config.modelo || 'gemini-2.0-flash';
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
+      var resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: 'Hola, recomendame un blend para pollo' }],
-          catalogo: [],
-          config: _config.config,
-          sessionId: 'test-' + Date.now()
+          contents: [{ role: 'user', parts: [{ text: 'Hola, recomendame un blend para pollo. Respondé en español, máx 3 oraciones.' }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
         })
       });
-      var data = await r.json();
-      if (data.error) alert('Error: ' + data.error);
-      else alert('Respuesta del bot:\n\n' + data.reply);
+      var data = await resp.json();
+      if (!resp.ok) {
+        console.error('[chatbot] test error:', data);
+        alert('Error ' + resp.status + ': ' + (data?.error?.message || 'Error desconocido'));
+      } else {
+        var reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '(sin respuesta)';
+        alert('✅ Bot funcionando:\n\n' + reply);
+      }
     } catch (e) {
-      alert('Error: ' + e.message);
+      alert('Error de conexión: ' + e.message);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Probar chat'; }
     }
