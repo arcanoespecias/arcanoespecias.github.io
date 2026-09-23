@@ -258,22 +258,26 @@ async function generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
   const payloadB64 = base64UrlEncode(JSON.stringify(payload));
   const signingInput = headerB64 + '.' + payloadB64;
 
-  // Importar private key
+  // Convertir la raw private key (32 bytes) a formato PKCS8 DER
+  // Web Crypto no acepta raw ECDSA private keys, solo PKCS8 o JWK
+  const pkcs8Der = rawP256PrivateKeyToPkcs8(privKeyBytes);
+
   let cryptoKey;
   try {
-    // Intentar importar como raw P-256 private key (32 bytes)
+    // Importar como PKCS8
     cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      privKeyBytes,
+      'pkcs8',
+      pkcs8Der,
       { name: 'ECDSA', namedCurve: 'P-256' },
       false,
       ['sign']
     );
   } catch (e) {
-    // Si falla, intentar como PKCS8
+    // Si falla PKCS8, intentar como JWK
+    const jwk = rawPrivateKeyToJwk(privKeyBytes);
     cryptoKey = await crypto.subtle.importKey(
-      'pkcs8',
-      pemToDer(privateKeyStr),
+      'jwk',
+      jwk,
       { name: 'ECDSA', namedCurve: 'P-256' },
       false,
       ['sign']
@@ -290,6 +294,87 @@ async function generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
   const signatureB64 = base64UrlEncodeBytes(new Uint8Array(rawSignature));
 
   return signingInput + '.' + signatureB64;
+}
+
+// Convertir raw P-256 private key (32 bytes) a PKCS8 DER
+// Estructura PKCS8 para P-256:
+// SEQUENCE {
+//   INTEGER 0 (version),
+//   SEQUENCE { OID 1.2.840.10045.2.1 (ecPublicKey), OID 1.2.840.10045.3.1.7 (P-256) },
+//   OCTET STRING { SEQUENCE { INTEGER 1, OCTET STRING { <32-byte private key> } } }
+// }
+function rawP256PrivateKeyToPkcs8(rawKey) {
+  if (rawKey.length !== 32) {
+    throw new Error('Invalid raw P-256 private key length: ' + rawKey.length + ' (expected 32). Las VAPID keys de web-push generadas con npx son raw 32 bytes.');
+  }
+
+  // OID for ecPublicKey (1.2.840.10045.2.1)
+  const OID_EC_PUBLIC_KEY = [0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01];
+  // OID for P-256 / prime256v1 (1.2.840.10045.3.1.7)
+  const OID_P256 = [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07];
+
+  // Build inner EC private key SEQUENCE { INTEGER 1, OCTET STRING(32) privKey }
+  // INTEGER 1: 02 01 01
+  // OCTET STRING(32): 04 20 <32 bytes>
+  const integerOne = [0x02, 0x01, 0x01];
+  const octetString32 = [0x04, 0x20];
+  const ecPrivContent = new Uint8Array(integerOne.length + octetString32.length + 32);
+  let off = 0;
+  for (let i = 0; i < integerOne.length; i++) ecPrivContent[off++] = integerOne[i];
+  for (let i = 0; i < octetString32.length; i++) ecPrivContent[off++] = octetString32[i];
+  ecPrivContent.set(rawKey, off);
+  
+  // Wrap in SEQUENCE
+  const ecPrivSeq = new Uint8Array(2 + ecPrivContent.length);
+  ecPrivSeq[0] = 0x30;
+  ecPrivSeq[1] = ecPrivContent.length;
+  ecPrivSeq.set(ecPrivContent, 2);
+  
+  // OCTET STRING wrapping the EC private key SEQUENCE
+  const octetStringWrapper = new Uint8Array(2 + ecPrivSeq.length);
+  octetStringWrapper[0] = 0x04;
+  octetStringWrapper[1] = ecPrivSeq.length;
+  octetStringWrapper.set(ecPrivSeq, 2);
+  
+  // AlgorithmIdentifier: SEQUENCE { OID ecPublicKey, OID P-256 }
+  const algIdContent = new Uint8Array(OID_EC_PUBLIC_KEY.length + OID_P256.length);
+  algIdContent.set(OID_EC_PUBLIC_KEY, 0);
+  algIdContent.set(OID_P256, OID_EC_PUBLIC_KEY.length);
+  const algId = new Uint8Array(2 + algIdContent.length);
+  algId[0] = 0x30;
+  algId[1] = algIdContent.length;
+  algId.set(algIdContent, 2);
+  
+  // version INTEGER 0
+  const version = [0x02, 0x01, 0x00];
+  
+  // Top-level SEQUENCE { version, algId, OCTET STRING(ecPrivSeq) }
+  const topContent = new Uint8Array(version.length + algId.length + octetStringWrapper.length);
+  let off2 = 0;
+  for (let i = 0; i < version.length; i++) topContent[off2++] = version[i];
+  topContent.set(algId, off2); off2 += algId.length;
+  topContent.set(octetStringWrapper, off2); off2 += octetStringWrapper.length;
+  
+  const pkcs8 = new Uint8Array(2 + topContent.length);
+  pkcs8[0] = 0x30;
+  pkcs8[1] = topContent.length;
+  pkcs8.set(topContent, 2);
+  
+  return pkcs8.buffer;
+}
+
+// Alternativa: convertir raw private key a JWK
+function rawPrivateKeyToJwk(rawKey) {
+  // Convertir 32 bytes a base64url
+  const d = base64UrlEncodeBytes(rawKey);
+  return {
+    kty: 'EC',
+    crv: 'P-256',
+    d: d,
+    // x e y no son necesarios para signing, pero algunos navegadores los requieren
+    // Los dejamos vacíos y esperamos que funcione
+    ext: true
+  };
 }
 
 // Encriptar payload con aes128gcm (RFC 8291)
