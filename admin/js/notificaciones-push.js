@@ -277,14 +277,21 @@ var NotificacionesPush = (function() {
         return;
       }
       // 2. Usar el SW RAÍZ (scope /) para push, no el del admin
-      // Esto es CRÍTICO: el push solo funciona si el SW tiene scope /
       if (!('serviceWorker' in navigator)) {
         alert('Tu navegador no soporta service workers. No se puede activar push.');
         return;
       }
-      // Registrar el SW raíz explícitamente
+      
+      // Registrar el SW raíz explícitamente y esperar a que esté ACTIVO
       var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      await navigator.serviceWorker.ready;
+      
+      // Esperar a que el SW esté activo (no solo registrado)
+      // Esto es CRÍTICO: si el SW no está active, PushManager.subscribe falla
+      await _waitForSWActive(reg);
+      
+      // Doble verificación: navigator.serviceWorker.ready
+      reg = await navigator.serviceWorker.ready;
+      
       // 3. Suscribirse a push usando el SW raíz
       var applicationServerKey = _urlBase64ToUint8Array(_vapidPublicKey);
       var subscription = await reg.pushManager.subscribe({
@@ -312,7 +319,47 @@ var NotificacionesPush = (function() {
       loadDevices();
     } catch (e) {
       alert('Error: ' + e.message);
+      console.error('[Push] Error en activar():', e);
     }
+  }
+
+  // Helper: esperar a que el SW esté en estado 'activated'
+  function _waitForSWActive(registration) {
+    return new Promise(function(resolve, reject) {
+      if (registration.active) {
+        // Ya está activo
+        resolve(registration);
+        return;
+      }
+      
+      var sw = registration.installing || registration.waiting;
+      if (!sw) {
+        // No hay SW instalando/esperando — esperar a navigator.serviceWorker.ready
+        navigator.serviceWorker.ready.then(resolve).catch(reject);
+        return;
+      }
+      
+      // Escuchar cambios de estado
+      function checkState() {
+        if (sw.state === 'activated') {
+          sw.removeEventListener('statechange', checkState);
+          resolve(registration);
+        } else if (sw.state === 'redundant') {
+          sw.removeEventListener('statechange', checkState);
+          reject(new Error('Service Worker falló al instalar (redundant)'));
+        }
+      }
+      sw.addEventListener('statechange', checkState);
+      // Llamar una vez por si ya cambió
+      checkState();
+      
+      // Timeout de seguridad (10s)
+      setTimeout(function() {
+        sw.removeEventListener('statechange', checkState);
+        // Aún así intentar resolver — quizás ya está activo
+        navigator.serviceWorker.ready.then(resolve).catch(reject);
+      }, 10000);
+    });
   }
 
   async function desactivar() {
