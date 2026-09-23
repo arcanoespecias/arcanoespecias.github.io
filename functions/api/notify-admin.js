@@ -149,8 +149,14 @@ export async function onRequestGet({ request, env }) {
       const count = subsData ? Object.keys(subsData).length : 0;
       return new Response(JSON.stringify({
         suscripciones: count,
-        vapid_configurado: !!(env?.VAPID_PUBLIC_KEY && env?.VAPID_PRIVATE_KEY)
-      }), { headers: CORS_HEADERS });
+        vapid_configurado: !!(env?.VAPID_PUBLIC_KEY && env?.VAPID_PRIVATE_KEY),
+        // Debug: ver qué variables de entorno llegan (sin mostrar valores)
+        env_keys_disponibles: env ? Object.keys(env) : [],
+        tiene_vapid_public: !!env?.VAPID_PUBLIC_KEY,
+        tiene_vapid_private: !!env?.VAPID_PRIVATE_KEY,
+        tiene_vapid_subject: !!env?.VAPID_SUBJECT,
+        tiene_firebase_rtdb: !!env?.FIREBASE_RTDB_URL
+      }, null, 2), { headers: CORS_HEADERS });
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), {
         status: 500, headers: CORS_HEADERS
