@@ -73,12 +73,26 @@ var NotificacionesPush = (function() {
         '<div class="notif-section">' +
           '<div class="notif-card">' +
             '<h4 class="notif-card-title">⚙️ Configuración VAPID</h4>' +
-            '<p class="notif-card-desc">La VAPID public key es necesaria para suscribirse. Ingresala una sola vez (se guarda en Firebase para todos los dispositivos).</p>' +
-            '<div class="notif-vapid-row">' +
-              '<input type="text" class="notif-input" id="notif-vapid-input" placeholder="VAPID public key (empieza con B...)" style="flex:1">' +
-              '<button class="notif-btn notif-btn-gold" onclick="NotificacionesPush.guardarVapidKey()">Guardar</button>' +
+            '<p class="notif-card-desc">Las VAPID keys son necesarias para que las notificaciones push funcionen. Las generaste con <code>npx web-push generate-vapid-keys</code>. Se guardan en Firebase.</p>' +
+            '<div class="notif-vapid-form">' +
+              '<label class="text-sm text-muted">VAPID Public Key (empieza con B...)</label>' +
+              '<div class="notif-vapid-row">' +
+                '<input type="text" class="notif-input" id="notif-vapid-public" placeholder="BG9...">' +
+              '</div>' +
+              '<label class="text-sm text-muted mt-8">VAPID Private Key</label>' +
+              '<div class="notif-vapid-row">' +
+                '<input type="password" class="notif-input" id="notif-vapid-private" placeholder="xXx...">' +
+              '</div>' +
+              '<label class="text-sm text-muted mt-8">Subject (mail o URL)</label>' +
+              '<div class="notif-vapid-row">' +
+                '<input type="text" class="notif-input" id="notif-vapid-subject" placeholder="mailto:admin@arcanoespecias.com" value="mailto:arcanoespecias@gmail.com">' +
+              '</div>' +
+              '<div class="mt-12">' +
+                '<button class="notif-btn notif-btn-gold" onclick="NotificacionesPush.guardarVapidKey()">💾 Guardar keys</button>' +
+                ' <button class="notif-btn notif-btn-outline" onclick="NotificacionesPush.mostrarPrivate()" id="notif-toggle-private">👁 Mostrar private</button>' +
+              '</div>' +
             '</div>' +
-            '<p class="text-xs text-muted mt-8">La key privada no se necesita acá — solo se usa en el servidor (Cloudflare).</p>' +
+            '<p class="text-xs text-muted mt-8">⚠️ La private key se guarda en Firebase. Es accesible públicamente con tus reglas actuales. Para tu caso (tienda pequeña) es aceptable. El riesgo máximo es que alguien te envíe notificaciones no deseadas.</p>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -100,30 +114,61 @@ var NotificacionesPush = (function() {
 
   async function loadVapidKey() {
     try {
-      var r = await fetch(FB_BASE + '/pushConfig/vapidPublicKey.json');
-      var key = r.ok ? await r.json() : null;
-      _vapidPublicKey = key;
-      var input = document.getElementById('notif-vapid-input');
-      if (input && key) input.value = key;
+      var r = await fetch(FB_BASE + '/pushConfig.json');
+      var data = r.ok ? await r.json() : null;
+      if (!data) data = {};
+      _vapidPublicKey = data.vapidPublicKey || null;
+      var pubInput = document.getElementById('notif-vapid-public');
+      var privInput = document.getElementById('notif-vapid-private');
+      var subjInput = document.getElementById('notif-vapid-subject');
+      if (pubInput && data.vapidPublicKey) pubInput.value = data.vapidPublicKey;
+      if (privInput && data.vapidPrivateKey) privInput.value = data.vapidPrivateKey;
+      if (subjInput && data.vapidSubject) subjInput.value = data.vapidSubject;
     } catch (e) {}
   }
 
   async function guardarVapidKey() {
-    var input = document.getElementById('notif-vapid-input');
-    if (!input) return;
-    var key = input.value.trim();
-    if (!key) { alert('Ingresá la VAPID public key'); return; }
-    if (key.length < 80) { if (!confirm('La key parece muy corta. ¿Es una VAPID public key válida?')) return; }
+    var pubInput = document.getElementById('notif-vapid-public');
+    var privInput = document.getElementById('notif-vapid-private');
+    var subjInput = document.getElementById('notif-vapid-subject');
+    if (!pubInput || !privInput || !subjInput) return;
+    var publicKey = pubInput.value.trim();
+    var privateKey = privInput.value.trim();
+    var subject = subjInput.value.trim();
+    if (!publicKey) { alert('Ingresá la VAPID public key'); return; }
+    if (!privateKey) { alert('Ingresá la VAPID private key'); return; }
+    if (!subject) { alert('Ingresá el subject (mail o URL)'); return; }
+    if (publicKey.length < 80) { if (!confirm('La public key parece muy corta. ¿Es válida?')) return; }
+    if (privateKey.length < 30) { if (!confirm('La private key parece muy corta. ¿Es válida?')) return; }
     try {
-      await fetch(FB_BASE + '/pushConfig/vapidPublicKey.json', {
-        method: 'PUT',
+      var config = {
+        vapidPublicKey: publicKey,
+        vapidPrivateKey: privateKey,
+        vapidSubject: subject,
+        actualizadoEn: Date.now()
+      };
+      await fetch(FB_BASE + '/pushConfig.json', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(key)
+        body: JSON.stringify(config)
       });
-      _vapidPublicKey = key;
-      toast('VAPID public key guardada');
+      _vapidPublicKey = publicKey;
+      toast('VAPID keys guardadas en Firebase');
     } catch (e) {
       alert('Error: ' + e.message);
+    }
+  }
+
+  function mostrarPrivate() {
+    var inp = document.getElementById('notif-vapid-private');
+    var btn = document.getElementById('notif-toggle-private');
+    if (!inp) return;
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      if (btn) btn.textContent = '🙈 Ocultar private';
+    } else {
+      inp.type = 'password';
+      if (btn) btn.textContent = '👁 Mostrar private';
     }
   }
 
@@ -379,6 +424,7 @@ var NotificacionesPush = (function() {
     desactivar: desactivar,
     enviarTest: enviarTest,
     guardarVapidKey: guardarVapidKey,
+    mostrarPrivate: mostrarPrivate,
     borrarDispositivo: borrarDispositivo
   };
 })();

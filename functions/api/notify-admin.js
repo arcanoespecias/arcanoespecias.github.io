@@ -1,6 +1,7 @@
 // /api/notify-admin.js — Cloudflare Pages Function
 // Notificaciones Web Push al admin — sin dependencias externas
 // Implementa VAPID (RFC 8292) + Web Push Encryption (RFC 8291) con Web Crypto API nativo
+// Lee las VAPID keys desde Firebase (configuradas desde el panel del admin)
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,36 @@ const CORS_HEADERS = {
 };
 
 const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
+
+// Cache en memoria de las VAPID keys (no las lee en cada request)
+let _cachedVapid = null;
+let _cachedVapidTs = 0;
+const VAPID_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+async function getVapidKeys() {
+  // Usar cache si está fresco
+  if (_cachedVapid && (Date.now() - _cachedVapidTs) < VAPID_CACHE_TTL) {
+    return _cachedVapid;
+  }
+  try {
+    const r = await fetch(`${FB_BASE}/pushConfig.json`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (!data || !data.vapidPublicKey || !data.vapidPrivateKey || !data.vapidSubject) {
+      return null;
+    }
+    _cachedVapid = {
+      publicKey: data.vapidPublicKey,
+      privateKey: data.vapidPrivateKey,
+      subject: data.vapidSubject
+    };
+    _cachedVapidTs = Date.now();
+    return _cachedVapid;
+  } catch (e) {
+    console.error('[notify-admin] Error leyendo VAPID de Firebase:', e);
+    return null;
+  }
+}
 
 export async function onRequestPost({ request, env }) {
   if (request.method === 'OPTIONS') {
@@ -26,15 +57,15 @@ export async function onRequestPost({ request, env }) {
       });
     }
 
-    // Verificar VAPID keys
-    if (!env?.VAPID_PRIVATE_KEY || !env?.VAPID_PUBLIC_KEY || !env?.VAPID_SUBJECT) {
+    // 1. Leer VAPID keys desde Firebase
+    const vapid = await getVapidKeys();
+    if (!vapid) {
       return new Response(JSON.stringify({
-        error: 'VAPID keys no configuradas en Cloudflare Environment Variables.',
-        hint: 'Agregar VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT en Pages > Settings > Environment Variables'
+        error: 'VAPID keys no configuradas. Pedile al admin que las cargue desde el panel de Notificaciones (sección "Configuración VAPID").'
       }), { status: 500, headers: CORS_HEADERS });
     }
 
-    // 1. Leer suscripciones push del admin desde Firebase
+    // 2. Leer suscripciones push del admin desde Firebase
     const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
     if (!subRes.ok) {
       return new Response(JSON.stringify({ error: 'No se pudieron leer suscripciones' }), {
@@ -50,7 +81,7 @@ export async function onRequestPost({ request, env }) {
       }), { status: 200, headers: CORS_HEADERS });
     }
 
-    // 2. Construir payload del push
+    // 3. Construir payload del push
     const payload = JSON.stringify({
       titulo: titulo,
       mensaje: mensaje,
@@ -59,7 +90,7 @@ export async function onRequestPost({ request, env }) {
       timestamp: Date.now()
     });
 
-    // 3. Enviar push a cada suscripción
+    // 4. Enviar push a cada suscripción
     const results = [];
     const subKeys = Object.keys(subsData);
     for (const subKey of subKeys) {
@@ -79,11 +110,7 @@ export async function onRequestPost({ request, env }) {
             }
           },
           payload,
-          vapid: {
-            subject: env.VAPID_SUBJECT,
-            privateKey: env.VAPID_PRIVATE_KEY,
-            publicKey: env.VAPID_PUBLIC_KEY
-          }
+          vapid
         });
         results.push({ subKey, status: 'sent' });
       } catch (err) {
@@ -144,18 +171,16 @@ export async function onRequestGet({ request, env }) {
 
   if (action === 'status') {
     try {
+      const vapid = await getVapidKeys();
       const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
       const subsData = subRes.ok ? await subRes.json() : null;
       const count = subsData ? Object.keys(subsData).length : 0;
       return new Response(JSON.stringify({
         suscripciones: count,
-        vapid_configurado: !!(env?.VAPID_PUBLIC_KEY && env?.VAPID_PRIVATE_KEY),
-        // Debug: ver qué variables de entorno llegan (sin mostrar valores)
-        env_keys_disponibles: env ? Object.keys(env) : [],
-        tiene_vapid_public: !!env?.VAPID_PUBLIC_KEY,
-        tiene_vapid_private: !!env?.VAPID_PRIVATE_KEY,
-        tiene_vapid_subject: !!env?.VAPID_SUBJECT,
-        tiene_firebase_rtdb: !!env?.FIREBASE_RTDB_URL
+        vapid_configurado: !!(vapid && vapid.publicKey && vapid.privateKey),
+        vapid_tiene_public: !!(vapid?.publicKey),
+        vapid_tiene_private: !!(vapid?.privateKey),
+        vapid_tiene_subject: !!(vapid?.subject)
       }, null, 2), { headers: CORS_HEADERS });
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), {
@@ -175,8 +200,6 @@ export async function onRequestGet({ request, env }) {
 }
 
 // ===================== WEB PUSH IMPLEMENTATION =====================
-// Implementacion de VAPID JWT + Web Push Encryption usando solo Web Crypto API
-// Sin dependencias externas — funciona nativamente en Cloudflare Pages Functions
 
 async function sendWebPush({ subscription, payload, vapid }) {
   const { endpoint, keys } = subscription;
@@ -217,56 +240,7 @@ async function sendWebPush({ subscription, payload, vapid }) {
 }
 
 // Generar VAPID JWT (ES256)
-async function generateVapidJWT(subject, publicKey, publicKeyStr) {
-  // Si privateKey es una string base64url, decodificarla
-  let privKeyBytes;
-  if (typeof privateKey === 'string') {
-    privKeyBytes = base64UrlToBytes(privateKey);
-  } else {
-    privKeyBytes = privateKey;
-  }
-
-  // Header
-  const header = { typ: 'JWT', alg: 'ES256' };
-  // Payload
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 12 * 60 * 60; // 12 horas
-  const aud = new URL(subject).origin;
-  const payload = {
-    aud: aud,
-    exp: exp,
-    sub: subject
-  };
-
-  const headerB64 = base64UrlEncode(JSON.stringify(header));
-  const payloadB64 = base64UrlEncode(JSON.stringify(payload));
-  const signingInput = headerB64 + '.' + payloadB64;
-
-  // Importar private key para usar con Web Crypto
-  const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8',
-    pemToDer(privateKey),
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  );
-
-  // Firmar
-  const signature = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
-    cryptoKey,
-    new TextEncoder().encode(signingInput)
-  );
-
-  // Convertir firma DER a R+S (formato JWT ES256)
-  const rawSignature = derToRaw(signature);
-  const signatureB64 = base64UrlEncodeBytes(rawSignature);
-
-  return signingInput + '.' + signatureB64;
-}
-
-// Función corregida para generar VAPID JWT
-async function _generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
+async function generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
   // Decodificar private key de base64url a bytes
   const privKeyBytes = base64UrlToBytes(privateKeyStr);
 
@@ -285,7 +259,6 @@ async function _generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
   const signingInput = headerB64 + '.' + payloadB64;
 
   // Importar private key
-  // VAPID private key es una key P-256 raw (32 bytes) o PEM
   let cryptoKey;
   try {
     // Intentar importar como raw P-256 private key (32 bytes)
@@ -297,7 +270,7 @@ async function _generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
       ['sign']
     );
   } catch (e) {
-    // Si falla, intentar como PKCS8 PEM
+    // Si falla, intentar como PKCS8
     cryptoKey = await crypto.subtle.importKey(
       'pkcs8',
       pemToDer(privateKeyStr),
@@ -351,79 +324,61 @@ async function encryptPayload(payload, p256dhB64, authB64) {
     256
   );
 
-  // HKDF: derivar clave de encriptación y nonce (RFC 8291)
-  // IKM = sharedSecret, salt = auth, info = "WebPush: info\0" || p256dh || ephemeralPublicKey
-  const authSecret = auth;
+  // HKDF para derivar CEK y nonce
   const ikm = new Uint8Array(sharedSecret);
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
-  // Info para HKDF
   const infoKey = new Uint8Array(
-    15 +  // "WebPush: info\0"
-    p256dh.length +
-    ephemeralPublicKeyBytes.length
+    15 + p256dh.length + ephemeralPublicKeyBytes.length
   );
   const infoLabel = new TextEncoder().encode('WebPush: info\0');
   infoKey.set(infoLabel, 0);
   infoKey.set(p256dh, infoLabel.length);
   infoKey.set(ephemeralPublicKeyBytes, infoLabel.length + p256dh.length);
 
-  // Derivar CEK (content encryption key, 16 bytes)
   const cekInfo = new TextEncoder().encode('Content-Encoding: aes128gcm\0');
   const cek = await hkdf(ikm, salt, cekInfo, 16);
 
-  // Derivar nonce (12 bytes)
   const nonceInfo = new TextEncoder().encode('Content-Encoding: nonce\0');
   const nonce = await hkdf(ikm, salt, nonceInfo, 12);
 
-  // Construir payload final segun RFC 8188:
-  // header (21 bytes ephemeral pubkey + ...) + ciphertext + padding + tag
+  // Construir input para encriptar: plaintext || delimiter (0x02)
   const plaintext = new TextEncoder().encode(payload);
-  const paddingSize = 0; // sin padding adicional
-  const recordSize = 4096;
-  const ciphertextLength = plaintext.length + 16 + 1; // 16 = tag, 1 = delimiter
-
-  // Construir input para encriptar: plaintext || padding || delimiter (0x02)
   const inputBytes = new Uint8Array(plaintext.length + 1);
   inputBytes.set(plaintext, 0);
-  inputBytes[plaintext.length] = 0x02; // delimiter de fin
+  inputBytes[plaintext.length] = 0x02;
 
   // Encriptar con AES-128-GCM
-  const iv = nonce;
   const aesKey = await crypto.subtle.importKey('raw', cek, { name: 'AES-GCM' }, false, ['encrypt']);
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: iv, tagLength: 128 },
+    { name: 'AES-GCM', iv: nonce, tagLength: 128 },
     aesKey,
     inputBytes
   );
   const encryptedBytes = new Uint8Array(encrypted);
 
   // Construir mensaje final RFC 8188 aes128gcm
-  // Format: salt (16) || recordSize (4) || keyid (ephemeral pubkey length, 1 byte = 65) || ephemeralPublicKey (65) || ciphertext+tag
   const keyIdLen = ephemeralPublicKeyBytes.length; // 65
   const finalPayload = new Uint8Array(16 + 4 + 1 + keyIdLen + encryptedBytes.length);
 
   let offset = 0;
   finalPayload.set(salt, offset); offset += 16;
-  // recordSize = 4096 (big endian uint32)
   finalPayload[offset++] = 0x00;
   finalPayload[offset++] = 0x00;
   finalPayload[offset++] = 0x10;
   finalPayload[offset++] = 0x00;
-  finalPayload[offset++] = keyIdLen; // keyid length (1 byte, = 65)
+  finalPayload[offset++] = keyIdLen;
   finalPayload.set(ephemeralPublicKeyBytes, offset); offset += keyIdLen;
   finalPayload.set(encryptedBytes, offset);
 
   return finalPayload;
 }
 
-// HKDF (HMAC-based Key Derivation Function, RFC 5869)
 async function hkdf(ikm, salt, info, length) {
   const saltKey = await crypto.subtle.importKey('raw', salt, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const prk = await crypto.subtle.sign('HMAC', saltKey, ikm);
   const prkKey = await crypto.subtle.importKey('raw', prk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
 
-  // T(i) = HMAC(PRK, T(i-1) || info || counter)
   const infoWithCounter = new Uint8Array(info.length + 1);
   infoWithCounter.set(info, 0);
   infoWithCounter[info.length] = 1;
@@ -431,7 +386,6 @@ async function hkdf(ikm, salt, info, length) {
   const t1 = await crypto.subtle.sign('HMAC', prkKey, infoWithCounter);
   if (length <= 32) return t1.slice(0, length);
 
-  // Si necesita más de 32 bytes, generar T(2)
   const infoWithCounter2 = new Uint8Array(info.length + 32 + 1);
   infoWithCounter2.set(new Uint8Array(t1), 0);
   infoWithCounter2.set(info, 32);
@@ -444,40 +398,30 @@ async function hkdf(ikm, salt, info, length) {
   return combined.slice(0, length);
 }
 
-// Convertir DER signature a raw R+S (64 bytes)
 function derToRaw(derSignature) {
   const der = new Uint8Array(derSignature);
-  // DER format: 0x30 || totalLen || 0x02 || rLen || r || 0x02 || sLen || s
-  let offset = 2; // skip 0x30 and totalLen
+  let offset = 2;
   if (der[1] & 0x80) {
-    // Long form length
     const lenBytes = der[1] & 0x7f;
     offset = 2 + lenBytes;
   }
-
-  // r
   if (der[offset] !== 0x02) throw new Error('Invalid DER: expected 0x02 for r');
   offset++;
   const rLen = der[offset];
   offset++;
   const r = der.slice(offset, offset + rLen);
   offset += rLen;
-
-  // s
   if (der[offset] !== 0x02) throw new Error('Invalid DER: expected 0x02 for s');
   offset++;
   const sLen = der[offset];
   offset++;
   const s = der.slice(offset, offset + sLen);
 
-  // Pad r and s to 32 bytes each (handling leading zeros)
   const rPadded = padToLength(r, 32);
   const sPadded = padToLength(s, 32);
-
   const raw = new Uint8Array(64);
   raw.set(rPadded, 0);
   raw.set(sPadded, 32);
-
   return raw;
 }
 
@@ -489,9 +433,7 @@ function padToLength(arr, length) {
   return padded;
 }
 
-// Helpers de encoding
 function base64UrlToBytes(b64url) {
-  // Pad to multiple of 4
   let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
   while (b64.length % 4) b64 += '=';
   const binary = atob(b64);
@@ -512,27 +454,22 @@ function base64UrlEncodeBytes(bytes) {
 }
 
 function pemToDer(pem) {
-  // Si ya es bytes, devolver
   if (typeof pem !== 'string') return pem;
-  // Quitar headers PEM si los tiene
   const cleaned = pem
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
     .replace(/-----END PRIVATE KEY-----/g, '')
     .replace(/-----BEGIN EC PRIVATE KEY-----/g, '')
     .replace(/-----END EC PRIVATE KEY-----/g, '')
     .replace(/\s+/g, '');
-  // Si despues de limpiar quedan caracteres, era PEM
   if (cleaned.length > 0 && /^[A-Za-z0-9+/_=-]+$/.test(cleaned)) {
     return base64UrlToBytes(cleaned);
   }
-  // Si no, es base64url directo
   return base64UrlToBytes(pem);
 }
 
 function extractAudience(subject) {
   try {
     if (subject.startsWith('mailto:')) {
-      // Para mailto, usar el origin del push service (default)
       return 'https://fcm.googleapis.com';
     }
     return new URL(subject).origin;
