@@ -1,0 +1,384 @@
+/* ===================== NOTIFICACIONES PUSH — Admin Panel =====================
+ * Gestiona suscripción a Web Push (FCM/Google push service para Chrome Android)
+ * Funciona incluso con la PWA cerrada (en Android).
+ */
+
+var NotificacionesPush = (function() {
+
+  var FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
+  var PUSH_API = '/api/notify-admin';
+  // VAPID public key se lee desde Firebase (configurada por el admin)
+  var _vapidPublicKey = null;
+  var _currentSubscription = null;
+
+  function renderPanel(container) {
+    container.innerHTML =
+      '<div class="notif-panel">' +
+        _styles() +
+        '<h2 style="color:var(--gold,#d4af37);margin:0 0 4px">🔔 Notificaciones Push</h2>' +
+        '<p style="color:var(--text-muted,#8a7a6e);margin:0 0 20px;font-size:0.9rem">Recibí alertas en tu celular aunque la app esté cerrada (Android)</p>' +
+
+        '<div class="notif-section">' +
+          '<div class="notif-card' + (Notification.permission === 'granted' ? ' active' : '') + '">' +
+            '<div class="notif-status-row">' +
+              '<div>' +
+                '<h4 class="notif-card-title">Estado de notificaciones</h4>' +
+                '<p class="notif-card-desc" id="notif-status-desc">Cargando estado...</p>' +
+              '</div>' +
+              '<div class="notif-status-badge" id="notif-status-badge">—</div>' +
+            '</div>' +
+            '<div class="notif-actions">' +
+              '<button class="notif-btn notif-btn-gold" id="notif-enable-btn" onclick="NotificacionesPush.activar()">Activar notificaciones</button>' +
+              '<button class="notif-btn notif-btn-outline" id="notif-test-btn" onclick="NotificacionesPush.enviarTest()" style="display:none">🔔 Probar notificación</button>' +
+              '<button class="notif-btn notif-btn-sec" id="notif-disable-btn" onclick="NotificacionesPush.desactivar()" style="display:none">Desactivar</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="notif-section">' +
+          '<div class="notif-card">' +
+            '<h4 class="notif-card-title">📱 Dispositivos suscriptos</h4>' +
+            '<p class="notif-card-desc">Otros dispositivos donde activaste notificaciones</p>' +
+            '<div id="notif-devices-list"><p class="text-muted text-center" style="padding:20px">Cargando...</p></div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="notif-section">' +
+          '<div class="notif-card">' +
+            '<h4 class="notif-card-title">📋 Eventos que disparan notificaciones</h4>' +
+            '<div class="notif-events-grid">' +
+              _eventCard('🛒', 'Pedido nuevo', 'Cuando un cliente hace un pedido en la tienda') +
+              _eventCard('👤', 'Cliente nuevo', 'Cuando alguien se registra en Mi Cuenta') +
+              _eventCard('🛍️', 'Carrito abandonado', 'Después de 30 min sin completar compra') +
+              _eventCard('🏅', 'Colección completada', 'Cliente completó 10 casilleros (canje)') +
+              _eventCard('🏢', 'Grandes Clientes', 'Nueva solicitud de restaurante/hotel') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="notif-section">' +
+          '<div class="notif-card">' +
+            '<h4 class="notif-card-title">ℹ️ Cómo funciona</h4>' +
+            '<ul class="notif-info-list">' +
+              '<li><strong>Instalá la PWA</strong> en tu celular (Chrome Android → "Agregar a pantalla de inicio")</li>' +
+              '<li><strong>Activá las notificaciones</strong> con el botón de arriba</li>' +
+              '<li>Cuando un cliente haga un pedido, te llegará una notificación push <strong>instantánea</strong></li>' +
+              '<li>Funciona <strong>aunque la app esté cerrada</strong> (en Android Chrome)</li>' +
+              '<li>En iOS, la app debe estar en background reciente (limitación de Apple)</li>' +
+              '<li>Para instalar en PC, abrí la PWA en Chrome/Edge y hacé clic en "Instalar" en la barra de direcciones</li>' +
+            '</ul>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="notif-section">' +
+          '<div class="notif-card">' +
+            '<h4 class="notif-card-title">⚙️ Configuración VAPID</h4>' +
+            '<p class="notif-card-desc">La VAPID public key es necesaria para suscribirse. Ingresala una sola vez (se guarda en Firebase para todos los dispositivos).</p>' +
+            '<div class="notif-vapid-row">' +
+              '<input type="text" class="notif-input" id="notif-vapid-input" placeholder="VAPID public key (empieza con B...)" style="flex:1">' +
+              '<button class="notif-btn notif-btn-gold" onclick="NotificacionesPush.guardarVapidKey()">Guardar</button>' +
+            '</div>' +
+            '<p class="text-xs text-muted mt-8">La key privada no se necesita acá — solo se usa en el servidor (Cloudflare).</p>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    loadVapidKey();
+    loadStatus();
+    loadDevices();
+  }
+
+  function _eventCard(icon, title, desc) {
+    return '<div class="notif-event-card">' +
+      '<div class="notif-event-icon">' + icon + '</div>' +
+      '<div>' +
+        '<div class="notif-event-title">' + title + '</div>' +
+        '<div class="notif-event-desc">' + desc + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function loadVapidKey() {
+    try {
+      var r = await fetch(FB_BASE + '/pushConfig/vapidPublicKey.json');
+      var key = r.ok ? await r.json() : null;
+      _vapidPublicKey = key;
+      var input = document.getElementById('notif-vapid-input');
+      if (input && key) input.value = key;
+    } catch (e) {}
+  }
+
+  async function guardarVapidKey() {
+    var input = document.getElementById('notif-vapid-input');
+    if (!input) return;
+    var key = input.value.trim();
+    if (!key) { alert('Ingresá la VAPID public key'); return; }
+    if (key.length < 80) { if (!confirm('La key parece muy corta. ¿Es una VAPID public key válida?')) return; }
+    try {
+      await fetch(FB_BASE + '/pushConfig/vapidPublicKey.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(key)
+      });
+      _vapidPublicKey = key;
+      toast('VAPID public key guardada');
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function loadStatus() {
+    var desc = document.getElementById('notif-status-desc');
+    var badge = document.getElementById('notif-status-badge');
+    var enableBtn = document.getElementById('notif-enable-btn');
+    var testBtn = document.getElementById('notif-test-btn');
+    var disableBtn = document.getElementById('notif-disable-btn');
+
+    if (!('Notification' in window)) {
+      if (desc) desc.textContent = 'Este navegador no soporta notificaciones';
+      if (badge) { badge.textContent = 'No soportado'; badge.className = 'notif-status-badge notif-status-off'; }
+      return;
+    }
+
+    var permission = Notification.permission;
+    if (permission === 'granted') {
+      // Verificar si hay suscripción activa
+      if ('serviceWorker' in navigator) {
+        var reg = await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          _currentSubscription = sub;
+          if (desc) desc.textContent = 'Notificaciones activadas en este dispositivo. Vas a recibir alertas cuando lleguen pedidos.';
+          if (badge) { badge.textContent = '● Activo'; badge.className = 'notif-status-badge notif-status-on'; }
+          if (enableBtn) enableBtn.style.display = 'none';
+          if (testBtn) testBtn.style.display = 'inline-flex';
+          if (disableBtn) disableBtn.style.display = 'inline-flex';
+        } else {
+          if (desc) desc.textContent = 'Permiso concedido pero falta suscribirse. Hacé clic en "Activar notificaciones".';
+          if (badge) { badge.textContent = '○ Listo para activar'; badge.className = 'notif-status-badge notif-status-wait'; }
+        }
+      }
+    } else if (permission === 'denied') {
+      if (desc) desc.innerHTML = 'Las notificaciones están <strong>bloqueadas</strong> en este navegador. Habilitá los permisos desde la configuración del navegador → Notificaciones → permitir arcanoespecias.com';
+      if (badge) { badge.textContent = '✗ Bloqueado'; badge.className = 'notif-status-badge notif-status-off'; }
+      if (enableBtn) enableBtn.style.display = 'none';
+    } else {
+      if (desc) desc.textContent = 'Aún no activaste las notificaciones. Hacé clic en "Activar notificaciones" para empezar a recibir alertas.';
+      if (badge) { badge.textContent = '○ Inactivo'; badge.className = 'notif-status-badge notif-status-wait'; }
+      if (enableBtn) enableBtn.style.display = 'inline-flex';
+      if (testBtn) testBtn.style.display = 'none';
+      if (disableBtn) disableBtn.style.display = 'none';
+    }
+  }
+
+  async function loadDevices() {
+    var listEl = document.getElementById('notif-devices-list');
+    if (!listEl) return;
+    try {
+      var r = await fetch(FB_BASE + '/pushSubscriptions.json');
+      var data = r.ok ? await r.json() : null;
+      if (!data || Object.keys(data).length === 0) {
+        listEl.innerHTML = '<p class="text-muted text-center" style="padding:20px">No hay dispositivos suscriptos todavía.</p>';
+        return;
+      }
+      var html = '<div class="notif-devices-table"><table class="table"><thead><tr><th>Dispositivo</th><th>Suscripto</th><th></th></tr></thead><tbody>';
+      var keys = Object.keys(data);
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var sub = data[k];
+        var endpoint = sub.endpoint || '';
+        var isAndroid = endpoint.indexOf('fcm.googleapis.com') >= 0 || endpoint.indexOf('android.googleapis.com') >= 0;
+        var isFirefox = endpoint.indexOf('mozilla') >= 0;
+        var isChrome = endpoint.indexOf('google') >= 0;
+        var deviceType = isAndroid ? '📱 Android (Chrome)' : (isFirefox ? '🦊 Firefox' : (isChrome ? '💻 Chrome' : '🌐 Web Push'));
+        var fecha = sub.suscriptoEn ? new Date(sub.suscriptoEn).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+        html += '<tr>' +
+          '<td class="fw7">' + deviceType + '</td>' +
+          '<td class="text-sm text-muted">' + fecha + '</td>' +
+          '<td><button class="notif-btn notif-btn-sec btn-sm" onclick="NotificacionesPush.borrarDispositivo(\'' + k + '\')">Eliminar</button></td>' +
+        '</tr>';
+      }
+      html += '</tbody></table></div>';
+      listEl.innerHTML = html;
+    } catch (e) {
+      listEl.innerHTML = '<p class="text-muted text-center">Error: ' + e.message + '</p>';
+    }
+  }
+
+  async function borrarDispositivo(key) {
+    if (!confirm('¿Eliminar este dispositivo? Ya no recibirá notificaciones.')) return;
+    try {
+      await fetch(FB_BASE + '/pushSubscriptions/' + key + '.json', { method: 'DELETE' });
+      loadDevices();
+      toast('Dispositivo eliminado');
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  async function activar() {
+    if (!('Notification' in window)) {
+      alert('Tu navegador no soporta notificaciones push. Probá con Chrome Android o Edge.');
+      return;
+    }
+    if (!_vapidPublicKey) {
+      alert('Falta configurar la VAPID public key. Ingresala abajo y hacé clic en "Guardar".');
+      return;
+    }
+    try {
+      // 1. Pedir permiso
+      var permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Permiso denegado. No vas poder recibir notificaciones.');
+        return;
+      }
+      // 2. Registrar service worker si no está
+      if (!('serviceWorker' in navigator)) {
+        alert('Tu navegador no soporta service workers. No se puede activar push.');
+        return;
+      }
+      var reg = await navigator.serviceWorker.ready;
+      // 3. Suscribirse a push
+      var applicationServerKey = _urlBase64ToUint8Array(_vapidPublicKey);
+      var subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey
+      });
+      _currentSubscription = subscription;
+      // 4. Guardar suscripción en Firebase
+      var subJson = subscription.toJSON();
+      var subData = {
+        endpoint: subJson.endpoint,
+        keys: subJson.keys,
+        suscriptoEn: Date.now(),
+        userAgent: navigator.userAgent.substring(0, 200)
+      };
+      // Generar ID único para este dispositivo
+      var deviceId = 'd' + Date.now() + Math.random().toString(36).slice(2, 8);
+      await fetch(FB_BASE + '/pushSubscriptions/' + deviceId + '.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subData)
+      });
+      // 5. Registrar periodic sync (si está soportado)
+      if ('periodicSync' in reg) {
+        try {
+          var ps = await reg.periodicSync.register('check-pedidos', { minInterval: 12 * 60 * 60 * 1000 });
+        } catch (e) {}
+      }
+      toast('Notificaciones activadas en este dispositivo');
+      loadStatus();
+      loadDevices();
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function desactivar() {
+    if (!confirm('¿Desactivar notificaciones en este dispositivo?')) return;
+    try {
+      if ('serviceWorker' in navigator) {
+        var reg = await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        if (sub) await sub.unsubscribe();
+      }
+      // También borrar de Firebase (buscar por endpoint)
+      if (_currentSubscription) {
+        var endpoint = _currentSubscription.endpoint;
+        var r = await fetch(FB_BASE + '/pushSubscriptions.json');
+        var data = r.ok ? await r.json() : null;
+        if (data) {
+          for (var k in data) {
+            if (data[k].endpoint === endpoint) {
+              await fetch(FB_BASE + '/pushSubscriptions/' + k + '.json', { method: 'DELETE' });
+              break;
+            }
+          }
+        }
+      }
+      _currentSubscription = null;
+      toast('Notificaciones desactivadas');
+      loadStatus();
+      loadDevices();
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  async function enviarTest() {
+    var btn = document.getElementById('notif-test-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    try {
+      var r = await fetch(PUSH_API + '?action=test');
+      var data = await r.json();
+      if (data.ok) {
+        toast('Notificación enviada. Debería llegar en unos segundos.');
+      } else {
+        alert('No se pudo enviar: ' + (data.error || JSON.stringify(data)));
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🔔 Probar notificación'; }
+    }
+  }
+
+  function _urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(base64);
+    var arr = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  }
+
+  function _styles() {
+    return '<style>' +
+      '.notif-panel{padding:20px;max-width:900px;margin:0 auto}' +
+      '.notif-section{margin-bottom:20px}' +
+      '.notif-card{background:var(--card-bg,#2a1a14);border:1px solid var(--border,#3a2a1e);border-radius:12px;padding:20px;transition:border-color 0.2s}' +
+      '.notif-card.active{border-color:var(--green,#4ade80)}' +
+      '.notif-card-title{margin:0 0 4px;color:var(--gold,#d4af37);font-size:1rem;font-weight:600}' +
+      '.notif-card-desc{margin:0 0 16px;color:var(--text-muted,#8a7a6e);font-size:0.85rem}' +
+      '.notif-status-row{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}' +
+      '.notif-status-badge{padding:6px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;white-space:nowrap}' +
+      '.notif-status-on{background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3)}' +
+      '.notif-status-wait{background:rgba(212,175,55,0.15);color:#d4af37;border:1px solid rgba(212,175,55,0.3)}' +
+      '.notif-status-off{background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)}' +
+      '.notif-actions{display:flex;gap:8px;flex-wrap:wrap}' +
+      '.notif-btn{padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.85rem;font-family:inherit;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:4px;text-decoration:none}' +
+      '.notif-btn-gold{background:var(--gold,#d4af37);color:#1b0b07}' +
+      '.notif-btn-gold:hover{background:#e6c14a}' +
+      '.notif-btn-outline{background:transparent;border:1px solid var(--border,#3a2a1e);color:var(--text,#e8d5b7)}' +
+      '.notif-btn-outline:hover{border-color:var(--gold,#d4af37);color:var(--gold,#d4af37)}' +
+      '.notif-btn-sec{background:transparent;border:1px solid var(--border,#3a2a1e);color:var(--text,#e8d5b7);padding:4px 10px;font-size:0.78rem}' +
+      '.notif-btn-sec:hover{border-color:#f87171;color:#f87171}' +
+      '.notif-events-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:8px}' +
+      '.notif-event-card{background:var(--bg,#1b0b07);border:1px solid var(--border,#3a2a1e);border-radius:8px;padding:12px;display:flex;gap:10px;align-items:center}' +
+      '.notif-event-icon{font-size:1.4rem;flex-shrink:0}' +
+      '.notif-event-title{color:var(--text,#e8d5b7);font-weight:600;font-size:0.88rem}' +
+      '.notif-event-desc{color:var(--text-muted,#8a7a6e);font-size:0.75rem;margin-top:2px}' +
+      '.notif-info-list{margin:8px 0 0 16px;padding:0;color:var(--text,#e8d5b7);font-size:0.85rem;line-height:1.7}' +
+      '.notif-info-list li{margin-bottom:6px}' +
+      '.notif-info-list strong{color:var(--gold,#d4af37)}' +
+      '.notif-vapid-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}' +
+      '.notif-input{flex:1;background:var(--bg,#1b0b07);border:1px solid var(--border,#3a2a1e);color:var(--text,#e8d5b7);padding:8px 12px;border-radius:6px;font-family:inherit;font-size:0.85rem;min-width:300px}' +
+      '.notif-input:focus{outline:none;border-color:var(--gold,#d4af37)}' +
+      '.notif-devices-table .table{width:100%;border-collapse:collapse;font-size:0.85rem}' +
+      '.notif-devices-table .table th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border,#3a2a1e);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted,#8a7a6e)}' +
+      '.notif-devices-table .table td{padding:8px 10px;border-bottom:1px solid var(--border,#3a2a1e)}' +
+      '.btn-sm{padding:4px 10px;font-size:0.78rem}' +
+      '@media(max-width:600px){.notif-status-row{flex-direction:column;align-items:flex-start;gap:8px}.notif-vapid-row{flex-direction:column}.notif-input{min-width:100%}}' +
+    '</style>';
+  }
+
+  function toast(msg) {
+    if (typeof window.toast === 'function') window.toast(msg);
+    else if (window.App && App.toast) App.toast(msg);
+  }
+
+  return {
+    renderPanel: renderPanel,
+    activar: activar,
+    desactivar: desactivar,
+    enviarTest: enviarTest,
+    guardarVapidKey: guardarVapidKey,
+    borrarDispositivo: borrarDispositivo
+  };
+})();

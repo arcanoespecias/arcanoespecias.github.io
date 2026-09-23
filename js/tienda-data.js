@@ -214,6 +214,8 @@ function submitOrder(orderData) {
           if (error) reject(error); else {
             // Marcar carrito como convertido en tracking
             markCarritoAsConverted();
+            // Notificar al admin por Web Push (aunque la app esté cerrada)
+            _notifyAdminPush(orderData, 'pedido');
             resolve(orderData);
           }
         });
@@ -223,6 +225,7 @@ function submitOrder(orderData) {
         _pedidosRef.push(orderData, function(error) {
           if (error) reject(error); else {
             markCarritoAsConverted();
+            _notifyAdminPush(orderData, 'pedido');
             resolve(orderData);
           }
         });
@@ -231,11 +234,49 @@ function submitOrder(orderData) {
       _pedidosRef.push(orderData, function(error) {
         if (error) reject(error); else {
           markCarritoAsConverted();
+          _notifyAdminPush(orderData, 'pedido');
           resolve(orderData);
         }
       });
     }
   });
+}
+
+/**
+ * Notifica al admin por Web Push (llama a /api/notify-admin en Cloudflare)
+ * - No bloquea el flujo del checkout (fire and forget)
+ * - Usa sendBeacon para que se ejecute incluso si el usuario cierra la pestaña
+ */
+function _notifyAdminPush(orderData, evento) {
+  try {
+    var cliente = orderData.cliente || {};
+    var nombreCliente = cliente.nombre || 'Cliente';
+    var total = orderData.total || 0;
+    var nItems = (orderData.items || []).length;
+    var titulo = '🛒 Nuevo pedido';
+    var mensaje = nombreCliente + ' — $' + total.toLocaleString('es-CO') + ' — ' + nItems + ' producto(s)';
+    var payload = {
+      evento: evento,
+      titulo: titulo,
+      mensaje: mensaje,
+      data: { url: '/admin/' }
+    };
+    // Usar sendBeacon para que se envíe incluso si el usuario cierra la pestaña
+    if (navigator.sendBeacon) {
+      var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      navigator.sendBeacon('/api/notify-admin', blob);
+    } else {
+      // Fallback: fetch normal
+      fetch('/api/notify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      }).catch(function() {});
+    }
+  } catch (e) {
+    console.warn('[Push] No se pudo notificar al admin:', e);
+  }
 }
 
 /* === CLIENTES (sesion + historial) === */

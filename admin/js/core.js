@@ -432,6 +432,8 @@ const App = {
               '<span class="nav-icon">\u{1F3C5}</span><span class="nav-label">Campa\u00F1as</span><span class="nav-badge" id="nav-campanas" style="display:none"></span></a>' +
             '<a class="nav-item" data-page="chatbot" onclick="App.navigate(\'chatbot\')">' +
               '<span class="nav-icon">\u{1F52E}</span><span class="nav-label">Chatbot IA</span></a>' +
+            '<a class="nav-item" data-page="notificaciones" onclick="App.navigate(\'notificaciones\')">' +
+              '<span class="nav-icon">\u{1F514}</span><span class="nav-label">Notificaciones</span></a>' +
             '<div style="border-top:1px solid var(--border);margin:8px 12px"></div>' +
             '<a class="nav-item" data-page="testing" onclick="App.navigate(\'testing\')">' +
               '<span class="nav-icon">\u{1F9EA}</span><span class="nav-label">Testing</span></a>' +
@@ -470,7 +472,7 @@ const App = {
     this.closeMobileSidebar();
     var titles = {
       dashboard: 'Dashboard', productos: 'Productos', insumos: 'Insumos', testing: 'Testing',
-      produccion: 'Produccion', costales: 'Costales', ventas: 'Ventas', gastos: 'Gastos', pedidos: 'Pedidos', envios: 'Env\u00EDos', stock: 'Stock', costos: 'Costos', palas: 'Palas', tienda: 'Tienda', tublend: 'Tu Blend', recetas: 'Recetas IA', blog: 'Blog IA', estadisticas: 'Estadisticas', usuarios: 'Usuarios', puntosdeventa: 'P. Venta', grandesClientes: 'Grandes Clientes', clientes: 'Clientes', promociones: 'Promociones', carritos: 'Carritos', mensajes: 'Mensajes WhatsApp', chatbot: 'Chatbot IA'
+      produccion: 'Produccion', costales: 'Costales', ventas: 'Ventas', gastos: 'Gastos', pedidos: 'Pedidos', envios: 'Env\u00EDos', stock: 'Stock', costos: 'Costos', palas: 'Palas', tienda: 'Tienda', tublend: 'Tu Blend', recetas: 'Recetas IA', blog: 'Blog IA', estadisticas: 'Estadisticas', usuarios: 'Usuarios', puntosdeventa: 'P. Venta', grandesClientes: 'Grandes Clientes', clientes: 'Clientes', promociones: 'Promociones', carritos: 'Carritos', mensajes: 'Mensajes WhatsApp', chatbot: 'Chatbot IA', notificaciones: 'Notificaciones Push'
     };
     document.getElementById('page-title').textContent = titles[page] || page;
     // Cierra el drawer lateral en mobile al cambiar de pagina
@@ -548,6 +550,7 @@ const App = {
         case 'mensajes': WhatsAppNotifications.renderPanel(container); break;
         case 'campanas': Pages.renderCampanas(container); break;
         case 'chatbot': ChatbotPanel.render(container); break;
+        case 'notificaciones': NotificacionesPush.renderPanel(container); break;
         default: container.innerHTML = '<p>Pagina no encontrada</p>';
       }
     } catch (e) {
