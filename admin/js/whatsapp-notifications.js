@@ -424,7 +424,7 @@ var WhatsAppNotifications = (function() {
       var telNorm = _normalizeTel(tel);
       if (!telNorm) continue;
       var msgFinal = msg.replace(/\{nombre\}/g, nombre);
-      var waLink = 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(msgFinal);
+      var waLink = _buildWaLink(telNorm, msgFinal);
       window.open(waLink, '_blank');
       enviados++;
       // Log
@@ -512,7 +512,7 @@ var WhatsAppNotifications = (function() {
           '</div>' +
           '<div class="modal-footer" style="display:flex;gap:8px;justify-content:space-between">' +
             '<button class="btn btn-outline" onclick="document.getElementById(\'wa-notif-modal\').remove()">⊘ Saltar</button>' +
-            '<a id="wa-notif-send" href="https://wa.me/' + telNorm + '?text=' + encodeURIComponent(mensaje) + '" target="_blank" class="btn btn-gold" style="text-decoration:none">' +
+            '<a id="wa-notif-send" href="' + _buildWaLink(telNorm, mensaje) + '" target="_blank" class="btn btn-gold" style="text-decoration:none">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>' +
               'Enviar por WhatsApp' +
             '</a>' +
@@ -525,7 +525,7 @@ var WhatsAppNotifications = (function() {
       var textarea = modal.querySelector('#wa-notif-msg');
       var link = modal.querySelector('#wa-notif-send');
       textarea.addEventListener('input', function() {
-        link.href = 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(textarea.value);
+        link.href = _buildWaLink(telNorm, textarea.value);
       });
 
       // Cuando se hace clic en Enviar, registrar como enviado
@@ -651,6 +651,18 @@ var WhatsAppNotifications = (function() {
       .replace(/\{guia\}/g, data.guia || '');
   }
 
+  function _buildWaLink(telNorm, mensaje) {
+    // Usar URLSearchParams para garantizar encoding UTF-8 correcto de emojis y acentos
+    try {
+      var params = new URLSearchParams();
+      params.set('text', mensaje);
+      return 'https://wa.me/' + telNorm + '?' + params.toString();
+    } catch (e) {
+      // Fallback
+      return 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(mensaje);
+    }
+  }
+
   function _normalizeTel(tel) {
     if (!tel) return '';
     var clean = String(tel).replace(/\D/g, '');
@@ -724,7 +736,7 @@ var WhatsAppNotifications = (function() {
     if (!h || !h.tel) return;
     var telNorm = _normalizeTel(h.tel);
     var msg = h.mensaje || 'Hola ' + (h.cliente || 'Cliente') + '! Te escribimos desde Arcano Especias.';
-    var waLink = 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(msg);
+    var waLink = _buildWaLink(telNorm, msg);
     window.open(waLink, '_blank');
     toast('Mensaje abierto en WhatsApp');
   }

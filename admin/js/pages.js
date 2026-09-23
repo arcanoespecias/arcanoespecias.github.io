@@ -1,6 +1,18 @@
 const Pages = {
   _qrPagoImage: localStorage.getItem('arcano_qr_pago_image') || '',
 
+  // Helper global para construir links de WhatsApp con encoding UTF-8 correcto (emojis y acentos)
+  _buildWaLink: function(telNorm, mensaje) {
+    if (!telNorm) return '#';
+    try {
+      var params = new URLSearchParams();
+      params.set('text', mensaje);
+      return 'https://wa.me/' + telNorm + '?' + params.toString();
+    } catch (e) {
+      return 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(mensaje);
+    }
+  },
+
   _getCheckedCats: function(prefix) {
     var cats = [];
     var el;
@@ -10312,7 +10324,7 @@ Pages.renderMensajes = function(el) {
     for (var oi = 0; oi < otpPendientes.length; oi++) {
       var o = otpPendientes[oi];
       var telNorm = o.telNorm || '';
-      var waLink = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent('Hola ' + (o.nombre || '') + '! Tu código de acceso a Arcano Especias es: ' + o.codigo + '. Ingrésalo en la tienda para activar tu cuenta.')) : '#';
+      var waLink = telNorm ? Pages._buildWaLink(telNorm, 'Hola ' + (o.nombre || '') + '! Tu código de acceso a Arcano Especias es: ' + o.codigo + '. Ingrésalo en la tienda para activar tu cuenta.') : '#';
       var tiempoStr = o.creado ? Pages._formatearTiempo(Date.now() - new Date(o.creado).getTime()) : '-';
       var estadoCls = o.enviado ? 'text-green' : 'text-yellow';
       var estadoTxt = o.enviado ? 'Enviado' : 'Pendiente';
@@ -10383,7 +10395,7 @@ Pages.renderMensajes = function(el) {
         .replace(/\{nombre\}/g, nombreVar)
         .replace(/\{total\}/g, '$' + totalVar)
         .replace(/\{items\}/g, itemsVar);
-      var waLink = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent(mensaje)) : '#';
+      var waLink = telNorm ? Pages._buildWaLink(telNorm, mensaje) : '#';
       h += '<tr>' +
         '<td class="fw7">' + esc(cliente.nombre || 'Invitado') + '</td>' +
         '<td>' + esc(cliente.telefono || '-') + '</td>' +
@@ -10510,7 +10522,7 @@ Pages._enviarMensajesWA = function() {
     var telNorm = cliente.telefono ? ('57' + cliente.telefono.replace(/\D/g, '').replace(/^57/, '')) : '';
     if (!telNorm) continue;
     var msg = mensajeTemplate.replace(/\{nombre\}/g, cliente.nombre || 'Cliente');
-    var waLink = 'https://wa.me/' + telNorm + '?text=' + encodeURIComponent(msg);
+    var waLink = Pages._buildWaLink(telNorm, msg);
     window.open(waLink, '_blank');
     enviados++;
   }
@@ -10543,7 +10555,7 @@ Pages._reactivarOtp = function(key) {
     if (pendientes[i]._key === key) { otp = pendientes[i]; break; }
   }
   if (!otp) return;
-  var waLink = 'https://wa.me/' + otp.telNorm + '?text=' + encodeURIComponent('Hola ' + (otp.nombre || '') + '! Tu código de acceso a Arcano Especias es: ' + otp.codigo + '. Ingrésalo en la tienda para activar tu cuenta.');
+  var waLink = Pages._buildWaLink(otp.telNorm, 'Hola ' + (otp.nombre || '') + '! Tu código de acceso a Arcano Especias es: ' + otp.codigo + '. Ingrésalo en la tienda para activar tu cuenta.');
   window.open(waLink, '_blank');
   // Re-marcar como pendiente
   try {
