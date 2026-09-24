@@ -7863,6 +7863,9 @@ const Pages = {
   _renderGa4DailyChart: function(daily) {
     var canvas = document.getElementById('ga4-daily-chart');
     if (!canvas || daily.length === 0) return;
+    // CRITICAL: destroy existing chart before creating new one
+    var existing = Chart.getChart(canvas);
+    if (existing) { try { existing.destroy(); } catch(e) {} }
     var labels = [], sessions = [], users = [];
     for (var i = 0; i < daily.length; i++) {
       var d = daily[i].date || '';
@@ -7887,6 +7890,9 @@ const Pages = {
   _renderGa4TrafficChart: function(traffic) {
     var canvas = document.getElementById('ga4-traffic-chart');
     if (!canvas || traffic.length === 0) return;
+    // CRITICAL: destroy existing chart before creating new one
+    var existing = Chart.getChart(canvas);
+    if (existing) { try { existing.destroy(); } catch(e) {} }
     var channelLabels = {Organic: 'Organico', Direct: 'Directo', Social: 'Redes Sociales', Paid: 'Pago', Referral: 'Referidos', Email: 'Email'};
     var labels = [], data = [], colors = ['#4A90D9','#2ECC71','#E74C3C','#F39C12','#9B59B6','#1ABC9C','#E67E22','#3498DB'];
     for (var i = 0; i < traffic.length; i++) {
@@ -7904,6 +7910,9 @@ const Pages = {
   _renderGa4PagesChart: function(pages) {
     var canvas = document.getElementById('ga4-pages-chart');
     if (!canvas || pages.length === 0) return;
+    // CRITICAL: destroy existing chart before creating new one
+    var existing = Chart.getChart(canvas);
+    if (existing) { try { existing.destroy(); } catch(e) {} }
     var top = pages.slice(0, 10);
     var labels = [], views = [], durations = [];
     for (var i = 0; i < top.length; i++) {
