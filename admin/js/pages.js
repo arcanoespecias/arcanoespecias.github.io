@@ -752,6 +752,15 @@ const Pages = {
       var gc = ing ? (ing.gramosChico || '') : '';
       var gg = ing ? (ing.gramosGrande || '') : '';
       var selVal = ing ? ing.especiaId : '';
+      // Si especiaId es null pero tenemos especiaNombre, buscar el ID por nombre
+      if ((!selVal || selVal === null) && ing && ing.especiaNombre) {
+        for (var ei = 0; ei < especias.length; ei++) {
+          if (especias[ei].nombre === ing.especiaNombre) {
+            selVal = especias[ei].id;
+            break;
+          }
+        }
+      }
       div.innerHTML =
         '<div class="form-group" style="margin:0"><label>Especia</label><select class="input ing-esp">' + espOptsHTML + '</select></div>' +
         '<div class="form-group" style="margin:0"><label>Grs/Peque\u00F1o</label><input type="number" class="input ing-gc" value="' + gc + '" placeholder="0" min="0"></div>' +
