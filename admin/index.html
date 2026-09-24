@@ -31,20 +31,20 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <!-- App -->
-  <script src="js/db.js?v=7"></script>
-  <script src="js/pdv.js?v=7"></script>
-  <script src="js/pages.js?v=7"></script>
-  <script src="js/seo-generator.js?v=7"></script>
-  <script src="js/chatbot-panel.js?v=7"></script>
-  <script src="js/whatsapp-notifications.js?v=7"></script>
-  <script src="js/notificaciones-push.js?v=7"></script>
-  <script src="js/core.js?v=7"></script>
+  <script src="js/db.js?v=8"></script>
+  <script src="js/pdv.js?v=8"></script>
+  <script src="js/pages.js?v=8"></script>
+  <script src="js/seo-generator.js?v=8"></script>
+  <script src="js/chatbot-panel.js?v=8"></script>
+  <script src="js/whatsapp-notifications.js?v=8"></script>
+  <script src="js/notificaciones-push.js?v=8"></script>
+  <script src="js/core.js?v=8"></script>
 
-  <!-- PWA Service Worker -->
+  <!-- PWA Service Worker: usar el SW raíz (scope /) para que push funcione -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('sw.js').catch(function() {});
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
       });
     }
   </script>

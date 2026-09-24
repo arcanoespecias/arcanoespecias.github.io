@@ -286,12 +286,11 @@ var NotificacionesPush = (function() {
       var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       
       // Esperar a que el SW esté activo (no solo registrado)
-      // Esto es CRÍTICO: si el SW no está active, PushManager.subscribe falla
       await _waitForSWActive(reg);
       
-      // Doble verificación: navigator.serviceWorker.ready
-      reg = await navigator.serviceWorker.ready;
-      
+      // NO usar navigator.serviceWorker.ready aquí porque devuelve el SW
+      // que controla la página actual (que puede ser el admin SW, no el raíz).
+      // Usar directamente el reg del SW raíz que acabamos de registrar.
       // 3. Suscribirse a push usando el SW raíz
       var applicationServerKey = _urlBase64ToUint8Array(_vapidPublicKey);
       var subscription = await reg.pushManager.subscribe({
