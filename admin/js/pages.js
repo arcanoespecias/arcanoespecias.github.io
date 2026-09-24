@@ -7795,10 +7795,10 @@ const Pages = {
     h += '<div id="ga4-kpis" style="display:none"></div>';
     h += '<div id="ga4-charts" style="display:none">';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">';
-    h += '<div class="card" style="padding:16px"><h4 style="margin:0 0 12px;font-size:0.9rem">Sesiones por dia</h4><canvas id="ga4-daily-chart" height="220"></canvas></div>';
-    h += '<div class="card" style="padding:16px"><h4 style="margin:0 0 12px;font-size:0.9rem">Fuentes de trafico</h4><canvas id="ga4-traffic-chart" height="220"></canvas></div>';
+    h += '<div class="card" style="padding:16px"><h4 style="margin:0 0 12px;font-size:0.9rem">Sesiones por dia</h4><div id="ga4-daily-chart-container" style="min-height:200px"></div></div>';
+    h += '<div class="card" style="padding:16px"><h4 style="margin:0 0 12px;font-size:0.9rem">Fuentes de trafico</h4><div id="ga4-traffic-chart-container" style="min-height:200px"></div></div>';
     h += '</div>';
-    h += '<div class="card" style="padding:16px;margin-bottom:20px"><h4 style="margin:0 0 12px;font-size:0.9rem">Paginas mas visitadas</h4><canvas id="ga4-pages-chart" height="250"></canvas></div>';
+    h += '<div class="card" style="padding:16px;margin-bottom:20px"><h4 style="margin:0 0 12px;font-size:0.9rem">Paginas mas visitadas</h4><div id="ga4-pages-chart-container" style="min-height:250px"></div></div>';
     h += '</div>';
     el.innerHTML = h;
 
@@ -7879,82 +7879,72 @@ const Pages = {
   },
 
   _renderGa4DailyChart: function(daily) {
-    var canvas = document.getElementById('ga4-daily-chart');
-    if (!canvas || daily.length === 0) return;
-    // CRITICAL: destroy existing chart before creating new one
-    var existing = Chart.getChart(canvas);
-    if (existing) { try { existing.destroy(); } catch(e) {} }
-    var labels = [], sessions = [], users = [];
+    var container = document.getElementById('ga4-daily-chart-container');
+    if (!container || daily.length === 0) return;
+    var maxSessions = 1;
+    for (var i = 0; i < daily.length; i++) { if (daily[i].sessions > maxSessions) maxSessions = daily[i].sessions; }
+    var h = '<div style="display:flex;align-items:flex-end;gap:2px;height:180px;padding:0 4px">';
     for (var i = 0; i < daily.length; i++) {
-      var d = daily[i].date || '';
-      labels.push(d.substring(5)); // MM-DD
-      sessions.push(daily[i].sessions);
-      users.push(daily[i].users);
+      var d = daily[i];
+      var sHeight = Math.max(2, (d.sessions / maxSessions) * 160);
+      var uHeight = Math.max(1, (d.users / maxSessions) * 160);
+      var label = (d.date || '').substring(5);
+      h += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px" title="' + label + ': ' + d.sessions + ' sesiones, ' + d.users + ' usuarios">' +
+        '<div style="display:flex;align-items:flex-end;height:160px;gap:1px">' +
+          '<div style="width:6px;height:' + sHeight + 'px;background:#4A90D9;border-radius:2px 2px 0 0"></div>' +
+          '<div style="width:6px;height:' + uHeight + 'px;background:#7B68EE;border-radius:2px 2px 0 0"></div>' +
+        '</div>' +
+        '<div style="font-size:0.55rem;color:var(--text-sec);transform:rotate(-45deg);white-space:nowrap;transform-origin:center;margin-top:4px">' + label + '</div>' +
+      '</div>';
     }
-    var chart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {label: 'Sesiones', data: sessions, borderColor: '#4A90D9', backgroundColor: 'rgba(74,144,217,0.1)', fill: true, tension: 0.3, pointRadius: 2},
-          {label: 'Usuarios', data: users, borderColor: '#7B68EE', backgroundColor: 'rgba(123,104,238,0.05)', fill: true, tension: 0.3, pointRadius: 2}
-        ]
-      },
-      options: {responsive: true, maintainAspectRatio: false, animation: false, plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}}}}, scales: {x: {ticks: {font: {size: 10}, maxTicksLimit: 10}}, y: {beginAtZero: true, ticks: {font: {size: 10}}}}}
-    });
-    Pages._ga4Charts.push(chart);
+    h += '</div>';
+    h += '<div style="display:flex;gap:16px;margin-top:12px;justify-content:center;font-size:0.75rem"><span style="color:#4A90D9">■ Sesiones</span><span style="color:#7B68EE">■ Usuarios</span></div>';
+    container.innerHTML = h;
   },
 
   _renderGa4TrafficChart: function(traffic) {
-    var canvas = document.getElementById('ga4-traffic-chart');
-    if (!canvas || traffic.length === 0) return;
-    // CRITICAL: destroy existing chart before creating new one
-    var existing = Chart.getChart(canvas);
-    if (existing) { try { existing.destroy(); } catch(e) {} }
+    var container = document.getElementById('ga4-traffic-chart-container');
+    if (!container || traffic.length === 0) return;
+    var total = 0;
+    for (var i = 0; i < traffic.length; i++) total += traffic[i].sessions;
     var channelLabels = {Organic: 'Organico', Direct: 'Directo', Social: 'Redes Sociales', Paid: 'Pago', Referral: 'Referidos', Email: 'Email'};
-    var labels = [], data = [], colors = ['#4A90D9','#2ECC71','#E74C3C','#F39C12','#9B59B6','#1ABC9C','#E67E22','#3498DB'];
+    var colors = ['#4A90D9','#2ECC71','#E74C3C','#F39C12','#9B59B6','#1ABC9C','#E67E22','#3498DB'];
+    var h = '';
     for (var i = 0; i < traffic.length; i++) {
-      labels.push(channelLabels[traffic[i].channel] || traffic[i].channel);
-      data.push(traffic[i].sessions);
+      var t = traffic[i];
+      var pct = total > 0 ? Math.round((t.sessions / total) * 100) : 0;
+      var label = channelLabels[t.channel] || t.channel;
+      var color = colors[i % colors.length];
+      h += '<div style="margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px"><span style="color:var(--text)">' + label + '</span><span style="color:var(--text-sec)">' + t.sessions + ' (' + pct + '%)</span></div>' +
+        '<div style="background:var(--bg);border-radius:4px;height:20px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:4px;transition:width 0.3s"></div></div>' +
+      '</div>';
     }
-    var chart = new Chart(canvas, {
-      type: 'doughnut',
-      data: {labels: labels, datasets: [{data: data, backgroundColor: colors.slice(0, data.length), borderWidth: 0}]},
-      options: {responsive: true, maintainAspectRatio: false, animation: false, plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}, padding: 12}}}, cutout: '55%'}
-    });
-    Pages._ga4Charts.push(chart);
+    container.innerHTML = h;
   },
 
   _renderGa4PagesChart: function(pages) {
-    var canvas = document.getElementById('ga4-pages-chart');
-    if (!canvas || pages.length === 0) return;
-    // CRITICAL: destroy existing chart before creating new one
-    var existing = Chart.getChart(canvas);
-    if (existing) { try { existing.destroy(); } catch(e) {} }
+    var container = document.getElementById('ga4-pages-chart-container');
+    if (!container || pages.length === 0) return;
     var top = pages.slice(0, 10);
-    var labels = [], views = [], durations = [];
+    var maxViews = 1;
+    for (var i = 0; i < top.length; i++) { if (top[i].views > maxViews) maxViews = top[i].views; }
+    var h = '';
     for (var i = 0; i < top.length; i++) {
-      var title = top[i].title || top[i].path;
-      if (title.length > 35) title = title.substring(0, 35) + '...';
-      labels.push(title);
-      views.push(top[i].views);
-      var dur = top[i].avgDuration || 0;
+      var p = top[i];
+      var title = p.title || p.path || '?';
+      if (title.length > 40) title = title.substring(0, 40) + '...';
+      var pct = Math.round((p.views / maxViews) * 100);
+      var dur = p.avgDuration || 0;
       var m = Math.floor(dur / 60);
       var s = Math.round(dur % 60);
-      durations.push(m + ':' + (s < 10 ? '0' : '') + s);
+      var durStr = m > 0 ? (m + 'm ' + s + 's') : (s + 's');
+      h += '<div style="margin-bottom:8px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:3px"><span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">' + title + '</span><span style="color:var(--text-sec);white-space:nowrap">' + p.views + ' vistas · ' + durStr + '</span></div>' +
+        '<div style="background:var(--bg);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:rgba(74,144,217,0.7);border-radius:4px"></div></div>' +
+      '</div>';
     }
-    var chart = new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          {label: 'Vistas', data: views, backgroundColor: 'rgba(74,144,217,0.7)', borderRadius: 4},
-          {label: 'Tiempo prom. (mm:ss)', data: durations.map(function(d) { var p = d.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }), backgroundColor: 'rgba(231,76,60,0.5)', borderRadius: 4}
-        ]
-      },
-      options: {responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}}}}, scales: {x: {beginAtZero: true, ticks: {font: {size: 10}}}, y: {ticks: {font: {size: 10}}}}}
-    });
-    Pages._ga4Charts.push(chart);
+    container.innerHTML = h;
   },
 
   /* ================================================================
