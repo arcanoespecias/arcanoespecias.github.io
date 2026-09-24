@@ -248,6 +248,7 @@ function submitOrder(orderData) {
  * - Usa sendBeacon para que se ejecute incluso si el usuario cierra la pestaña
  */
 function _notifyAdminPush(orderData, evento) {
+  // Mantener compatibilidad: redirige a _notifyAdminEmail
   try {
     var cliente = orderData.cliente || {};
     var nombreCliente = cliente.nombre || 'Cliente';
@@ -255,21 +256,31 @@ function _notifyAdminPush(orderData, evento) {
     var nItems = (orderData.items || []).length;
     var titulo = '🛒 Nuevo pedido';
     var mensaje = nombreCliente + ' — $' + total.toLocaleString('es-CO') + ' — ' + nItems + ' producto(s)';
+    _notifyAdminEmail(titulo, mensaje, evento || 'pedido');
+  } catch (e) {
+    console.warn('[Notif] Error:', e);
+  }
+}
+
+/**
+ * Envía notificación por email al admin (vía /api/notify-admin → Resend)
+ * No bloquea el flujo (fire and forget con keepalive).
+ */
+function _notifyAdminEmail(titulo, mensaje, evento) {
+  try {
     var payload = {
-      evento: evento,
+      evento: evento || 'generico',
       titulo: titulo,
       mensaje: mensaje,
       data: { url: '/admin/' }
     };
-    // Usar fetch con keepalive para que se envíe incluso si el usuario cierra la pestaña
-    // (sendBeacon no manda Content-Type header, lo que rompe request.json() en la Pages Function)
     fetch('/api/notify-admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       keepalive: true
     }).catch(function(e) {
-      console.warn('[Notif] No se pudo notificar al admin:', e);
+      console.warn('[Notif] No se pudo enviar email:', e);
     });
   } catch (e) {
     console.warn('[Notif] Error:', e);
@@ -425,6 +436,14 @@ function requestClienteOTP(telefono, nombreOpt) {
             esNuevo: !!esNuevo
           });
         } catch(e) { console.warn('No se pudo encolar OTP pendiente:', e); }
+        // Notificar al admin por email si es cliente nuevo
+        if (esNuevo) {
+          _notifyAdminEmail(
+            '👤 Nuevo cliente registrado',
+            (cliente.nombre || nombreOpt || 'Cliente') + ' se acaba de registrar con WhatsApp ' + (cliente.telefono || telefono) + '. Revisá el panel de Mensajes WA para enviarle el código de acceso.',
+            'cliente_nuevo'
+          );
+        }
         // Resolver sin devolver el c\u00F3digo al frontend
         resolve({ clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || nombreOpt || '', esNuevo: !!esNuevo });
       };

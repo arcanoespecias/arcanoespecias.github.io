@@ -303,6 +303,20 @@ const App = {
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('\u{1F3C5} Colecci\u00F3n Arcano', { body: nombre + ' complet\u00F3 su cart\u00F3n de 10 blends. \u00A1Debe recibir Blend Grande gratis!', icon: 'icons/arcano-logo.webp' });
         }
+        // Notificar por email (por si el admin no está viendo)
+        try {
+          fetch('/api/notify-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              evento: 'coleccion_completada',
+              titulo: '\u{1F3C5} Colecci\u00F3n Arcano completada',
+              mensaje: nombre + ' complet\u00F3 su cart\u00F3n de 10 blends. Debe recibir Blend Grande gratis.',
+              data: { url: '/admin/' }
+            }),
+            keepalive: true
+          }).catch(function() {});
+        } catch(e) {}
         // Toast
         if (typeof toast === 'function') toast('\u{1F3C5} ' + nombre + ' complet\u00F3 su cart\u00F3n. \u00A1Blend Grande gratis!', 'ok');
         // Re-render si est\u00E1 en campa\u00F1as

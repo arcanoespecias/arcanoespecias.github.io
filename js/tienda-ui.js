@@ -1431,6 +1431,14 @@ function submitGrandesClientes(e) {
     closeGrandesClientes();
     document.getElementById('gc-form').reset();
     btn.disabled = false; btn.textContent = 'Enviar Solicitud';
+    // Notificar al admin por email
+    if (typeof _notifyAdminEmail === 'function') {
+      _notifyAdminEmail(
+        '🏢 Nueva solicitud de Grandes Clientes',
+        nombre + ' (' + (empresa || 'sin empresa') + ') solicitó información para grandes clientes. WhatsApp: ' + tel,
+        'grandes_clientes'
+      );
+    }
   }).catch(function() {
     alert('Error al enviar. Intenta de nuevo.');
     btn.disabled = false; btn.textContent = 'Enviar Solicitud';
