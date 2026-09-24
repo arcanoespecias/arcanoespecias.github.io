@@ -49,6 +49,7 @@ var NotificacionesPush = (function() {
             '<h4 class="notif-card-title">📋 Eventos que disparan notificaciones</h4>' +
             '<div class="notif-events-grid">' +
               _eventCard('🛒', 'Pedido nuevo', 'Cuando un cliente hace un pedido en la tienda') +
+              _eventCard('🎁', 'Primer pedido', 'Cuando un cliente hace su primer pedido (bienvenida)') +
               _eventCard('👤', 'Cliente nuevo', 'Cuando alguien se registra en Mi Cuenta') +
               _eventCard('🛍️', 'Carrito abandonado', 'Después de 30 min sin completar compra') +
               _eventCard('🏅', 'Colección completada', 'Cliente completó 10 casilleros (canje)') +

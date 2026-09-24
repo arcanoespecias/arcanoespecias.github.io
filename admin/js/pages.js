@@ -4077,6 +4077,32 @@ const Pages = {
     }
     h += '</div></div>';
 
+    // Detectar si es primer pedido del cliente
+    var esPrimerPedido = false;
+    if (p.clienteId) {
+      var cliente = ArcanoDB.getCliente ? ArcanoDB.getCliente(p.clienteId) : null;
+      if (!cliente) {
+        // Buscar en la lista de clientes
+        var allClientes = ArcanoDB.getClientes ? ArcanoDB.getClientes() : [];
+        for (var ci2 = 0; ci2 < allClientes.length; ci2++) {
+          if (allClientes[ci2]._key === p.clienteId || allClientes[ci2].id === p.clienteId) {
+            cliente = allClientes[ci2];
+            break;
+          }
+        }
+      }
+      if (cliente && (cliente.totalPedidos || 0) <= 1) {
+        esPrimerPedido = true;
+      }
+    }
+    if (esPrimerPedido && cl.telefono) {
+      h += '<div class="mt-12" style="padding:12px 16px;background:rgba(212,175,55,0.1);border:1px solid var(--gold);border-radius:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">';
+      h += '<span style="font-size:1.5rem">🎁</span>';
+      h += '<div style="flex:1"><strong style="color:var(--gold)">¡Primer pedido de este cliente!</strong><br><span class="text-xs text-muted">Dale la bienvenida con un mensaje de WhatsApp</span></div>';
+      h += '<button class="btn btn-sm btn-gold" onclick="WhatsAppNotifications.notificarDesdePedido(\'' + pedidoKey + '\', \'primer_pedido\')">📱 Enviar bienvenida</button>';
+      h += '</div>';
+    }
+
     h += '</div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'pedido-modal\').remove()">Cerrar</button>';
     h += '<a class="btn btn-gold" href="tel:' + (cl.telefono || '') + '" target="_blank">Llamar Cliente</a>';
     h += '<button class="btn btn-sm btn-red" style="margin-left:auto" onclick="Pages.eliminarPedido(\'' + pedidoKey + '\')">Eliminar Pedido</button>';

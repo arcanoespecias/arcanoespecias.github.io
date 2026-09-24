@@ -11,14 +11,15 @@
 var WhatsAppNotifications = (function() {
 
   var FB_URL = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
-  var ESTADOS = ['nuevo', 'confirmado', 'enviado', 'entregado', 'cancelado', 'pago_recibido'];
+  var ESTADOS = ['nuevo', 'confirmado', 'enviado', 'entregado', 'cancelado', 'pago_recibido', 'primer_pedido'];
   var ESTADO_LABELS = {
     nuevo: '\u{1F195} Pedido Nuevo',
     confirmado: '\u2705 Pedido Confirmado',
     enviado: '\u{1F69A} Pedido Enviado',
     entregado: '\u{1F4E6} Pedido Entregado',
     cancelado: '\u274C Pedido Cancelado',
-    pago_recibido: '\u{1F4B0} Pago Recibido'
+    pago_recibido: '\u{1F4B0} Pago Recibido',
+    primer_pedido: '\u{1F381} Primer Pedido'
   };
   var ESTADO_DESCRIPCIONES = {
     nuevo: 'Cuando un cliente hace un pedido nuevo en la tienda',
@@ -26,7 +27,8 @@ var WhatsAppNotifications = (function() {
     enviado: 'Cuando el pedido sale a entrega / gu\u00EDa generada',
     entregado: 'Cuando el pedido fue entregado al cliente',
     cancelado: 'Cuando cancel\u00E1s un pedido',
-    pago_recibido: 'Cuando registr\u00E1s un pago del cliente'
+    pago_recibido: 'Cuando registr\u00E1s un pago del cliente',
+    primer_pedido: 'Cuando un cliente hace su primer pedido (bienvenida)'
   };
 
   var PLANTILLAS_DEFAULT = {
@@ -52,6 +54,10 @@ var WhatsAppNotifications = (function() {
     },
     pago_recibido: {
       mensaje: 'Gracias {nombre}! Recibimos tu pago de ${total} por el pedido #{id}. Lo estamos preparando para envio.',
+      activo: true
+    },
+    primer_pedido: {
+      mensaje: 'Hola {nombre}! Bienvenido a Arcano Especias! Este es tu primer pedido #{id} y queremos agradecerte por confiar en nosotros. Tus blends estan siendo preparados con cuidado. Cualquier duda, escribenos por aqui.',
       activo: true
     }
   };
