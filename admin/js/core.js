@@ -480,6 +480,11 @@ const App = {
 
   navigate(page) {
     this.currentPage = page;
+    // Marcar que el usuario navegó explícitamente (para que el throttle permita el render)
+    if (typeof Pages !== 'undefined') {
+      Pages._dashChanged = true;
+      Pages._estTabChanged = true;
+    }
     document.querySelectorAll('.nav-item').forEach(function(el) {
       el.classList.toggle('active', el.dataset.page === page);
     });

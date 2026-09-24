@@ -36,6 +36,13 @@ const Pages = {
   _dashCharts: [],
 
   renderDashboard(container) {
+    // THROTTLE: prevenir re-render por Firebase sync si ya está renderizada
+    if (Pages._dashLastRender && (Date.now() - Pages._dashLastRender) < 30000 && !Pages._dashChanged) {
+      return;
+    }
+    Pages._dashChanged = false;
+    Pages._dashLastRender = Date.now();
+    
     if (Pages._dashCharts) { for (var _ci = 0; _ci < Pages._dashCharts.length; _ci++) { try { Pages._dashCharts[_ci].destroy(); } catch(e) {} } }
     Pages._dashCharts = [];
 
@@ -7465,6 +7472,17 @@ const Pages = {
   _estCharts: [],
 
   renderEstadisticas: function(container) {
+    // THROTTLE: prevenir re-render por Firebase sync si ya está renderizada
+    // Solo permitir re-render si:
+    // 1. Es la primera vez (no hay _estLastRender)
+    // 2. Pasaron más de 30s desde el último render
+    // 3. El usuario cambió de tab explícitamente (_estTabChanged = true)
+    if (Pages._estLastRender && (Date.now() - Pages._estLastRender) < 30000 && !Pages._estTabChanged) {
+      return; // Skip re-render
+    }
+    Pages._estTabChanged = false;
+    Pages._estLastRender = Date.now();
+    
     var ventas = ArcanoDB.getVentas();
     var pedidos = ArcanoDB.getPedidos();
     var producciones = ArcanoDB.getProducciones();
@@ -7493,14 +7511,14 @@ const Pages = {
     if (!Pages._estTab) Pages._estTab = 'ventas';
 
     var h = '<div class="est-tabs">';
-    h += '<button class="est-tab' + (Pages._estTab === 'ventas' ? ' active' : '') + '" onclick="Pages._estTab=\'ventas\';App.renderPage(\'estadisticas\')">Ventas</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'costos' ? ' active' : '') + '" onclick="Pages._estTab=\'costos\';App.renderPage(\'estadisticas\')">Costos y Margen</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'produccion' ? ' active' : '') + '" onclick="Pages._estTab=\'produccion\';App.renderPage(\'estadisticas\')">Produccion</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'pedidos' ? ' active' : '') + '" onclick="Pages._estTab=\'pedidos\';App.renderPage(\'estadisticas\')">Pedidos Tienda</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'inventario' ? ' active' : '') + '" onclick="Pages._estTab=\'inventario\';App.renderPage(\'estadisticas\')">Inventario</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'canales' ? ' active' : '') + '" onclick="Pages._estTab=\'canales\';App.renderPage(\'estadisticas\')">Costos por Canal</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'costosproducto' ? ' active' : '') + '" onclick="Pages._estTab=\'costosproducto\';App.renderPage(\'estadisticas\')">Costos por Producto</button>';
-    h += '<button class="est-tab' + (Pages._estTab === 'web' ? ' active' : '') + '" onclick="Pages._estTab=\'web\';App.renderPage(\'estadisticas\')">Web Analytics</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'ventas' ? ' active' : '') + '" onclick="Pages._estTab=\'ventas\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Ventas</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'costos' ? ' active' : '') + '" onclick="Pages._estTab=\'costos\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Costos y Margen</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'produccion' ? ' active' : '') + '" onclick="Pages._estTab=\'produccion\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Produccion</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'pedidos' ? ' active' : '') + '" onclick="Pages._estTab=\'pedidos\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Pedidos Tienda</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'inventario' ? ' active' : '') + '" onclick="Pages._estTab=\'inventario\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Inventario</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'canales' ? ' active' : '') + '" onclick="Pages._estTab=\'canales\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Costos por Canal</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'costosproducto' ? ' active' : '') + '" onclick="Pages._estTab=\'costosproducto\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Costos por Producto</button>';
+    h += '<button class="est-tab' + (Pages._estTab === 'web' ? ' active' : '') + '" onclick="Pages._estTab=\'web\';Pages._estTabChanged=true;App.renderPage(\'estadisticas\')">Web Analytics</button>';
     h += '</div>';
     h += '<div id="est-content"></div>';
     container.innerHTML = h;
@@ -7766,7 +7784,7 @@ const Pages = {
     var h = '';
     h += '<div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">';
     h += '<h3 style="margin:0;font-size:1.1rem">Analitica Web (GA4)</h3>';
-    h += '<select id="ga4-days" onchange="Pages._ga4Days=parseInt(this.value);Pages._renderWebAnalytics(document.querySelector(\'#est-content\'))" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:0.85rem">';
+    h += '<select id="ga4-days" onchange="Pages._ga4Days=parseInt(this.value);Pages._estTabChanged=true;Pages._renderWebAnalytics(document.querySelector(\'#est-content\'))" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:0.85rem">';
     h += '<option value="7"' + (Pages._ga4Days === 7 ? ' selected' : '') + '>Ultimos 7 dias</option>';
     h += '<option value="14"' + (Pages._ga4Days === 14 ? ' selected' : '') + '>Ultimos 14 dias</option>';
     h += '<option value="30"' + (Pages._ga4Days === 30 ? ' selected' : '') + '>Ultimos 30 dias</option>';
