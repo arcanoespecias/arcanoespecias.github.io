@@ -96,9 +96,32 @@ var NotificacionesPush = (function() {
             '<p class="text-xs text-muted mt-8">⚠️ La private key se guarda en Firebase. Es accesible públicamente con tus reglas actuales. Para tu caso (tienda pequeña) es aceptable. El riesgo máximo es que alguien te envíe notificaciones no deseadas.</p>' +
           '</div>' +
         '</div>' +
+
+        '<div class="notif-section">' +
+          '<div class="notif-card" style="border-color:var(--green,#4ade80)">' +
+            '<h4 class="notif-card-title">📧 Notificaciones por Email (RECOMENDADO)</h4>' +
+            '<p class="notif-card-desc">Recibí un email cuando llega un pedido nuevo. El email se muestra como notificación en tu móvil (app de Gmail). Más confiable que las push notifications.</p>' +
+            '<div class="notif-vapid-form">' +
+              '<label class="text-sm text-muted">Email donde recibir alertas</label>' +
+              '<div class="notif-vapid-row">' +
+                '<input type="email" class="notif-input" id="notif-email-destinatario" placeholder="arcanoespecias@gmail.com" value="arcanoespecias@gmail.com">' +
+              '</div>' +
+              '<label class="text-sm text-muted mt-8">Resend API Key (gratis en resend.com)</label>' +
+              '<div class="notif-vapid-row">' +
+                '<input type="password" class="notif-input" id="notif-resend-key" placeholder="re_...">' +
+              '</div>' +
+              '<div class="mt-12">' +
+                '<button class="notif-btn notif-btn-gold" onclick="NotificacionesPush.guardarEmailConfig()">💾 Guardar config email</button>' +
+                ' <button class="notif-btn notif-btn-outline" onclick="NotificacionesPush.enviarTestEmail()">📧 Enviar email de prueba</button>' +
+              '</div>' +
+            '</div>' +
+            '<p class="text-xs text-muted mt-8">Obtené tu API key gratis en <a href="https://resend.com/api-keys" target="_blank" style="color:var(--gold,#d4af37)">resend.com/api-keys</a> (no requiere tarjeta de crédito). Plan free: 100 emails/día.</p>' +
+          '</div>' +
+        '</div>' +
       '</div>';
 
     loadVapidKey();
+    loadEmailConfig();
     loadStatus();
     loadDevices();
   }
@@ -126,6 +149,62 @@ var NotificacionesPush = (function() {
       if (privInput && data.vapidPrivateKey) privInput.value = data.vapidPrivateKey;
       if (subjInput && data.vapidSubject) subjInput.value = data.vapidSubject;
     } catch (e) {}
+  }
+
+  async function loadEmailConfig() {
+    try {
+      var r = await fetch(FB_BASE + '/emailConfig.json');
+      var data = r.ok ? await r.json() : null;
+      if (!data) data = {};
+      var destInput = document.getElementById('notif-email-destinatario');
+      var keyInput = document.getElementById('notif-resend-key');
+      if (destInput && data.destinatario) destInput.value = data.destinatario;
+      if (keyInput && data.resendApiKey) keyInput.value = data.resendApiKey;
+    } catch (e) {}
+  }
+
+  async function guardarEmailConfig() {
+    var destInput = document.getElementById('notif-email-destinatario');
+    var keyInput = document.getElementById('notif-resend-key');
+    if (!destInput || !keyInput) return;
+    var destinatario = destInput.value.trim();
+    var resendKey = keyInput.value.trim();
+    if (!destinatario) { alert('Ingresá el email destino'); return; }
+    if (!resendKey) { alert('Ingresá la Resend API key'); return; }
+    if (resendKey.length < 20) { alert('La API key parece muy corta'); return; }
+    try {
+      var config = {
+        destinatario: destinatario,
+        resendApiKey: resendKey,
+        actualizadoEn: Date.now()
+      };
+      await fetch(FB_BASE + '/emailConfig.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      toast('Configuración de email guardada');
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function enviarTestEmail() {
+    var btn = event?.target;
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    try {
+      var r = await fetch(PUSH_API + '?action=test');
+      var data = await r.json();
+      if (data.ok) {
+        toast('Email enviado. Revisá tu casilla.');
+      } else {
+        alert('No se pudo enviar: ' + (data.email?.error || data.error || JSON.stringify(data)));
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '📧 Enviar email de prueba'; }
+    }
   }
 
   async function guardarVapidKey() {
@@ -578,8 +657,10 @@ var NotificacionesPush = (function() {
     activar: activar,
     desactivar: desactivar,
     enviarTest: enviarTest,
+    enviarTestEmail: enviarTestEmail,
     diagnosticar: diagnosticar,
     guardarVapidKey: guardarVapidKey,
+    guardarEmailConfig: guardarEmailConfig,
     mostrarPrivate: mostrarPrivate,
     borrarDispositivo: borrarDispositivo
   };

@@ -57,88 +57,57 @@ export async function onRequestPost({ request, env }) {
       });
     }
 
-    // 1. Leer VAPID keys desde Firebase
-    const vapid = await getVapidKeys();
-    if (!vapid) {
-      return new Response(JSON.stringify({
-        error: 'VAPID keys no configuradas. Pedile al admin que las cargue desde el panel de Notificaciones (sección "Configuración VAPID").'
-      }), { status: 500, headers: CORS_HEADERS });
-    }
-
-    // 2. Leer suscripciones push del admin desde Firebase
-    const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
-    if (!subRes.ok) {
-      return new Response(JSON.stringify({ error: 'No se pudieron leer suscripciones' }), {
-        status: 500, headers: CORS_HEADERS
-      });
-    }
-    const subsData = await subRes.json();
-
-    if (!subsData || Object.keys(subsData).length === 0) {
-      return new Response(JSON.stringify({
-        ok: false,
-        error: 'No hay dispositivos suscriptos. El admin debe activar notificaciones desde el panel.'
-      }), { status: 200, headers: CORS_HEADERS });
-    }
-
-    // 3. Construir payload del push
-    const payload = JSON.stringify({
-      titulo: titulo,
-      mensaje: mensaje,
-      evento: evento || 'pedido',
-      data: data || {},
-      timestamp: Date.now()
-    });
-
-    // 4. Enviar push a cada suscripción
-    const results = [];
-    const subKeys = Object.keys(subsData);
-    for (const subKey of subKeys) {
-      const subscription = subsData[subKey];
-      if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-        results.push({ subKey, status: 'invalid_subscription' });
-        continue;
-      }
-
+    // === MÉTODO PRINCIPAL: EMAIL via Resend ===
+    // Leer config de email desde Firebase
+    const emailConfig = await getEmailConfig();
+    let emailResult = null;
+    
+    if (emailConfig && emailConfig.resendApiKey && emailConfig.destinatario) {
       try {
-        await sendWebPush({
-          subscription: {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: subscription.keys.p256dh,
-              auth: subscription.keys.auth
-            }
-          },
-          payload,
-          vapid
+        emailResult = await sendEmailResend({
+          apiKey: emailConfig.resendApiKey,
+          destinatario: emailConfig.destinatario,
+          titulo: titulo,
+          mensaje: mensaje,
+          evento: evento || 'pedido'
         });
-        results.push({ subKey, status: 'sent' });
       } catch (err) {
-        const status = err?.status || 0;
-        if (status === 404 || status === 410) {
-          // Suscripción expiró — borrarla
+        console.error('[notify-admin] Error enviando email:', err);
+        emailResult = { ok: false, error: err.message };
+      }
+    }
+
+    // === MÉTODO SECUNDARIO: Web Push (si está configurado) ===
+    let pushResult = null;
+    const vapid = await getVapidKeys();
+    if (vapid) {
+      const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
+      const subsData = subRes.ok ? await subRes.json() : null;
+      if (subsData && Object.keys(subsData).length > 0) {
+        const payload = JSON.stringify({ titulo, mensaje, evento: evento || 'pedido', data: data || {}, timestamp: Date.now() });
+        pushResult = { total: Object.keys(subsData).length, enviados: 0, errores: 0 };
+        for (const subKey of Object.keys(subsData)) {
+          const subscription = subsData[subKey];
+          if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) continue;
           try {
-            await fetch(`${FB_BASE}/pushSubscriptions/${subKey}.json`, { method: 'DELETE' });
-            results.push({ subKey, status: 'deleted_expired' });
-          } catch (e) {
-            results.push({ subKey, status: 'error', error: err.message });
+            await sendWebPush({ subscription: { endpoint: subscription.endpoint, keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth } }, payload, vapid });
+            pushResult.enviados++;
+          } catch (err) {
+            pushResult.errores++;
+            if ((err?.status === 404) || (err?.status === 410)) {
+              try { await fetch(`${FB_BASE}/pushSubscriptions/${subKey}.json`, { method: 'DELETE' }); } catch (e) {}
+            }
           }
-        } else {
-          results.push({ subKey, status: 'error', error: err.message });
         }
       }
     }
 
-    const sent = results.filter(r => r.status === 'sent').length;
-    const errors = results.filter(r => r.status === 'error').length;
-    const expired = results.filter(r => r.status === 'deleted_expired').length;
-
+    // Respuesta combinada
+    const ok = (emailResult?.ok) || (pushResult?.enviados > 0);
     return new Response(JSON.stringify({
-      ok: sent > 0,
-      enviados: sent,
-      errores: errors,
-      expirados: expired,
-      results
+      ok: ok,
+      email: emailResult,
+      push: pushResult
     }), { headers: CORS_HEADERS });
 
   } catch (e) {
@@ -147,6 +116,63 @@ export async function onRequestPost({ request, env }) {
       status: 500, headers: CORS_HEADERS
     });
   }
+}
+
+// === EMAIL: leer config desde Firebase ===
+let _cachedEmailConfig = null;
+let _cachedEmailTs = 0;
+
+async function getEmailConfig() {
+  if (_cachedEmailConfig && (Date.now() - _cachedEmailTs) < 5 * 60 * 1000) return _cachedEmailConfig;
+  try {
+    const r = await fetch(`${FB_BASE}/emailConfig.json`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (!data || !data.resendApiKey || !data.destinatario) return null;
+    _cachedEmailConfig = data;
+    _cachedEmailTs = Date.now();
+    return data;
+  } catch (e) { return null; }
+}
+
+// === EMAIL: enviar via Resend API ===
+async function sendEmailResend({ apiKey, destinatario, titulo, mensaje, evento }) {
+  const emailHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #1b0b07; color: #e8d5b7; padding: 30px; border-radius: 12px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="https://arcanoespecias.com/icons/arcano-logo.webp" alt="Arcano Especias" style="height: 50px;">
+      </div>
+      <h1 style="color: #d4af37; font-size: 24px; margin: 0 0 16px;">${titulo}</h1>
+      <p style="font-size: 16px; line-height: 1.6; color: #e8d5b7;">${mensaje}</p>
+      <div style="margin: 24px 0; padding: 16px; background: #2a1a14; border-radius: 8px; border: 1px solid #3a2a1e;">
+        <p style="margin: 0; color: #8a7a6e; font-size: 13px;">Fecha: ${new Date().toLocaleString('es-CO')}</p>
+      </div>
+      <a href="https://arcanoespecias.com/admin/" style="display: inline-block; background: #d4af37; color: #1b0b07; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Ver en el Admin</a>
+      <p style="margin-top: 24px; color: #6a5a4e; font-size: 12px; text-align: center;">Arcano Especias — Sistema de notificaciones automáticas</p>
+    </div>
+  `;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'Arcano Especias <onboarding@resend.dev>',
+      to: [destinatario],
+      subject: titulo,
+      html: emailHtml
+    })
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error('Resend API error ' + response.status + ': ' + errBody);
+  }
+
+  const data = await response.json();
+  return { ok: true, id: data.id };
 }
 
 export async function onRequestGet({ request, env }) {
@@ -172,15 +198,15 @@ export async function onRequestGet({ request, env }) {
   if (action === 'status') {
     try {
       const vapid = await getVapidKeys();
+      const emailConfig = await getEmailConfig();
       const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
       const subsData = subRes.ok ? await subRes.json() : null;
       const count = subsData ? Object.keys(subsData).length : 0;
       return new Response(JSON.stringify({
-        suscripciones: count,
+        suscripciones_push: count,
         vapid_configurado: !!(vapid && vapid.publicKey && vapid.privateKey),
-        vapid_tiene_public: !!(vapid?.publicKey),
-        vapid_tiene_private: !!(vapid?.privateKey),
-        vapid_tiene_subject: !!(vapid?.subject)
+        email_configurado: !!(emailConfig && emailConfig.resendApiKey && emailConfig.destinatario),
+        email_destinatario: emailConfig?.destinatario || null
       }, null, 2), { headers: CORS_HEADERS });
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), {
