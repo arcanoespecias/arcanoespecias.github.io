@@ -243,10 +243,34 @@ async function sendWebPush({ subscription, payload, vapid }) {
   return { ok: true, status: response.status };
 }
 
-// Generar VAPID JWT (ES256)
+// Generar VAPID JWT (ES256) usando JWK (mucho más confiable que PKCS8)
 async function generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
-  // Decodificar private key de base64url a bytes
-  const privKeyBytes = base64UrlToBytes(privateKeyStr);
+  // Decodificar keys de base64url a bytes
+  const pubKeyBytes = base64UrlToBytes(publicKeyStr);   // 65 bytes: 04 || X(32) || Y(32)
+  const privKeyBytes = base64UrlToBytes(privateKeyStr);  // 32 bytes: d (scalar)
+
+  // Extraer X e Y de la public key (formato uncompressed point: 04 || X || Y)
+  const xBytes = pubKeyBytes.slice(1, 33);
+  const yBytes = pubKeyBytes.slice(33, 65);
+
+  // Crear JWK completo con todas las coordenadas
+  const jwk = {
+    kty: 'EC',
+    crv: 'P-256',
+    d: base64UrlEncodeBytes(privKeyBytes),
+    x: base64UrlEncodeBytes(xBytes),
+    y: base64UrlEncodeBytes(yBytes),
+    ext: true
+  };
+
+  // Importar usando JWK (formato JSON, mucho más confiable que PKCS8 binario)
+  const cryptoKey = await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
 
   // Construir JWT
   const header = { typ: 'JWT', alg: 'ES256' };
@@ -262,47 +286,19 @@ async function generateVapidJWT(subject, publicKeyStr, privateKeyStr) {
   const payloadB64 = base64UrlEncode(JSON.stringify(payload));
   const signingInput = headerB64 + '.' + payloadB64;
 
-  // Convertir la raw private key (32 bytes) a formato PKCS8 DER
-  // Web Crypto no acepta raw ECDSA private keys, solo PKCS8 o JWK
-  const pkcs8Der = rawP256PrivateKeyToPkcs8(privKeyBytes);
-
-  let cryptoKey;
-  try {
-    // Importar como PKCS8
-    cryptoKey = await crypto.subtle.importKey(
-      'pkcs8',
-      pkcs8Der,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    );
-  } catch (e) {
-    // Si falla PKCS8, intentar como JWK
-    const jwk = rawPrivateKeyToJwk(privKeyBytes);
-    cryptoKey = await crypto.subtle.importKey(
-      'jwk',
-      jwk,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    );
-  }
-
+  // Firmar
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     cryptoKey,
     new TextEncoder().encode(signingInput)
   );
 
-  // La firma puede venir en formato DER (ASN.1) o en formato raw (64 bytes R+S)
-  // dependiendo del runtime. Cloudflare Workers devuelve raw en algunos casos.
+  // La firma puede venir en formato DER o raw (64 bytes)
   const sigBytes = new Uint8Array(signature);
   let rawSignature;
   if (sigBytes.length === 64) {
-    // Ya está en formato raw (R + S, 32 bytes cada uno)
     rawSignature = sigBytes;
   } else {
-    // Está en formato DER, hay que convertirlo a raw
     rawSignature = derToRaw(signature);
   }
   const signatureB64 = base64UrlEncodeBytes(new Uint8Array(rawSignature));

@@ -283,14 +283,14 @@ var NotificacionesPush = (function() {
       }
       
       // Registrar el SW raíz explícitamente y esperar a que esté ACTIVO
+      console.log('[Push] Registrando SW raíz /sw.js con scope /');
       var reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      console.log('[Push] SW registrado. Estado:', reg.active ? 'active' : (reg.waiting ? 'waiting' : (reg.installing ? 'installing' : 'unknown')));
       
-      // Esperar a que el SW esté activo (no solo registrado)
+      // Esperar a que el SW esté activo
       await _waitForSWActive(reg);
+      console.log('[Push] SW activo confirmado');
       
-      // NO usar navigator.serviceWorker.ready aquí porque devuelve el SW
-      // que controla la página actual (que puede ser el admin SW, no el raíz).
-      // Usar directamente el reg del SW raíz que acabamos de registrar.
       // 3. Suscribirse a push usando el SW raíz
       var applicationServerKey = _urlBase64ToUint8Array(_vapidPublicKey);
       var subscription = await reg.pushManager.subscribe({
