@@ -1066,11 +1066,13 @@ function renderBlendBuilder() {
         if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
       }
       var safeName = especias[e].nombre.replace(/'/g, "\\'");
+      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 120) : '';
+      var tooltipHtml = espDesc ? '<span class="bb-chip-tooltip">' + espDesc + (especias[e].descripcion.length > 120 ? '...' : '') + '</span>' : '';
       if (isSelected) {
-        h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">\u2713</span></button>';
+        h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">\u2713</span>' + tooltipHtml + '</button>';
       } else {
         var disabled = state.especias.length >= 5 ? ' disabled' : '';
-        h += '<button class="bb-chip' + disabled + '" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + '</button>';
+        h += '<button class="bb-chip' + disabled + '" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + tooltipHtml + '</button>';
       }
     }
     h += '</div></div>';
