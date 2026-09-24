@@ -383,17 +383,25 @@ function registrarCliente(telefono, nombre) {
         };
         newRef.set(newCliente, function(err) {
           if (err) reject(err);
-          else resolve({
-            id: newKey,
-            nombre: nombre.trim(),
-            telefono: telefono,
-            email: '',
-            ciudad: '',
-            direccion: '',
-            totalPedidos: 0,
-            creado: now,
-            esNuevo: true
-          });
+          else {
+            // Notificar al admin por email si es cliente nuevo
+            _notifyAdminEmail(
+              '\u{1F464} Nuevo cliente registrado',
+              nombre.trim() + ' se acaba de registrar con WhatsApp ' + telefono + '. Ya puede hacer pedidos en la tienda.',
+              'cliente_nuevo'
+            );
+            resolve({
+              id: newKey,
+              nombre: nombre.trim(),
+              telefono: telefono,
+              email: '',
+              ciudad: '',
+              direccion: '',
+              totalPedidos: 0,
+              creado: now,
+              esNuevo: true
+            });
+          }
         });
       }
     }, function(err) { reject(err); });
