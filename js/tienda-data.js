@@ -261,21 +261,18 @@ function _notifyAdminPush(orderData, evento) {
       mensaje: mensaje,
       data: { url: '/admin/' }
     };
-    // Usar sendBeacon para que se envíe incluso si el usuario cierra la pestaña
-    if (navigator.sendBeacon) {
-      var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon('/api/notify-admin', blob);
-    } else {
-      // Fallback: fetch normal
-      fetch('/api/notify-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        keepalive: true
-      }).catch(function() {});
-    }
+    // Usar fetch con keepalive para que se envíe incluso si el usuario cierra la pestaña
+    // (sendBeacon no manda Content-Type header, lo que rompe request.json() en la Pages Function)
+    fetch('/api/notify-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true
+    }).catch(function(e) {
+      console.warn('[Notif] No se pudo notificar al admin:', e);
+    });
   } catch (e) {
-    console.warn('[Push] No se pudo notificar al admin:', e);
+    console.warn('[Notif] Error:', e);
   }
 }
 
