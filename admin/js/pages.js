@@ -407,7 +407,7 @@ const Pages = {
      ================================================================ */
   renderProductos(container) {
     var especias = ArcanoDB.getEspecias();
-    var blends = ArcanoDB.getBlends();
+    var blends = ArcanoDB.getBlends().filter(function(b) { return b && b.id && b.nombre; });
     var packs = ArcanoDB.getPacks();
     var tab = window._prodTab || 'especias';
     var search = (window._prodSearch || '').toLowerCase().trim();
@@ -869,10 +869,29 @@ const Pages = {
   },
 
   delBlend(id) {
+    if (!id && id !== 0) { alert('ID inválido'); return; }
     var bl = ArcanoDB.getBlend(id);
-    if (!bl) return;
-    if (!confirm('Eliminar "' + bl.nombre + '"?')) return;
+    if (!bl) { 
+      // Si no existe en _db pero está en Firebase, forzar eliminación
+      if (!confirm('Este blend no existe en memoria. ¿Eliminar de Firebase?')) return;
+      try {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          firebase.database().ref('arcano/db/blends/' + id).set(null, function() {
+            toast('Blend eliminado de Firebase');
+            App.renderPage('productos');
+          });
+        }
+      } catch(e) { alert('Error: ' + e.message); }
+      return;
+    }
+    if (!confirm('Eliminar "' + (bl.nombre || 'sin nombre') + '"?')) return;
     ArcanoDB.deleteBlend(id);
+    // También forzar eliminación directa en Firebase por si acaso
+    try {
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        firebase.database().ref('arcano/db/blends/' + id).set(null);
+      }
+    } catch(e) {}
     App.renderPage('productos');
   },
 
