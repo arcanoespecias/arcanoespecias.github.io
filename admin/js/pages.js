@@ -5303,8 +5303,10 @@ const Pages = {
               var row = espData[i];
               if (!row) continue;
               var nombre = String(row[1] || '').trim();
-              if (!nombre) continue;
+              if (!nombre || nombre === 'undefined') continue;
               var rawId = row[0] ? String(row[0]).trim() : '';
+              var enTiendaRaw = row[9];
+              var enTiendaStr = enTiendaRaw != null ? String(enTiendaRaw).trim().toLowerCase() : '';
               espUpdates.push({
                 id: rawId,
                 nombre: nombre,
@@ -5312,7 +5314,7 @@ const Pages = {
                 categoria: String(row[3] || '').trim() || 'Especias',
                 precioChico: Number(row[4]) || 0,
                 precioGrande: Number(row[5]) || 0,
-                enTienda: String(row[9] || '').toLowerCase() === 'si',
+                enTienda: enTiendaStr === 'si' || enTiendaStr === 'true' || enTiendaStr === '1',
                 uso: String(row[10] || '').trim(),
                 isNew: !rawId || !ArcanoDB.getEspecia(rawId)
               });
@@ -5336,6 +5338,8 @@ const Pages = {
               if (!row) continue;
               if (row[0]) {
                 currentBlId = String(row[0]);
+                var blEnTiendaRaw = row[8];
+                var blEnTiendaStr = blEnTiendaRaw != null ? String(blEnTiendaRaw).trim().toLowerCase() : '';
                 blUpdates[currentBlId] = {
                   id: currentBlId,
                   nombre: String(row[1] || '').trim(),
@@ -5343,17 +5347,20 @@ const Pages = {
                   categoria: String(row[3] || '').trim(),
                   precioChico: Number(row[4]) || 0,
                   precioGrande: Number(row[5]) || 0,
-                  enTienda: String(row[8] || '').toLowerCase() === 'si',
+                  enTienda: blEnTiendaStr === 'si' || blEnTiendaStr === 'true' || blEnTiendaStr === '1',
                   uso: String(row[9] || '').trim(),
                   ingredientes: []
                 };
               }
               if (currentBlId && row[10]) {
-                blUpdates[currentBlId].ingredientes.push({
-                  especiaNombre: String(row[10] || '').trim(),
-                  gramosChico: Number(row[11]) || 0,
-                  gramosGrande: Number(row[12]) || 0
-                });
+                var ingNombre = String(row[10] || '').trim();
+                if (ingNombre && ingNombre !== 'undefined') {
+                  blUpdates[currentBlId].ingredientes.push({
+                    especiaNombre: ingNombre,
+                    gramosChico: Number(row[11]) || 0,
+                    gramosGrande: Number(row[12]) || 0
+                  });
+                }
               }
             }
           }
