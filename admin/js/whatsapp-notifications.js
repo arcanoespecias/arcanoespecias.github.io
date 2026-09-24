@@ -84,6 +84,8 @@ var WhatsAppNotifications = (function() {
 
         '<div id="wa-tabs" class="wa-tabs">' +
           '<button class="wa-tab active" data-tab="plantillas" onclick="WhatsAppNotifications.showTab(\'plantillas\')">\u{1F4DD} Plantillas por evento</button>' +
+          '<button class="wa-tab" data-tab="carritos" onclick="WhatsAppNotifications.showTab(\'carritos\')">\u{1F6D2} Carritos abandonados</button>' +
+          '<button class="wa-tab" data-tab="seguimiento" onclick="WhatsAppNotifications.showTab(\'seguimiento\')">\u{1F4DE} Seguimiento post-venta</button>' +
           '<button class="wa-tab" data-tab="estadisticas" onclick="WhatsAppNotifications.showTab(\'estadisticas\')">\u{1F4CA} Estad\u00EDsticas</button>' +
           '<button class="wa-tab" data-tab="historial" onclick="WhatsAppNotifications.showTab(\'historial\')">\u{1F4DC} Historial</button>' +
           '<button class="wa-tab" data-tab="manual" onclick="WhatsAppNotifications.showTab(\'manual\')">\u{1F4E4} Env\u00EDo manual</button>' +
@@ -111,6 +113,8 @@ var WhatsAppNotifications = (function() {
       var cfg = await loadConfig();
       var historial = await loadHistorial();
       if (tab === 'plantillas') renderPlantillas(content, cfg);
+      else if (tab === 'carritos') await renderCarritos(content, cfg);
+      else if (tab === 'seguimiento') await renderSeguimiento(content, cfg);
       else if (tab === 'estadisticas') renderEstadisticas(content, cfg, historial);
       else if (tab === 'historial') renderHistorial(content, historial);
       else if (tab === 'manual') renderManual(content, cfg);
@@ -351,6 +355,295 @@ var WhatsAppNotifications = (function() {
   }
 
   // === TAB: Env\u00EDo manual ===
+
+  // === TAB: Carritos abandonados ===
+
+  async function renderCarritos(container, cfg) {
+    var mw = cfg.mensajesWhatsApp || {};
+    var carritos = [];
+    try {
+      if (typeof ArcanoDB !== 'undefined' && ArcanoDB.getCarritos) {
+        carritos = ArcanoDB.getCarritos();
+      }
+    } catch(e) {}
+
+    var ahora = Date.now();
+    var abandonadosPendientes = carritos.filter(function(c) {
+      if (c.estado !== 'abandonado') return false;
+      if (c.notificadoEn) return false;
+      if (!c.actualizado && !c.creado) return false;
+      return true;
+    });
+
+    var html = '<div class="wa-section">';
+
+    // Configuracion
+    html += '<div class="wa-card">' +
+      '<h4>\u{1F6D2} Configuracion de carritos abandonados</h4>' +
+      '<p class="text-sm text-muted mb-12">Cuando un cliente deja productos en el carrito sin completar el pedido, podes enviarle un recordatorio por WhatsApp.</p>' +
+      '<div class="g2">' +
+        '<div class="form-group"><label>Tiempo de abandono (minutos)</label>' +
+          '<input class="input" id="ca-tiempo" type="number" min="5" max="1440" value="' + (mw.tiempoAbandonoMin || 30) + '" placeholder="30">' +
+          '<p class="text-xs text-muted mt-4">Despues de X minutos sin actividad, el carrito se considera abandonado.</p>' +
+        '</div>' +
+        '<div class="form-group"><label>Activar notificacion automatica</label>' +
+          '<select class="input" id="ca-activo">' +
+            '<option value="true"' + (mw.notifActiva !== false ? ' selected' : '') + '>Activado</option>' +
+            '<option value="false"' + (mw.notifActiva === false ? ' selected' : '') + '>Desactivado</option>' +
+          '</select></div>' +
+      '</div>' +
+      '<div class="form-group mt-12"><label>Mensaje de carrito abandonado (usa {nombre} y {total})</label>' +
+        '<textarea class="input" id="ca-mensaje" rows="4" placeholder="Hola {nombre}! Vimos que dejaste productos en tu carrito de Arcano Especias por ${total}. Te ayudamos a completar tu pedido?">' + escHtml(mw.mensajeAbandono || '') + '</textarea>' +
+        '<p class="text-xs text-muted mt-4">Variables: <code>{nombre}</code>, <code>{total}</code>, <code>{items}</code></p>' +
+      '</div>' +
+      '<div class="mt-8" style="display:flex;gap:8px;align-items:center">' +
+        '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.guardarCarritosConfig()">Guardar configuracion</button>' +
+        '<span id="ca-status" class="text-sm text-muted ml-8"></span>' +
+      '</div>' +
+    '</div>';
+
+    // Carritos abandonados pendientes
+    html += '<div class="wa-card mt-16">' +
+      '<h4>Carritos abandonados pendientes (' + abandonadosPendientes.length + ')</h4>';
+    if (abandonadosPendientes.length === 0) {
+      html += '<p class="text-center text-muted" style="padding:20px">No hay carritos abandonados pendientes de notificar.</p>';
+    } else {
+      html += '<div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Items</th><th>Total</th><th>Abandonado hace</th><th></th></tr></thead><tbody>';
+      for (var i = 0; i < abandonadosPendientes.length; i++) {
+        var c = abandonadosPendientes[i];
+        var cliente = c.cliente || {};
+        var tiempoMs = ahora - new Date(c.actualizado || c.creado).getTime();
+        var tiempoStr = _formatearTiempo(tiempoMs);
+        var telNorm = cliente.telefono ? ('57' + cliente.telefono.replace(/\D/g, '').replace(/^57/, '')) : '';
+        var nombreVar = cliente.nombre || 'Cliente';
+        var totalVar = (c.total || 0).toLocaleString();
+        var itemsVar = (c.items || []).map(function(it) { return (it.nombre || '?') + ' x' + (it.qty || 1); }).join(', ');
+        var mensaje = (mw.mensajeAbandono || 'Hola {nombre}! Vimos que dejaste productos en tu carrito de Arcano Especias por ${total}. Te ayudamos a completar tu pedido?')
+          .replace(/\{nombre\}/g, nombreVar)
+          .replace(/\{total\}/g, '$' + totalVar)
+          .replace(/\{items\}/g, itemsVar);
+        var waLink = telNorm ? _buildWaLink(telNorm, mensaje) : '#';
+        html += '<tr>' +
+          '<td class="fw7">' + escHtml(cliente.nombre || 'Invitado') + '</td>' +
+          '<td>' + escHtml(cliente.telefono || '-') + '</td>' +
+          '<td class="text-sm">' + ((c.items || []).length) + ' productos</td>' +
+          '<td class="fw7 text-gold">$' + (c.total || 0).toLocaleString() + '</td>' +
+          '<td class="text-sm text-muted">' + tiempoStr + '</td>' +
+          '<td>' +
+            (waLink !== '#' ?
+              '<a href="' + waLink + '" target="_blank" class="btn btn-sm btn-gold">Enviar</a> ' +
+              '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications.marcarCarritoNotificado(\'' + c._key + '\')">Marcar notificado</button>'
+              : '<span class="text-xs text-muted">Sin telefono</span>') +
+          '</td>' +
+        '</tr>';
+      }
+      html += '</tbody></table></div>';
+    }
+    html += '</div></div>';
+    container.innerHTML = html;
+  }
+
+  async function guardarCarritosConfig() {
+    var tiempo = parseInt(document.getElementById('ca-tiempo').value, 10) || 30;
+    var activo = document.getElementById('ca-activo').value === 'true';
+    var mensaje = document.getElementById('ca-mensaje').value.trim();
+    try {
+      var r = await fetch(FB_URL + '/tiendaConfig.json');
+      var current = r.ok ? await r.json() : {};
+      current = current || {};
+      current.mensajesWhatsApp = current.mensajesWhatsApp || {};
+      current.mensajesWhatsApp.tiempoAbandonoMin = tiempo;
+      current.mensajesWhatsApp.notifActiva = activo;
+      current.mensajesWhatsApp.mensajeAbandono = mensaje;
+      await fetch(FB_URL + '/tiendaConfig.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(current)
+      });
+      var status = document.getElementById('ca-status');
+      if (status) status.innerHTML = '<span style="color:var(--green)">Guardado</span>';
+      toast('Configuracion de carritos guardada');
+      setTimeout(function() { if (status) status.innerHTML = ''; }, 3000);
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function marcarCarritoNotificado(key) {
+    try {
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        await firebase.database().ref('arcano/db/carritos/' + key).update({ notificadoEn: new Date().toISOString() });
+      } else {
+        await fetch(FB_URL + '/carritos/' + key + '/notificadoEn.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(new Date().toISOString())
+        });
+      }
+      toast('Carrito marcado como notificado');
+      showTab('carritos');
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  // === TAB: Seguimiento post-venta ===
+
+  async function renderSeguimiento(container, cfg) {
+    var mw = cfg.mensajesWhatsApp || {};
+    var pedidos = [];
+    var clientes = [];
+    try {
+      if (typeof ArcanoDB !== 'undefined') {
+        if (ArcanoDB.getPedidos) pedidos = ArcanoDB.getPedidos();
+        if (ArcanoDB.getClientes) clientes = ArcanoDB.getClientes();
+      }
+    } catch(e) {}
+
+    // Configuracion del mensaje de seguimiento
+    var html = '<div class="wa-section">';
+    html += '<div class="wa-card">' +
+      '<h4>\u{1F4DE} Seguimiento post-venta</h4>' +
+      '<p class="text-sm text-muted mb-12">Enviale un mensaje a los clientes que recibieron su pedido hace X dias para preguntarles como les fue. Ideal para fidelizar y pedir reseñas.</p>' +
+      '<div class="g2">' +
+        '<div class="form-group"><label>Enviar mensaje despues de (dias)</label>' +
+          '<input class="input" id="sv-dias" type="number" min="1" max="30" value="' + (mw.seguimientoDias || 4) + '" placeholder="4">' +
+          '<p class="text-xs text-muted mt-4">Despues de cuantos dias de entregado el pedido, enviar el mensaje.</p>' +
+        '</div>' +
+        '<div class="form-group"><label>Activar recordatorio en panel</label>' +
+          '<select class="input" id="sv-activo">' +
+            '<option value="true"' + (mw.seguimientoActivo !== false ? ' selected' : '') + '>Activado</option>' +
+            '<option value="false"' + (mw.seguimientoActivo === false ? ' selected' : '') + '>Desactivado</option>' +
+          '</select></div>' +
+      '</div>' +
+      '<div class="form-group mt-12"><label>Mensaje de seguimiento (usa {nombre})</label>' +
+        '<textarea class="input" id="sv-mensaje" rows="4" placeholder="Hola {nombre}! Hace unos dias recibiste tu pedido de Arcano Especias. Como fue tu experiencia? Tu opinion nos ayuda mucho. Cualquier cosa, escribenos por aqui.">' + escHtml(mw.mensajeSeguimiento || '') + '</textarea>' +
+        '<p class="text-xs text-muted mt-4">Variables: <code>{nombre}</code></p>' +
+      '</div>' +
+      '<div class="mt-8">' +
+        '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.guardarSeguimientoConfig()">Guardar configuracion</button>' +
+        '<span id="sv-status" class="text-sm text-muted ml-8"></span>' +
+      '</div>' +
+    '</div>';
+
+    // Buscar pedidos entregados hace X dias
+    var dias = mw.seguimientoDias || 4;
+    var ahora = Date.now();
+    var limiteDias = dias * 24 * 60 * 60 * 1000;
+    var candidatos = [];
+
+    for (var i = 0; i < pedidos.length; i++) {
+      var p = pedidos[i];
+      if (p.estado !== 'entregado') continue;
+      if (!p.cliente || !p.cliente.telefono) continue;
+      // Verificar si ya se envio seguimiento
+      if (p.seguimientoEnviado) continue;
+      var fechaEntrega = p.notificadoEn || p.creado || '';
+      if (!fechaEntrega) continue;
+      var fechaMs = new Date(fechaEntrega).getTime();
+      if (isNaN(fechaMs)) continue;
+      var diff = ahora - fechaMs;
+      if (diff >= limiteDias && diff < (limiteDias + 7 * 24 * 60 * 60 * 1000)) {
+        // Entre X dias y X+7 dias despues de entrega
+        candidatos.push(p);
+      }
+    }
+
+    html += '<div class="wa-card mt-16">' +
+      '<h4>Clientes para seguimiento (' + candidatos.length + ')</h4>' +
+      '<p class="text-sm text-muted mb-12">Pedidos entregados hace ' + dias + ' o mas dias sin mensaje de seguimiento enviado.</p>';
+    if (candidatos.length === 0) {
+      html += '<p class="text-center text-muted" style="padding:20px">No hay clientes pendientes de seguimiento en este momento.</p>';
+    } else {
+      html += '<div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Pedido</th><th>Total</th><th>Entregado hace</th><th></th></tr></thead><tbody>';
+      for (var j = 0; j < candidatos.length; j++) {
+        var ped = candidatos[j];
+        var cl = ped.cliente || {};
+        var telNorm = cl.telefono ? ('57' + cl.telefono.replace(/\D/g, '').replace(/^57/, '')) : '';
+        var nombreVar = cl.nombre || 'Cliente';
+        var mensaje = (mw.mensajeSeguimiento || 'Hola {nombre}! Hace unos dias recibiste tu pedido de Arcano Especias. Como fue tu experiencia? Tu opinion nos ayuda mucho.')
+          .replace(/\{nombre\}/g, nombreVar);
+        var waLink = telNorm ? _buildWaLink(telNorm, mensaje) : '#';
+        var fechaEntrega = ped.notificadoEn || ped.creado || '';
+        var diffMs = ahora - new Date(fechaEntrega).getTime();
+        var diasPasados = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        html += '<tr>' +
+          '<td class="fw7">' + escHtml(cl.nombre || '?') + '</td>' +
+          '<td>' + escHtml(cl.telefono || '-') + '</td>' +
+          '<td><code>#' + (ped._key || '').slice(-6).toUpperCase() + '</code></td>' +
+          '<td class="fw7 text-gold">$' + (ped.total || 0).toLocaleString() + '</td>' +
+          '<td class="text-sm text-muted">' + diasPasados + ' dias</td>' +
+          '<td>' +
+            (waLink !== '#' ?
+              '<a href="' + waLink + '" target="_blank" class="btn btn-sm btn-gold">Enviar</a> ' +
+              '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications.marcarSeguimientoEnviado(\'' + ped._key + '\')">Marcar enviado</button>'
+              : '<span class="text-xs text-muted">Sin telefono</span>') +
+          '</td>' +
+        '</tr>';
+      }
+      html += '</tbody></table></div>';
+    }
+    html += '</div></div>';
+    container.innerHTML = html;
+  }
+
+  async function guardarSeguimientoConfig() {
+    var dias = parseInt(document.getElementById('sv-dias').value, 10) || 4;
+    var activo = document.getElementById('sv-activo').value === 'true';
+    var mensaje = document.getElementById('sv-mensaje').value.trim();
+    try {
+      var r = await fetch(FB_URL + '/tiendaConfig.json');
+      var current = r.ok ? await r.json() : {};
+      current = current || {};
+      current.mensajesWhatsApp = current.mensajesWhatsApp || {};
+      current.mensajesWhatsApp.seguimientoDias = dias;
+      current.mensajesWhatsApp.seguimientoActivo = activo;
+      current.mensajesWhatsApp.mensajeSeguimiento = mensaje;
+      await fetch(FB_URL + '/tiendaConfig.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(current)
+      });
+      var status = document.getElementById('sv-status');
+      if (status) status.innerHTML = '<span style="color:var(--green)">Guardado</span>';
+      toast('Configuracion de seguimiento guardada');
+      setTimeout(function() { if (status) status.innerHTML = ''; }, 3000);
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function marcarSeguimientoEnviado(key) {
+    try {
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        await firebase.database().ref('arcano/db/pedidos/' + key).update({ seguimientoEnviado: true, seguimientoEn: new Date().toISOString() });
+      } else {
+        await fetch(FB_URL + '/pedidos/' + key + '/seguimientoEnviado.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(true)
+        });
+        await fetch(FB_URL + '/pedidos/' + key + '/seguimientoEn.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(new Date().toISOString())
+        });
+      }
+      toast('Seguimiento marcado como enviado');
+      showTab('seguimiento');
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  function _formatearTiempo(ms) {
+    var min = Math.floor(ms / 60000);
+    if (min < 60) return min + ' min';
+    var horas = Math.floor(min / 60);
+    if (horas < 24) return horas + 'h ' + (min % 60) + 'm';
+    var dias = Math.floor(horas / 24);
+    return dias + 'd ' + (horas % 24) + 'h';
+  }
 
   function renderManual(container, cfg) {
     var clientes = (typeof ArcanoDB !== 'undefined' && ArcanoDB.getClientes) ? ArcanoDB.getClientes() : [];
@@ -777,6 +1070,10 @@ var WhatsAppNotifications = (function() {
     enviarManual: enviarManual,
     notificarDesdePedido: notificarDesdePedido,
     showNotificacionModal: showNotificacionModal,
-    reenviar: reenviar
+    reenviar: reenviar,
+    guardarCarritosConfig: guardarCarritosConfig,
+    marcarCarritoNotificado: marcarCarritoNotificado,
+    guardarSeguimientoConfig: guardarSeguimientoConfig,
+    marcarSeguimientoEnviado: marcarSeguimientoEnviado
   };
 })();
