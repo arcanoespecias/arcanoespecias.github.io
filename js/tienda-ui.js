@@ -623,26 +623,19 @@ function _renderDetail(products, idx) {
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
   html += descHtml + ingsHtml + _usosHtml(p);
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
-  html += '</div></div>';
+  html += '</div>';
+  // Botón "Volver a la tienda" — bien visible al final
+  html += '<div style="padding:16px 20px;text-align:center;border-top:1px solid var(--border)">';
+  html += '<button onclick="document.getElementById(\'detail-ov\').remove()" style="background:var(--gold,#d4af37);color:#1b0b07;border:none;padding:12px 32px;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;max-width:300px;font-family:inherit">← Volver a la tienda</button>';
+  html += '</div>';
+  html += '</div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
 
   // Click en overlay (fuera del modal) para cerrar
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
 
-  // Swipe con touch
-  var touchStartX = 0;
-  var touchEndX = 0;
-  overlay.addEventListener('touchstart', function(e) {
-    touchStartX = e.changedTouches[0].screenX;
-  }, { passive: true });
-  overlay.addEventListener('touchend', function(e) {
-    touchEndX = e.changedTouches[0].screenX;
-    var diff = touchEndX - touchStartX;
-    if (Math.abs(diff) < 60) return; // swipe m\u00EDnimo 60px
-    if (diff > 0 && hasPrev) _swipeDetail(idx, -1);
-    else if (diff < 0 && hasNext) _swipeDetail(idx, 1);
-  }, { passive: true });
+  // SIN swipe — removido para evitar cambio accidental de producto al hacer scroll
 
   _updateTitle(null, p.nombre + ' - Arcano Especias');
 }
@@ -726,21 +719,15 @@ function _updateDetailContent(overlay, products, idx) {
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
   html += descHtml + ingsHtml + _usosHtml(p);
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
-  html += '</div></div>';
+  html += '</div>';
+  // Botón "Volver a la tienda" — bien visible al final
+  html += '<div style="padding:16px 20px;text-align:center;border-top:1px solid var(--border)">';
+  html += '<button onclick="document.getElementById(\'detail-ov\').remove()" style="background:var(--gold,#d4af37);color:#1b0b07;border:none;padding:12px 32px;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;max-width:300px;font-family:inherit">← Volver a la tienda</button>';
+  html += '</div>';
+  html += '</div>';
   // Actualizar el contenido del overlay
   overlay.innerHTML = html;
-  // Re-attach touch listeners
-  var touchStartX = 0;
-  overlay.addEventListener('touchstart', function(e) {
-    touchStartX = e.changedTouches[0].screenX;
-  }, { passive: true });
-  overlay.addEventListener('touchend', function(e) {
-    var touchEndX = e.changedTouches[0].screenX;
-    var diff = touchEndX - touchStartX;
-    if (Math.abs(diff) < 60) return;
-    if (diff > 0 && hasPrev) _swipeDetail(idx, -1);
-    else if (diff < 0 && hasNext) _swipeDetail(idx, 1);
-  }, { passive: true });
+  // SIN swipe — removido para evitar cambio accidental de producto al hacer scroll
   _updateTitle(null, p.nombre + ' - Arcano Especias');
 }
 

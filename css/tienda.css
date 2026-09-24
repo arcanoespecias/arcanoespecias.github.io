@@ -672,14 +672,15 @@ main {
   position: relative;
 }
 .detail-close {
-  position: absolute; top: 16px; right: 16px;
-  width: 36px; height: 36px; border-radius: 50%;
+  position: absolute; top: 12px; right: 12px;
+  width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem; color: var(--text-sec);
-  background: var(--surface); z-index: 2;
+  font-size: 1.5rem; color: #1b0b07;
+  background: var(--gold); z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   transition: all 0.2s var(--ease);
 }
-.detail-close:hover { background: var(--border); color: var(--text); }
+.detail-close:hover { background: #e6c14a; transform: scale(1.1); }
 .detail-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 44px; height: 44px; border-radius: 50%;
