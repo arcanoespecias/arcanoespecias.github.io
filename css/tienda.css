@@ -555,10 +555,11 @@ main {
   height: 280px; position: relative; overflow: hidden;
   background: var(--bg-secondary);
   display: flex; align-items: center; justify-content: center;
+  contain: layout style paint;
 }
 .card-img-wrap img {
-  width: 100%; height: 100%; object-fit: contain;
-  transition: transform 0.5s var(--ease);
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.3s ease;
 }
 .product-card:hover .card-img-wrap img { transform: scale(1.03); }
 .card-img-wrap span {

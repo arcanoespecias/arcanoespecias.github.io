@@ -507,11 +507,17 @@ function renderProducts(filter) {
     if (p.region) meta += (meta ? ' \u00b7 ' : '') + p.region;
 
     h += '<div class="product-card" onclick="openDetail(' + p.id + ')">';
-    h += '<div class="card-img-wrap">';
+    h += '<div class="card-img-wrap" style="aspect-ratio:1/1;background:var(--bg2,#1b0b07)">';
     if (p.imagen) {
-      h += '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '" loading="lazy" decoding="async">';
+      // Para imágenes base64, no usar loading=lazy (ya están en memoria)
+      // Para imágenes URL, usar loading=lazy + decoding=async
+      var isBase64 = p.imagen.indexOf('data:image') === 0;
+      h += '<img src="' + p.imagen + '" alt="' + _productAlt(p) + '"' +
+        (isBase64 ? '' : ' loading="lazy"') +
+        ' decoding="async" style="width:100%;height:100%;object-fit:cover"' +
+        ' onerror="this.style.display=\'none\';this.parentElement.querySelector(\'span\')?.style.setProperty(\'display\',\'flex\')">';
     } else {
-      h += '<span>' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>';
+      h += '<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:2.5rem">' + (isPack ? '\ud83c\udf81' : (isBlend ? '\ud83c\udf3f' : '\ud83c\udf31')) + '</span>';
     }
     h += '</div><div class="card-body">';
     h += '<div class="card-name">' + p.nombre + '</div>';

@@ -698,11 +698,12 @@ function getTiendaConfig() {
 /* === FIX DE URLs: reemplazar dominio viejo por nuevo en im\u00E1genes === */
 function _fixImageUrl(url, updatedAt) {
   if (!url) return '';
+  // Si es base64, devolverla tal cual (ya está lista para usar)
+  if (url.indexOf('data:image') === 0) return url;
+  // Reemplazar dominio viejo
   var fixed = url.replace(/https?:\/\/arcanoespecias\.github\.io/g, 'https://arcanoespecias.com');
   // Cache-busting: si la imagen fue actualizada recientemente, agregar ?v=timestamp
-  // para evitar que el navegador muestre la imagen vieja cacheada
   if (updatedAt && (Date.now() - updatedAt) < 24 * 60 * 60 * 1000) {
-    // Solo agregar cache-buster si la imagen fue actualizada en las ultimas 24h
     var separator = fixed.indexOf('?') >= 0 ? '&' : '?';
     fixed = fixed + separator + 'v=' + updatedAt;
   }
