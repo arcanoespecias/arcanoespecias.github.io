@@ -2148,8 +2148,9 @@ function toggleEnBlend(especiaId) {
 
 /** Find especia by name with flexible matching (exact, prefix, contains, word overlap) */
 function findEspeciaByName(nombre) {
-  if (!nombre) return null;
+  if (!nombre || typeof nombre !== 'string') return null;
   var target = nombre.trim().toLowerCase();
+  if (!target) return null;
   var keys = Object.keys(_db.especias || {});
   // 1. Exact match
   for (var i = 0; i < keys.length; i++) {

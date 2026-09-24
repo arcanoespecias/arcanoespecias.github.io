@@ -5549,8 +5549,10 @@ const Pages = {
                 } else {
                   var allBlends = ArcanoDB.getBlends();
                   var matchBl = null;
+                  var bUNombre = (bU.nombre || '').trim().toLowerCase();
                   for (var mb = 0; mb < allBlends.length; mb++) {
-                    if (allBlends[mb].nombre.toLowerCase() === bU.nombre.toLowerCase()) { matchBl = allBlends[mb]; break; }
+                    var mbNombre = (allBlends[mb].nombre || '').trim().toLowerCase();
+                    if (mbNombre && mbNombre === bUNombre) { matchBl = allBlends[mb]; break; }
                   }
                   if (matchBl) {
                     savedBl = ArcanoDB.saveBlend({
