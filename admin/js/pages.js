@@ -5450,7 +5450,7 @@ const Pages = {
             '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
             '<button class="btn btn-gold" id="btn-do-prod-import">Confirmar Actualizacion</button>';
 
-          document.getElementById('btn-do-prod-import').addEventListener('click', function() {
+          document.getElementById('btn-do-prod-import').addEventListener('click', async function() {
             var btn = document.getElementById('btn-do-prod-import');
             btn.disabled = true;
             btn.textContent = 'Actualizando...';
@@ -5592,26 +5592,65 @@ const Pages = {
                 ArcanoDB.saveCostosInsumos(newCostos);
               }
 
-              // Force immediate save to Firebase and wait for confirmation
+              // Force immediate save — escribir cada blend directamente a Firebase
+              // en vez de saveNow() que sube TODA la DB (demasiado grande)
               btn.textContent = 'Guardando en Firebase...';
-              ArcanoDB.saveNow().then(function(ok) {
-                if (ok) {
-                  previewDiv.innerHTML = '<div class="card"><div class="card-body">' +
-                    '<p class="text-green fw7 mb-8">Importacion completada y guardada</p>' +
-                    '<div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">' +
-                      '<div class="stat-card"><div class="stat-value" style="color:var(--green)">' + espOk + '</div><div class="stat-label">Especias Procesadas</div></div>' +
-                      '<div class="stat-card"><div class="stat-value" style="color:var(--blue)">' + blOk + '</div><div class="stat-label">Blends Procesados</div></div>' +
-                    '</div>' +
-                    '<p class="text-sm text-muted mt-12">Los productos nuevos fueron creados y los existentes actualizados. Los stocks no se modificaron.</p>' +
-                  '</div></div>';
-                } else {
-                  previewDiv.innerHTML = '<div class="card"><div class="card-body">' +
-                    '<p class="text-red fw7 mb-8">Error al guardar en Firebase</p>' +
-                    '<p class="text-sm text-muted">Los datos se procesaron pero no se pudieron guardar. Intenta de nuevo o verifica tu conexion.</p>' +
-                  '</div></div>';
+              
+              var savedCount = 0;
+              var totalToSave = blKeys2.length;
+              var failedCount = 0;
+              
+              for (var sk = 0; sk < blKeys2.length; sk++) {
+                var saveBlId = blUpdates[blKeys2[sk]].id || blKeys2[sk];
+                var saveBlData = _db.blends[saveBlId];
+                if (saveBlData && saveBlId) {
+                  try {
+                    await new Promise(function(resolve) {
+                      ArcanoDB.writeField('blends/' + saveBlId, saveBlData);
+                      resolve(true);
+                    });
+                    savedCount++;
+                  } catch(e) {
+                    console.error('[Import] Error saving blend ' + saveBlId + ':', e);
+                    failedCount++;
+                  }
                 }
-                footerDiv.innerHTML = '<button class="btn btn-gold" onclick="this.closest(\'.modal-overlay\').remove();App.renderPage(\'productos\')">Cerrar</button>';
-              });
+              }
+              
+              // También guardar especias
+              for (var se = 0; se < espUpdates.length; se++) {
+                var saveEspId = espUpdates[se].id;
+                var saveEspData = saveEspId ? _db.especias[saveEspId] : null;
+                if (saveEspData && saveEspId) {
+                  try {
+                    await new Promise(function(resolve) {
+                      ArcanoDB.writeField('especias/' + saveEspId, saveEspData);
+                      resolve(true);
+                    });
+                  } catch(e) {
+                    console.error('[Import] Error saving especia ' + saveEspId + ':', e);
+                  }
+                }
+              }
+              
+              if (failedCount === 0 || savedCount > 0) {
+                previewDiv.innerHTML = '<div class="card"><div class="card-body">' +
+                  '<p class="text-green fw7 mb-8">Importacion completada</p>' +
+                  '<div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">' +
+                    '<div class="stat-card"><div class="stat-value" style="color:var(--green)">' + espOk + '</div><div class="stat-label">Especias Procesadas</div></div>' +
+                    '<div class="stat-card"><div class="stat-value" style="color:var(--blue)">' + blOk + '</div><div class="stat-label">Blends Procesados</div></div>' +
+                    '<div class="stat-card"><div class="stat-value" style="color:' + (failedCount > 0 ? 'var(--red)' : 'var(--green)') + '">' + savedCount + '</div><div class="stat-label">Guardados en Firebase</div></div>' +
+                  '</div>' +
+                  (failedCount > 0 ? '<p class="text-sm" style="color:var(--red);margin-top:8px">' + failedCount + ' blends no se pudieron guardar. Revisá la consola.</p>' : '') +
+                  '<p class="text-sm text-muted mt-12">Los productos nuevos fueron creados y los existentes actualizados. Los stocks no se modificaron.</p>' +
+                '</div></div>';
+              } else {
+                previewDiv.innerHTML = '<div class="card"><div class="card-body">' +
+                  '<p class="text-red fw7 mb-8">Error al guardar en Firebase</p>' +
+                  '<p class="text-sm text-muted">Los datos se procesaron pero no se pudieron guardar. Intenta de nuevo.</p>' +
+                '</div></div>';
+              }
+              footerDiv.innerHTML = '<button class="btn btn-gold" onclick="this.closest(\'.modal-overlay\').remove();App.renderPage(\'productos\')">Cerrar</button>';
 
             } catch (err) {
               previewDiv.innerHTML += '<p class="text-red mt-8">Error: ' + err.message + '</p>';
