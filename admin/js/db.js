@@ -55,6 +55,43 @@ function _cleanNulls() {
   }
 }
 
+/**
+ * Convierte una colección de _db de array a objeto keyed-by-id.
+ * Si la colección ya es un objeto, no hace nada.
+ * Si es un array, lo convierte a { id: item } usando el campo `id` de cada item.
+ * Items sin `id` o con `id` duplicado se asignan a una key generada para no perder datos.
+ * Esto resuelve el bug donde _db.blends[id] accedía por índice del array en vez
+ * de por id real, causando que toggleTienda('blend', N) tocara el producto equivocado.
+ */
+function _normalizeToMap(col) {
+  if (!_db || !_db[col]) return;
+  var c = _db[col];
+  if (!Array.isArray(c)) return;  // ya es objeto
+  var newObj = {};
+  var usedKeys = {};
+  var mismatches = 0;
+  for (var i = 0; i < c.length; i++) {
+    var item = c[i];
+    if (!item || typeof item !== 'object') continue;
+    var idVal = item.id;
+    var key;
+    if (idVal != null && String(idVal) !== String(i)) mismatches++;
+    if (idVal != null && !usedKeys[String(idVal)]) {
+      key = String(idVal);
+      usedKeys[key] = true;
+    } else {
+      // id faltante o duplicado: usar índice del array como fallback
+      key = '__idx_' + i;
+      usedKeys[key] = true;
+    }
+    newObj[key] = item;
+  }
+  _db[col] = newObj;
+  if (mismatches > 0) {
+    console.log('[DB] _normalizeToMap(' + col + '): convertidos ' + c.length + ' items de array a objeto, ' + mismatches + ' con index!=id.');
+  }
+}
+
 function _ensureStructure() {
   if (!_db || typeof _db !== 'object' || Array.isArray(_db)) {
     _db = null;
@@ -95,6 +132,28 @@ function _ensureStructure() {
   };
   if (!_db.usoOptions) _db.usoOptions = ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'];
   if (!_db.tiendaConfig) _db.tiendaConfig = { logoPago: '' };
+
+  // === MIGRACIÓN CRÍTICA: normalizar colecciones a objetos keyed-by-id ===
+  // Bug: Firebase RTDB guarda arrays densos como listas JSON, pero cuando se
+  // borran items y se agregan otros, el índice del array deja de coincidir
+  // con el campo `id` dentro de cada item. Eso hace que _db.blends[11] retorne
+  // el item en la posición 11 del array (que puede tener id=21, etc.), causando
+  // que toggleTienda('blend', 11) cambie el producto equivocado.
+  // Fix: convertir arrays a objetos { id: item } para que _db.blends[id] sea
+  // siempre el item correcto. Esto también hace que el write directo a
+  // Firebase (`blends/{id}/enTienda`) apunte al path correcto.
+  _normalizeToMap('especias');
+  _normalizeToMap('blends');
+  _normalizeToMap('packs');
+  _normalizeToMap('producciones');
+  _normalizeToMap('ventas');
+  _normalizeToMap('entradas');
+  _normalizeToMap('costales');
+  _normalizeToMap('ajustes');
+  _normalizeToMap('puntosDeVenta');
+  _normalizeToMap('pdvVentas');
+  _normalizeToMap('gastos');
+  _normalizeToMap('stickers');
 
   _cleanNulls();
 
