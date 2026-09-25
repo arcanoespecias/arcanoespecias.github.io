@@ -5,22 +5,14 @@ Disallow: /admin-exclude.html
 Disallow: /clear.html
 Disallow: /tienda/
 
-Sitemap: https://arcanoespecias.com/sitemap.xml
-
-# Feed de productos para Google Merchant Center
-# Disponible en XML (estándar RSS 2.0 con namespace g:) y TSV
-# https://support.google.com/merchants/answer/7052112
-
-User-agent: Googlebot
-Allow: /
-
 User-agent: Googlebot-Image
 Allow: /img/
 Allow: /icons/
 Allow: /productos/
+Disallow: /admin/
+Disallow: /admin-exclude.html
+Disallow: /clear.html
+Disallow: /tienda/
 
-User-agent: AdsBot-Google
-Allow: /
-
-# Sitemap de imágenes
+Sitemap: https://arcanoespecias.com/sitemap.xml
 Sitemap: https://arcanoespecias.com/sitemap-images.xml

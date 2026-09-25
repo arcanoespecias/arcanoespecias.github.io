@@ -678,39 +678,87 @@ var ArcanoSEO = (function() {
   }
 
   /* === Sitemap XML === */
+  function _lastmodForBlend(b) {
+    // Prioriza imagenUpdatedAt > creado > hoy
+    if (b.imagenUpdatedAt) {
+      try {
+        var d = new Date(Number(b.imagenUpdatedAt));
+        if (!isNaN(d.getTime())) return d.toISOString().substring(0, 10);
+      } catch (e) {}
+    }
+    if (b.creado && typeof b.creado === 'string') {
+      return b.creado.substring(0, 10);
+    }
+    return new Date().toISOString().substring(0, 10);
+  }
+
   function generateSitemap(blends, catsWithCounts, extraUrls) {
     var today = new Date().toISOString().substring(0, 10);
     var urlsSeen = {};
+    // Lista de tuplas [url, prio, freq, lastmod]
     var urls = [];
-    function add(url, prio, freq) {
+    function add(url, prio, freq, lastmod) {
       if (urlsSeen[url]) return;
       urlsSeen[url] = true;
-      urls.push([url, prio, freq]);
+      urls.push([url, prio, freq, lastmod || today]);
     }
-    add(BASE_URL + '/', '1.0', 'weekly');
-    add(BASE_URL + '/blends-para/', '0.9', 'weekly');
-    for (var i = 0; i < catsWithCounts.length; i++) {
-      add(BASE_URL + '/blends-para/' + catsWithCounts[i][0] + '/', '0.8', 'weekly');
-    }
+
+    // Homepage: fecha de hoy
+    add(BASE_URL + '/', '1.0', 'weekly', today);
+    // Índice /blends-para/: fecha de hoy
+    add(BASE_URL + '/blends-para/', '0.9', 'weekly', today);
+
+    // Mapeo: cat_label → lista de blends (con sus lastmod)
+    var catToBlends = {};
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
-      if ((Number(b.precioChico) || 0) <= 0) continue;
-      var slug = b._slug || slugify(b.nombre);
-      add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly');
+      if ((Number(b.precioChico) || 0) <= 0 && (Number(b.precioGrande) || 0) <= 0) continue;
+      var cat = b.categoria || '';
+      if (cat) {
+        if (!catToBlends[cat]) catToBlends[cat] = [];
+        catToBlends[cat].push(b);
+      }
     }
-    // Extra URLs (recetas, blog, etc.)
+
+    // Categorías SEO: lastmod = max(lastmod) de los blends en esa categoría
+    for (var i = 0; i < catsWithCounts.length; i++) {
+      var catSlug = catsWithCounts[i][0];
+      var catLastmod = today;
+      for (var catName in catToBlends) {
+        if (catToBlends.hasOwnProperty(catName) && slugify(catName) === catSlug) {
+          var blendList = catToBlends[catName];
+          var lastmods = blendList.map(function(b) { return _lastmodForBlend(b); });
+          lastmods.sort();
+          catLastmod = lastmods[lastmods.length - 1];
+          break;
+        }
+      }
+      add(BASE_URL + '/blends-para/' + catSlug + '/', '0.8', 'weekly', catLastmod);
+    }
+
+    // Productos /blends/ — lastmod dinámico desde Firebase
+    for (var i = 0; i < blends.length; i++) {
+      var b = blends[i];
+      if ((Number(b.precioChico) || 0) <= 0 && (Number(b.precioGrande) || 0) <= 0) continue;
+      var slug = b._slug || slugify(b.nombre);
+      add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly', _lastmodForBlend(b));
+    }
+
+    // Extra URLs (recetas, blog, etc.) - lastmod fallback = today
     if (extraUrls) {
       for (var i = 0; i < extraUrls.length; i++) {
         var u = extraUrls[i];
         if (u.indexOf(BASE_URL + '/p/') === 0) continue;
         if (u.indexOf(BASE_URL + '/blends/') === 0) continue;
         if (u.indexOf(BASE_URL + '/blends-para/') === 0) continue;
-        add(u, '0.6', 'monthly');
+        if (u.replace(/\/$/, '') === BASE_URL) continue;  // skip homepage (already added)
+        add(u, '0.6', 'monthly', today);
       }
     }
+
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     for (var i = 0; i < urls.length; i++) {
-      xml += '<url><loc>' + esc(urls[i][0]) + '</loc><lastmod>' + today + '</lastmod><priority>' + urls[i][1] + '</priority><changefreq>' + urls[i][2] + '</changefreq></url>\n';
+      xml += '<url><loc>' + esc(urls[i][0]) + '</loc><lastmod>' + urls[i][3] + '</lastmod><priority>' + urls[i][1] + '</priority><changefreq>' + urls[i][2] + '</changefreq></url>\n';
     }
     xml += '</urlset>\n';
     return xml;

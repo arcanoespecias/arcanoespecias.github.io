@@ -896,33 +896,93 @@ def generate_merchant_feed(blends):
     with open(os.path.join(REPO_PATH, 'merchant_feed.tsv'), 'w', encoding='utf-8') as f:
         f.write(tsv)
 
+def _lastmod_for_blend(b):
+    """Calcula la fecha de última modificación de un blend.
+    Prioriza: imagenUpdatedAt > creado.
+    Devuelve string YYYY-MM-DD."""
+    # imagenUpdatedAt se setea cuando se cambia la imagen (epoch ms)
+    img_ts = b.get('imagenUpdatedAt')
+    if img_ts:
+        try:
+            from datetime import datetime as _dt
+            return _dt.fromtimestamp(int(img_ts) / 1000).strftime('%Y-%m-%d')
+        except Exception:
+            pass
+    # creado (ISO 8601 string)
+    creado = b.get('creado')
+    if creado:
+        try:
+            return creado[:10]  # 'YYYY-MM-DDTHH:MM:SS' → 'YYYY-MM-DD'
+        except Exception:
+            pass
+    # Fallback: fecha de hoy
+    return datetime.now().strftime('%Y-%m-%d')
+
+
+def _lastmod_for_filesystem(path):
+    """Lee la fecha de modificación del archivo en disco."""
+    try:
+        mtime = os.path.getmtime(path)
+        return datetime.fromtimestamp(mtime).strftime('%Y-%m-%d')
+    except Exception:
+        return datetime.now().strftime('%Y-%m-%d')
+
+
 def generate_sitemap(blends, cats_with_counts, existing_pages):
-    """Genera sitemap.xml extendido con todas las URLs."""
+    """Genera sitemap.xml con lastmod dinámico por URL.
+    - Blends: usa imagenUpdatedAt o creado de Firebase.
+    - Categorías: usa la fecha del blend más reciente en esa categoría.
+    - Blog/Recetas: lee mtime del archivo HTML estático.
+    - Homepage: fecha de hoy.
+    """
     today = datetime.now().strftime('%Y-%m-%d')
     urls_seen = set()
+    # Lista de tuplas (url, prio, freq, lastmod)
     urls = []
 
-    def add(url, prio, freq):
+    def add(url, prio, freq, lastmod=None):
         if url in urls_seen:
             return
         urls_seen.add(url)
-        urls.append((url, prio, freq))
+        urls.append((url, prio, freq, lastmod or today))
 
-    add(BASE_URL + '/', '1.0', 'weekly')
-    add(BASE_URL + '/blends-para/', '0.9', 'weekly')
+    # Homepage: fecha de hoy
+    add(BASE_URL + '/', '1.0', 'weekly', today)
+    # Índice /blends-para/: fecha de hoy
+    add(BASE_URL + '/blends-para/', '0.9', 'weekly', today)
 
-    # Categorías SEO
-    for cat_slug, _ in cats_with_counts:
-        add(BASE_URL + '/blends-para/' + cat_slug + '/', '0.8', 'weekly')
-
-    # Productos /blends/
+    # Mapeo: categoria_slug → lista de blends en esa categoría (con sus lastmod)
+    cat_to_blends = {}
     for b in blends:
-        if (b.get('precioChico') or 0) <= 0:
+        if (b.get('precioChico') or 0) <= 0 and (b.get('precioGrande') or 0) <= 0:
+            continue
+        cat = b.get('categoria', '')
+        if cat:
+            cat_to_blends.setdefault(cat, []).append(b)
+
+    # Categorías SEO: lastmod = fecha del blend más reciente en la categoría
+    for cat_slug, _ in cats_with_counts:
+        # Buscar el cat original (label) para matchear los blends
+        cat_lastmod = today
+        for cat_name, blend_list in cat_to_blends.items():
+            cat_slug_normalized = slugify(cat_name)
+            if cat_slug_normalized == cat_slug:
+                if blend_list:
+                    # Tomar el último lastmod
+                    lastmods = [_lastmod_for_blend(b) for b in blend_list]
+                    cat_lastmod = max(lastmods)
+                break
+        add(BASE_URL + '/blends-para/' + cat_slug + '/', '0.8', 'weekly', cat_lastmod)
+
+    # Productos /blends/ — lastmod dinámico desde Firebase
+    for b in blends:
+        if (b.get('precioChico') or 0) <= 0 and (b.get('precioGrande') or 0) <= 0:
             continue
         slug = b.get('_slug') or slugify(b.get('nombre', ''))
-        add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly')
+        lastmod = _lastmod_for_blend(b)
+        add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly', lastmod)
 
-    # Páginas existentes (recetas, blog) - preservar
+    # Páginas existentes (recetas, blog) - preservar y usar mtime del archivo
     for url, priority, freq in existing_pages:
         # Excluir /p/ (reemplazadas por /blends/)
         if url.startswith(BASE_URL + '/p/'):
@@ -932,12 +992,28 @@ def generate_sitemap(blends, cats_with_counts, existing_pages):
             continue
         if url.startswith(BASE_URL + '/blends-para/'):
             continue
-        add(url, priority, freq)
+        # Excluir homepage (ya agregada)
+        if url.rstrip('/') == BASE_URL:
+            continue
+        # Calcular lastmod desde el archivo HTML correspondiente
+        lastmod = today
+        # URL → path relativo
+        if url.startswith(BASE_URL + '/'):
+            rel_path = url[len(BASE_URL):].lstrip('/')
+            local_path = os.path.join(REPO_PATH, rel_path)
+            # Si es directorio (termina con /), buscar index.html
+            if local_path.endswith('/'):
+                local_path = local_path + 'index.html'
+            elif not local_path.endswith('.html'):
+                local_path = local_path + '/index.html'
+            if os.path.exists(local_path):
+                lastmod = _lastmod_for_filesystem(local_path)
+        add(url, priority, freq, lastmod)
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    for url, prio, freq in urls:
-        xml += f'<url><loc>{esc(url)}</loc><lastmod>{today}</lastmod><priority>{prio}</priority><changefreq>{freq}</changefreq></url>\n'
+    for url, prio, freq, lastmod in urls:
+        xml += f'<url><loc>{esc(url)}</loc><lastmod>{lastmod}</lastmod><priority>{prio}</priority><changefreq>{freq}</changefreq></url>\n'
     xml += '</urlset>\n'
 
     with open(os.path.join(REPO_PATH, 'sitemap.xml'), 'w', encoding='utf-8') as f:
