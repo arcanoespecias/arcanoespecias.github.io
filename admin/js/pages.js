@@ -4631,7 +4631,7 @@ const Pages = {
     if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
     if (statusEl) statusEl.innerHTML = '<span class="text-muted">Leyendo productos...</span>';
 
-    var _gt='jksbZrZsYRI8E5<phRNgs]7wPot<M{yd;W63t6ZP';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+    var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
     var GH_OWNER = 'arcanoespecias';
     var GH_REPO = 'arcanoespecias.github.io';
     var GH_BRANCH = 'main';
@@ -12362,7 +12362,8 @@ Pages.regenerarSEOCompleto = function() {
   log('Iniciando regeneraci\u00F3n SEO completa...');
 
   // Token y config (mismos que regenerarSEO)
-  var _gt='jksbZrZsYRI8E5<phRNgs]7wPot<M{yd;W63t6ZP';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+  // Token fine-grained PAT de arcanoespecias-bot (rotado 2026-09-25, el anterior classic PAT fue revocado)
+  var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
   var GH_OWNER = 'arcanoespecias';
   var GH_REPO = 'arcanoespecias.github.io';
   var GH_BRANCH = 'main';
