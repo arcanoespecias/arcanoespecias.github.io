@@ -2434,15 +2434,71 @@ function addUsoOption(optionName) {
 
 function removeUsoOption(optionName) {
   _ensureStructure();
-  if (!_db.usoOptions) return false;
-  var idx = -1;
-  for (var i = 0; i < _db.usoOptions.length; i++) {
-    if (_db.usoOptions[i] === optionName) { idx = i; break; }
+  if (!optionName) return false;
+  var removed = false;
+  // 1) Quitar de _db.usoOptions (lista legacy, a veces poblada por migraciones)
+  if (_db.usoOptions) {
+    var idx = -1;
+    for (var i = 0; i < _db.usoOptions.length; i++) {
+      if (_db.usoOptions[i] === optionName) { idx = i; break; }
+    }
+    if (idx >= 0) { _db.usoOptions.splice(idx, 1); removed = true; }
   }
-  if (idx < 0) return false;
-  _db.usoOptions.splice(idx, 1);
-  _saveToFirebase(); _cacheLocal();
-  return true;
+  // 2) Quitar de tiendaConfig.usosCustom (lista realmente usada por el selector de productos)
+  try {
+    var cfg = _db.tiendaConfig || {};
+    if (cfg.usosCustom && Array.isArray(cfg.usosCustom)) {
+      var j = cfg.usosCustom.indexOf(optionName);
+      if (j >= 0) {
+        cfg.usosCustom.splice(j, 1);
+        _db.tiendaConfig = cfg;
+        removed = true;
+      }
+    }
+  } catch(e) { console.error('[DB] removeUsoOption usosCustom cleanup:', e); }
+  if (removed) { _saveToFirebase(); _cacheLocal(); }
+  return removed;
+}
+
+/**
+ * Limpia el campo `uso` de todas las especias y blends que contengan el uso
+ * indicado. Esto evita que el selector auto-recupere el uso eliminado via
+ * la lógica de "selArr no está en allOpciones → agregarlo" en buildUsoSelectorHtml.
+ * Retorna { especias: N, blends: M } con la cantidad de productos limpiados.
+ */
+function removeUsoFromProducts(usoName) {
+  _ensureStructure();
+  if (!usoName) return { especias: 0, blends: 0 };
+  var countE = 0, countB = 0;
+  // Especias
+  if (_db.especias) {
+    var espKeys = Object.keys(_db.especias);
+    for (var i = 0; i < espKeys.length; i++) {
+      var e = _db.especias[espKeys[i]];
+      if (!e || !e.uso) continue;
+      var parts = String(e.uso).split(',').map(function(s){return s.trim();}).filter(function(s){return s && s !== usoName;});
+      if (parts.length !== String(e.uso).split(',').map(function(s){return s.trim();}).filter(function(s){return s;}).length) {
+        e.uso = parts.join(', ');
+        countE++;
+      }
+    }
+  }
+  // Blends
+  if (_db.blends) {
+    var blKeys = Object.keys(_db.blends);
+    for (var j = 0; j < blKeys.length; j++) {
+      var b = _db.blends[blKeys[j]];
+      if (!b || !b.uso) continue;
+      var partsB = String(b.uso).split(',').map(function(s){return s.trim();}).filter(function(s){return s && s !== usoName;});
+      var origPartsB = String(b.uso).split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+      if (partsB.length !== origPartsB.length) {
+        b.uso = partsB.join(', ');
+        countB++;
+      }
+    }
+  }
+  if (countE > 0 || countB > 0) { _saveToFirebase(); _cacheLocal(); }
+  return { especias: countE, blends: countB };
 }
 
 /* ==================== IMAGE HELPER ==================== */
@@ -3540,7 +3596,7 @@ window.ArcanoDB = {
   toggleEnBlend: toggleEnBlend,
   getProductTags: getProductTags, getTagsForCategoria: getTagsForCategoria,
   addProductTag: addProductTag, removeProductTag: removeProductTag,
-  getUsoOptions: getUsoOptions, addUsoOption: addUsoOption, removeUsoOption: removeUsoOption,
+  getUsoOptions: getUsoOptions, addUsoOption: addUsoOption, removeUsoOption: removeUsoOption, removeUsoFromProducts: removeUsoFromProducts,
   compressImage: compressImage,
   DB_KEY: DB_KEY, FB_PATH: FB_PATH,
   getPuntosDeVenta: getPuntosDeVenta, getPuntoDeVenta: getPuntoDeVenta,

@@ -439,6 +439,7 @@ const Pages = {
         `<button class="tab${tab==='especias' ? ' active' : ''}" onclick="window._prodTab='especias';window._prodSearch='';App.renderPage('productos')">Especias<span class="tab-count">${especias.length}</span></button>` +
         `<button class="tab${tab==='blends' ? ' active' : ''}" onclick="window._prodTab='blends';window._prodSearch='';App.renderPage('productos')">Blends<span class="tab-count">${blends.length}</span></button>` +
         `<button class="tab${tab==='packs' ? ' active' : ''}" onclick="window._prodTab='packs';window._prodSearch='';App.renderPage('productos')">Packs<span class="tab-count">${packs.length}</span></button>` +
+        `<button class="tab${tab==='modos-uso' ? ' active' : ''}" onclick="window._prodTab='modos-uso';window._prodSearch='';App.renderPage('productos')">Modos de Uso</button>` +
         `<button class="tab${tab==='uso' ? ' active' : ''}" onclick="window._prodTab='uso';window._prodSearch='';App.renderPage('productos')" style="display:none">Etiquetas de uso</button>` +
       '</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
@@ -572,6 +573,72 @@ const Pages = {
         }
         h += '</tbody></table></div>';
       }
+    }
+
+    // --- TAB: MODOS DE USO ---
+    // Permite al admin ELIMINAR y agregar etiquetas de "Modo de Uso" (los chips
+    // que aparecen en el selector "Uso / Preparaciones" del formulario de producto).
+    // Las etiquetas base del sistema (Carnes, Pollo, etc.) se muestran como solo lectura.
+    // Las personalizadas (agregadas por el admin) tienen botón X para eliminar.
+    if (tab === 'modos-uso') {
+      var _baseUsos = ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'];
+      var _customUsos = [];
+      try {
+        var _cfg = ArcanoDB.getTiendaConfig();
+        if (_cfg && _cfg.usosCustom && Array.isArray(_cfg.usosCustom)) _customUsos = _cfg.usosCustom.slice();
+      } catch(e) {}
+
+      // Buscar usos "huérfanos" en productos que no están en base ni custom
+      // (pueden venir de importación Excel o datos viejos). Mostrarlos como eliminables.
+      var _extraUsos = [];
+      var _seen = {};
+      _baseUsos.forEach(function(u){ _seen[u] = true; });
+      _customUsos.forEach(function(u){ _seen[u] = true; });
+      try {
+        var _allEsp = ArcanoDB.getEspecias();
+        var _allBl = ArcanoDB.getBlends();
+        var _collectUso = function(prod) {
+          if (!prod || !prod.uso) return;
+          String(prod.uso).split(',').forEach(function(p) {
+            var u = p.trim();
+            if (u && !_seen[u]) { _seen[u] = true; _extraUsos.push(u); }
+          });
+        };
+        _allEsp.forEach(_collectUso);
+        _allBl.forEach(_collectUso);
+      } catch(e) {}
+
+      h += '<div class="card"><div class="card-body">';
+      h += '<div style="margin-bottom:18px"><p class="text-sm text-muted" style="margin:0 0 14px">Gestion\u00E1 las etiquetas de <strong>Modo de Uso</strong> que aparecen en el selector del formulario de producto. Las etiquetas base del sistema se muestran como solo lectura; las personalizadas se pueden eliminar.</p>';
+
+      // Input para agregar nuevos modos de uso
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">' +
+        '<span class="badge badge-gold" style="min-width:100px;text-align:center">+ Nuevo</span>' +
+        '<input type="text" class="input" id="new-uso-input" placeholder="Nuevo modo de uso (ej: Verduras Salteadas)..." style="flex:1;padding:6px 10px;font-size:.85rem" onkeydown="if(event.key===\'Enter\')Pages.doAddUsoMode()">' +
+        '<button class="btn btn-sm btn-outline" onclick="Pages.doAddUsoMode()">+ Agregar</button></div>';
+
+      // Modos de uso personalizados (eliminables)
+      if (_customUsos.length > 0 || _extraUsos.length > 0) {
+        h += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge badge-blue" style="min-width:100px;text-align:center">Personalizados</span><span class="text-xs text-muted">Click en X para eliminar</span></div>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+        _customUsos.forEach(function(u) {
+          h += '<span class="tag-chip-admin" title="Personalizado"><span>' + u + '</span><button onclick="Pages.doRemoveUsoMode(\'' + u.replace(/'/g, '&apos;') + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:1rem;padding:0 2px">X</button></span>';
+        });
+        _extraUsos.forEach(function(u) {
+          h += '<span class="tag-chip-admin" title="Detectado en productos (hu\u00E9rfano)"><span>' + u + ' <em style="color:var(--text-muted);font-size:.7rem">(huérfano)</em></span><button onclick="Pages.doRemoveUsoMode(\'' + u.replace(/'/g, '&apos;') + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:1rem;padding:0 2px">X</button></span>';
+        });
+        h += '</div></div>';
+      }
+
+      // Modos de uso base (solo lectura)
+      h += '<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge" style="min-width:100px;text-align:center;background:var(--bg3);color:var(--text-muted)">Base sistema</span><span class="text-xs text-muted">No eliminables</span></div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      _baseUsos.forEach(function(u) {
+        h += '<span class="tag-chip-admin" style="opacity:.7" title="Etiqueta base del sistema (no eliminable)"><span>' + u + '</span></span>';
+      });
+      h += '</div></div>';
+
+      h += '</div></div>';
     }
 
     // --- TAB: ETIQUETAS DE USO ---
@@ -5897,6 +5964,60 @@ const Pages = {
       ArcanoDB.removeProductTag(cat, tagName);
       App.renderPage('productos');
     }
+  },
+
+  /* ================================================================
+     MODOS DE USO (chips "Uso / Preparaciones" del formulario de producto)
+     ================================================================ */
+  doAddUsoMode() {
+    var input = document.getElementById('new-uso-input');
+    if (!input) return;
+    var name = input.value.trim();
+    if (!name) { alert('Ingresa un nombre para el modo de uso'); return; }
+    // Guardar en tiendaConfig.usosCustom (lista realmente usada por el selector)
+    try {
+      var cfg = ArcanoDB.getTiendaConfig();
+      var usosCustom = cfg.usosCustom || [];
+      // Verificar duplicado (case-insensitive)
+      for (var i = 0; i < usosCustom.length; i++) {
+        if (usosCustom[i].toLowerCase() === name.toLowerCase()) {
+          alert('Ya existe un modo de uso con ese nombre.');
+          return;
+        }
+      }
+      // Verificar contra la lista base hardcodeada
+      var baseList = ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'];
+      for (var j = 0; j < baseList.length; j++) {
+        if (baseList[j].toLowerCase() === name.toLowerCase()) {
+          alert('Esa etiqueta ya existe como modo de uso base del sistema.');
+          return;
+        }
+      }
+      usosCustom.push(name);
+      ArcanoDB.saveTiendaConfig({ usosCustom: usosCustom });
+      toast('Modo de uso agregado: ' + name);
+      App.renderPage('productos');
+    } catch(e) { alert('Error: ' + e.message); }
+  },
+
+  doRemoveUsoMode(usoName) {
+    if (!usoName) return;
+    var msg = 'Eliminar el modo de uso "' + usoName + '"?\n\n' +
+      'Se quitar\u00E1 de la lista de opciones y se limpiar\u00E1 de todos los productos que lo tengan asignado.';
+    if (!confirm(msg)) return;
+    try {
+      var removed = ArcanoDB.removeUsoOption(usoName);  // borra de usosCustom (y legacy _db.usoOptions)
+      // Tambi\u00E9n limpiar el campo `uso` de productos que lo tengan, para que no
+      // vuelva a auto-aparecer en el selector via buildUsoSelectorHtml().
+      var cleaned = ArcanoDB.removeUsoFromProducts(usoName);
+      var totalCleaned = (cleaned && (cleaned.especias + cleaned.blends)) || 0;
+      if (removed || totalCleaned > 0) {
+        toast('Modo de uso "' + usoName + '" eliminado' + (totalCleaned > 0 ? ' (' + totalCleaned + ' productos limpiados)' : ''));
+      } else {
+        toast('El modo de uso no estaba en la lista personalizada');
+      }
+      App.renderPage('productos');
+    } catch(e) { alert('Error: ' + e.message); }
   },
 
   /* ================================================================
