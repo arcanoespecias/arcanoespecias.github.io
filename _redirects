@@ -57,29 +57,55 @@
 # === 24 blends borrados — devolver 410 Gone (mejor que 404 para SEO) ===
 # Estas páginas se borraron del catálogo. Google las desindexa en 24-48hs con 410.
 # El 410 le dice a Google: 'esto se borró permanentemente, sacalo del índice YA'.
+# IMPORTANTE: Cloudflare Pages splat `/*` NO matchea la URL con solo `/` final.
+# Por eso agregamos DOS reglas por slug: una para `/` (index) y otra para `/*` (subpaths).
+/blends/andean-fire/         /404.html  410
 /blends/andean-fire/*         /404.html  410
+/blends/bavarian-roast/      /404.html  410
 /blends/bavarian-roast/*      /404.html  410
+/blends/dutch-spice-mix/     /404.html  410
 /blends/dutch-spice-mix/*     /404.html  410
+/blends/mapuche-ahumado/     /404.html  410
 /blends/mapuche-ahumado/*     /404.html  410
+/blends/mediterranean-citrus/ /404.html  410
 /blends/mediterranean-citrus/* /404.html  410
+/blends/memphis-bbq/          /404.html  410
 /blends/memphis-bbq/*          /404.html  410
+/blends/merquen-patagonico/   /404.html  410
 /blends/merquen-patagonico/*   /404.html  410
+/blends/mistica-oriental/     /404.html  410
 /blends/mistica-oriental/*     /404.html  410
+/blends/mole-seco/            /404.html  410
 /blends/mole-seco/*            /404.html  410
+/blends/montreal-steak/       /404.html  410
 /blends/montreal-steak/*       /404.html  410
+/blends/noche-azul/           /404.html  410
 /blends/noche-azul/*           /404.html  410
+/blends/pekin-roast/         /404.html  410
 /blends/pekin-roast/*         /404.html  410
+/blends/polish-smoke/         /404.html  410
 /blends/polish-smoke/*         /404.html  410
+/blends/portuguese-seafood/   /404.html  410
 /blends/portuguese-seafood/*   /404.html  410
+/blends/seoul-fire/           /404.html  410
 /blends/seoul-fire/*           /404.html  410
+/blends/shichimi-arcano/      /404.html  410
 /blends/shichimi-arcano/*      /404.html  410
+/blends/sichuan-fire/         /404.html  410
 /blends/sichuan-fire/*         /404.html  410
+/blends/taco-mexicano/        /404.html  410
 /blends/taco-mexicano/*        /404.html  410
+/blends/thai-lemongrass/      /404.html  410
 /blends/thai-lemongrass/*      /404.html  410
+/blends/vietnam-street/       /404.html  410
 /blends/vietnam-street/*       /404.html  410
+/blends/toscana-grill/        /404.html  410
 /blends/toscana-grill/*        /404.html  410
+/blends/fajita-tex-mex/       /404.html  410
 /blends/fajita-tex-mex/*       /404.html  410
+/blends/sabor-paisa/          /404.html  410
 /blends/sabor-paisa/*          /404.html  410
+/blends/pizza-napoletana/     /404.html  410
 /blends/pizza-napoletana/*     /404.html  410
 
 # Redirects adicionales
