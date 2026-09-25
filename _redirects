@@ -4,13 +4,13 @@
 /p/adobo-colombiano.html  /blends/adobo-colombiano/  301
 /p/aji-andino.html  /blends/aji-andino/  301
 /p/amazonia-verde.html  /blends/amazonia-verde/  301
-/p/andean-fire.html  /blends/andean-fire/  301
+/p/andean-fire.html  /  301
 /p/arcano-signature.html  /blends/arcano-signature/  301
 /p/asado-pampeano.html  /blends/asado-pampeano/  301
 /p/baharat.html  /blends/baharat/  301
 /p/balkan-grill.html  /blends/balkan-grill/  301
 /p/bangkok-curry.html  /blends/bangkok-curry/  301
-/p/bavarian-roast.html  /blends/bavarian-roast/  301
+/p/bavarian-roast.html  /  301
 /p/bbq-kansas.html  /blends/bbq-kansas/  301
 /p/berbere.html  /blends/berbere/  301
 /p/bourbon-bbq.html  /blends/bourbon-bbq/  301
@@ -36,15 +36,15 @@
 /p/italiano-clasico.html  /blends/italiano-clasico/  301
 /p/korean-bbq.html  /blends/korean-bbq/  301
 /p/moscow-mule.html  /blends/moscow-mule/  301
-/p/noche-azul.html  /blends/noche-azul/  301
+/p/noche-azul.html  /  301
 /p/noche-serena.html  /blends/noche-serena/  301
 /p/patagonico-ahumado.html  /blends/patagonico-ahumado/  301
 /p/piri-piri.html  /blends/piri-piri/  301
-/p/pizza-napoletana.html  /blends/pizza-napoletana/  301
+/p/pizza-napoletana.html  /  301
 /p/ras-el-hanout.html  /blends/ras-el-hanout/  301
 /p/respirar.html  /blends/respirar/  301
-/p/sabor-paisa.html  /blends/sabor-paisa/  301
-/p/shichimi-arcano.html  /blends/shichimi-arcano/  301
+/p/sabor-paisa.html  /  301
+/p/shichimi-arcano.html  /  301
 /p/smokehouse-classic.html  /blends/smokehouse-classic/  301
 /p/sobremesa-arcano.html  /blends/sobremesa-arcano/  301
 /p/spiced-mojito.html  /blends/spiced-mojito/  301
@@ -53,6 +53,34 @@
 /p/vermu-botanico.html  /blends/vermu-botanico/  301
 /p/whisky-oak-spice.html  /blends/whisky-oak-spice/  301
 /p/za-atar.html  /blends/zaatar/  301
+
+# === 24 blends borrados — devolver 410 Gone (mejor que 404 para SEO) ===
+# Estas páginas se borraron del catálogo. Google las desindexa en 24-48hs con 410.
+# El 410 le dice a Google: 'esto se borró permanentemente, sacalo del índice YA'.
+/blends/andean-fire/*         /404.html  410
+/blends/bavarian-roast/*      /404.html  410
+/blends/dutch-spice-mix/*     /404.html  410
+/blends/mapuche-ahumado/*     /404.html  410
+/blends/mediterranean-citrus/* /404.html  410
+/blends/memphis-bbq/*          /404.html  410
+/blends/merquen-patagonico/*   /404.html  410
+/blends/mistica-oriental/*     /404.html  410
+/blends/mole-seco/*            /404.html  410
+/blends/montreal-steak/*       /404.html  410
+/blends/noche-azul/*           /404.html  410
+/blends/pekin-roast/*         /404.html  410
+/blends/polish-smoke/*         /404.html  410
+/blends/portuguese-seafood/*   /404.html  410
+/blends/seoul-fire/*           /404.html  410
+/blends/shichimi-arcano/*      /404.html  410
+/blends/sichuan-fire/*         /404.html  410
+/blends/taco-mexicano/*        /404.html  410
+/blends/thai-lemongrass/*      /404.html  410
+/blends/vietnam-street/*       /404.html  410
+/blends/toscana-grill/*        /404.html  410
+/blends/fajita-tex-mex/*       /404.html  410
+/blends/sabor-paisa/*          /404.html  410
+/blends/pizza-napoletana/*     /404.html  410
 
 # Redirects adicionales
 /index.html  /  301
