@@ -4631,7 +4631,13 @@ const Pages = {
     if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
     if (statusEl) statusEl.innerHTML = '<span class="text-muted">Leyendo productos...</span>';
 
-    var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+    var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var _GH_HARDCODED=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+    var GH_TOKEN = localStorage.getItem('arcano_gh_token') || _GH_HARDCODED;
+    if (!GH_TOKEN) {
+      if (statusEl) statusEl.innerHTML = '<span class="text-red">✗ No hay token de GitHub. Abrí el admin con #tk=<tu_token> en la URL.</span>';
+      if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Tienda'; }
+      return;
+    }
     var GH_OWNER = 'arcanoespecias';
     var GH_REPO = 'arcanoespecias.github.io';
     var GH_BRANCH = 'main';
@@ -12361,9 +12367,17 @@ Pages.regenerarSEOCompleto = function() {
 
   log('Iniciando regeneraci\u00F3n SEO completa...');
 
-  // Token y config (mismos que regenerarSEO)
-  // Token fine-grained PAT de arcanoespecias-bot (rotado 2026-09-25, el anterior classic PAT fue revocado)
-  var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var GH_TOKEN=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+  // Token y config: prioriza el token de localStorage (arcano_gh_token) que el admin
+  // configuró via URL hash #tk=<token> (flujo estándar de github-sync.js).
+  // Fallback al token hardcoded solo si no hay token en localStorage.
+  var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var _GH_HARDCODED=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
+  var GH_TOKEN = localStorage.getItem('arcano_gh_token') || _GH_HARDCODED;
+  if (!GH_TOKEN) {
+    setStatus('✗ Error: No hay token de GitHub configurado. Abrí el admin con #tk=<tu_token> en la URL para configurarlo.', 'err');
+    if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
+    return;
+  }
+  log(GH_TOKEN === _GH_HARDCODED ? 'Usando token hardcoded (fallback).' : 'Usando token de localStorage (arcano_gh_token).', 'ok');
   var GH_OWNER = 'arcanoespecias';
   var GH_REPO = 'arcanoespecias.github.io';
   var GH_BRANCH = 'main';
