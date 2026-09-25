@@ -2133,8 +2133,20 @@ function toggleTienda(tipo, id) {
     _db.packs[id].enTienda = !_db.packs[id].enTienda;
   } else return;
   _saveToFirebase(); _cacheLocal();
+  // Escritura directa a Firebase para asegurar que persista
   var colMap = { especia: 'especias', blend: 'blends', pack: 'packs' };
-  _notify('update', colMap[tipo] || tipo, id);
+  var colName = colMap[tipo] || tipo;
+  var val = (tipo === 'especia' && _db.especias[id]) ? _db.especias[id].enTienda :
+            (tipo === 'blend' && _db.blends[id]) ? _db.blends[id].enTienda :
+            (tipo === 'pack' && _db.packs[id]) ? _db.packs[id].enTienda : false;
+  if (_firebaseRef) {
+    try {
+      _firebaseRef.child(colName + '/' + id + '/enTienda').set(val, function(err) {
+        if (err) console.error('[DB] Error guardando enTienda:', err);
+      });
+    } catch(e) { console.error('[DB] toggleTienda write error:', e); }
+  }
+  _notify('update', colName, id);
 }
 
 function toggleEnBlend(especiaId) {
