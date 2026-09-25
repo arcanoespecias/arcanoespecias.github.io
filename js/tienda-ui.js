@@ -624,11 +624,6 @@ function _renderDetail(products, idx) {
   html += descHtml + ingsHtml + _usosHtml(p);
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
   html += '</div>';
-  // Botón "Volver a la tienda" — bien visible al final
-  html += '<div style="padding:16px 20px;text-align:center;border-top:1px solid var(--border)">';
-  html += '<button onclick="document.getElementById(\'detail-ov\').remove()" style="background:var(--gold,#d4af37);color:#1b0b07;border:none;padding:12px 32px;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;max-width:300px;font-family:inherit">← Volver a la tienda</button>';
-  html += '</div>';
-  html += '</div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
 
@@ -719,11 +714,6 @@ function _updateDetailContent(overlay, products, idx) {
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
   html += descHtml + ingsHtml + _usosHtml(p);
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
-  html += '</div>';
-  // Botón "Volver a la tienda" — bien visible al final
-  html += '<div style="padding:16px 20px;text-align:center;border-top:1px solid var(--border)">';
-  html += '<button onclick="document.getElementById(\'detail-ov\').remove()" style="background:var(--gold,#d4af37);color:#1b0b07;border:none;padding:12px 32px;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;max-width:300px;font-family:inherit">← Volver a la tienda</button>';
-  html += '</div>';
   html += '</div>';
   // Actualizar el contenido del overlay
   overlay.innerHTML = html;
