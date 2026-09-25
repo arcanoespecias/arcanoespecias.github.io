@@ -101,22 +101,49 @@ const App = {
     function _playNotifSound() {
       try {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // Two-tone notification: high note then higher note
-        var times = [0, 0.15, 0.35];
-        var freqs = [880, 1100, 880];
-        for (var i = 0; i < times.length; i++) {
+        // SONIDO FUERTE: 3 capas para máxima audibilidad
+        // Layer 1: 3 tonos ascendentes en onda "square" (más cortante/percusiva que sine)
+        var t1 = [0, 0.12, 0.28];
+        var f1 = [660, 990, 1320];  // E5, B5, E6
+        for (var i = 0; i < t1.length; i++) {
           var osc = ctx.createOscillator();
           var gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.value = freqs[i];
-          osc.type = 'sine';
-          gain.gain.setValueAtTime(0.3, ctx.currentTime + times[i]);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + times[i] + 0.14);
-          osc.start(ctx.currentTime + times[i]);
-          osc.stop(ctx.currentTime + times[i] + 0.15);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = f1[i];
+          osc.type = 'square';  // más energía armónica, más audible
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime + t1[i]);
+          gain.gain.exponentialRampToValueAtTime(0.45, ctx.currentTime + t1[i] + 0.005);  // attack rápido
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t1[i] + 0.22);  // decay
+          osc.start(ctx.currentTime + t1[i]);
+          osc.stop(ctx.currentTime + t1[i] + 0.25);
         }
-      } catch (e) {}
+        // Layer 2: chirp agudo para llamar atención (1800 → 2400 Hz)
+        var osc2 = ctx.createOscillator();
+        var gain2 = ctx.createGain();
+        osc2.connect(gain2); gain2.connect(ctx.destination);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1800, ctx.currentTime + 0.05);
+        osc2.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.18);
+        gain2.gain.setValueAtTime(0.0001, ctx.currentTime + 0.05);
+        gain2.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 0.07);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+        osc2.start(ctx.currentTime + 0.05);
+        osc2.stop(ctx.currentTime + 0.25);
+        // Layer 3: golpe grave para impacto (220 → 110 Hz tipo "bass thump")
+        var osc3 = ctx.createOscillator();
+        var gain3 = ctx.createGain();
+        osc3.connect(gain3); gain3.connect(ctx.destination);
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(220, ctx.currentTime);
+        osc3.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.15);
+        gain3.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain3.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 0.01);
+        gain3.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc3.start(ctx.currentTime);
+        osc3.stop(ctx.currentTime + 0.3);
+        // Vibración en mobile (si el dispositivo lo soporta) — más enérgica que el welcome
+        if (navigator.vibrate) navigator.vibrate([180, 80, 180, 80, 180, 80, 400]);
+      } catch (e) { console.warn('[Audio] notif sound error:', e); }
     }
 
     var _lastPedidoNuevoCount = -1;
@@ -127,8 +154,11 @@ const App = {
         if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
         else { badge.style.display = 'none'; }
       }
-      // Audio + visual alert when a NEW pedido arrives (not on initial load)
-      if (isNew && _lastPedidoNuevoCount >= 0) {
+      // Audio + visual alert when a NEW pedido arrives (not on initial load).
+      // Doble check: isNew (db.js ya filtra post-first-callback) + listener ready
+      // + _lastPedidoNuevoCount >= 0 (evita sonido en la 1ra snapshot).
+      var ready = (typeof ArcanoDB.isPedidosReady === 'function') ? ArcanoDB.isPedidosReady() : true;
+      if (isNew && ready && _lastPedidoNuevoCount >= 0) {
         _playNotifSound();
         // Flash browser tab title
         var origTitle = document.title;
@@ -144,7 +174,9 @@ const App = {
       _lastPedidoNuevoCount = count;
     }
     ArcanoDB.onPedidosChange(_updatePedidosBadge);
-    // Initial badge update after a short delay to let pedidos load
+    // Initial badge update after a short delay to let pedidos load.
+    // NO reproducir sonido aunque isNew=true en este primer setTimeout: el
+    // flag ready en db.js se encarga de descartar el "new" en carga inicial.
     setTimeout(_updatePedidosBadge, 2000);
 
     // Clientes listener + sonido de bienvenida cuando un cliente se registra
@@ -166,22 +198,34 @@ const App = {
         if (ctx.state === 'suspended') {
           ctx.resume().catch(function() {});
         }
-        // Sonido tipo "campana de bienvenida": 4 notas ascendentes (do-mi-sol-do)
+        // SONIDO FUERTE: campana de bienvenida con 4 notas + capa aguda de brillantez
         var now = ctx.currentTime;
         var times = [0, 0.12, 0.24, 0.45];
         var freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
         for (var i = 0; i < times.length; i++) {
+          // Capa principal: tono medio (triangle — más rico que sine)
           var osc = ctx.createOscillator();
           var gain = ctx.createGain();
           osc.connect(gain);
           gain.connect(ctx.destination);
           osc.frequency.value = freqs[i];
-          osc.type = 'sine';
+          osc.type = 'triangle';  // tono más "cristalino"
           gain.gain.setValueAtTime(0, now + times[i]);
-          gain.gain.linearRampToValueAtTime(0.25, now + times[i] + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + times[i] + 0.4);
+          gain.gain.linearRampToValueAtTime(0.35, now + times[i] + 0.02);  // +40% volumen
+          gain.gain.exponentialRampToValueAtTime(0.001, now + times[i] + 0.45);
           osc.start(now + times[i]);
-          osc.stop(now + times[i] + 0.45);
+          osc.stop(now + times[i] + 0.5);
+          // Capa secundaria: octava superior (más aguda, más brillante/audible)
+          var oscHi = ctx.createOscillator();
+          var gainHi = ctx.createGain();
+          oscHi.connect(gainHi); gainHi.connect(ctx.destination);
+          oscHi.frequency.value = freqs[i] * 2;
+          oscHi.type = 'sine';
+          gainHi.gain.setValueAtTime(0, now + times[i]);
+          gainHi.gain.linearRampToValueAtTime(0.18, now + times[i] + 0.02);
+          gainHi.gain.exponentialRampToValueAtTime(0.001, now + times[i] + 0.3);
+          oscHi.start(now + times[i]);
+          oscHi.stop(now + times[i] + 0.35);
         }
       } catch (e) {
         console.warn('[Audio] No se pudo reproducir sonido de bienvenida:', e);
@@ -241,8 +285,12 @@ const App = {
     var _lastClientesCount = -1;
     function _onClientesChange(clientes) {
       var count = clientes.length;
-      // Sonido solo si aument\u00F3 la cantidad (cliente nuevo) y no en carga inicial
-      if (count > _lastClientesCount && _lastClientesCount >= 0) {
+      // Sonido solo si aument\u00F3 la cantidad (cliente nuevo). El flag isClientesReady
+      // (db.js) garantiza que ya se carg\u00F3 al menos una vez de Firebase, evitando
+      // falsos positivos cuando el setTimeout(3000) captura count=0 (datos a\u00FAn no
+      // cargados) y luego Firebase responde con count=10 → disparaba welcome sound.
+      var ready = (typeof ArcanoDB.isClientesReady === 'function') ? ArcanoDB.isClientesReady() : true;
+      if (ready && count > _lastClientesCount && _lastClientesCount >= 0) {
         // Buscar el cliente nuevo (el \u00FAltimo agregado)
         var nuevoCliente = clientes[0];  // ya est\u00E1 ordenado por ultimoPedido desc
         var nombreNuevo = nuevoCliente && nuevoCliente.nombre ? nuevoCliente.nombre : 'Nuevo cliente';
@@ -270,7 +318,9 @@ const App = {
       _lastClientesCount = count;
     }
     ArcanoDB.onClientesChange(_onClientesChange);
-    // Inicializar count despu\u00E9s de un delay para no disparar sonido en carga inicial
+    // Inicializar count despu\u00E9s de un delay. Con el flag isClientesReady ya NO es
+    // cr\u00EDtico que este setTimeout sea exacto: si Firebase carga despu\u00E9s de los 3s,
+    // el ready flag a\u00FAn es false hasta el primer callback, evitando sonido espurio.
     setTimeout(function() {
       _lastClientesCount = ArcanoDB.getClientesCount();
     }, 3000);
@@ -280,16 +330,37 @@ const App = {
       if (type === 'coleccion_completada') {
         var col = ArcanoDB.getColeccion(id);
         var nombre = (col && col.nombre) ? col.nombre : id;
-        // Sonido
+        // Sonido de fanfarria (más fuerte): 5 notas ascendentes tipo "victoria"
         try {
           var ctx = new (window.AudioContext || window.webkitAudioContext)();
-          var osc = ctx.createOscillator(); var gain = ctx.createGain();
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.type = 'triangle'; osc.frequency.setValueAtTime(523, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(1047, ctx.currentTime + 0.3);
-          gain.gain.setValueAtTime(0.2, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+          // Capa principal: arpeggio rápido C5-E5-G5-C6-E6 en onda triangle
+          var fanTimes = [0, 0.08, 0.16, 0.24, 0.36];
+          var fanFreqs = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+          for (var fi = 0; fi < fanTimes.length; fi++) {
+            var fosc = ctx.createOscillator();
+            var fgain = ctx.createGain();
+            fosc.connect(fgain); fgain.connect(ctx.destination);
+            fosc.type = 'triangle';
+            fosc.frequency.value = fanFreqs[fi];
+            fgain.gain.setValueAtTime(0.0001, ctx.currentTime + fanTimes[fi]);
+            fgain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + fanTimes[fi] + 0.005);
+            fgain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + fanTimes[fi] + 0.3);
+            fosc.start(ctx.currentTime + fanTimes[fi]);
+            fosc.stop(ctx.currentTime + fanTimes[fi] + 0.35);
+          }
+          // Capa grave sostenida (tono pedal) para "cuerpo"
+          var bassOsc = ctx.createOscillator();
+          var bassGain = ctx.createGain();
+          bassOsc.connect(bassGain); bassGain.connect(ctx.destination);
+          bassOsc.type = 'sine';
+          bassOsc.frequency.setValueAtTime(261.63, ctx.currentTime);  // C4
+          bassGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+          bassGain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+          bassOsc.start(ctx.currentTime);
+          bassOsc.stop(ctx.currentTime + 0.65);
+          // Vibración
+          if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 400]);
         } catch(e) {}
         // Flash del t\u00EDtulo
         var origTitle2 = document.title;
@@ -356,8 +427,10 @@ const App = {
         if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
         else { badge.style.display = 'none'; }
       }
-      // Audio + visual alert when a NEW GC message arrives
-      if (isNew && _lastGCNuevoCount >= 0) {
+      // Audio + visual alert when a NEW GC message arrives.
+      // Doble check con flag ready para evitar sonido en carga inicial.
+      var ready = (typeof ArcanoDB.isGCReady === 'function') ? ArcanoDB.isGCReady() : true;
+      if (isNew && ready && _lastGCNuevoCount >= 0) {
         _playNotifSound();
         var origTitle = document.title;
         var flashCount = 0;

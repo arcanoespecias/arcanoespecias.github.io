@@ -235,17 +235,20 @@ var _firebaseRef = null;
 var _pedidos = [];           // in-memory list of orders from tienda
 var _pedidosRef = null;      // Firebase ref for arcano/db/pedidos
 var _pedidosListeners = [];  // callbacks when new pedido arrives
+var _pedidosReady = false;   // true after FIRST Firebase callback (avoids false "new" on init)
 
 /* === Grandes Clientes (path arcano/db/grandesClientes) === */
 var _grandesClientes = [];
 var _gcRef = null;
 var _gcListeners = [];
 var _prevGCKeys = {};
+var _gcReady = false;        // true after FIRST Firebase callback
 
 /* === Clientes tienda (path arcano/db/clientes) === */
 var _clientes = [];
 var _clientesRef = null;
 var _clientesListeners = [];
+var _clientesReady = false;  // true after FIRST Firebase callback
 
 /* === Promociones (path arcano/db/promociones) === */
 var _promociones = [];
@@ -519,12 +522,18 @@ function _startPedidosListener() {
     }
     _pedidos.sort(function(a, b) { return (b.creado || '').localeCompare(a.creado || ''); });
     _prevNuevoKeys = nuevoKeys;
-    // Detect new pedido: a key in nuevoKeys that was NOT in prevNuevoKeys
+    // Detect new pedido: a key in nuevoKeys that was NOT in prevNuevoKeys.
+    // ONLY flag as new if we have already seen at least one Firebase callback
+    // (otherwise the very first snapshot fires "isNew=true" for any existing
+    // pedidos with estado 'nuevo' in the DB → false notification sound on login).
     var hasNew = false;
-    var nk = Object.keys(nuevoKeys);
-    for (var n = 0; n < nk.length; n++) {
-      if (!prevNuevoKeys[nk[n]]) { hasNew = true; break; }
+    if (_pedidosReady) {
+      var nk = Object.keys(nuevoKeys);
+      for (var n = 0; n < nk.length; n++) {
+        if (!prevNuevoKeys[nk[n]]) { hasNew = true; break; }
+      }
     }
+    _pedidosReady = true;  // mark ready for subsequent callbacks
     _notifyPedidos(hasNew, _pedidos.length !== prevLen);
   });
 }
@@ -569,11 +578,16 @@ function _startGrandesClientesListener() {
     var currentKeys = {};
     for (var k = 0; k < _grandesClientes.length; k++) { currentKeys[_grandesClientes[k]._key] = true; }
     var hasNew = false;
-    var ck = Object.keys(currentKeys);
-    for (var c = 0; c < ck.length; c++) {
-      if (!_prevGCKeys[ck[c]]) { hasNew = true; break; }
+    // ONLY flag as new if we have already seen at least one Firebase callback,
+    // to avoid false notifications on initial load
+    if (_gcReady) {
+      var ck = Object.keys(currentKeys);
+      for (var c = 0; c < ck.length; c++) {
+        if (!_prevGCKeys[ck[c]]) { hasNew = true; break; }
+      }
     }
     _prevGCKeys = currentKeys;
+    _gcReady = true;  // mark ready for subsequent callbacks
     for (var j = 0; j < _listeners.length; j++) { try { _listeners[j](); } catch(e) {} }
     for (var g = 0; g < _gcListeners.length; g++) { try { _gcListeners[g](_grandesClientes, hasNew); } catch(e) {} }
   });
@@ -622,6 +636,9 @@ function _startClientesListener() {
     _clientes.sort(function(a, b) {
       return (b.ultimoPedido || b.creado || '').localeCompare(a.ultimoPedido || a.creado || '');
     });
+    // Mark ready AFTER first Firebase callback so that the badge handler in
+    // core.js can detect "real" increases vs initial-load noise.
+    _clientesReady = true;
     for (var j = 0; j < _listeners.length; j++) { try { _listeners[j](); } catch(e) {} }
     for (var cl = 0; cl < _clientesListeners.length; cl++) { try { _clientesListeners[cl](_clientes); } catch(e) {} }
   });
@@ -3580,7 +3597,7 @@ window.ArcanoDB = {
   getEntradas: getEntradas, saveEntrada: saveEntrada, updateEntrada: updateEntrada, deleteEntrada: deleteEntrada,
   getGastos: getGastos, getGastosCategorias: getGastosCategorias, saveGasto: saveGasto, deleteGasto: deleteGasto, saveGastosCategorias: saveGastosCategorias,
   getAjustes: getAjustes, saveAjuste: saveAjuste, deleteAjuste: deleteAjuste,
-  getPedidos: getPedidos, getPedidosCount: getPedidosCount, updatePedidoEstado: updatePedidoEstado, updatePedidoField: updatePedidoField, deletePedido: deletePedido, onPedidosChange: onPedidosChange,
+  getPedidos: getPedidos, getPedidosCount: getPedidosCount, updatePedidoEstado: updatePedidoEstado, updatePedidoField: updatePedidoField, deletePedido: deletePedido, onPedidosChange: onPedidosChange, isPedidosReady: function() { return _pedidosReady; },
   producirEspecia: producirEspecia, producirBlend: producirBlend,
   getProducciones: getProducciones, deleteProduccion: deleteProduccion,
   getFrascosParaVender: getFrascosParaVender,
@@ -3611,8 +3628,8 @@ window.ArcanoDB = {
   getTiendaConfig: getTiendaConfig, saveTiendaConfig: saveTiendaConfig, saveTiendaConfigField: saveTiendaConfigField,
   saveNow: saveNow,
   writeField: writeField,
-  getGrandesClientes: getGrandesClientes, updateGCEstado: updateGCEstado, deleteGC: deleteGC, onGCChange: onGCChange, getGCCount: getGCCount,
-  getClientes: getClientes, getClientesCount: getClientesCount, onClientesChange: onClientesChange, deleteCliente: deleteCliente, getPedidosByCliente: getPedidosByCliente,
+  getGrandesClientes: getGrandesClientes, updateGCEstado: updateGCEstado, deleteGC: deleteGC, onGCChange: onGCChange, getGCCount: getGCCount, isGCReady: function() { return _gcReady; },
+  getClientes: getClientes, getClientesCount: getClientesCount, onClientesChange: onClientesChange, deleteCliente: deleteCliente, getPedidosByCliente: getPedidosByCliente, isClientesReady: function() { return _clientesReady; },
   getPromociones: getPromociones, getPromocionesActivas: getPromocionesActivas, savePromocion: savePromocion, deletePromocion: deletePromocion, onPromocionesChange: onPromocionesChange,
   getCarritos: getCarritos, getCarritosByEstado: getCarritosByEstado, deleteCarrito: deleteCarrito, onCarritosChange: onCarritosChange,
   getOtpPendientes: getOtpPendientes, getOtpPendientesCount: getOtpPendientesCount, markOtpEnviado: markOtpEnviado, deleteOtpPendiente: deleteOtpPendiente, onOtpPendientesChange: onOtpPendientesChange,
