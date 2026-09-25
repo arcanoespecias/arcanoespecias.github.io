@@ -762,15 +762,24 @@ var ArcanoSEO = (function() {
        stats: {blends, categorias, pUpdates, incompletos}
      } */
   function generateAll(db, existingSitemapUrls, pHtmlFiles) {
-    // db = ArcanoDB.getDB() — tiene blends, especias, packs
-    var blendsRaw = db.blends || [];
+    // db = ArcanoDB.getDB() — tiene blends, especias, packs como objetos keyed-by-id
+    // (después del fix _normalizeToMap en db.js). Soportamos también arrays legacy.
+    var blendsRaw = db.blends || {};
     var especiasRaw = db.especias || {};
     var especiasById = {};
 
+    // Normalizar blendsRaw a array (puede ser objeto keyed-by-id o array legacy)
+    var blendsArr = [];
+    if (Array.isArray(blendsRaw)) {
+      blendsArr = blendsRaw.slice();
+    } else if (blendsRaw && typeof blendsRaw === 'object') {
+      blendsArr = Object.keys(blendsRaw).map(function(k) { return blendsRaw[k]; });
+    }
+
     // Filtrar blends con precio > 0
     var blends = [];
-    for (var i = 0; i < blendsRaw.length; i++) {
-      var b = blendsRaw[i];
+    for (var i = 0; i < blendsArr.length; i++) {
+      var b = blendsArr[i];
       if (!b || typeof b !== 'object') continue;
       if (!b.nombre) continue;
       var pc = Number(b.precioChico) || 0;
@@ -785,48 +794,36 @@ var ArcanoSEO = (function() {
     // Filtrar especias con precio > 0 y enTienda (para /blends/ también)
     // Hoy las especias individuales no se venden, así que especiasList queda vacío
     // pero mantenemos la lógica por si en el futuro se habilitan
+    var especiasArr = [];
     if (Array.isArray(especiasRaw)) {
-      for (var i = 0; i < especiasRaw.length; i++) {
-        var e = especiasRaw[i];
-        if (!e || typeof e !== 'object') continue;
-        if (!e.nombre || !e.enTienda) continue;
-        var pc = Number(e.precioTiendaChico || e.precioChico) || 0;
-        var pg = Number(e.precioTiendaGrande || e.precioGrande) || 0;
-        if (pc <= 0 && pg <= 0) continue;
-        e._slug = slugify(e.nombre);
-        e._categoriasSEO = deriveCategoriasSEO(e);
-        e._tipo = 'especia';
-        especiasById[String(e.id)] = e;
-        blends.push(e);  // las especias en tienda se tratan como productos
-      }
+      especiasArr = especiasRaw.slice();
     } else if (especiasRaw && typeof especiasRaw === 'object') {
-      var keys = Object.keys(especiasRaw);
-      for (var i = 0; i < keys.length; i++) {
-        var e = especiasRaw[keys[i]];
-        if (!e || typeof e !== 'object') continue;
-        if (!e.nombre || !e.enTienda) continue;
-        var pc = Number(e.precioTiendaChico || e.precioChico) || 0;
-        var pg = Number(e.precioTiendaGrande || e.precioGrande) || 0;
-        if (pc <= 0 && pg <= 0) continue;
-        e._slug = slugify(e.nombre);
-        e._categoriasSEO = deriveCategoriasSEO(e);
-        e._tipo = 'especia';
-        especiasById[keys[i]] = e;
-        blends.push(e);
-      }
-    } else {
-      // Sin especias en tienda, mapear por id igual para los ingredientes
-      if (Array.isArray(especiasRaw)) {
-        for (var i = 0; i < especiasRaw.length; i++) {
-          if (especiasRaw[i] && especiasRaw[i].id) especiasById[String(especiasRaw[i].id)] = especiasRaw[i];
-        }
-      }
+      especiasArr = Object.keys(especiasRaw).map(function(k) { return especiasRaw[k]; });
+    }
+    for (var i = 0; i < especiasArr.length; i++) {
+      var e = especiasArr[i];
+      if (!e || typeof e !== 'object') continue;
+      if (!e.nombre || !e.enTienda) continue;
+      var pc = Number(e.precioTiendaChico || e.precioChico) || 0;
+      var pg = Number(e.precioTiendaGrande || e.precioGrande) || 0;
+      if (pc <= 0 && pg <= 0) continue;
+      e._slug = slugify(e.nombre);
+      e._categoriasSEO = deriveCategoriasSEO(e);
+      e._tipo = 'especia';
+      especiasById[String(e.id)] = e;
+      blends.push(e);  // las especias en tienda se tratan como productos
     }
 
     // Si no se cargaron especias en tienda, igual mapearlas para los ingredientes
     if (Array.isArray(especiasRaw)) {
       for (var i = 0; i < especiasRaw.length; i++) {
         var e = especiasRaw[i];
+        if (e && e.id && !especiasById[String(e.id)]) especiasById[String(e.id)] = e;
+      }
+    } else if (especiasRaw && typeof especiasRaw === 'object') {
+      var espKeys = Object.keys(especiasRaw);
+      for (var i = 0; i < espKeys.length; i++) {
+        var e = especiasRaw[espKeys[i]];
         if (e && e.id && !especiasById[String(e.id)]) especiasById[String(e.id)] = e;
       }
     }
