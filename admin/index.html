@@ -48,5 +48,27 @@
       });
     }
   </script>
+
+  <!-- Handler inline para #tk=<token>: guarda el token de GitHub en localStorage.
+       Es el flujo estándar para configurar el token del admin desde la URL.
+       Se ejecuta ANTES de que carguen pages.js/db.js para que estén disponibles. -->
+  <script>
+    (function() {
+      try {
+        var hash = window.location.hash || '';
+        if (hash.indexOf('#tk=') === 0) {
+          var token = hash.slice(4);
+          if (token) {
+            localStorage.setItem('arcano_gh_token', token);
+            console.log('[Auth] Token de GitHub guardado en localStorage desde URL hash.');
+          }
+          // Limpiar el hash para que no quede visible en la URL
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } catch (e) {
+        console.warn('[Auth] Error procesando hash #tk=:', e);
+      }
+    })();
+  </script>
 </body>
 </html>
