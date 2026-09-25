@@ -333,7 +333,7 @@ def blend_page_html(blend, especias, all_blends):
             'url': url_canonical,
             'priceCurrency': 'COP',
             'price': str(precio_chico),
-            'availability': 'https://schema.org/InStock'
+            'availability': 'https://schema.org/InStock' if (blend.get('stockChico') or 0) > 0 or (blend.get('stockGrande') or 0) > 0 else 'https://schema.org/OutOfStock'
         }
     }
     if precio_grande > 0:
@@ -624,11 +624,12 @@ def category_page_html(cat_slug, blends_in_cat, all_blends):
         }
         # Agregar offers con precio si existe
         if precio_chico > 0 or precio_grande > 0:
+            in_stock = (b.get('stockChico') or 0) > 0 or (b.get('stockGrande') or 0) > 0
             product_obj['offers'] = {
                 '@type': 'Offer',
                 'priceCurrency': 'COP',
                 'price': str(int(precio_chico if precio_chico > 0 else precio_grande)),
-                'availability': 'https://schema.org/InStock',
+                'availability': 'https://schema.org/InStock' if in_stock else 'https://schema.org/OutOfStock',
                 'url': BASE_URL + '/blends/' + slug + '/'
             }
         itemlist_jsonld['itemListElement'].append({
@@ -816,6 +817,16 @@ def generate_merchant_feed(blends):
     xml += f'<link>{BASE_URL}/</link>\n'
     xml += '<description>Feed de productos de Arcano Especias para Google Merchant Center</description>\n'
 
+    def is_in_stock(b):
+        return (b.get('stockChico') or 0) > 0 or (b.get('stockGrande') or 0) > 0
+
+    def has_real_image(b):
+        img = b.get('imagen') or ''
+        if not img: return False
+        if 'logo.png' in img: return False
+        if img.startswith('data:image'): return True
+        return True
+
     for b in blends:
         if (b.get('precioChico') or 0) <= 0:
             continue
@@ -826,6 +837,8 @@ def generate_merchant_feed(blends):
         if 'arcanoespecias.github.io' in imagen:
             imagen = imagen.replace('arcanoespecias.github.io', 'arcanoespecias.com')
         precio_chico = b.get('precioChico', 0) or 0
+        in_stock = is_in_stock(b)
+        real_img = has_real_image(b)
         # Escape XML
         nombre_x = esc(nombre)
         desc_x = esc(desc)
@@ -835,13 +848,27 @@ def generate_merchant_feed(blends):
         xml += f'<g:description>{desc_x}</g:description>\n'
         xml += f'<g:link>{BASE_URL}/blends/{slug}/</g:link>\n'
         xml += f'<g:image_link>{esc(imagen)}</g:image_link>\n'
-        xml += '<g:availability>in stock</g:availability>\n'
+        xml += f'<g:availability>{"in stock" if in_stock else "out of stock"}</g:availability>\n'
         xml += f'<g:price>{precio_chico} COP</g:price>\n'
         xml += '<g:brand>Arcano Especias</g:brand>\n'
         xml += '<g:condition>new</g:condition>\n'
         xml += '<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>\n'
         xml += f'<g:product_type>{esc(b.get("categoria", ""))}</g:product_type>\n'
         xml += '<g:identifier_exists>FALSE</g:identifier_exists>\n'
+        # IVA 19% incluido en el precio (Colombia)
+        xml += '<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>\n'
+        # Peso estimado (frasco pequeño ~80g)
+        xml += '<g:shipping_weight>80 g</g:shipping_weight>\n'
+        # Política de devoluciones: 7 días solo por daño/error
+        xml += '<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/#politica-devoluciones</g:return_policy_url></g:return_policy>\n'
+        # Envío variable por zona (Colombia)
+        xml += '<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>\n'
+        xml += '<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n'
+        xml += '<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n'
+        xml += '<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>\n'
+        # Si el producto no tiene imagen real (usa logo.png), excluirlo de Google Shopping
+        if not real_img:
+            xml += '<g:excluded_destination>Shopping</g:excluded_destination>\n'
         xml += '</item>\n'
 
     xml += '</channel>\n</rss>\n'
@@ -850,7 +877,7 @@ def generate_merchant_feed(blends):
         f.write(xml)
 
     # TSV
-    tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\n'
+    tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\texcluded_destination\n'
     for b in blends:
         if (b.get('precioChico') or 0) <= 0:
             continue
@@ -862,7 +889,9 @@ def generate_merchant_feed(blends):
             imagen = imagen.replace('arcanoespecias.github.io', 'arcanoespecias.com')
         precio_chico = b.get('precioChico', 0) or 0
         cat = b.get('categoria', '')
-        tsv += f'{slug}\t{nombre}\t{desc}\t{BASE_URL}/blends/{slug}/\t{imagen}\tin stock\t{precio_chico} COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t{cat}\tFALSE\n'
+        avail = 'in stock' if is_in_stock(b) else 'out of stock'
+        excluded = '' if has_real_image(b) else 'Shopping'
+        tsv += f'{slug}\t{nombre}\t{desc}\t{BASE_URL}/blends/{slug}/\t{imagen}\t{avail}\t{precio_chico} COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t{cat}\tFALSE\t{excluded}\n'
 
     with open(os.path.join(REPO_PATH, 'merchant_feed.tsv'), 'w', encoding='utf-8') as f:
         f.write(tsv)

@@ -143,6 +143,28 @@ var ArcanoSEO = (function() {
     return url;
   }
 
+  /* Disponibilidad dinámica basada en stock real.
+   * Google Merchant Center RECHAZA feeds que marcan productos sin stock como 'in stock'. */
+  function isBlendInStock(b) {
+    return (Number(b.stockChico) || 0) > 0 || (Number(b.stockGrande) || 0) > 0;
+  }
+  function availabilitySchema(b) {
+    return isBlendInStock(b) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+  }
+  function availabilityGmc(b) {
+    return isBlendInStock(b) ? 'in stock' : 'out of stock';
+  }
+
+  /* Verifica si el producto tiene imagen real (no logo.png, no vacío).
+   * Productos sin imagen real deben excluirse de Google Shopping. */
+  function hasRealImage(b) {
+    var img = b.imagen || '';
+    if (!img) return false;
+    if (img.indexOf('logo.png') >= 0) return false;
+    if (img.indexOf('data:image') === 0) return true;  // base64 es válido
+    return true;
+  }
+
   function formatCOP(n) {
     n = Number(n) || 0;
     return '$' + n.toLocaleString('es-CO');
@@ -209,7 +231,7 @@ var ArcanoSEO = (function() {
         url: urlCanonical,
         priceCurrency: 'COP',
         price: String(precioChico),
-        availability: 'https://schema.org/InStock',
+        availability: availabilitySchema(blend),
         itemCondition: 'https://schema.org/NewCondition'
       }
     };
@@ -435,7 +457,7 @@ var ArcanoSEO = (function() {
           '@type': 'Offer',
           priceCurrency: 'COP',
           price: String(precioChico > 0 ? precioChico : precioGrande),
-          availability: 'https://schema.org/InStock',
+          availability: availabilitySchema(b),
           url: BASE_URL + '/blends/' + slug + '/'
         };
       }
@@ -597,19 +619,37 @@ var ArcanoSEO = (function() {
       var imagen = esc(fixImageUrl(b.imagen));
       var precio = Number(b.precioChico) || 0;
       var cat = esc(b.categoria || '');
+      var inStock = isBlendInStock(b);
+      var realImg = hasRealImage(b);
       xml += '<item>\n';
       xml += '<g:id>' + slug + '</g:id>\n';
       xml += '<g:title>' + nombre + '</g:title>\n';
       xml += '<g:description>' + desc + '</g:description>\n';
       xml += '<g:link>' + BASE_URL + '/blends/' + slug + '/</g:link>\n';
       xml += '<g:image_link>' + imagen + '</g:image_link>\n';
-      xml += '<g:availability>in stock</g:availability>\n';
+      xml += '<g:availability>' + (inStock ? 'in stock' : 'out of stock') + '</g:availability>\n';
       xml += '<g:price>' + precio + ' COP</g:price>\n';
       xml += '<g:brand>Arcano Especias</g:brand>\n';
       xml += '<g:condition>new</g:condition>\n';
       xml += '<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>\n';
       xml += '<g:product_type>' + cat + '</g:product_type>\n';
       xml += '<g:identifier_exists>FALSE</g:identifier_exists>\n';
+      // IVA 19% incluido en el precio (Colombia)
+      xml += '<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>\n';
+      // Peso estimado (frasco pequeño ~80g)
+      xml += '<g:shipping_weight>80 g</g:shipping_weight>\n';
+      // Política de devoluciones: 7 días solo por daño/error
+      xml += '<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/#politica-devoluciones</g:return_policy_url></g:return_policy>\n';
+      // Envío variable por zona (Colombia)
+      xml += '<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>\n';
+      xml += '<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n';
+      xml += '<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n';
+      xml += '<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>\n';
+      // Si el producto no tiene imagen real (usa logo.png), excluirlo de Google Shopping
+      // para evitar rechazo del feed por 'image is brand logo'.
+      if (!realImg) {
+        xml += '<g:excluded_destination>Shopping</g:excluded_destination>\n';
+      }
       xml += '</item>\n';
     }
     xml += '</channel>\n</rss>\n';
@@ -618,7 +658,9 @@ var ArcanoSEO = (function() {
 
   /* === Merchant feed TSV === */
   function generateMerchantFeedTsv(blends) {
-    var tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\n';
+    // TSV no soporta campos anidados como shipping o return_policy; mantenemos formato simple
+    // con los campos básicos + availability dinámico + excluded_destination.
+    var tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\texcluded_destination\n';
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       if ((Number(b.precioChico) || 0) <= 0) continue;
@@ -628,7 +670,9 @@ var ArcanoSEO = (function() {
       var imagen = fixImageUrl(b.imagen);
       var precio = Number(b.precioChico) || 0;
       var cat = (b.categoria || '').replace(/\t/g, ' ');
-      tsv += slug + '\t' + nombre + '\t' + desc + '\t' + BASE_URL + '/blends/' + slug + '/\t' + imagen + '\tin stock\t' + precio + ' COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t' + cat + '\tFALSE\n';
+      var avail = isBlendInStock(b) ? 'in stock' : 'out of stock';
+      var excluded = hasRealImage(b) ? '' : 'Shopping';
+      tsv += slug + '\t' + nombre + '\t' + desc + '\t' + BASE_URL + '/blends/' + slug + '/\t' + imagen + '\t' + avail + '\t' + precio + ' COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t' + cat + '\tFALSE\t' + excluded + '\n';
     }
     return tsv;
   }
