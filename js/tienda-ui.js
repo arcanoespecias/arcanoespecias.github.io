@@ -1376,17 +1376,15 @@ document.addEventListener('DOMContentLoaded', function() {
   _updateCuentaBadge();
   _updateSidebar('tienda');
 
-  // === Detectar ?cofre=abierto en URL → forzar scroll=0 + mostrar cofre ===
+  // === Detectar ?scrollTo=filtros en URL → scrollear a #filters ===
   // Viene de /order-confirmation/ ("Volver a la tienda"). Queremos que el
-  // usuario vea el cofre cerrado al inicio (experiencia Arcano) en vez de
-  // caer en la posición de scroll que tenía antes.
-  var _forceCofreAbierto = false;
+  // usuario caiga directamente en la sección de filtros de categoría
+  // (Todos, Comidas, Infusiones, Coctelería, Especias, Packs).
+  var _scrollToFiltros = false;
   try {
     var urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('cofre') === 'abierto') {
-      _forceCofreAbierto = true;
-      // Resetear scroll al top inmediatamente
-      window.scrollTo(0, 0);
+    if (urlParams.get('scrollTo') === 'filtros') {
+      _scrollToFiltros = true;
       // Limpiar el query param de la URL sin recargar
       var cleanUrl = window.location.pathname + window.location.hash;
       history.replaceState(null, '', cleanUrl);
@@ -1416,14 +1414,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (pb) pb.style.display = 'none';
     }
 
-    // Si venimos de /order-confirmation/, forzar el cofre abierto (cerrado visualmente)
-    if (_forceCofreAbierto && window.ArcanoOpening && typeof window.ArcanoOpening.enable === 'function') {
-      // Asegurar scroll=0 antes de habilitar el overlay
-      window.scrollTo(0, 0);
-      // Habilitar el overlay (lo muestra si scrollY < threshold)
-      window.ArcanoOpening.enable();
-      // Doble check: forzar scroll=0 después de un microtask
-      setTimeout(function() { window.scrollTo(0, 0); }, 10);
+    // Si venimos de /order-confirmation/, scrollear a #filters
+    if (_scrollToFiltros) {
+      var filtersEl = document.getElementById('filters');
+      if (filtersEl) {
+        // Offset de 90px para que el header sticky no tape los filtros
+        var targetTop = filtersEl.getBoundingClientRect().top + (window.scrollY || window.pageYOffset) - 90;
+        if (targetTop < 0) targetTop = 0;
+        // Pequeño delay para asegurar que los productos ya cargaron
+        setTimeout(function() {
+          window.scrollTo({ top: targetTop, behavior: 'smooth' });
+        }, 200);
+      }
     }
   });
   document.getElementById('filters').addEventListener('click', function(e) {
