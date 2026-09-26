@@ -1020,15 +1020,48 @@ def generate_sitemap(blends, cats_with_counts, existing_pages):
         f.write(xml)
 
 def load_existing_sitemap_urls():
-    """Lee el sitemap actual para preservar URLs existentes (recetas, blog)."""
-    sitemap_path = os.path.join(REPO_PATH, 'sitemap.xml')
-    if not os.path.exists(sitemap_path):
-        return []
+    """Lee el sitemap actual + escanea directorios /blog/ y /recetas/ en disco
+    para preservar TODAS las URLs existentes (no solo las del sitemap).
+
+    Esto evita que el botón 'Regenerar SEO Completo' pierda URLs de blog/recetas
+    si el sitemap actual ya las perdió por una corrida previa defectuosa.
+    """
     urls = []
-    with open(sitemap_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    for m in re.finditer(r'<loc>([^<]+)</loc>', content):
-        urls.append((m.group(1), '0.6', 'monthly'))
+    urls_seen = set()
+
+    # 1. URLs del sitemap actual
+    sitemap_path = os.path.join(REPO_PATH, 'sitemap.xml')
+    if os.path.exists(sitemap_path):
+        with open(sitemap_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        for m in re.finditer(r'<loc>([^<]+)</loc>', content):
+            url = m.group(1)
+            if url not in urls_seen:
+                urls_seen.add(url)
+                urls.append((url, '0.6', 'monthly'))
+
+    # 2. Escaneo de directorios /blog/ y /recetas/ en disco
+    # Esto garantiza que aunque el sitemap se haya roto, las URLs se recreen.
+    for subdir in ['blog', 'recetas']:
+        dir_path = os.path.join(REPO_PATH, subdir)
+        if not os.path.isdir(dir_path):
+            continue
+        for fname in sorted(os.listdir(dir_path)):
+            if not fname.endswith('.html'):
+                continue
+            url = f'{BASE_URL}/{subdir}/{fname}'
+            if url not in urls_seen:
+                urls_seen.add(url)
+                urls.append((url, '0.6', 'monthly'))
+
+    # 3. /order-confirmation/ (si existe)
+    oc_path = os.path.join(REPO_PATH, 'order-confirmation', 'index.html')
+    if os.path.exists(oc_path):
+        url = f'{BASE_URL}/order-confirmation/'
+        if url not in urls_seen:
+            urls_seen.add(url)
+            urls.append((url, '0.1', 'never'))  # noindex, baja prioridad
+
     return urls
 
 # ============================================================
