@@ -1375,6 +1375,24 @@ document.addEventListener('DOMContentLoaded', function() {
   updateCartBadge();
   _updateCuentaBadge();
   _updateSidebar('tienda');
+
+  // === Detectar ?cofre=abierto en URL → forzar scroll=0 + mostrar cofre ===
+  // Viene de /order-confirmation/ ("Volver a la tienda"). Queremos que el
+  // usuario vea el cofre cerrado al inicio (experiencia Arcano) en vez de
+  // caer en la posición de scroll que tenía antes.
+  var _forceCofreAbierto = false;
+  try {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('cofre') === 'abierto') {
+      _forceCofreAbierto = true;
+      // Resetear scroll al top inmediatamente
+      window.scrollTo(0, 0);
+      // Limpiar el query param de la URL sin recargar
+      var cleanUrl = window.location.pathname + window.location.hash;
+      history.replaceState(null, '', cleanUrl);
+    }
+  } catch (e) {}
+
   initTienda().then(function() {
     initRecetas();
     initBlog();
@@ -1396,6 +1414,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!hasVisiblePacks()) {
       var pb = document.querySelector('.filter-pill[data-cat="Packs"]');
       if (pb) pb.style.display = 'none';
+    }
+
+    // Si venimos de /order-confirmation/, forzar el cofre abierto (cerrado visualmente)
+    if (_forceCofreAbierto && window.ArcanoOpening && typeof window.ArcanoOpening.enable === 'function') {
+      // Asegurar scroll=0 antes de habilitar el overlay
+      window.scrollTo(0, 0);
+      // Habilitar el overlay (lo muestra si scrollY < threshold)
+      window.ArcanoOpening.enable();
+      // Doble check: forzar scroll=0 después de un microtask
+      setTimeout(function() { window.scrollTo(0, 0); }, 10);
     }
   });
   document.getElementById('filters').addEventListener('click', function(e) {
