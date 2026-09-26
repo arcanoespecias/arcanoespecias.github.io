@@ -639,7 +639,7 @@ var ArcanoSEO = (function() {
       // Peso estimado (frasco pequeño ~80g)
       xml += '<g:shipping_weight>80 g</g:shipping_weight>\n';
       // Política de devoluciones: 7 días solo por daño/error
-      xml += '<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/#politica-devoluciones</g:return_policy_url></g:return_policy>\n';
+      xml += '<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>\n';
       // Envío variable por zona (Colombia)
       xml += '<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>\n';
       xml += '<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n';
