@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0E0A07">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Pedido confirmado | Arcano Especias</title>
+  <meta name="description" content="Tu pedido fue recibido correctamente. Te contactaremos por WhatsApp para coordinar la entrega.">
+  <link rel="icon" type="image/png" href="/icons/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: #1b0b07;
+      color: #f0e6d3;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container { max-width: 560px; width: 100%; text-align: center; }
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c9a84c, #e8b84b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: #1b0b07;
+      box-shadow: 0 8px 32px rgba(201, 168, 76, 0.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    h1 {
+      font-size: 2.2rem;
+      color: #c9a84c;
+      margin-bottom: 12px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      font-size: 1.1rem;
+      color: #f0e6d3;
+      margin-bottom: 32px;
+      font-weight: 500;
+    }
+    .order-info {
+      background: #2d1a10;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      border: 1px solid #3a2a1e;
+      text-align: left;
+    }
+    .order-info .label {
+      color: #a08b6e;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .order-info .value {
+      color: #f0e6d3;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .order-info .value:last-child { margin-bottom: 0; }
+    .order-id {
+      font-family: 'Courier New', monospace;
+      color: #c9a84c;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+    .whatsapp-note {
+      background: rgba(37, 211, 102, 0.1);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 24px 0;
+      font-size: 0.95rem;
+      color: #b8e6c9;
+    }
+    .whatsapp-note strong { color: #25d366; }
+    .cta {
+      display: inline-block;
+      background: #c9a84c;
+      color: #1b0b07;
+      padding: 14px 36px;
+      border-radius: 8px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s, background 0.2s;
+      font-size: 1rem;
+      margin-top: 8px;
+    }
+    .cta:hover {
+      transform: translateY(-2px);
+      background: #e8b84b;
+      text-decoration: none;
+    }
+    .footer-note {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #2d1a10;
+      color: #6b5a42;
+      font-size: 0.85rem;
+    }
+    .loading {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #3a2a1e;
+      border-top-color: #c9a84c;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-icon">✓</div>
+    <h1>¡Pedido confirmado!</h1>
+    <p class="subtitle">Tu pedido fue recibido correctamente.</p>
+
+    <div class="order-info" id="order-info">
+      <div class="label">Número de pedido</div>
+      <div class="value order-id" id="order-id-display">—</div>
+      <div class="label">Nombre</div>
+      <div class="value" id="customer-name-display">—</div>
+      <div class="label">Email</div>
+      <div class="value" id="customer-email-display">—</div>
+      <div class="label">Total</div>
+      <div class="value" id="order-total-display">—</div>
+    </div>
+
+    <div class="whatsapp-note">
+      <strong>📱 Próximo paso:</strong> Te contactaremos por WhatsApp en las próximas horas para coordinar el pago y la entrega.
+    </div>
+
+    <a href="/" class="cta">Volver al catálogo →</a>
+
+    <div class="footer-note">
+      Arcano Especias · Especias artesanales del mundo<br>
+      <a href="/blog/" style="color:#a08b6e;text-decoration:none">Visitá nuestro blog</a>
+    </div>
+  </div>
+
+  <!-- === Google Merchant Reviews Opt-in ===
+       Página de confirmación de pedido para integrar Google Customer Reviews.
+       Requisitos:
+       - Carrito y checkout en mismo dominio (arcanoespecias.com) ✓
+       - Página de confirmación en su propio dominio (esta página) ✓
+       - <!DOCTYPE HTML> al inicio de todas las páginas ✓
+       Variables dinámicas:
+       - merchant_id: 5854719506 (fijo)
+       - order_id: ID único del pedido (de Firebase o generado)
+       - email: email del cliente (del form de checkout)
+       - delivery_country: CO (fijo, Colombia)
+       - estimated_delivery_date: calculado según zona de envío (no visible al usuario)
+       - products: lista de productos con gtin (= product.id, ya que identifier_exists=false en feed)
+  -->
+  <script src="https://apis.google.com/js/platform.js?onload=renderOptIn" async defer></script>
+  <script>
+    // === Datos del pedido (leídos de query string) ===
+    function getQueryParam(name) {
+      var match = window.location.search.match(new RegExp('[?&]' + name + '=([^&]+)'));
+      return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : '';
+    }
+
+    // Cargar datos del pedido desde Firebase usando order_id
+    var orderId = getQueryParam('id') || '';
+    var customerEmail = getQueryParam('email') || '';
+    var customerName = getQueryParam('nombre') || '';
+    var orderTotal = getQueryParam('total') || '';
+    var deliveryZone = getQueryParam('zona') || '';  // 'bogota', 'antioquia', 'valle', 'otras'
+    var productsParam = getQueryParam('productos') || '';  // JSON string
+
+    // Mostrar datos básicos en la página
+    document.getElementById('order-id-display').textContent = orderId || '—';
+    document.getElementById('customer-name-display').textContent = customerName || '—';
+    document.getElementById('customer-email-display').textContent = customerEmail || '—';
+    document.getElementById('order-total-display').textContent = orderTotal ? ('$' + Number(orderTotal).toLocaleString('es-CO') + ' COP') : '—';
+
+    // === Calcular estimated_delivery_date (NO visible al usuario) ===
+    // Google lo usa para saber cuándo enviar el email de reseña al cliente.
+    // Basado en la zona de envío seleccionada en checkout.
+    // Zonas mapeadas desde tienda-ui.js:
+    //   medellin (urbano)    → 3 días
+    //   capital              → 5 días (Bogotá, Cali, Barranquilla, etc.)
+    //   especial             → 8 días (insulares/lejanas: Leticia, San Andrés, etc.)
+    //   otras / sin cobertura → 7 días (default)
+    function calculateEstimatedDeliveryDate(zone) {
+      var daysToAdd = 7;
+      if (zone === 'medellin') daysToAdd = 3;
+      else if (zone === 'capital') daysToAdd = 5;
+      else if (zone === 'especial') daysToAdd = 8;
+
+      var date = new Date();
+      date.setDate(date.getDate() + daysToAdd);
+      return date.toISOString().substring(0, 10);  // YYYY-MM-DD
+    }
+
+    var estimatedDeliveryDate = calculateEstimatedDeliveryDate(deliveryZone);
+
+    // === Parsear productos para enviar a Google ===
+    // Formato: [{"gtin":"PRODUCT_ID1"}, {"gtin":"PRODUCT_ID2"}]
+    // Como identifier_exists=FALSE en el feed (productos artesanales sin GTIN),
+    // usamos el product.id como GTIN/MPN — Google lo acepta como fallback.
+    var productsForGoogle = [];
+    try {
+      if (productsParam) {
+        var parsed = JSON.parse(productsParam);
+        if (Array.isArray(parsed)) {
+          for (var i = 0; i < parsed.length; i++) {
+            if (parsed[i] && parsed[i].id) {
+              productsForGoogle.push({ gtin: String(parsed[i].id) });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Google Reviews] Error parseando productos:', e);
+    }
+
+    // === Render del opt-in de Google Customer Reviews ===
+    window.renderOptIn = function() {
+      // Solo renderizar si tenemos los datos mínimos necesarios
+      if (!orderId || !customerEmail) {
+        console.warn('[Google Reviews] Faltan datos: order_id o email. No se renderiza el opt-in.');
+        return;
+      }
+      try {
+        window.gapi.load('surveyoptin', function() {
+          window.gapi.surveyoptin.render({
+            // REQUIRED FIELDS
+            "merchant_id": 5854719506,
+            "order_id": orderId,
+            "email": customerEmail,
+            "delivery_country": "CO",
+            "estimated_delivery_date": estimatedDeliveryDate,
+            // OPTIONAL FIELDS
+            "products": productsForGoogle
+          });
+        });
+      } catch (e) {
+        console.warn('[Google Reviews] Error renderizando opt-in:', e);
+      }
+    };
+  </script>
+</body>
+</html>

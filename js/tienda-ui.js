@@ -423,7 +423,33 @@ function sendOrder() {
         items: ga4Items
       });
     }
-    body.innerHTML = '<div class="success-box"><div class="success-icon">\u2705</div><h3>Pedido enviado</h3><p>Tu pedido fue recibido correctamente.</p><button class="btn-primary" onclick="_finishOrder()" style="max-width:200px;margin:0 auto">Entendido</button></div>';
+    // === Redirect a página de confirmación dedicada ===
+    // Necesario para Google Merchant Reviews (requiere URL propia en mismo dominio).
+    // Generamos order_id único (Firebase no devuelve el key directamente).
+    var orderId = 'ARC-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 3).toUpperCase();
+    // Mapear categoría de envío a zona corta para el cálculo de delivery_date en la page
+    var zonaEnvio = 'otras';
+    if (envio.categoria === 'urbano') zonaEnvio = 'medellin';
+    else if (envio.categoria === 'capital') zonaEnvio = 'capital';
+    else if (envio.categoria === 'especial') zonaEnvio = 'especial';
+    // Construir lista de productos (compacta) para enviar a Google
+    var productosParaGoogle = cart.map(function(c) {
+      return { id: c.productId };
+    });
+    // Construir URL de confirmación con todos los datos necesarios
+    var params = new URLSearchParams({
+      id: orderId,
+      email: email || '',
+      nombre: nombre || '',
+      total: String(totalFinal),
+      zona: zonaEnvio,
+      productos: JSON.stringify(productosParaGoogle)
+    });
+    var confirmUrl = '/order-confirmation/?' + params.toString();
+    // Limpiar carrito antes de redirigir (para que al volver no aparezca lleno)
+    cart = []; saveCart(); updateCartBadge();
+    // Redirigir a la página de confirmación
+    window.location.href = confirmUrl;
   }).catch(function(err) {
     alert('Error: ' + (err.message || err));
     renderCartDrawer();
