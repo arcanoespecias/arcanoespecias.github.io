@@ -326,6 +326,8 @@ def blend_page_html(blend, especias, all_blends):
         'name': nombre,
         'description': descripcion or meta_desc,
         'image': url_imagen,
+        'sku': str(blend.get('id', '')),
+        'mpn': str(blend.get('id', '')),
         'brand': {'@type': 'Brand', 'name': 'Arcano Especias'},
         'category': categoria,
         'offers': {
@@ -333,7 +335,8 @@ def blend_page_html(blend, especias, all_blends):
             'url': url_canonical,
             'priceCurrency': 'COP',
             'price': str(precio_chico),
-            'availability': 'https://schema.org/InStock' if (blend.get('stockChico') or 0) > 0 or (blend.get('stockGrande') or 0) > 0 else 'https://schema.org/OutOfStock'
+            'availability': 'https://schema.org/InStock' if (blend.get('stockChico') or 0) > 0 or (blend.get('stockGrande') or 0) > 0 else 'https://schema.org/OutOfStock',
+            'itemCondition': 'https://schema.org/NewCondition'
         }
     }
     if precio_grande > 0:
