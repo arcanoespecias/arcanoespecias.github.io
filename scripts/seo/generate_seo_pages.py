@@ -858,6 +858,12 @@ def generate_merchant_feed(blends):
         xml += '<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>\n'
         xml += f'<g:product_type>{esc(b.get("categoria", ""))}</g:product_type>\n'
         xml += '<g:identifier_exists>FALSE</g:identifier_exists>\n'
+        # Target country: indica a Google en qué país se venden los productos.
+        # Requerido por Google Merchant Center — sin este campo, los productos
+        # se rechazan con error 'región de los productos'.
+        xml += '<g:target_country>CO</g:target_country>\n'
+        # Content language: idioma del feed (español de Colombia)
+        xml += '<g:content_language>es</g:content_language>\n'
         # IVA 19% incluido en el precio (Colombia)
         xml += '<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>\n'
         # Peso estimado (frasco pequeño ~80g)
