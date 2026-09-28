@@ -6640,22 +6640,35 @@ const Pages = {
   // ============================================================
   // CONFIGURACION DE IA PARA BLOG
   // Persistencia: Firebase arcano/db/config/blog_ai + localStorage arcano_blog_ai_config
-  // Defaults: gemini-2.5-flash, temp 0.8, tokens 4000, tono cercano, longitud media
+  // Defaults: gemini-3.8-flash, temp 0.8, tokens 4000, tono cercano, longitud media
   // ============================================================
   _blogAIDefaults: {
-    modelo: 'gemini-2.5-flash',
+    modelo: 'gemini-3.8-flash',
     temperatura: 0.8,
     maxTokens: 4000,
     tono: 'cercano',
     longitud: 'media'
   },
 
+  // Modelos vigentes segun Google AI Studio (Sep 2026).
+  // Google depreca modelos con frecuencia; el input usa datalist para que el admin
+  // pueda escribir un modelo nuevo aunque todavia no este en la lista.
   _blogAIModelOptions: [
-    { value: 'gemini-2.5-flash',  label: 'Gemini 2.5 Flash  (rapido, recomendado)' },
-    { value: 'gemini-2.5-pro',    label: 'Gemini 2.5 Pro    (mayor calidad, mas lento)' },
-    { value: 'gemini-2.0-flash',  label: 'Gemini 2.0 Flash' },
-    { value: 'gemini-1.5-flash',  label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-pro',    label: 'Gemini 1.5 Pro' }
+    { value: 'gemini-3.8-flash',  label: 'Gemini 3.8 Flash  (rapido, recomendado)' },
+    { value: 'gemini-3.8-pro',    label: 'Gemini 3.8 Pro    (mayor calidad, mas lento)' },
+    { value: 'gemini-2.5-flash',  label: 'Gemini 2.5 Flash  (legacy - puede no estar disponible para API keys nuevas)' },
+    { value: 'gemini-2.5-pro',    label: 'Gemini 2.5 Pro    (legacy - puede no estar disponible)' },
+    { value: 'gemini-2.0-flash',  label: 'Gemini 2.0 Flash  (legacy)' },
+    { value: 'gemini-1.5-flash',  label: 'Gemini 1.5 Flash  (legacy)' },
+    { value: 'gemini-1.5-pro',    label: 'Gemini 1.5 Pro    (legacy)' }
+  ],
+
+  // Modelos deprecados por Google. Si el admin tiene uno guardado en su config,
+  // lo migraremos automaticamente al default vigente.
+  _blogAIDeprecatedModels: [
+    'gemini-3.6-flash',   // nunca existio como tal, error de tipeo
+    'gemini-2.5-flash',  // deprecado Sep 2026 para nuevas API keys
+    'gemini-2.5-pro'     // deprecado Sep 2026 para nuevas API keys
   ],
 
   _blogAIToneOptions: [
@@ -6675,8 +6688,19 @@ const Pages = {
     var cfg = {};
     try { cfg = JSON.parse(localStorage.getItem('arcano_blog_ai_config') || '{}'); } catch(e) { cfg = {}; }
     var d = Pages._blogAIDefaults;
+    var modelo = cfg.modelo || d.modelo;
+    // Migracion: si el modelo guardado esta deprecado, usar el default vigente
+    if (Pages._blogAIDeprecatedModels.indexOf(modelo) !== -1) {
+      modelo = d.modelo;
+      // Limpieza silenciosa en localStorage para que no vuelva a aparecer
+      try {
+        var clean = JSON.parse(localStorage.getItem('arcano_blog_ai_config') || '{}');
+        clean.modelo = d.modelo;
+        localStorage.setItem('arcano_blog_ai_config', JSON.stringify(clean));
+      } catch(e) {}
+    }
     return {
-      modelo:       cfg.modelo       || d.modelo,
+      modelo:       modelo,
       temperatura:  (typeof cfg.temperatura === 'number') ? cfg.temperatura : d.temperatura,
       maxTokens:    cfg.maxTokens    || d.maxTokens,
       tono:         cfg.tono         || d.tono,
@@ -6718,6 +6742,12 @@ const Pages = {
           // Mergear con defaults por si falta algun campo
           var merged = Pages._getBlogAIConfig();
           for (var k in fbCfg) merged[k] = fbCfg[k];
+          // Migrar modelo deprecado si llego uno de Firebase
+          if (Pages._blogAIDeprecatedModels.indexOf(merged.modelo) !== -1) {
+            merged.modelo = Pages._blogAIDefaults.modelo;
+            // Persistir la migracion en Firebase para no volver a cargar el viejo
+            firebase.database().ref('arcano/db/config/blog_ai/modelo').set(merged.modelo);
+          }
           localStorage.setItem('arcano_blog_ai_config', JSON.stringify(merged));
           Pages._applyBlogAIConfigToUI(merged);
         }
@@ -6758,12 +6788,13 @@ const Pages = {
       '<div class="card-body">' +
         '<div class="g2">' +
           '<div class="form-group"><label>Modelo de Gemini</label>' +
-            '<select class="input" id="ba-cfg-modelo">';
+            '<input type="text" class="input" id="ba-cfg-modelo" list="ba-cfg-modelos-list" placeholder="gemini-3.8-flash" autocomplete="off" style="font-family:monospace;font-size:0.85rem">' +
+            '<datalist id="ba-cfg-modelos-list">';
     for (var mi = 0; mi < Pages._blogAIModelOptions.length; mi++) {
       h += '<option value="' + Pages._blogAIModelOptions[mi].value + '">' + Pages._blogAIModelOptions[mi].label + '</option>';
     }
-    h += '</select>' +
-          '<p class="text-xs text-muted mt-4">2.5 Flash = rapido y economico (recomendado). Pro = mejor calidad pero mas lento y consume mas cuota.</p>' +
+    h += '</datalist>' +
+          '<p class="text-xs text-muted mt-4">3.8 Flash = rapido y economico (recomendado). 3.8 Pro = mejor calidad pero mas lento. Si Google lanza un modelo nuevo, puedes escribir su nombre aqui directamente.</p>' +
           '</div>' +
           '<div class="form-group"><label>Temperatura: <span id="ba-cfg-temp-val" style="color:var(--gold);font-weight:700">0.8</span></label>' +
             '<input type="range" class="input" id="ba-cfg-temp" min="0" max="1.5" step="0.1" value="0.8" ' +
