@@ -1,13 +1,8 @@
 // /api/generate-article.js — Cloudflare Pages Function
 // Genera artículos de blog usando el servicio de IA de z.ai (GLM-4-Plus).
 // Sin API keys del usuario, sin cuota, sin modelos deprecados.
-//
-// El admin hace POST a /api/generate-article con:
-//   { prompt: string, config: { temperatura, maxTokens } }
-// Y recibe: { text: string, model: string } con el contenido JSON generado por la IA.
 
 const ZAI_BASE_URL = 'https://internal-api.z.ai/v1';
-// Credenciales internas de z.ai (no sensibles, son del SDK)
 const ZAI_CONFIG = {
   apiKey: 'Z.ai',
   chatId: 'chat-c4651b11-5bec-451f-a82a-b52b7cbb2a33',
@@ -15,33 +10,64 @@ const ZAI_CONFIG = {
   token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNGIyNzU1MjYtNjY3Ni00MmIxLWFkZjItYzhmZTdiMDNmNWFkIiwiY2hhdF9pZCI6ImNoYXQtYzQ2NTFiMTEtNWJlYy00NTFmLWE4MmEtYjUyYjdjYmIyYTMzIiwicGxhdGZvcm0iOiJ6YWkifQ.EFl5fZpZ-viKeNAhLmslMOYXPCNyYEXZHVj4-97X3ds'
 };
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json'
+};
+
+// === Health check (GET) — para verificar que la función está desplegada ===
+export async function onRequestGet({ request }) {
+  return new Response(JSON.stringify({
+    ok: true,
+    service: 'z.ai generate-article',
+    timestamp: Date.now(),
+    zaiBaseUrl: ZAI_BASE_URL
+  }), { headers: corsHeaders });
+}
+
 export async function onRequestPost({ request }) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-  };
+  console.log('[generate-article] onRequestPost started');
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // === PASO 1: Parsear el body ===
+  let body;
   try {
-    const body = await request.json();
-    const { prompt, config } = body;
+    body = await request.json();
+    console.log('[generate-article] Step 1 OK: body parsed, keys=', Object.keys(body));
+  } catch (e) {
+    console.error('[generate-article] Step 1 FAIL: body parse error:', e.message);
+    return new Response(JSON.stringify({
+      error: 'Body invalido',
+      detail: e.message,
+      step: 'parse_body'
+    }), { status: 400, headers: corsHeaders });
+  }
 
-    if (!prompt || typeof prompt !== 'string' || prompt.length === 0) {
-      return new Response(JSON.stringify({ error: 'prompt required' }), {
-        status: 400, headers: corsHeaders
-      });
-    }
+  const { prompt, config } = body;
 
-    const temperatura = Number(config?.temperatura);
-    const maxTokens = Number(config?.maxTokens) || 4000;
+  if (!prompt || typeof prompt !== 'string' || prompt.length === 0) {
+    console.error('[generate-article] Step 2 FAIL: prompt missing');
+    return new Response(JSON.stringify({
+      error: 'prompt required',
+      step: 'validate_prompt'
+    }), { status: 400, headers: corsHeaders });
+  }
+  console.log('[generate-article] Step 2 OK: prompt length=', prompt.length);
 
-    // Llamar a z.ai chat completions (GLM-4-Plus)
-    const zaiResp = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
+  const temperatura = Number(config?.temperatura);
+  const maxTokens = Number(config?.maxTokens) || 4000;
+  console.log('[generate-article] Step 3: config parsed, temp=', temperatura, 'tokens=', maxTokens);
+
+  // === PASO 4: Llamar a z.ai ===
+  let zaiResp;
+  try {
+    console.log('[generate-article] Step 4: fetching z.ai at', ZAI_BASE_URL + '/chat/completions');
+    zaiResp = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,41 +93,63 @@ export async function onRequestPost({ request }) {
         thinking: { type: 'disabled' }
       })
     });
-
-    if (!zaiResp.ok) {
-      const errText = await zaiResp.text();
-      console.error('[generate-article] z.ai error:', zaiResp.status, errText);
-      return new Response(JSON.stringify({
-        error: 'z.ai API error',
-        detail: zaiResp.status === 429
-          ? 'Límite de consultas alcanzado en z.ai. Intentá de nuevo en unos segundos.'
-          : 'Error temporal del servicio de IA.',
-        status: zaiResp.status,
-        body: errText.slice(0, 500)
-      }), { status: 502, headers: corsHeaders });
-    }
-
-    const data = await zaiResp.json();
-    const text = data?.choices?.[0]?.message?.content || '';
-
-    if (!text) {
-      console.error('[generate-article] z.ai empty response:', JSON.stringify(data).slice(0, 500));
-      return new Response(JSON.stringify({
-        error: 'Respuesta vacía de z.ai',
-        detail: 'La IA no devolvió contenido. Intenta nuevamente.'
-      }), { status: 502, headers: corsHeaders });
-    }
-
-    return new Response(JSON.stringify({
-      text: text,
-      model: data?.model || 'glm-4-plus',
-      usage: data?.usage || null
-    }), { headers: corsHeaders });
-
+    console.log('[generate-article] Step 4 OK: z.ai responded status=', zaiResp.status);
   } catch (e) {
-    console.error('[generate-article] Error:', e);
+    console.error('[generate-article] Step 4 FAIL: fetch error:', e.message, e.stack);
     return new Response(JSON.stringify({
-      error: e.message || 'Server error'
-    }), { status: 500, headers: corsHeaders });
+      error: 'No se pudo conectar con z.ai',
+      detail: e.message,
+      step: 'fetch_zai',
+      stack: e.stack?.split('\n').slice(0, 5).join(' | ')
+    }), { status: 502, headers: corsHeaders });
   }
+
+  // === PASO 5: Procesar la respuesta de z.ai ===
+  if (!zaiResp.ok) {
+    let errText = '';
+    try { errText = await zaiResp.text(); } catch(_) {}
+    console.error('[generate-article] Step 5 FAIL: z.ai HTTP', zaiResp.status, errText.slice(0, 500));
+    return new Response(JSON.stringify({
+      error: 'z.ai API error',
+      detail: zaiResp.status === 429
+        ? 'Límite de consultas alcanzado en z.ai. Intentá de nuevo en unos segundos.'
+        : 'Error temporal del servicio de IA.',
+      status: zaiResp.status,
+      body: errText.slice(0, 500),
+      step: 'zai_response'
+    }), { status: 502, headers: corsHeaders });
+  }
+
+  let data;
+  try {
+    data = await zaiResp.json();
+    console.log('[generate-article] Step 5 OK: z.ai json parsed, model=', data?.model);
+  } catch (e) {
+    console.error('[generate-article] Step 5 FAIL: json parse:', e.message);
+    return new Response(JSON.stringify({
+      error: 'z.ai devolvió respuesta no-JSON',
+      detail: e.message,
+      step: 'parse_zai_json'
+    }), { status: 502, headers: corsHeaders });
+  }
+
+  const text = data?.choices?.[0]?.message?.content || '';
+
+  if (!text) {
+    console.error('[generate-article] Step 6 FAIL: empty content, full response:', JSON.stringify(data).slice(0, 500));
+    return new Response(JSON.stringify({
+      error: 'Respuesta vacía de z.ai',
+      detail: 'La IA no devolvió contenido. Intenta nuevamente.',
+      step: 'empty_content',
+      raw: JSON.stringify(data).slice(0, 500)
+    }), { status: 502, headers: corsHeaders });
+  }
+
+  console.log('[generate-article] Step 6 OK: text length=', text.length);
+
+  return new Response(JSON.stringify({
+    text: text,
+    model: data?.model || 'glm-4-plus',
+    usage: data?.usage || null
+  }), { headers: corsHeaders });
 }
