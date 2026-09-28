@@ -441,6 +441,23 @@ def blend_page_html(blend, especias, all_blends):
     html.append('.rel-card img{width:100%;height:90px;object-fit:cover}')
     html.append('.rel-card .name{padding:8px 10px;font-size:.85rem;font-weight:600}')
     html.append('.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}')
+    html.append('.buy-section{margin:20px 0}')
+    html.append('.size-selector{display:flex;gap:10px;margin-bottom:16px}')
+    html.append('.size-btn{flex:1;background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .2s}')
+    html.append('.size-btn:hover{border-color:#c9a84c}')
+    html.append('.size-btn.selected{border-color:#c9a84c;background:rgba(201,168,76,.1)}')
+    html.append('.size-btn .lab{color:#a08b6e;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}')
+    html.append('.size-btn.selected .lab{color:#c9a84c}')
+    html.append('.size-btn .price{color:#c9a84c;font-size:1.2rem;font-weight:700}')
+    html.append('.size-btn .stock{font-size:.7rem;margin-top:4px}')
+    html.append('.size-btn .stock-in{color:#4ade80}')
+    html.append('.size-btn .stock-out{color:#f87171}')
+    html.append('.buy-buttons{display:flex;gap:12px;flex-wrap:wrap}')
+    html.append('.btn-cart{background:#c9a84c;color:#1b0b07;border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;transition:background .2s;flex:1;min-width:180px}')
+    html.append('.btn-cart:hover{background:#e8b84b}')
+    html.append('.btn-cart:disabled{background:#4a3a2e;color:#6b5a42;cursor:not-allowed}')
+    html.append('.btn-store{background:transparent;color:#c9a84c;border:1px solid #c9a84c;padding:14px 32px;border-radius:8px;font-weight:600;font-size:.95rem;text-decoration:none;text-align:center;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;flex:1;min-width:180px}')
+    html.append('.btn-store:hover{background:rgba(201,168,76,.1);text-decoration:none}')
     html.append('</style>')
     html.append('</head>')
     html.append('<body>')
@@ -514,9 +531,41 @@ def blend_page_html(blend, especias, all_blends):
         html.append('<div class="row"><div class="lab">Frasco grande</div><div class="val">$' + format(precio_grande, ',d').replace(',', '.') + '</div></div>')
     html.append('</div>')
 
-    # CTA
+    # === Selector de tamaño + botón de compra (requisito Google Merchant Center) ===
+    blend_id = str(blend.get('id', ''))
+    stock_chico = blend.get('stockChico', 0) or 0
+    stock_grande = blend.get('stockGrande', 0) or 0
+    nombre_esc = esc(nombre)
+    html.append('<div class="buy-section">')
+    html.append('<div class="size-selector">')
+    if precio_chico > 0:
+        sel_c = 'selected' if stock_chico > 0 else ''
+        dis_c = 'opacity:.5;cursor:not-allowed' if stock_chico <= 0 else ''
+        stk_c = 'stock-in' if stock_chico > 0 else 'stock-out'
+        stk_t = f'{stock_chico} disponibles' if stock_chico > 0 else 'Agotado'
+        html.append(f'<div class="size-btn {sel_c}" data-talla="chico" data-precio="{precio_chico}" data-id="{blend_id}" data-nombre="{nombre_esc}" style="{dis_c}">')
+        html.append('<div class="lab">Frasco pequeño</div>')
+        html.append(f'<div class="price">${format(precio_chico, ",d").replace(",", ".")}</div>')
+        html.append(f'<div class="stock {stk_c}">{stk_t}</div>')
+        html.append('</div>')
+    if precio_grande > 0:
+        sel_g = 'selected' if (stock_chico <= 0 and stock_grande > 0) else ''
+        dis_g = 'opacity:.5;cursor:not-allowed' if stock_grande <= 0 else ''
+        stk_g = 'stock-in' if stock_grande > 0 else 'stock-out'
+        stk_tg = f'{stock_grande} disponibles' if stock_grande > 0 else 'Agotado'
+        html.append(f'<div class="size-btn {sel_g}" data-talla="grande" data-precio="{precio_grande}" data-id="{blend_id}" data-nombre="{nombre_esc}" style="{dis_g}">')
+        html.append('<div class="lab">Frasco grande</div>')
+        html.append(f'<div class="price">${format(precio_grande, ",d").replace(",", ".")}</div>')
+        html.append(f'<div class="stock {stk_g}">{stk_tg}</div>')
+        html.append('</div>')
+    html.append('</div>')
+    # Botones de compra
     tienda_url = BASE_URL + '/?producto=' + slug
-    html.append(f'<a href="{esc(tienda_url)}" class="cta">Comprar {esc(nombre)} →</a>')
+    html.append('<div class="buy-buttons">')
+    html.append(f'<button class="btn-cart" id="btn-add-cart" onclick="addToCartFromProductPage()">Agregar al carrito 🛒</button>')
+    html.append(f'<a href="{esc(tienda_url)}" class="btn-store">Ver en la tienda →</a>')
+    html.append('</div>')
+    html.append('</div>')
 
     # Productos relacionados
     if relacionados:
@@ -546,6 +595,40 @@ def blend_page_html(blend, especias, all_blends):
     # JSON-LD
     html.append('<script type="application/ld+json">' + json.dumps(product_jsonld, ensure_ascii=False) + '</script>')
     html.append('<script type="application/ld+json">' + json.dumps(breadcrumb_jsonld, ensure_ascii=False) + '</script>')
+
+    # === JS: Selector de tamaño + carrito (requisito Google Merchant Center) ===
+    html.append('''<script>
+document.querySelectorAll('.size-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    if(this.style.opacity&&parseFloat(this.style.opacity)<1)return;
+    document.querySelectorAll('.size-btn').forEach(function(b){b.classList.remove('selected')});
+    this.classList.add('selected');
+  });
+});
+function addToCartFromProductPage(){
+  var sel=document.querySelector('.size-btn.selected');
+  if(!sel){alert('Seleccioná un tamaño');return;}
+  var id=sel.getAttribute('data-id');
+  var nombre=sel.getAttribute('data-nombre');
+  var talla=sel.getAttribute('data-talla');
+  var precio=Number(sel.getAttribute('data-precio'));
+  if(!id||!precio)return;
+  var cart=JSON.parse(localStorage.getItem('arcano_cart')||'[]');
+  var found=false;
+  for(var i=0;i<cart.length;i++){
+    if(cart[i].productId==id&&cart[i].talla==talla){cart[i].qty++;found=true;break;}
+  }
+  if(!found){
+    cart.push({productId:id,nombre:nombre,tipo:'blend',talla:talla,precio:precio,qty:1});
+  }
+  localStorage.setItem('arcano_cart',JSON.stringify(cart));
+  var btn=document.getElementById('btn-add-cart');
+  var orig=btn.textContent;
+  btn.textContent='✓ Agregado! ('+cart.length+' en carrito)';
+  btn.style.background='#4ade80';
+  setTimeout(function(){btn.textContent=orig;btn.style.background='#c9a84c';},1500);
+}
+</script>''')
 
     html.append('</body></html>')
 

@@ -58,6 +58,23 @@ img.h{width:100%;border-radius:12px;max-height:420px;object-fit:cover;box-shadow
 .rel-card img{width:100%;height:90px;object-fit:cover}
 .rel-card .name{padding:8px 10px;font-size:.85rem;font-weight:600}
 .footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}
+.buy-section{margin:20px 0}
+.size-selector{display:flex;gap:10px;margin-bottom:16px}
+.size-btn{flex:1;background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .2s}
+.size-btn:hover{border-color:#c9a84c}
+.size-btn.selected{border-color:#c9a84c;background:rgba(201,168,76,.1)}
+.size-btn .lab{color:#a08b6e;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.size-btn.selected .lab{color:#c9a84c}
+.size-btn .price{color:#c9a84c;font-size:1.2rem;font-weight:700}
+.size-btn .stock{font-size:.7rem;margin-top:4px}
+.size-btn .stock-in{color:#4ade80}
+.size-btn .stock-out{color:#f87171}
+.buy-buttons{display:flex;gap:12px;flex-wrap:wrap}
+.btn-cart{background:#c9a84c;color:#1b0b07;border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;transition:background .2s;flex:1;min-width:180px}
+.btn-cart:hover{background:#e8b84b}
+.btn-cart:disabled{background:#4a3a2e;color:#6b5a42;cursor:not-allowed}
+.btn-store{background:transparent;color:#c9a84c;border:1px solid #c9a84c;padding:14px 32px;border-radius:8px;font-weight:600;font-size:.95rem;text-decoration:none;text-align:center;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;flex:1;min-width:180px}
+.btn-store:hover{background:rgba(201,168,76,.1);text-decoration:none}
 </style>
 </head>
 <body>
@@ -111,7 +128,24 @@ img.h{width:100%;border-radius:12px;max-height:420px;object-fit:cover;box-shadow
 <div class="row"><div class="lab">Frasco pequeño</div><div class="val">$15.000</div></div>
 <div class="row"><div class="lab">Frasco grande</div><div class="val">$30.000</div></div>
 </div>
-<a href="https://arcanoespecias.com/?producto=cajun-lousiana" class="cta">Comprar Cajún Lousiana →</a>
+<div class="buy-section">
+<div class="size-selector">
+<div class="size-btn selected" data-talla="chico" data-precio="15000" data-id="18" data-nombre="Cajún Lousiana" style="">
+<div class="lab">Frasco pequeño</div>
+<div class="price">$15.000</div>
+<div class="stock stock-in">20 disponibles</div>
+</div>
+<div class="size-btn " data-talla="grande" data-precio="30000" data-id="18" data-nombre="Cajún Lousiana" style="">
+<div class="lab">Frasco grande</div>
+<div class="price">$30.000</div>
+<div class="stock stock-in">15 disponibles</div>
+</div>
+</div>
+<div class="buy-buttons">
+<button class="btn-cart" id="btn-add-cart" onclick="addToCartFromProductPage()">Agregar al carrito 🛒</button>
+<a href="https://arcanoespecias.com/?producto=cajun-lousiana" class="btn-store">Ver en la tienda →</a>
+</div>
+</div>
 <div class="rel">
 <h2>Blends relacionados</h2>
 <div class="rel-grid">
@@ -139,4 +173,36 @@ img.h{width:100%;border-radius:12px;max-height:420px;object-fit:cover;box-shadow
 </div>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Product", "name": "Cajún Lousiana", "description": "Una mezcla de especias con espíritu sureño, donde la paprika aporta cuerpo y el ají aparece con un picante definido. La pimienta negra, el ajo y el tomillo completan un perfil intenso, aromático y lleno de carácter, con ese toque especiado que distingue la cocina cajún.", "image": "https://arcanoespecias.com/img/cajun-lousiana.jpg", "sku": "18", "mpn": "18", "brand": {"@type": "Brand", "name": "Arcano Especias", "description": "Origen: Estados Unidos"}, "category": "Comidas", "offers": {"@type": "Offer", "url": "https://arcanoespecias.com/blends/cajun-lousiana/", "priceCurrency": "COP", "price": "15000", "availability": "https://schema.org/InStock", "itemCondition": "https://schema.org/NewCondition", "priceSpecification": [{"@type": "UnitPriceSpecification", "price": "15000", "name": "Frasco pequeño"}, {"@type": "UnitPriceSpecification", "price": "30000", "name": "Frasco grande"}]}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://arcanoespecias.com/"}, {"@type": "ListItem", "position": 2, "name": "Blends", "item": "https://arcanoespecias.com/"}, {"@type": "ListItem", "position": 3, "name": "Cajún Lousiana", "item": "https://arcanoespecias.com/blends/cajun-lousiana/"}]}</script>
+<script>
+document.querySelectorAll('.size-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    if(this.style.opacity&&parseFloat(this.style.opacity)<1)return;
+    document.querySelectorAll('.size-btn').forEach(function(b){b.classList.remove('selected')});
+    this.classList.add('selected');
+  });
+});
+function addToCartFromProductPage(){
+  var sel=document.querySelector('.size-btn.selected');
+  if(!sel){alert('Seleccioná un tamaño');return;}
+  var id=sel.getAttribute('data-id');
+  var nombre=sel.getAttribute('data-nombre');
+  var talla=sel.getAttribute('data-talla');
+  var precio=Number(sel.getAttribute('data-precio'));
+  if(!id||!precio)return;
+  var cart=JSON.parse(localStorage.getItem('arcano_cart')||'[]');
+  var found=false;
+  for(var i=0;i<cart.length;i++){
+    if(cart[i].productId==id&&cart[i].talla==talla){cart[i].qty++;found=true;break;}
+  }
+  if(!found){
+    cart.push({productId:id,nombre:nombre,tipo:'blend',talla:talla,precio:precio,qty:1});
+  }
+  localStorage.setItem('arcano_cart',JSON.stringify(cart));
+  var btn=document.getElementById('btn-add-cart');
+  var orig=btn.textContent;
+  btn.textContent='✓ Agregado! ('+cart.length+' en carrito)';
+  btn.style.background='#4ade80';
+  setTimeout(function(){btn.textContent=orig;btn.style.background='#c9a84c';},1500);
+}
+</script>
 </body></html>
