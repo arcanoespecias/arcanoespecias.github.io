@@ -1,14 +1,15 @@
 // /api/generate-article.js — Cloudflare Pages Function
-// Genera artículos de blog usando el servicio de IA de z.ai (GLM-4-Plus).
-// Sin API keys del usuario, sin cuota, sin modelos deprecados.
+// Genera artículos de blog usando Cloudflare Workers AI (Llama 3.1 8B Instruct).
+// No requiere API keys externas — usa la infraestructura de Cloudflare.
+//
+// Requiere 2 environment variables configuradas en Cloudflare Pages dashboard:
+//   - CF_ACCOUNT_ID: tu Account ID de Cloudflare (visible en cualquier domain overview)
+//   - CF_API_TOKEN: API token con permiso "Workers AI > Read" (crear en Profile > API Tokens)
+//
+// El admin hace POST con: { prompt, config: { temperatura, maxTokens } }
+// Recibe: { text, model, usage }
 
-const ZAI_BASE_URL = 'https://internal-api.z.ai/v1';
-const ZAI_CONFIG = {
-  apiKey: 'Z.ai',
-  chatId: 'chat-c4651b11-5bec-451f-a82a-b52b7cbb2a33',
-  userId: '4b275526-6676-42b1-adf2-c8fe7b03f5ad',
-  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNGIyNzU1MjYtNjY3Ni00MmIxLWFkZjItYzhmZTdiMDNmNWFkIiwiY2hhdF9pZCI6ImNoYXQtYzQ2NTFiMTEtNWJlYy00NTFmLWE4MmEtYjUyYjdjYmIyYTMzIiwicGxhdGZvcm0iOiJ6YWkifQ.EFl5fZpZ-viKeNAhLmslMOYXPCNyYEXZHVj4-97X3ds'
-};
+const CF_AI_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,30 +18,62 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
-// === Health check (GET) — para verificar que la función está desplegada ===
-export async function onRequestGet({ request }) {
+// === Health check (GET) ===
+export async function onRequestGet({ request, env }) {
+  const hasAccountId = !!env?.CF_ACCOUNT_ID;
+  const hasApiToken = !!env?.CF_API_TOKEN;
   return new Response(JSON.stringify({
     ok: true,
-    service: 'z.ai generate-article',
+    service: 'cloudflare-workers-ai',
+    model: CF_AI_MODEL,
     timestamp: Date.now(),
-    zaiBaseUrl: ZAI_BASE_URL
+    configured: hasAccountId && hasApiToken,
+    missingVars: [
+      ...(!hasAccountId ? ['CF_ACCOUNT_ID'] : []),
+      ...(!hasApiToken ? ['CF_API_TOKEN'] : [])
+    ],
+    setupInstructions: (!hasAccountId || !hasApiToken) ? [
+      'Para activar la IA, configura estas variables en:',
+      'Cloudflare Pages → tu proyecto → Settings → Environment variables:',
+      '',
+      '1. CF_ACCOUNT_ID',
+      '   Como obtenerlo: Cloudflare dashboard → cualquier dominio → Overview → scroll derecho "Account ID"',
+      '',
+      '2. CF_API_TOKEN',
+      '   Como obtenerlo: Cloudflare dashboard → My Profile → API Tokens → Create Token',
+      '   Usar template "Workers AI" o crear custom con permiso:',
+      '   Account > Workers AI > Read'
+    ] : null
   }), { headers: corsHeaders });
 }
 
-export async function onRequestPost({ request }) {
-  console.log('[generate-article] onRequestPost started');
+export async function onRequestPost({ request, env }) {
+  console.log('[generate-article] onRequestPost started, env keys:', env ? Object.keys(env).join(',') : 'NO_ENV');
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // === PASO 1: Parsear el body ===
+  // === Validar configuracion de Cloudflare ===
+  if (!env?.CF_ACCOUNT_ID || !env?.CF_API_TOKEN) {
+    console.error('[generate-article] Missing env vars');
+    return new Response(JSON.stringify({
+      error: 'IA no configurada. Faltan variables de entorno en Cloudflare Pages.',
+      detail: 'Ve a /api/generate-article (GET) para instrucciones de configuracion.',
+      missingVars: [
+        ...(!env?.CF_ACCOUNT_ID ? ['CF_ACCOUNT_ID'] : []),
+        ...(!env?.CF_API_TOKEN ? ['CF_API_TOKEN'] : [])
+      ],
+      step: 'validate_env'
+    }), { status: 500, headers: corsHeaders });
+  }
+
+  // === Parsear body ===
   let body;
   try {
     body = await request.json();
-    console.log('[generate-article] Step 1 OK: body parsed, keys=', Object.keys(body));
+    console.log('[generate-article] Body parsed, prompt length:', body?.prompt?.length);
   } catch (e) {
-    console.error('[generate-article] Step 1 FAIL: body parse error:', e.message);
     return new Response(JSON.stringify({
       error: 'Body invalido',
       detail: e.message,
@@ -51,41 +84,37 @@ export async function onRequestPost({ request }) {
   const { prompt, config } = body;
 
   if (!prompt || typeof prompt !== 'string' || prompt.length === 0) {
-    console.error('[generate-article] Step 2 FAIL: prompt missing');
     return new Response(JSON.stringify({
       error: 'prompt required',
       step: 'validate_prompt'
     }), { status: 400, headers: corsHeaders });
   }
-  console.log('[generate-article] Step 2 OK: prompt length=', prompt.length);
 
   const temperatura = Number(config?.temperatura);
   const maxTokens = Number(config?.maxTokens) || 4000;
-  console.log('[generate-article] Step 3: config parsed, temp=', temperatura, 'tokens=', maxTokens);
 
-  // === MODO TEST: si el prompt es exactamente "TEST", no llamar a z.ai ===
+  // === MODO TEST ===
   if (prompt === 'TEST') {
-    console.log('[generate-article] TEST mode: skipping z.ai call');
     return new Response(JSON.stringify({
-      text: '{"titulo":"Test OK","subtitulo":"Respuesta de prueba sin z.ai","contenido":"<p>Test</p>"}',
+      text: '{"titulo":"Test OK","subtitulo":"Sin llamada a IA","contenido":"<p>Test</p>"}',
       model: 'test-mode',
       usage: null
     }), { headers: corsHeaders });
   }
 
-  // === PASO 4: Llamar a z.ai ===
-  let zaiResp;
+  // === Llamar a Cloudflare Workers AI ===
+  console.log('[generate-article] Calling CF Workers AI:', CF_AI_MODEL);
+
+  let aiResp;
   try {
-    console.log('[generate-article] Step 4: fetching z.ai at', ZAI_BASE_URL + '/chat/completions');
-    zaiResp = await fetch(`${ZAI_BASE_URL}/chat/completions`, {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/ai/run/${CF_AI_MODEL}`;
+    console.log('[generate-article] URL:', url);
+
+    aiResp = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ZAI_CONFIG.apiKey}`,
-        'X-Z-AI-From': 'Z',
-        'X-Chat-Id': ZAI_CONFIG.chatId,
-        'X-User-Id': ZAI_CONFIG.userId,
-        'X-Token': ZAI_CONFIG.token
+        'Authorization': `Bearer ${env.CF_API_TOKEN}`
       },
       body: JSON.stringify({
         messages: [
@@ -99,67 +128,67 @@ export async function onRequestPost({ request }) {
           }
         ],
         temperature: isNaN(temperatura) ? 0.8 : temperatura,
-        max_tokens: maxTokens,
-        thinking: { type: 'disabled' }
+        max_tokens: maxTokens
       })
     });
-    console.log('[generate-article] Step 4 OK: z.ai responded status=', zaiResp.status);
+    console.log('[generate-article] CF AI responded status:', aiResp.status);
   } catch (e) {
-    console.error('[generate-article] Step 4 FAIL: fetch error:', e.message, e.stack);
+    console.error('[generate-article] Fetch error:', e.message, e.stack);
     return new Response(JSON.stringify({
-      error: 'No se pudo conectar con z.ai',
+      error: 'No se pudo conectar con Cloudflare Workers AI',
       detail: e.message,
-      step: 'fetch_zai',
-      stack: e.stack?.split('\n').slice(0, 5).join(' | ')
+      step: 'fetch_cf_ai'
     }), { status: 502, headers: corsHeaders });
   }
 
-  // === PASO 5: Procesar la respuesta de z.ai ===
-  if (!zaiResp.ok) {
+  // === Procesar respuesta ===
+  if (!aiResp.ok) {
     let errText = '';
-    try { errText = await zaiResp.text(); } catch(_) {}
-    console.error('[generate-article] Step 5 FAIL: z.ai HTTP', zaiResp.status, errText.slice(0, 500));
+    try { errText = await aiResp.text(); } catch(_) {}
+    console.error('[generate-article] CF AI error:', aiResp.status, errText.slice(0, 500));
     return new Response(JSON.stringify({
-      error: 'z.ai API error',
-      detail: zaiResp.status === 429
-        ? 'Límite de consultas alcanzado en z.ai. Intentá de nuevo en unos segundos.'
+      error: 'Cloudflare Workers AI error',
+      detail: aiResp.status === 401
+        ? 'CF_API_TOKEN invalido o sin permisos de Workers AI. Crea un token con permiso "Account > Workers AI > Read".'
+        : aiResp.status === 404
+        ? 'Modelo no encontrado. Revisa que Workers AI este habilitado en tu cuenta.'
         : 'Error temporal del servicio de IA.',
-      status: zaiResp.status,
+      status: aiResp.status,
       body: errText.slice(0, 500),
-      step: 'zai_response'
+      step: 'cf_ai_response'
     }), { status: 502, headers: corsHeaders });
   }
 
   let data;
   try {
-    data = await zaiResp.json();
-    console.log('[generate-article] Step 5 OK: z.ai json parsed, model=', data?.model);
+    data = await aiResp.json();
+    console.log('[generate-article] CF AI json parsed, keys:', Object.keys(data).join(','));
   } catch (e) {
-    console.error('[generate-article] Step 5 FAIL: json parse:', e.message);
     return new Response(JSON.stringify({
-      error: 'z.ai devolvió respuesta no-JSON',
+      error: 'CF AI devolvió respuesta no-JSON',
       detail: e.message,
-      step: 'parse_zai_json'
+      step: 'parse_cf_ai_json'
     }), { status: 502, headers: corsHeaders });
   }
 
-  const text = data?.choices?.[0]?.message?.content || '';
+  // CF Workers AI response format: { result: { response: "text" } }
+  const text = data?.result?.response || data?.response || '';
 
   if (!text) {
-    console.error('[generate-article] Step 6 FAIL: empty content, full response:', JSON.stringify(data).slice(0, 500));
+    console.error('[generate-article] Empty response:', JSON.stringify(data).slice(0, 500));
     return new Response(JSON.stringify({
-      error: 'Respuesta vacía de z.ai',
+      error: 'Respuesta vacía de CF Workers AI',
       detail: 'La IA no devolvió contenido. Intenta nuevamente.',
       step: 'empty_content',
       raw: JSON.stringify(data).slice(0, 500)
     }), { status: 502, headers: corsHeaders });
   }
 
-  console.log('[generate-article] Step 6 OK: text length=', text.length);
+  console.log('[generate-article] OK, text length:', text.length);
 
   return new Response(JSON.stringify({
     text: text,
-    model: data?.model || 'glm-4-plus',
+    model: CF_AI_MODEL,
     usage: data?.usage || null
   }), { headers: corsHeaders });
 }
