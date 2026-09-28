@@ -6777,25 +6777,16 @@ const Pages = {
 
   renderBlogAdmin(container) {
     var categorias = ['Historias', 'Beneficios', 'Investigaciones', 'Curiosidades', 'Origenes'];
-    var savedKey = localStorage.getItem('arcano_gemini_key') || '';
 
     // === CARD CONFIGURACION DE IA (plegable) ===
     var h = '<details class="card mb-16" id="ba-cfg-card" style="background:var(--bg2)">' +
       '<summary style="cursor:pointer;padding:14px 16px;font-weight:700;color:var(--gold);user-select:none">' +
         'Configuracion de IA  ' +
-        '<span class="text-sm text-muted" style="font-weight:400">(modelo, temperatura, tokens, tono, longitud)</span>' +
+        '<span class="text-sm text-muted" style="font-weight:400">(temperatura, tokens, tono, longitud)</span>' +
       '</summary>' +
       '<div class="card-body">' +
+        '<div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.85rem;color:var(--green)">Modelo IA: <b>GLM-4-Plus</b> (z.ai) — sin configuracion necesaria</div>' +
         '<div class="g2">' +
-          '<div class="form-group"><label>Modelo de Gemini</label>' +
-            '<input type="text" class="input" id="ba-cfg-modelo" list="ba-cfg-modelos-list" placeholder="gemini-3.8-flash" autocomplete="off" style="font-family:monospace;font-size:0.85rem">' +
-            '<datalist id="ba-cfg-modelos-list">';
-    for (var mi = 0; mi < Pages._blogAIModelOptions.length; mi++) {
-      h += '<option value="' + Pages._blogAIModelOptions[mi].value + '">' + Pages._blogAIModelOptions[mi].label + '</option>';
-    }
-    h += '</datalist>' +
-          '<p class="text-xs text-muted mt-4">3.8 Flash = rapido y economico (recomendado). 3.8 Pro = mejor calidad pero mas lento. Si Google lanza un modelo nuevo, puedes escribir su nombre aqui directamente.</p>' +
-          '</div>' +
           '<div class="form-group"><label>Temperatura: <span id="ba-cfg-temp-val" style="color:var(--gold);font-weight:700">0.8</span></label>' +
             '<input type="range" class="input" id="ba-cfg-temp" min="0" max="1.5" step="0.1" value="0.8" ' +
               'oninput="document.getElementById(\'ba-cfg-temp-val\').textContent=parseFloat(this.value).toFixed(1)">' +
@@ -6834,19 +6825,15 @@ const Pages = {
       '</div>' +
     '</details>';
 
-    // === CARD GENERAR ARTICULO (igual que antes) ===
+    // === CARD GENERAR ARTICULO ===
     h += '<div class="card mb-16">' +
-      '<div class="card-header"><h3>Generar Articulo de Blog con IA</h3></div>' +
+      '<div class="card-header"><h3>Generar Articulo de Blog con IA</h3>' +
+        '<span class="badge badge-green" style="margin-left:auto;align-self:center">IA de z.ai integrada</span>' +
+      '</div>' +
       '<div class="card-body">' +
-        '<div class="form-group"><label>API Keys de Gemini (una por linea)</label>' +
-        '<div class="input-group" style="align-items:flex-start;flex-direction:column;gap:8px">' +
-          '<textarea class="input" id="ba-gemini-key" rows="2" placeholder="AIza... (una clave por linea — puedes usar varias para repartir cuota)" style="font-family:monospace;font-size:0.85rem;resize:vertical;width:100%">' + savedKey.replace(/</g, '&lt;') + '</textarea>' +
-          '<div style="display:flex;align-items:center;gap:8px">' +
-            '<button class="btn btn-dark" onclick="Pages._saveBlogKey()">Guardar</button>' +
-            '<span id="ba-key-status">' + (savedKey ? ' <span style="color:var(--green)">guardada</span>' : '') + '</span>' +
-          '</div>' +
-        '</div>' +
-        '<p class="text-sm text-muted mt-4">Obtene tus claves gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (no requiere tarjeta). <b>Cada cuenta Google tiene su propia cuota de 20 req/min</b> — si pegas varias claves (de varias cuentas Google), el sistema las rota automaticamente.</p>' +
+        '<div style="background:rgba(34,197,94,0.1);border:1px solid var(--green);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:1.2rem">✓</span>' +
+          '<span style="color:var(--green);font-size:0.85rem">Servicio de IA z.ai (GLM-4-Plus) integrado. No necesitas API keys ni configurar nada — el servicio ya está activo.</span>' +
         '</div>' +
         '<div class="g2">' +
           '<div class="form-group"><label>Categoria</label>' +
@@ -6874,11 +6861,73 @@ const Pages = {
     '</div>' +
     '<input type="file" id="ba-img-input" accept="image/*" style="display:none" onchange="Pages._onBlogImageSelect(event)">';
     container.innerHTML = h;
-    Pages._loadGeminiKey('ba-gemini-key', 'ba-key-status');
     Pages._loadBlogAIConfig();
     Pages._loadBlogAdmin();
   },
 
+  // Llama al endpoint /api/generate-article (Cloudflare Pages Function)
+  // que internamente usa el servicio de IA de z.ai (GLM-4-Plus).
+  // Sin API keys del usuario, sin cuota, sin modelos deprecados.
+  // - prompt: texto del prompt
+  // - cfg: configuracion de IA (modelo ignorado, temperatura y maxTokens sí se usan)
+  // - statusEl: elemento HTML donde mostrar progreso (opcional)
+  // Retorna Promise que resuelve con la respuesta JSON de z.ai
+  // (estructura compatible con Gemini: { candidates: [{ content: { parts: [{ text }] } }] })
+  _callZaiAPI: function(prompt, cfg, statusEl) {
+    return new Promise(function(resolve, reject) {
+      if (statusEl) {
+        statusEl.innerHTML = '<span style="color:var(--gold)">Generando con IA de z.ai (GLM-4-Plus)...</span>';
+      }
+
+      fetch('/api/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: prompt,
+          config: {
+            temperatura: cfg.temperatura,
+            maxTokens: cfg.maxTokens
+          }
+        })
+      })
+      .then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(e) {
+            throw new Error((e && (e.detail || e.error)) || 'Error ' + res.status);
+          }).catch(function(parseErr) {
+            // Si ni siquiera podemos parsear el error, devolver generico
+            throw new Error('Error ' + res.status + ' desde /api/generate-article');
+          });
+        }
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data || !data.text) {
+          throw new Error('Respuesta vacía desde z.ai. Intenta nuevamente.');
+        }
+        // Adaptar la respuesta al formato que espera el resto del codigo
+        // (estructura tipo Gemini: candidates[0].content.parts[0].text)
+        resolve({
+          candidates: [{
+            content: {
+              parts: [{ text: data.text }],
+              role: 'model'
+            },
+            finishReason: 'STOP'
+          }],
+          promptFeedback: {},
+          _zaiModel: data.model,
+          _zaiUsage: data.usage
+        });
+      })
+      .catch(function(err) {
+        reject(err);
+      });
+    });
+  },
+
+  // === Helpers legacy para compatibilidad con panel de Recetas ===
+  // (recetas todavia usa Gemini directamente — mantener interfaces)
   _parseGeminiKeys: function(str) {
     if (!str) return [];
     return str.split(/[\n,]/)
@@ -6887,6 +6936,8 @@ const Pages = {
   },
 
   // Llama a Gemini con reintentos automaticos en caso de cuota agotada (429).
+  // NOTA: Este helper sigue existiendo para el panel de Recetas (generarReceta).
+  // El panel de Blog usa _callZaiAPI en su lugar.
   // - keys: array de API keys (se rotan)
   // - prompt: texto del prompt
   // - cfg: configuracion de IA (modelo, temperatura, maxTokens)
@@ -7282,25 +7333,13 @@ const Pages = {
   },
 
   generarArticulo: function() {
-    var keyInput = document.getElementById('ba-gemini-key');
     var catSelect = document.getElementById('ba-categoria');
     var temaInput = document.getElementById('ba-tema');
     var btn = document.getElementById('ba-gen-btn');
     var status = document.getElementById('ba-gen-status');
 
-    var apiKey = keyInput.value.trim();
     var categoria = catSelect.value;
     var tema = temaInput.value.trim();
-
-    // === Parsear multiples claves (una por linea) ===
-    var keys = Pages._parseGeminiKeys(apiKey);
-    if (keys.length === 0) {
-      alert('Ingresa al menos una API Key de Gemini. Obtenla gratis en aistudio.google.com/apikey');
-      keyInput.focus();
-      return;
-    }
-    // Guardar raw (preserva newlines si hay multiples claves)
-    localStorage.setItem('arcano_gemini_key', apiKey);
 
     // === Cargar configuracion de IA ===
     var cfg = Pages._getBlogAIConfig();
@@ -7445,9 +7484,9 @@ const Pages = {
           'Escribe un articulo de blog categoria "' + categoria + '". ' + temaInstr + '\n' +
           'Recuerda: investiga keywords del mercado de especias en Colombia y usalas de forma sutil.';
 
-        status.textContent = 'Consultando ' + cfg.modelo + ' (temp ' + cfg.temperatura + ', ' + cfg.maxTokens + ' tokens)...';
+        status.textContent = 'Generando con IA de z.ai (GLM-4-Plus)...';
 
-        Pages._callGeminiWithRetry(keys, prompt, cfg, status)
+        Pages._callZaiAPI(prompt, cfg, status)
         .then(function(data) {
           // === DIAGNOSTICO: manejar varias estructuras de respuesta ===
           // Caso 1: candidates[].content.parts[].text  (normal)
