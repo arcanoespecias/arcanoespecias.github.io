@@ -815,15 +815,25 @@ function initBlog() {
   ref.on('value', function(snap) {
     var d = snap.val();
     _blogPosts = [];
+    var ahora = Date.now();
     if (d) {
       var keys = Object.keys(d);
       for (var i = 0; i < keys.length; i++) {
         var p = d[keys[i]]; p._key = keys[i];
+        // Filtros:
+        // 1. Pausado → no mostrar
         if (p.pausado === true) continue;
+        // 2. Programado para el futuro → no mostrar (aun)
+        if (p.programado === true && p.fechaPublicacion) {
+          var fp = new Date(p.fechaPublicacion).getTime();
+          if (!isNaN(fp) && fp > ahora) continue;
+        }
+        // 3. Borrador (publicado === false, sin programar) → no mostrar
+        if (p.publicado === false && p.programado !== true) continue;
         _blogPosts.push(p);
       }
     }
-    _blogPosts.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+    _blogPosts.sort(function(a, b) { return (b.fechaPublicacion || b.fecha || '').localeCompare(a.fechaPublicacion || a.fecha || ''); });
     _blogReady = true;
     for (var j = 0; j < _blogListeners.length; j++) { try { _blogListeners[j](_blogPosts); } catch(e) {} }
   });

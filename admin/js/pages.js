@@ -6777,103 +6777,458 @@ const Pages = {
 
   renderBlogAdmin(container) {
     var categorias = ['Historias', 'Beneficios', 'Investigaciones', 'Curiosidades', 'Origenes'];
+    Pages._blogCategorias = categorias;
 
-    // === CARD CONFIGURACION DE IA (plegable) ===
-    var h = '<details class="card mb-16" id="ba-cfg-card" style="background:var(--bg2)">' +
-      '<summary style="cursor:pointer;padding:14px 16px;font-weight:700;color:var(--gold);user-select:none">' +
-        'Configuracion de IA  ' +
-        '<span class="text-sm text-muted" style="font-weight:400">(temperatura, tokens, tono, longitud)</span>' +
-      '</summary>' +
-      '<div class="card-body">' +
-        '<div style="background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.85rem;color:var(--gold)">Modelo IA: <b>Gemini 3.8 Flash</b> (auto-detectado por formato de API key) — se lee de Firebase, no se configura aca</div>' +
-        '<div class="g2">' +
-          '<div class="form-group"><label>Temperatura: <span id="ba-cfg-temp-val" style="color:var(--gold);font-weight:700">0.8</span></label>' +
-            '<input type="range" class="input" id="ba-cfg-temp" min="0" max="1.5" step="0.1" value="0.8" ' +
-              'oninput="document.getElementById(\'ba-cfg-temp-val\').textContent=parseFloat(this.value).toFixed(1)">' +
-            '<p class="text-xs text-muted mt-4">0 = determinista. 1.5 = muy creativo. 0.8 = balance recomendado.</p>' +
-          '</div>' +
-        '</div>' +
-        '<div class="g2 mt-8">' +
-          '<div class="form-group"><label>Max tokens de respuesta</label>' +
-            '<select class="input" id="ba-cfg-tokens">' +
-              '<option value="2000">2000  (articulo corto)</option>' +
-              '<option value="4000">4000  (articulo medio, recomendado)</option>' +
-              '<option value="8000">8000  (articulo largo)</option>' +
-            '</select>' +
-          '</div>' +
-          '<div class="form-group"><label>Tono del redactor</label>' +
-            '<select class="input" id="ba-cfg-tono">';
-    for (var ti = 0; ti < Pages._blogAIToneOptions.length; ti++) {
-      h += '<option value="' + Pages._blogAIToneOptions[ti].value + '">' + Pages._blogAIToneOptions[ti].label + '</option>';
-    }
-    h += '</select></div>' +
-        '</div>' +
-        '<div class="g2 mt-8">' +
-          '<div class="form-group"><label>Longitud del articulo</label>' +
-            '<select class="input" id="ba-cfg-longitud" onchange="var d=Pages._blogAILengthOptions.find(function(o){return o.value===this.value}.bind(this));if(d)document.getElementById(\'ba-cfg-len-desc\').textContent=d.min+\'-\'+d.max+\' palabras\'">';
-    for (var li = 0; li < Pages._blogAILengthOptions.length; li++) {
-      h += '<option value="' + Pages._blogAILengthOptions[li].value + '">' + Pages._blogAILengthOptions[li].label + '</option>';
-    }
-    h += '</select>' +
-            '<p class="text-xs text-muted mt-4">Rango objetivo: <span id="ba-cfg-len-desc" style="color:var(--gold)">700-1200 palabras</span></p>' +
-          '</div>' +
-          '<div class="form-group" style="display:flex;align-items:flex-end;gap:8px">' +
-            '<button class="btn btn-gold" onclick="Pages._saveBlogAIConfig()">Guardar Configuracion</button>' +
-            '<span id="ba-cfg-status" class="text-sm"></span>' +
-          '</div>' +
+    // === Boton Nuevo Articulo + Tabla de existentes ===
+    var h = '<div class="card mb-16">' +
+      '<div class="card-header" style="display:flex;align-items:center;justify-content:space-between">' +
+        '<h3 style="margin:0">Blog</h3>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerateAllBlogSEO()" title="Regenera paginas HTML estaticas para SEO">Regenerar SEO</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._processAllBlogImages()" title="Convierte imagenes base64 a archivos JPG">Procesar Imagenes</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages.fixBlogLinks()" title="Reescribe nombres de blends como enlaces">Corregir Links</button>' +
+          '<button class="btn btn-gold" onclick="Pages.nuevoArticulo()">+ Nuevo Articulo</button>' +
         '</div>' +
       '</div>' +
-    '</details>';
-
-    // === CARD GENERAR ARTICULO ===
-    h += '<div class="card mb-16">' +
-      '<div class="card-header"><h3>Generar Articulo de Blog con IA</h3>' +
-        '<span class="badge badge-gold" style="margin-left:auto;align-self:center">Gemini API</span>' +
-      '</div>' +
-      '<div class="card-body">' +
-        '<div style="background:rgba(245,158,11,0.1);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">' +
-          '<span style="font-size:1.2rem">★</span>' +
-          '<span style="color:var(--gold);font-size:0.85rem">La API key se lee desde la configuracion del Chatbot IA del admin. Acepta formato <code>AIzaSy...</code> (legacy) y <code>AQ....</code> (nuevo Gemini 2026).</span>' +
-        '</div>' +
-        '<div class="g2">' +
-          '<div class="form-group"><label>Categoria</label>' +
-          '<select class="input" id="ba-categoria">';
-    for (var c = 0; c < categorias.length; c++) {
-      h += '<option value="' + categorias[c] + '">' + categorias[c] + '</option>';
-    }
-    h += '</select></div>' +
-          '<div class="form-group"><label>Tema (opcional)</label>' +
-          '<input type="text" class="input" id="ba-tema" placeholder="Ej: la ruta de la canela...">' +
-          '</div>' +
-        '</div>' +
-        '<button class="btn btn-gold" id="ba-gen-btn" onclick="Pages.generarArticulo()">Generar Articulo</button>' +
-        '<span id="ba-gen-status" class="text-sm text-muted ml-12"></span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="card" id="ba-preview-card" style="display:none">' +
-      '<div class="card-header"><h3>Vista Previa</h3></div>' +
-      '<div class="card-body" id="ba-preview"></div>' +
-      '<div class="card-footer" id="ba-preview-actions"></div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<div class="card-header"><h3>Articulos Existentes (<span id="ba-count">0</span>)</h3><button class="btn btn-sm btn-gold" onclick="Pages.fixBlogLinks()" style="float:right;margin-top:4px">Corregir Links</button><button class="btn btn-sm btn-outline" onclick="Pages._regenerateAllBlogSEO()" style="float:right;margin-top:4px;margin-right:6px" title="Regenera paginas HTML estaticas para SEO">Regenerar SEO</button><button class="btn btn-sm btn-outline" onclick="Pages._processAllBlogImages()" style="float:right;margin-top:4px;margin-right:6px" title="Convierte imagenes base64 a archivos JPG optimizados">Procesar Imagenes</button></div>' +
       '<div class="card-body" id="ba-list"><div class="text-center text-muted">Cargando...</div></div>' +
     '</div>' +
+
+    // === Card editor (oculta por defecto, se muestra al crear/editar) ===
+    '<div class="card mb-16" id="ba-editor-card" style="display:none">' +
+      '<div class="card-header" style="display:flex;align-items:center;justify-content:space-between">' +
+        '<h3 id="ba-editor-title" style="margin:0">Nuevo Articulo</h3>' +
+        '<button class="btn btn-sm btn-outline" onclick="Pages._cerrarEditor()">Cerrar</button>' +
+      '</div>' +
+      '<div class="card-body" id="ba-editor-body"></div>' +
+    '</div>' +
+
     '<input type="file" id="ba-img-input" accept="image/*" style="display:none" onchange="Pages._onBlogImageSelect(event)">';
     container.innerHTML = h;
-    Pages._loadBlogAIConfig();
+    // Auto-publicar articulos programados cuya fecha ya llego
+    Pages._autoPublishScheduled();
     Pages._loadBlogAdmin();
   },
 
-  // Llama al endpoint /api/generate-article (Cloudflare Pages Function)
-  // que internamente usa el servicio de IA de z.ai (GLM-4-Plus).
-  // Sin API keys del usuario, sin cuota, sin modelos deprecados.
+  // ============================================================
+  // EDITOR MANUAL DE ARTICULOS
+  // ============================================================
+
+  nuevoArticulo: function() {
+    Pages._blogEditKey = null;  // null = nuevo articulo
+    Pages._renderEditor({
+      titulo: '',
+      subtitulo: '',
+      categoria: Pages._blogCategorias[0],
+      descripcion_meta: '',
+      keywords: [],
+      contenido: '',
+      imagen_url: '',
+      fechaPublicacion: new Date().toISOString().slice(0, 16),  // ahora, formato datetime-local
+      publicado: false
+    }, 'Nuevo Articulo');
+  },
+
+  _cerrarEditor: function() {
+    var card = document.getElementById('ba-editor-card');
+    if (card) card.style.display = 'none';
+    Pages._blogEditKey = null;
+  },
+
+  _renderEditor: function(articulo, title) {
+    var card = document.getElementById('ba-editor-card');
+    var body = document.getElementById('ba-editor-body');
+    var titleEl = document.getElementById('ba-editor-title');
+    if (!card || !body) return;
+    if (titleEl) titleEl.textContent = title || (Pages._blogEditKey ? 'Editar Articulo' : 'Nuevo Articulo');
+
+    var catOpts = '';
+    for (var c = 0; c < Pages._blogCategorias.length; c++) {
+      catOpts += '<option value="' + Pages._blogCategorias[c] + '"' + (articulo.categoria === Pages._blogCategorias[c] ? ' selected' : '') + '>' + Pages._blogCategorias[c] + '</option>';
+    }
+    var keywordsStr = Array.isArray(articulo.keywords) ? articulo.keywords.join(', ') : (articulo.keywords || '');
+
+    var h = '<div class="g2">' +
+      // Titulo
+      '<div class="form-group"><label>Titulo <span id="be-titulo-count" class="text-xs text-muted ml-4"></span></label>' +
+        '<input type="text" class="input" id="be-titulo" value="' + (articulo.titulo || '').replace(/"/g, '&quot;') + '" placeholder="50-60 caracteres recomendados" oninput="Pages._updateSEOIndicators()">' +
+      '</div>' +
+      // Subtitulo
+      '<div class="form-group"><label>Subtitulo <span id="be-subtitulo-count" class="text-xs text-muted ml-4"></span></label>' +
+        '<input type="text" class="input" id="be-subtitulo" value="' + (articulo.subtitulo || '').replace(/"/g, '&quot;') + '" placeholder="100-160 caracteres" oninput="Pages._updateSEOIndicators()">' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="g2 mt-8">' +
+      // Categoria
+      '<div class="form-group"><label>Categoria</label>' +
+        '<select class="input" id="be-categoria">' + catOpts + '</select>' +
+      '</div>' +
+      // Fecha de publicacion (programada)
+      '<div class="form-group"><label>Fecha de publicacion</label>' +
+        '<input type="datetime-local" class="input" id="be-fecha" value="' + (articulo.fechaPublicacion || '') + '">' +
+        '<p class="text-xs text-muted mt-4">Si elegis una fecha futura, el articulo se guardara como <b>borrador programado</b> y se publicara automaticamente cuando llegue la fecha.</p>' +
+      '</div>' +
+    '</div>' +
+
+    // Meta description
+    '<div class="form-group mt-8"><label>Meta description <span id="be-meta-count" class="text-xs text-muted ml-4"></span></label>' +
+      '<textarea class="input" id="be-meta" rows="2" placeholder="150-155 caracteres para SEO. Incluye keyword principal." oninput="Pages._updateSEOIndicators()">' + (articulo.descripcion_meta || '').replace(/</g, '&lt;') + '</textarea>' +
+    '</div>' +
+
+    // Keywords
+    '<div class="form-group mt-8"><label>Keywords <span id="be-keywords-count" class="text-xs text-muted ml-4"></span></label>' +
+      '<input type="text" class="input" id="be-keywords" value="' + keywordsStr.replace(/"/g, '&quot;') + '" placeholder="especias online, comprar pimienta, blend artesanal (separadas por coma)" oninput="Pages._updateSEOIndicators()">' +
+    '</div>' +
+
+    // Imagen destacada
+    '<div class="form-group mt-8"><label>Imagen destacada</label>' +
+      '<div style="display:flex;align-items:center;gap:12px">' +
+        '<div id="be-img-preview" style="width:120px;height:80px;border:1px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2)">' +
+          (articulo.imagen_url ? '<img src="' + articulo.imagen_url + '" style="width:100%;height:100%;object-fit:cover">' : '<span class="text-xs text-muted">Sin imagen</span>') +
+        '</div>' +
+        '<div>' +
+          '<button class="btn btn-outline btn-sm" onclick="Pages._editorUploadImage()">' + (articulo.imagen_url ? 'Cambiar' : 'Subir') + '</button>' +
+          (articulo.imagen_url ? ' <button class="btn btn-sm btn-red" onclick="Pages._editorRemoveImage()">Quitar</button>' : '') +
+          '<input type="hidden" id="be-imagen-url" value="' + (articulo.imagen_url || '') + '">' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    // Toolbar + Contenido HTML
+    '<div class="form-group mt-8"><label>Contenido (HTML)</label>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;padding:6px;background:var(--bg2);border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none">' +
+        '<button type="button" class="btn btn-sm btn-outline" onclick="Pages._insertTag(\'<p>\',\'</p>\')" title="Parrafo">P</button>' +
+        '<button type="button" class="btn btn-sm btn-outline" onclick="Pages._insertTag(\'<h2>\',\'</h2>\')" title="Subtitulo H2">H2</button>' +
+        '<button type="button" class="btn btn-sm btn-outline" onclick="Pages._insertTag(\'<h3>\',\'</h3>\')" title="Subtitulo H3">H3</button>' +
+        '<button type="button" class="btn btn-sm btn-outline" onclick="Pages._insertTag(\'<blockquote>\',\'</blockquote>\')" title="Cita destacada">Quote</button>' +
+        '<button type="button" class="btn btn-sm btn-outline" onclick="Pages._insertTag(\'<ul><li>\',\'</li></ul>\')" title="Lista">Lista</button>' +
+        '<button type="button" class="btn btn-sm btn-gold" onclick="Pages._openBlendPicker()" title="Insertar enlace a blend del catalogo">+ Blend</button>' +
+      '</div>' +
+      '<textarea class="input" id="be-contenido" rows="18" style="font-family:monospace;font-size:0.85rem;border-radius:0 0 6px 6px" placeholder="<p>Empieza a escribir el articulo...</p>" oninput="Pages._updateLivePreview();Pages._updateSEOIndicators()">' + (articulo.contenido || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>' +
+    '</div>' +
+
+    // Vista previa en vivo
+    '<div class="form-group mt-8"><label>Vista previa</label>' +
+      '<div id="be-live-preview" style="max-height:400px;overflow-y:auto;padding:16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">' + (articulo.contenido || '<p class="text-muted">La vista previa aparece aqui mientras escribis...</p>') + '</div>' +
+    '</div>' +
+
+    // Indicadores SEO
+    '<div class="form-group mt-8"><label>Checklist SEO</label>' +
+      '<div id="be-seo-checklist" style="background:var(--bg2);border-radius:8px;padding:12px;border:1px solid var(--border);font-size:0.85rem"></div>' +
+    '</div>' +
+
+    // Botones
+    '<div style="display:flex;gap:8px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
+      '<button class="btn btn-gold" onclick="Pages.guardarArticulo(true)">' + (Pages._blogEditKey ? 'Guardar Cambios' : 'Crear y Publicar') + '</button>' +
+      '<button class="btn btn-outline" onclick="Pages.guardarArticulo(false)">' + (articulo.publicado === false ? 'Guardar Borrador' : 'Guardar como Borrador') + '</button>' +
+      '<button class="btn btn-outline" onclick="Pages._cerrarEditor()">Cancelar</button>' +
+      '<span id="be-status" class="text-sm text-muted ml-12"></span>' +
+    '</div>';
+
+    body.innerHTML = h;
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    Pages._updateSEOIndicators();
+  },
+
+  // === Toolbar helpers ===
+  _insertTag: function(openTag, closeTag) {
+    var ta = document.getElementById('be-contenido');
+    if (!ta) return;
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var text = ta.value;
+    var selected = text.substring(start, end);
+    var newText = text.substring(0, start) + openTag + selected + closeTag + text.substring(end);
+    ta.value = newText;
+    ta.focus();
+    ta.setSelectionRange(start + openTag.length, end + openTag.length);
+    Pages._updateLivePreview();
+    Pages._updateSEOIndicators();
+  },
+
+  _openBlendPicker: function() {
+    var blends = ArcanoDB.getBlends();
+    if (!blends || blends.length === 0) { alert('No hay blends en el catalogo'); return; }
+    var h = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center" id="blend-picker-modal">' +
+      '<div style="background:var(--bg);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">' +
+        '<h3 style="margin:0 0 12px">Selecciona un blend para enlazar</h3>' +
+        '<input type="text" class="input mb-8" id="blend-search" placeholder="Buscar..." oninput="Pages._filterBlendPicker()">' +
+        '<div id="blend-list" style="max-height:300px;overflow-y:auto">';
+    for (var i = 0; i < blends.length; i++) {
+      var b = blends[i];
+      h += '<div class="blend-pick-item" style="padding:8px;cursor:pointer;border-radius:4px;display:flex;justify-content:space-between;align-items:center" onclick="Pages._insertBlendLink(' + b.id + ',\'' + (b.nombre || '').replace(/'/g, "\\'") + '\')" onmouseover="this.style.background=\'var(--bg2)\'" onmouseout="this.style.background=\'transparent\'">' +
+        '<span><b>' + (b.nombre || '') + '</b> <span class="text-xs text-muted">[ID:' + b.id + ']</span></span>' +
+        '<span class="text-xs text-muted">' + (b.categoria || '') + '</span>' +
+      '</div>';
+    }
+    h += '</div>' +
+        '<button class="btn btn-outline mt-8" onclick="document.getElementById(\'blend-picker-modal\').remove()">Cancelar</button>' +
+      '</div>' +
+    '</div>';
+    document.body.insertAdjacentHTML('beforeend', h);
+  },
+
+  _filterBlendPicker: function() {
+    var q = (document.getElementById('blend-search').value || '').toLowerCase();
+    var items = document.querySelectorAll('.blend-pick-item');
+    for (var i = 0; i < items.length; i++) {
+      var txt = items[i].textContent.toLowerCase();
+      items[i].style.display = txt.indexOf(q) !== -1 ? '' : 'none';
+    }
+  },
+
+  _insertBlendLink: function(id, nombre) {
+    var modal = document.getElementById('blend-picker-modal');
+    if (modal) modal.remove();
+    var linkHtml = '<a href="#" onclick="openDetail(' + id + ');return false">' + nombre + '</a>';
+    Pages._insertTag('', '');
+    var ta = document.getElementById('be-contenido');
+    if (!ta) return;
+    var start = ta.selectionStart;
+    var text = ta.value;
+    ta.value = text.substring(0, start) + linkHtml + text.substring(start);
+    ta.focus();
+    ta.setSelectionRange(start + linkHtml.length, start + linkHtml.length);
+    Pages._updateLivePreview();
+    Pages._updateSEOIndicators();
+  },
+
+  _updateLivePreview: function() {
+    var ta = document.getElementById('be-contenido');
+    var prev = document.getElementById('be-live-preview');
+    if (!ta || !prev) return;
+    prev.innerHTML = ta.value;
+  },
+
+  // === Indicadores SEO en vivo ===
+  _updateSEOIndicators: function() {
+    var titulo = (document.getElementById('be-titulo') || {}).value || '';
+    var sub = (document.getElementById('be-subtitulo') || {}).value || '';
+    var meta = (document.getElementById('be-meta') || {}).value || '';
+    var kw = (document.getElementById('be-keywords') || {}).value || '';
+    var contenido = (document.getElementById('be-contenido') || {}).value || '';
+
+    // Contadores
+    function setCount(elId, len, min, max) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      var color = (len >= min && len <= max) ? 'var(--green)' : (len > max ? '#f59e0b' : 'var(--muted)');
+      el.innerHTML = '<span style="color:' + color + '">' + len + ' chars</span>';
+    }
+    setCount('be-titulo-count', titulo.length, 40, 70);
+    setCount('be-subtitulo-count', sub.length, 80, 180);
+    setCount('be-meta-count', meta.length, 150, 160);
+
+    // Keywords
+    var kwArr = kw.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+    var kwEl = document.getElementById('be-keywords-count');
+    if (kwEl) {
+      var kwColor = (kwArr.length >= 3 && kwArr.length <= 8) ? 'var(--green)' : '#f59e0b';
+      kwEl.innerHTML = '<span style="color:' + kwColor + '">' + kwArr.length + ' keywords</span>';
+    }
+
+    // Palabras en contenido
+    var textoPlano = contenido.replace(/<[^>]+>/g, ' ');
+    var palabras = textoPlano.split(/\s+/).filter(function(w) { return w.length > 0; });
+    var numPalabras = palabras.length;
+
+    // Links a blends
+    var links = contenido.match(/<a[^>]*onclick="openDetail\(\d+\)[^"]*"[^>]*>/g) || [];
+
+    // H2
+    var h2s = contenido.match(/<h2[^>]*>/g) || [];
+
+    // Checklist
+    var checklist = [
+      { label: 'Titulo entre 50-60 chars', ok: titulo.length >= 50 && titulo.length <= 60, val: titulo.length + ' chars' },
+      { label: 'Subtitulo entre 100-160 chars', ok: sub.length >= 100 && sub.length <= 160, val: sub.length + ' chars' },
+      { label: 'Meta description entre 150-155 chars', ok: meta.length >= 150 && meta.length <= 155, val: meta.length + ' chars' },
+      { label: 'Al menos 3 keywords', ok: kwArr.length >= 3, val: kwArr.length + ' keywords' },
+      { label: 'Al menos 700 palabras', ok: numPalabras >= 700, val: numPalabras + ' palabras' },
+      { label: 'Al menos 2 subtitulos H2', ok: h2s.length >= 2, val: h2s.length + ' H2' },
+      { label: 'Al menos 1 enlace a blend', ok: links.length >= 1, val: links.length + ' enlaces' },
+      { label: 'Maximo 3 enlaces a blends (no sobre-optimizar)', ok: links.length <= 3, val: links.length + '/3' }
+    ];
+    var checklistEl = document.getElementById('be-seo-checklist');
+    if (checklistEl) {
+      var html = '';
+      for (var i = 0; i < checklist.length; i++) {
+        var item = checklist[i];
+        var icon = item.ok ? '<span style="color:var(--green)">✓</span>' : '<span style="color:#f59e0b">○</span>';
+        var valColor = item.ok ? 'var(--green)' : 'var(--muted)';
+        html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">' +
+          '<span>' + icon + ' ' + item.label + '</span>' +
+          '<span style="color:' + valColor + ';font-size:0.8rem">' + item.val + '</span>' +
+        '</div>';
+      }
+      var allOk = checklist.every(function(c) { return c.ok; });
+      if (allOk) {
+        html = '<div style="background:rgba(34,197,94,0.1);color:var(--green);padding:8px;border-radius:6px;margin-bottom:8px;text-align:center;font-weight:600">✓ Articulo optimizado para SEO</div>' + html;
+      }
+      checklistEl.innerHTML = html;
+    }
+  },
+
+  // === Upload de imagen desde el editor ===
+  _editorUploadImage: function() {
+    // Si es articulo nuevo (sin key), guardamos temporalmente y subimos al guardar
+    Pages._blogImgTarget = Pages._blogEditKey || '_new_article';
+    var inp = document.getElementById('ba-img-input');
+    if (inp) inp.click();
+  },
+
+  _editorRemoveImage: function() {
+    var inp = document.getElementById('be-imagen-url');
+    var prev = document.getElementById('be-img-preview');
+    if (inp) inp.value = '';
+    if (prev) prev.innerHTML = '<span class="text-xs text-muted">Sin imagen</span>';
+  },
+
+  // === Guardar / Publicar ===
+  guardarArticulo: function(publicar) {
+    var titulo = (document.getElementById('be-titulo') || {}).value || '';
+    var subtitulo = (document.getElementById('be-subtitulo') || {}).value || '';
+    var categoria = (document.getElementById('be-categoria') || {}).value || '';
+    var meta = (document.getElementById('be-meta') || {}).value || '';
+    var kw = (document.getElementById('be-keywords') || {}).value || '';
+    var contenido = (document.getElementById('be-contenido') || {}).value || '';
+    var fechaInput = (document.getElementById('be-fecha') || {}).value || '';
+    var imagen_url = (document.getElementById('be-imagen-url') || {}).value || '';
+    var statusEl = document.getElementById('be-status');
+
+    titulo = titulo.trim();
+    if (!titulo) { alert('El titulo es obligatorio'); return; }
+    if (!contenido || !contenido.trim()) { alert('El contenido no puede estar vacio'); return; }
+
+    // Parsear keywords
+    var kwArr = kw.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+
+    // Parsear fecha
+    var fechaPub = fechaInput ? new Date(fechaInput + ':00Z') : new Date();  // datetime-local no incluye zona horaria
+    if (isNaN(fechaPub.getTime())) fechaPub = new Date();
+
+    // Si la fecha es futura, el articulo queda como "programado" (publicado=false)
+    // aunque el admin haya clickeado "Publicar"
+    var ahora = new Date();
+    var esProgramado = fechaPub.getTime() > ahora.getTime() + 60000;  // +1 min de margen
+
+    // Calcular tiempo de lectura (200 palabras/min)
+    var textoPlano = contenido.replace(/<[^>]+>/g, ' ');
+    var numPalabras = textoPlano.split(/\s+/).filter(function(w) { return w.length > 0; }).length;
+    var tiempoLectura = Math.max(1, Math.round(numPalabras / 200)) + ' min';
+
+    var articulo = {
+      titulo: titulo,
+      subtitulo: subtitulo.trim(),
+      categoria: categoria,
+      descripcion_meta: meta.trim(),
+      keywords: kwArr,
+      tiempoLectura: tiempoLectura,
+      contenido: contenido,
+      imagen_url: imagen_url || null,
+      fechaPublicacion: fechaPub.toISOString(),
+      publicado: publicar && !esProgramado ? true : (esProgramado ? false : publicar),
+      programado: esProgramado
+    };
+
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Guardando...</span>';
+
+    var onSave = function(err) {
+      if (err) {
+        alert('Error al guardar: ' + (err.message || err));
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error</span>';
+      } else {
+        if (statusEl) {
+          if (esProgramado) {
+            statusEl.innerHTML = '<span style="color:#f59e0b">Articulo programado para ' + fechaPub.toLocaleString('es-CO') + '</span>';
+          } else if (publicar) {
+            statusEl.innerHTML = '<span style="color:var(--green)">Articulo publicado correctamente</span>';
+          } else {
+            statusEl.innerHTML = '<span style="color:var(--blue)">Borrador guardado</span>';
+          }
+        }
+        Pages._blogEditKey = null;
+        Pages._loadBlogAdmin();
+        // Si fue publicado, generar SEO HTML estatico
+        if (publicar && !esProgramado) {
+          Pages._publishBlogSEO(articulo);
+        }
+      }
+    };
+
+    if (Pages._blogEditKey) {
+      // Editando existente
+      firebase.database().ref('arcano/db/blog/' + Pages._blogEditKey).update(articulo, onSave);
+    } else {
+      // Nuevo articulo
+      articulo.fecha = new Date().toISOString().slice(0, 10);  // compatibilidad con frontend actual
+      firebase.database().ref('arcano/db/blog').push(articulo, onSave);
+    }
+  },
+
+  // === Auto-publicar articulos programados cuya fecha ya llego ===
+  // Se ejecuta al abrir el panel Blog del admin
+  _autoPublishScheduled: function() {
+    try {
+      firebase.database().ref('arcano/db/blog').once('value', function(snap) {
+        var data = snap.val();
+        if (!data) return;
+        var keys = Object.keys(data);
+        var ahora = Date.now();
+        var toPublish = [];
+        for (var i = 0; i < keys.length; i++) {
+          var a = data[keys[i]];
+          if (a.programado === true && a.fechaPublicacion) {
+            var fechaPub = new Date(a.fechaPublicacion).getTime();
+            if (!isNaN(fechaPub) && fechaPub <= ahora) {
+              toPublish.push(keys[i]);
+            }
+          }
+        }
+        if (toPublish.length === 0) return;
+        console.log('[blog] Auto-publicando ' + toPublish.length + ' articulos programados...');
+        for (var j = 0; j < toPublish.length; j++) {
+          var key = toPublish[j];
+          firebase.database().ref('arcano/db/blog/' + key).update({
+            publicado: true,
+            programado: false,
+            fecha: new Date().toISOString().slice(0, 10)
+          }, function(err) {
+            if (!err) {
+              console.log('[blog] Articulo auto-publicado:', key);
+              // Generar SEO HTML
+              Pages._publishBlogSEO(data[key]);
+            }
+          });
+        }
+        if (toPublish.length > 0) {
+          toast(toPublish.length + ' articulo(s) programado(s) publicado(s) automaticamente', 'ok');
+        }
+      });
+    } catch(e) {
+      console.error('[blog] autoPublish error:', e);
+    }
+  },
+
+  // === Helpers legacy para compatibilidad con panel de Recetas ===
+  // (recetas todavia usa Gemini directamente — mantener interfaces)
+  _parseGeminiKeys: function(str) {
+    if (!str) return [];
+    return str.split(/[\n,]/)
+      .map(function(k) { return k.trim(); })
+      .filter(function(k) { return k.length > 0; });
+  },
+
+  // Llama a Gemini con reintentos automaticos en caso de cuota agotada (429).
+  // NOTA: Este helper sigue existiendo para el panel de Recetas (generarReceta).
+  // El panel de Blog ya no lo usa — usa editor manual.
+  // - keys: array de API keys (se rotan)
   // - prompt: texto del prompt
-  // - cfg: configuracion de IA (modelo ignorado, temperatura y maxTokens sí se usan)
+  // - cfg: configuracion de IA (modelo, temperatura, maxTokens)
   // - statusEl: elemento HTML donde mostrar progreso (opcional)
-  // Retorna Promise que resuelve con la respuesta JSON de z.ai
-  // (estructura compatible con Gemini: { candidates: [{ content: { parts: [{ text }] } }] })
-  _callZaiAPI: function(prompt, cfg, statusEl) {
+  // Retorna Promise que resuelve con el JSON de respuesta de Gemini.
+  _callGeminiWithRetry: function(keys, prompt, cfg, statusEl) {
     return new Promise(function(resolve, reject) {
       if (statusEl) {
         statusEl.innerHTML = '<span style="color:var(--gold)">Generando con Gemini...</span>';
@@ -7143,10 +7498,13 @@ const Pages = {
     if (!countEl || !listEl) return;
     countEl.textContent = articulos.length;
     if (articulos.length === 0) {
-      listEl.innerHTML = '<p class="text-center text-muted">No hay articulos. Genera el primero con el boton de arriba.</p>';
+      listEl.innerHTML = '<div style="text-align:center;padding:32px">' +
+        '<p class="text-muted mb-12">No hay articulos todavía.</p>' +
+        '<button class="btn btn-gold" onclick="Pages.nuevoArticulo()">+ Crear primer articulo</button>' +
+      '</div>';
       return;
     }
-    var h = '<div class="table-wrap"><table class="table"><thead><tr><th>Titulo</th><th>Img</th><th>Categoria</th><th>Fecha</th><th>Estado</th><th></th></tr></thead><tbody>';
+    var h = '<div class="table-wrap"><table class="table"><thead><tr><th>Titulo</th><th>Img</th><th>Categoria</th><th>Fecha pub.</th><th>Estado</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < articulos.length; i++) {
       var a = articulos[i];
       var imgCell;
@@ -7158,24 +7516,79 @@ const Pages = {
       } else {
         imgCell = '<button class="btn btn-sm btn-outline" onclick="Pages.uploadBlogImage(\'' + a._key + '\')">+ Img</button>';
       }
+
+      // === Determinar estado ===
       var pausado = a.pausado === true;
-      var estadoBadge = pausado
-        ? '<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">\u23F8 Pausado</span>'
-        : '<span class="badge badge-green">\u25CF Activo</span>';
-      var toggleBtn = pausado
-        ? '<button class="btn btn-sm btn-green" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',false)" title="Activar">\u25B6</button>'
-        : '<button class="btn btn-sm" style="background:rgba(245,158,11,0.1);color:#f59e0b;border-color:rgba(245,158,11,0.3)" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',true)" title="Pausar">\u23F8</button>';
-      h += '<tr' + (pausado ? ' style="opacity:0.6"' : '') + '>' +
+      var programado = a.programado === true;
+      var publicado = a.publicado !== false && !programado;  // por defecto true salvo programado
+      var estadoBadge, toggleBtn, rowStyle = '';
+
+      if (programado) {
+        var fechaProg = a.fechaPublicacion ? new Date(a.fechaPublicacion) : null;
+        var fechaTxt = fechaProg && !isNaN(fechaProg.getTime()) ? fechaProg.toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '?';
+        estadoBadge = '<span class="badge" style="background:rgba(59,130,246,0.15);color:#3b82f6">📅 Programado: ' + fechaTxt + '</span>';
+        toggleBtn = '<button class="btn btn-sm btn-green" onclick="Pages.publicarAhora(\'' + a._key + '\')" title="Publicar ahora">▶ Pub.</button>';
+        rowStyle = ' style="opacity:0.8"';
+      } else if (pausado) {
+        estadoBadge = '<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">⏸ Pausado</span>';
+        toggleBtn = '<button class="btn btn-sm btn-green" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',false)" title="Activar">▶</button>';
+        rowStyle = ' style="opacity:0.6"';
+      } else if (!publicado) {
+        estadoBadge = '<span class="badge" style="background:rgba(107,114,128,0.15);color:#9ca3af">○ Borrador</span>';
+        toggleBtn = '<button class="btn btn-sm btn-green" onclick="Pages.publicarAhora(\'' + a._key + '\')" title="Publicar">▶</button>';
+        rowStyle = ' style="opacity:0.7"';
+      } else {
+        estadoBadge = '<span class="badge badge-green">● Publicado</span>';
+        toggleBtn = '<button class="btn btn-sm" style="background:rgba(245,158,11,0.1);color:#f59e0b;border-color:rgba(245,158,11,0.3)" onclick="Pages.togglePausaArticulo(\'' + a._key + '\',true)" title="Pausar">⏸</button>';
+      }
+
+      // Fecha de publicacion para mostrar
+      var fechaDisplay = '';
+      if (a.fechaPublicacion) {
+        var fd = new Date(a.fechaPublicacion);
+        if (!isNaN(fd.getTime())) {
+          fechaDisplay = fd.toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        } else { fechaDisplay = a.fechaPublicacion; }
+      } else if (a.fecha) {
+        fechaDisplay = a.fecha;
+      }
+
+      h += '<tr' + rowStyle + '>' +
         '<td class="fw7"><a href="#" onclick="Pages.editarArticulo(\'' + a._key + '\');return false" style="color:inherit;text-decoration:none" title="Editar">' + (a.titulo || 'Sin titulo') + '</a></td>' +
         '<td>' + imgCell + '</td>' +
         '<td><span class="badge badge-gold">' + (a.categoria || '') + '</span></td>' +
-        '<td class="text-sm text-muted">' + (a.fecha || '') + '</td>' +
+        '<td class="text-sm text-muted">' + fechaDisplay + '</td>' +
         '<td>' + estadoBadge + '</td>' +
-        '<td style="white-space:nowrap">' + toggleBtn + ' <button class="btn btn-sm btn-outline" onclick="Pages.editarArticulo(\'' + a._key + '\')" title="Editar">\u270E</button> <button class="btn btn-sm btn-red" onclick="Pages.borrarArticulo(\'' + a._key + '\')" title="Eliminar">X</button></td>' +
+        '<td style="white-space:nowrap">' + toggleBtn + ' <button class="btn btn-sm btn-outline" onclick="Pages.editarArticulo(\'' + a._key + '\')" title="Editar">✎</button> <button class="btn btn-sm btn-red" onclick="Pages.borrarArticulo(\'' + a._key + '\')" title="Eliminar">X</button></td>' +
         '</tr>';
     }
     h += '</tbody></table></div>';
     listEl.innerHTML = h;
+  },
+
+  // === Publicar articulo inmediatamente (para programados o borradores) ===
+  publicarAhora: function(key) {
+    if (!confirm('Publicar este articulo ahora mismo?')) return;
+    firebase.database().ref('arcano/db/blog/' + key).once('value', function(snap) {
+      var a = snap.val();
+      if (!a) return;
+      firebase.database().ref('arcano/db/blog/' + key).update({
+        publicado: true,
+        programado: false,
+        pausado: false,
+        fecha: new Date().toISOString().slice(0, 10),
+        fechaPublicacion: new Date().toISOString()
+      }, function(err) {
+        if (err) {
+          toast('Error al publicar: ' + (err.message || err), 'err');
+        } else {
+          toast('Articulo publicado correctamente', 'ok');
+          Pages._loadBlogAdmin();
+          // Generar SEO HTML estatico
+          Pages._publishBlogSEO(a);
+        }
+      });
+    });
   },
 
   togglePausaArticulo: function(key, pausar) {
@@ -7300,8 +7713,29 @@ const Pages = {
       var dataUrl = ev.target.result;
       var key = Pages._blogImgTarget;
       if (!key) return;
-      var statusEl = document.getElementById('ba-gen-status');
+      var statusEl = document.getElementById('be-status') || document.getElementById('ba-gen-status');
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Subiendo imagen...</span>';
+
+      // Si es articulo nuevo (_new_article), usar titulo del editor como slug
+      if (key === '_new_article') {
+        var tituloInput = document.getElementById('be-titulo');
+        var titulo = tituloInput ? tituloInput.value.trim() : '';
+        var slug = Pages._titleToSlug(titulo) || ('blog-img-' + Date.now());
+        Pages._uploadBlogImageToGitHub(dataUrl, slug).then(function(url) {
+          // Guardar en el input hidden del editor
+          var urlInput = document.getElementById('be-imagen-url');
+          var prev = document.getElementById('be-img-preview');
+          if (urlInput) urlInput.value = url;
+          if (prev) prev.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover">';
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Imagen subida</span>';
+        }).catch(function(err) {
+          alert('Error al subir imagen: ' + (err.message || err));
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error</span>';
+        });
+        return;
+      }
+
+      // Articulo existente - flujo original
       firebase.database().ref('arcano/db/blog/' + key).once('value', function(snap) {
         var article = snap.val();
         var slug = Pages._titleToSlug(article && article.titulo);
@@ -7312,6 +7746,11 @@ const Pages = {
               alert('Error al guardar: ' + (err.message || err));
               if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error al guardar URL</span>';
             } else {
+              // Actualizar tambien el editor si esta abierto
+              var urlInput = document.getElementById('be-imagen-url');
+              var prev = document.getElementById('be-img-preview');
+              if (urlInput) urlInput.value = url;
+              if (prev) prev.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover">';
               Pages._loadBlogAdmin();
               if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Imagen subida correctamente</span>';
             }
@@ -7790,39 +8229,31 @@ const Pages = {
       var a = snap.val();
       if (!a) { alert('Articulo no encontrado'); return; }
       Pages._blogEditKey = key;
-      var categorias = ['Historias', 'Beneficios', 'Investigaciones', 'Curiosidades', 'Origenes'];
-      var previewCard = document.getElementById('ba-preview-card');
-      var previewEl = document.getElementById('ba-preview');
-      var actionsEl = document.getElementById('ba-preview-actions');
-      if (!previewCard || !previewEl || !actionsEl) return;
-      var catOpts = '';
-      for (var c = 0; c < categorias.length; c++) {
-        catOpts += '<option value="' + categorias[c] + '"' + (a.categoria === categorias[c] ? ' selected' : '') + '>' + categorias[c] + '</option>';
+      // Convertir fechaPublicacion a formato datetime-local (YYYY-MM-DDTHH:MM)
+      var fechaLocal = '';
+      if (a.fechaPublicacion) {
+        var d = new Date(a.fechaPublicacion);
+        if (!isNaN(d.getTime())) {
+          // datetime-local espera YYYY-MM-DDTHH:MM en hora local
+          var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+          fechaLocal = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
       }
-      var h = '<div class="form-group"><label>Titulo</label>' +
-        '<input type="text" class="input" id="be-titulo" value="' + (a.titulo || '').replace(/"/g, '&quot;') + '"></div>' +
-        '<div class="form-group"><label>Subtitulo</label>' +
-        '<input type="text" class="input" id="be-subtitulo" value="' + (a.subtitulo || '').replace(/"/g, '&quot;') + '"></div>' +
-        '<div class="form-group"><label>Categoria</label>' +
-        '<select class="input" id="be-categoria">' + catOpts + '</select></div>' +
-        '<div class="form-group"><label>Contenido (HTML)</label>' +
-        '<textarea class="input" id="be-contenido" rows="16" style="font-family:monospace;font-size:0.85rem">' + (a.contenido || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea></div>' +
-        '<div style="max-height:300px;overflow-y:auto;padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);margin-top:8px" id="be-live-preview"></div>';
-      previewEl.innerHTML = h;
-      actionsEl.innerHTML = '<button class="btn btn-gold" onclick="Pages.guardarEdicionArticulo()">Guardar Cambios</button>' +
-        '<button class="btn btn-outline ml-8" onclick="Pages.descartarArticulo()">Cancelar</button>' +
-        '<span id="be-status" class="text-sm text-muted ml-12"></span>';
-      previewCard.style.display = 'block';
-      previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      var liveEl = document.getElementById('be-live-preview');
-      var contenidoInput = document.getElementById('be-contenido');
-      function updatePreview() {
-        if (liveEl && contenidoInput) liveEl.innerHTML = contenidoInput.value.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      // Si no hay fechaPublicacion pero hay fecha (legacy), usar fecha + 00:00
+      if (!fechaLocal && a.fecha) {
+        fechaLocal = a.fecha + 'T09:00';
       }
-      if (contenidoInput) {
-        contenidoInput.addEventListener('input', updatePreview);
-        updatePreview();
-      }
+      Pages._renderEditor({
+        titulo: a.titulo || '',
+        subtitulo: a.subtitulo || '',
+        categoria: a.categoria || Pages._blogCategorias[0],
+        descripcion_meta: a.descripcion_meta || '',
+        keywords: a.keywords || [],
+        contenido: a.contenido || '',
+        imagen_url: a.imagen_url || '',
+        fechaPublicacion: fechaLocal,
+        publicado: a.publicado !== false
+      }, 'Editar Articulo');
     });
   },
 
