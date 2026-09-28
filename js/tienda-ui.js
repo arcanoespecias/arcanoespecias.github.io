@@ -689,8 +689,7 @@ function _renderDetail(products, idx) {
     }
     html += '</div>';
     html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount + ' seleccionados</div>';
-    html += '<button class="detail-price-card" style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" data-blend-count="' + blendCount + '" disabled>Agregar al carrito — $' + configPrice.toLocaleString() + '</button>';
-    html += '<script>document.getElementById("config-add-cart-btn").addEventListener("click", function() { _addConfigPackToCart(' + p.id + ', "' + (p.nombre || '').replace(/"/g, '\\"') + '", ' + configPrice + ', "' + configTalla + '", ' + blendCount + '); });</script>';
+    html += '<button class="detail-price-card" style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" data-blend-count="' + blendCount + '" data-pack-id="' + p.id + '" data-pack-name="' + (p.nombre || '').replace(/"/g, '&quot;') + '" data-pack-price="' + configPrice + '" data-pack-talla="' + configTalla + '" disabled>Agregar al carrito — $' + configPrice.toLocaleString() + '</button>';
     html += '</div>';
     html += '<style>.config-blend-chip.selected{border-color:#c9a84c !important;background:rgba(201,168,76,.15) !important}.config-blend-chip:hover{border-color:#c9a84c}</style>';
   }
@@ -701,6 +700,19 @@ function _renderDetail(products, idx) {
 
   // Click en overlay (fuera del modal) para cerrar
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  // Si hay un botón de pack configurable, adjuntar event listener
+  var configBtn = document.getElementById('config-add-cart-btn');
+  if (configBtn) {
+    configBtn.addEventListener('click', function() {
+      var pid = this.getAttribute('data-pack-id');
+      var pname = this.getAttribute('data-pack-name');
+      var pprice = Number(this.getAttribute('data-pack-price'));
+      var ptalla = this.getAttribute('data-pack-talla');
+      var pcount = Number(this.getAttribute('data-blend-count'));
+      _addConfigPackToCart(Number(pid), pname, pprice, ptalla, pcount);
+    });
+  }
 
   // SIN swipe — removido para evitar cambio accidental de producto al hacer scroll
 
@@ -858,8 +870,7 @@ function _updateDetailContent(overlay, products, idx) {
     }
     html += '</div>';
     html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount2 + ' seleccionados</div>';
-    html += '<button style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" data-blend-count="' + blendCount2 + '" disabled>Agregar al carrito — $' + configPrice2.toLocaleString() + '</button>';
-    html += '<script>document.getElementById("config-add-cart-btn").addEventListener("click", function() { _addConfigPackToCart(' + p.id + ', "' + (p.nombre || '').replace(/"/g, '\\"') + '", ' + configPrice2 + ', "' + configTalla2 + '", ' + blendCount2 + '); });</script>';
+    html += '<button style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" data-blend-count="' + blendCount2 + '" data-pack-id="' + p.id + '" data-pack-name="' + (p.nombre || '').replace(/"/g, '&quot;') + '" data-pack-price="' + configPrice2 + '" data-pack-talla="' + configTalla2 + '" disabled>Agregar al carrito — $' + configPrice2.toLocaleString() + '</button>';
     html += '</div>';
     html += '<style>.config-blend-chip.selected{border-color:#c9a84c !important;background:rgba(201,168,76,.15) !important}.config-blend-chip:hover{border-color:#c9a84c}</style>';
   }
@@ -867,6 +878,19 @@ function _updateDetailContent(overlay, products, idx) {
   html += '</div>';
   // Actualizar el contenido del overlay
   overlay.innerHTML = html;
+
+  // Si hay un botón de pack configurable, adjuntar event listener
+  var configBtn2 = document.getElementById('config-add-cart-btn');
+  if (configBtn2) {
+    configBtn2.addEventListener('click', function() {
+      var pid = this.getAttribute('data-pack-id');
+      var pname = this.getAttribute('data-pack-name');
+      var pprice = Number(this.getAttribute('data-pack-price'));
+      var ptalla = this.getAttribute('data-pack-talla');
+      var pcount = Number(this.getAttribute('data-blend-count'));
+      _addConfigPackToCart(Number(pid), pname, pprice, ptalla, pcount);
+    });
+  }
   // SIN swipe — removido para evitar cambio accidental de producto al hacer scroll
   _updateTitle(null, p.nombre + ' - Arcano Especias');
 }
