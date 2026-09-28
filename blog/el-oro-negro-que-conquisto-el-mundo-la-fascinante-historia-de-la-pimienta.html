@@ -84,6 +84,10 @@
 }
 </script>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://arcanoespecias.com/js/tienda-data.js?v=14"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.8;padding:20px 0}
@@ -248,5 +252,186 @@ img.hero{width:100%;border-radius:12px;margin-bottom:32px;max-height:400px;objec
 </div>
 
 </div>
+
+<!-- === MODAL DE PRODUCTO (Blog → Card) === -->
+<div id="blend-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:99999;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeBlendModal()">
+  <div id="blend-modal-card" style="background:#1b0b07;border:1px solid #c9a84c;border-radius:16px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 16px 64px rgba(0,0,0,.6);animation:modalIn .3s ease">
+    <div style="position:relative">
+      <img id="blend-modal-img" src="" alt="" style="width:100%;height:240px;object-fit:cover;background:#2d1a10">
+      <button onclick="closeBlendModal()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.7);color:#f0e6d3;border:none;width:36px;height:36px;border-radius:50%;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div style="padding:24px">
+      <div id="blend-modal-category" style="color:#a08b6e;font-size:.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px"></div>
+      <h3 id="blend-modal-name" style="color:#c9a84c;font-size:1.5rem;font-weight:800;margin-bottom:8px;line-height:1.3"></h3>
+      <p id="blend-modal-desc" style="color:#e8dcc4;font-size:.9rem;margin-bottom:20px;line-height:1.6"></p>
+      <div id="blend-modal-prices" style="display:flex;gap:16px;margin-bottom:20px"></div>
+      <div style="display:flex;gap:12px">
+        <button id="blend-modal-add-cart" onclick="addToCartFromModal()" style="flex:1;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;transition:background .2s">Agregar al carrito 🛒</button>
+        <a id="blend-modal-view-store" href="#" style="flex:1;background:transparent;color:#c9a84c;border:1px solid #c9a84c;padding:14px;border-radius:8px;font-weight:600;font-size:1rem;text-decoration:none;text-align:center;transition:all .2s">Ver en la tienda →</a>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes modalIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+#blend-modal-overlay.active{display:flex !important}
+.blend-modal-price-card{flex:1;background:#2d1a10;border:1px solid #3a2a1e;border-radius:8px;padding:12px;text-align:center}
+.blend-modal-price-label{color:#a08b6e;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.blend-modal-price-value{color:#c9a84c;font-size:1.2rem;font-weight:700}
+#blend-modal-overlay .blend-link{cursor:pointer}
+@media(max-width:500px){#blend-modal-card{max-width:100%}}
+</style>
+<script>
+// === Slugify helper (para matchear slugs con nombres de productos) ===
+function slugify(name) {
+  if (!name) return '';
+  var repl = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','ü':'u','ñ':'n'};
+  var s = String(name).toLowerCase().trim();
+  for (var k in repl) { s = s.replace(new RegExp(k, 'g'), repl[k]); }
+  s = s.replace('&', '-');
+  s = s.replace(/[^a-z0-9\s-]/g, '');
+  s = s.replace(/[\s-]+/g, '-').replace(/^-|-$/g, '');
+  return s;
+}
+
+// === Interceptar clicks en links de blends dentro del blog ===
+// Solo intercepta links que apuntan a /blends/<slug>/
+// Los links a /blends-para/ y otros NO se interceptan (siguen funcionando normal)
+document.addEventListener('DOMContentLoaded', function() {
+  // Esperar a que tienda-data.js esté cargado
+  var checkTienda = setInterval(function() {
+    if (typeof getStoreProducts === 'function' && typeof initTienda === 'function') {
+      clearInterval(checkTienda);
+      initTienda();
+      console.log('[Blog] tienda-data.js cargado, interceptando links de blends');
+      interceptBlendLinks();
+    }
+  }, 500);
+  // Timeout después de 10s
+  setTimeout(function() { clearInterval(checkTienda); }, 10000);
+});
+
+function interceptBlendLinks() {
+  var links = document.querySelectorAll('.content a[href*="/blends/"]');
+  links.forEach(function(link) {
+    // Solo interceptar links a /blends/<slug>/ (no a /blends-para/)
+    var href = link.getAttribute('href');
+    if (href.indexOf('/blends-para/') >= 0) return; // excluir categorías
+    if (link.classList.contains('cta-btn')) return; // excluir CTA
+    if (link.classList.contains('back')) return; // excluir back link
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var slug = href.split('/blends/')[1].replace(/\/$/, '').replace(/\.html$/, '');
+      showBlendCard(slug, href);
+    });
+  });
+}
+
+var _modalBlendData = null;
+var _modalBlendSlug = null;
+
+function showBlendCard(slug, fallbackUrl) {
+  _modalBlendSlug = slug;
+  var products = (typeof getStoreProducts === 'function') ? getStoreProducts() : [];
+  var blend = null;
+  for (var i = 0; i < products.length; i++) {
+    var p = products[i];
+    if (!p || !p.nombre) continue;
+    if (slugify(p.nombre) === slug || String(p.id) === slug) {
+      blend = p;
+      break;
+    }
+  }
+  if (!blend) {
+    // Si no encuentra el producto, abrir la URL normalmente
+    window.open(fallbackUrl, '_self');
+    return;
+  }
+  _modalBlendData = blend;
+  // Poblar modal
+  var img = document.getElementById('blend-modal-img');
+  var imgSrc = blend.imagen || 'https://arcanoespecias.com/icons/logo.png';
+  if (imgSrc.indexOf('data:image') === 0) {
+    img.src = imgSrc;
+  } else if (imgSrc.indexOf('http') === 0) {
+    img.src = imgSrc;
+  } else {
+    img.src = 'https://arcanoespecias.com/icons/logo.png';
+  }
+  img.alt = blend.nombre || '';
+  document.getElementById('blend-modal-name').textContent = blend.nombre || '';
+  document.getElementById('blend-modal-category').textContent = blend.categoria || '';
+  document.getElementById('blend-modal-desc').textContent = (blend.descripcion || '').substring(0, 150) + '...';
+  // Precios
+  var pricesHtml = '';
+  if (blend.tipo === 'pack') {
+    pricesHtml = '<div class="blend-modal-price-card"><div class="blend-modal-price-label">Precio</div><div class="blend-modal-price-value">$' + (blend.precio || 0).toLocaleString('es-CO') + '</div></div>';
+  } else {
+    pricesHtml += '<div class="blend-modal-price-card"><div class="blend-modal-price-label">Frasco pequeño</div><div class="blend-modal-price-value">$' + (blend.precioChico || 0).toLocaleString('es-CO') + '</div></div>';
+    if (blend.precioGrande > 0) {
+      pricesHtml += '<div class="blend-modal-price-card"><div class="blend-modal-price-label">Frasco grande</div><div class="blend-modal-price-value">$' + (blend.precioGrande || 0).toLocaleString('es-CO') + '</div></div>';
+    }
+  }
+  document.getElementById('blend-modal-prices').innerHTML = pricesHtml;
+  // Link a tienda
+  document.getElementById('blend-modal-view-store').href = 'https://arcanoespecias.com/?producto=' + slug;
+  // Mostrar modal
+  var overlay = document.getElementById('blend-modal-overlay');
+  overlay.style.display = 'flex';
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBlendModal() {
+  var overlay = document.getElementById('blend-modal-overlay');
+  overlay.style.display = 'none';
+  overlay.classList.remove('active');
+  document.body.style.overflow = '';
+  _modalBlendData = null;
+}
+
+function addToCartFromModal() {
+  if (!_modalBlendData) return;
+  var blend = _modalBlendData;
+  var cart = JSON.parse(localStorage.getItem('arcano_cart') || '[]');
+  var talla = blend.tipo === 'pack' ? 'pack' : 'chico';
+  var precio = blend.tipo === 'pack' ? blend.precio : blend.precioChico;
+  // Buscar si ya está en el carrito
+  var found = false;
+  for (var i = 0; i < cart.length; i++) {
+    if (cart[i].productId === blend.id && cart[i].talla === talla) {
+      cart[i].qty++;
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    cart.push({
+      productId: blend.id,
+      nombre: blend.nombre,
+      tipo: blend.tipo || 'blend',
+      talla: talla,
+      precio: precio,
+      qty: 1
+    });
+  }
+  localStorage.setItem('arcano_cart', JSON.stringify(cart));
+  // Feedback visual
+  var btn = document.getElementById('blend-modal-add-cart');
+  var originalText = btn.textContent;
+  btn.textContent = '✓ Agregado! (' + cart.length + ' en carrito)';
+  btn.style.background = '#4ade80';
+  setTimeout(function() {
+    btn.textContent = originalText;
+    btn.style.background = '#c9a84c';
+    closeBlendModal();
+  }, 1200);
+}
+
+// Cerrar con ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeBlendModal();
+});
+</script>
 </body>
 </html>
