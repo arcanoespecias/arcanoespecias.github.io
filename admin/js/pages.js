@@ -7295,28 +7295,119 @@ const Pages = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: cfg.temperatura, maxOutputTokens: cfg.maxTokens }
+            generationConfig: {
+              temperature: cfg.temperatura,
+              maxOutputTokens: cfg.maxTokens,
+              responseMimeType: 'application/json'
+            }
           })
         })
         .then(function(res) {
-          if (!res.ok) return res.json().then(function(e) {
-            throw new Error((e.error && e.error.message) || 'Error ' + res.status);
-          });
+          // Si no es 2xx, intentar leer el body como JSON primero; si no se puede, leer como texto.
+          if (!res.ok) {
+            return res.text().then(function(bodyTxt) {
+              var msg = 'Error ' + res.status + ' ' + res.statusText;
+              try {
+                var e = JSON.parse(bodyTxt);
+                if (e.error && e.error.message) msg = e.error.message;
+                // Si el error sugiere un modelo alternativo, lo incluimos
+                if (e.error && e.error.details) {
+                  for (var di = 0; di < e.error.details.length; di++) {
+                    if (e.error.details[di].reason === 'MODEL_DEPRECATED' || e.error.details[di].reason === 'NOT_FOUND') {
+                      msg += ' (Modelo: ' + cfg.modelo + ' no disponible. Revisa la configuracion de IA arriba.)';
+                    }
+                  }
+                }
+              } catch(pe) {
+                // El body no es JSON — incluir los primeros 200 chars
+                if (bodyTxt) msg += ' — ' + bodyTxt.slice(0, 200);
+              }
+              throw new Error(msg);
+            });
+          }
           return res.json();
         })
         .then(function(data) {
-          var text = data.candidates[0].content.parts[0].text.trim();
+          // === DIAGNOSTICO: manejar varias estructuras de respuesta ===
+          // Caso 1: candidates[].content.parts[].text  (normal)
+          // Caso 2: candidates[] vacio por bloqueo de seguridad
+          // Caso 3: promptFeedback.blockReason (SAFETY, etc.)
+          // Caso 4: promptFeedback blockReason sin candidates
+          if (!data) throw new Error('Respuesta vacia de la API');
+
+          // Guardar la respuesta cruda para debug (accesible desde la consola)
+          Pages._lastGeminiResponse = data;
+          console.log('[generarArticulo] Respuesta de Gemini:', data);
+
+          // Check de bloqueo
+          if (data.promptFeedback && data.promptFeedback.blockReason) {
+            throw new Error('Bloqueado por Gemini: ' + data.promptFeedback.blockReason +
+              (data.promptFeedback.blockReason === 'SAFETY' ? ' (probablemente el prompt activo un filtro de seguridad). Intenta con otro tema o baja la temperatura.' : ''));
+          }
+
+          if (!data.candidates || data.candidates.length === 0) {
+            throw new Error('La API no devolvio candidatos. Respuesta: ' + JSON.stringify(data).slice(0, 300));
+          }
+
+          var cand = data.candidates[0];
+          if (cand.finishReason && cand.finishReason !== 'STOP') {
+            console.warn('[generarArticulo] finishReason inesperado:', cand.finishReason);
+            // MAX_TOKENS, SAFETY, RECITATION, OTHER...
+            if (cand.finishReason === 'MAX_TOKENS') {
+              throw new Error('El articulo se corto por alcanzar el limite de tokens (' + cfg.maxTokens + '). Sube el parametro "Max tokens" en la configuracion de IA.');
+            }
+            if (cand.finishReason === 'SAFETY') {
+              throw new Error('Gemini bloqueo la respuesta por seguridad. Intenta con otro tema.');
+            }
+          }
+
+          if (!cand.content || !cand.content.parts || cand.content.parts.length === 0) {
+            throw new Error('La API devolvio una respuesta sin contenido. finishReason=' + (cand.finishReason || 'unknown'));
+          }
+
+          // Unir TODAS las parts (puede venir dividido en chunks)
+          var text = '';
+          for (var pi = 0; pi < cand.content.parts.length; pi++) {
+            if (cand.content.parts[pi].text) text += cand.content.parts[pi].text;
+          }
+          text = text.trim();
+
+          if (!text) {
+            throw new Error('La API devolvio una respuesta vacia. finishReason=' + (cand.finishReason || 'unknown'));
+          }
+
+          // === PARSEO ROBUSTO DEL JSON ===
+          // 1. Quitar code block markdown ```json ... ```
           var jsonStr = text;
+          // Strip ```json o ``` al inicio, y ``` al final
+          jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
+
+          // 2. Si aun hay markdown antes/después del JSON, extraer solo el bloque JSON
           var js = jsonStr.indexOf('{');
           var je = jsonStr.lastIndexOf('}');
           if (js !== -1 && je > js) jsonStr = jsonStr.substring(js, je + 1);
+
           var articulo;
-          try { articulo = JSON.parse(jsonStr); } catch(pe) {
+          try {
+            articulo = JSON.parse(jsonStr);
+          } catch(pe) {
+            // Intento 2: reemplazar comillas simples por dobles
             try { articulo = JSON.parse(jsonStr.replace(/'/g, '"')); } catch(pe2) {
-              throw new Error('La IA no devolvio un JSON valido: ' + jsonStr.slice(0, 100));
+              // Intento 3: buscar el contenido entre { y } con regex multiline
+              var m = text.match(/\{[\s\S]*\}/);
+              if (m) {
+                try { articulo = JSON.parse(m[0]); } catch(pe3) {
+                  // Fallo definitivo: mostrar la respuesta cruda para que el admin vea qué pasó
+                  throw new Error('La IA no devolvio un JSON valido. Respuesta cruda (primeros 300 chars): ' + text.slice(0, 300));
+                }
+              } else {
+                throw new Error('La IA no devolvio JSON. Respuesta cruda (primeros 300 chars): ' + text.slice(0, 300));
+              }
             }
           }
-          
+
+          console.log('[generarArticulo] Articulo parseado:', articulo);
+
           // === VALIDACION ESTRICTA ===
           var errores = Pages._validarArticulo(articulo);
           if (errores.length > 0) {
