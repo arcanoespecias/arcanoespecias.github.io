@@ -6637,10 +6637,174 @@ const Pages = {
     }
   },
 
+  // ============================================================
+  // CONFIGURACION DE IA PARA BLOG
+  // Persistencia: Firebase arcano/db/config/blog_ai + localStorage arcano_blog_ai_config
+  // Defaults: gemini-2.5-flash, temp 0.8, tokens 4000, tono cercano, longitud media
+  // ============================================================
+  _blogAIDefaults: {
+    modelo: 'gemini-2.5-flash',
+    temperatura: 0.8,
+    maxTokens: 4000,
+    tono: 'cercano',
+    longitud: 'media'
+  },
+
+  _blogAIModelOptions: [
+    { value: 'gemini-2.5-flash',  label: 'Gemini 2.5 Flash  (rapido, recomendado)' },
+    { value: 'gemini-2.5-pro',    label: 'Gemini 2.5 Pro    (mayor calidad, mas lento)' },
+    { value: 'gemini-2.0-flash',  label: 'Gemini 2.0 Flash' },
+    { value: 'gemini-1.5-flash',  label: 'Gemini 1.5 Flash' },
+    { value: 'gemini-1.5-pro',    label: 'Gemini 1.5 Pro' }
+  ],
+
+  _blogAIToneOptions: [
+    { value: 'cercano',      label: 'Cercano y conversacional (amigo experto)' },
+    { value: 'profesional',  label: 'Profesional y divulgativo' },
+    { value: 'narrativo',    label: 'Narrativo / storytelling' },
+    { value: 'academico',    label: 'Academico / investigador' }
+  ],
+
+  _blogAILengthOptions: [
+    { value: 'corta',  label: 'Corta   (500-700 palabras)',   min: 500,  max: 700  },
+    { value: 'media',  label: 'Media   (700-1200 palabras)',   min: 700,  max: 1200 },
+    { value: 'larga',  label: 'Larga   (1200-1800 palabras)',  min: 1200, max: 1800 }
+  ],
+
+  _getBlogAIConfig: function() {
+    var cfg = {};
+    try { cfg = JSON.parse(localStorage.getItem('arcano_blog_ai_config') || '{}'); } catch(e) { cfg = {}; }
+    var d = Pages._blogAIDefaults;
+    return {
+      modelo:       cfg.modelo       || d.modelo,
+      temperatura:  (typeof cfg.temperatura === 'number') ? cfg.temperatura : d.temperatura,
+      maxTokens:    cfg.maxTokens    || d.maxTokens,
+      tono:         cfg.tono         || d.tono,
+      longitud:     cfg.longitud     || d.longitud
+    };
+  },
+
+  _saveBlogAIConfig: function() {
+    var get = function(id) { var el = document.getElementById(id); return el ? el.value : ''; };
+    var cfg = {
+      modelo:      get('ba-cfg-modelo'),
+      temperatura: parseFloat(get('ba-cfg-temp'))   || Pages._blogAIDefaults.temperatura,
+      maxTokens:   parseInt(get('ba-cfg-tokens'), 10) || Pages._blogAIDefaults.maxTokens,
+      tono:        get('ba-cfg-tono'),
+      longitud:    get('ba-cfg-longitud')
+    };
+    localStorage.setItem('arcano_blog_ai_config', JSON.stringify(cfg));
+    var statusEl = document.getElementById('ba-cfg-status');
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Guardando...</span>';
+    firebase.database().ref('arcano/db/config/blog_ai').set(cfg, function(err) {
+      if (err) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error: ' + (err.message || err) + '</span>';
+      } else {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Configuracion guardada</span>';
+        setTimeout(function() { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+      }
+    });
+  },
+
+  _loadBlogAIConfig: function() {
+    // 1. Pintar defaults desde localStorage
+    var cfg = Pages._getBlogAIConfig();
+    Pages._applyBlogAIConfigToUI(cfg);
+    // 2. Pedir a Firebase (sobreescribe si existe)
+    try {
+      firebase.database().ref('arcano/db/config/blog_ai').once('value', function(snap) {
+        var fbCfg = snap.val();
+        if (fbCfg) {
+          // Mergear con defaults por si falta algun campo
+          var merged = Pages._getBlogAIConfig();
+          for (var k in fbCfg) merged[k] = fbCfg[k];
+          localStorage.setItem('arcano_blog_ai_config', JSON.stringify(merged));
+          Pages._applyBlogAIConfigToUI(merged);
+        }
+      });
+    } catch(e) { /* Firebase aun no inicializado - usamos defaults locales */ }
+  },
+
+  _applyBlogAIConfigToUI: function(cfg) {
+    var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+    set('ba-cfg-modelo',   cfg.modelo);
+    set('ba-cfg-temp',     cfg.temperatura);
+    set('ba-cfg-tokens',   cfg.maxTokens);
+    set('ba-cfg-tono',     cfg.tono);
+    set('ba-cfg-longitud', cfg.longitud);
+    var tempValEl = document.getElementById('ba-cfg-temp-val');
+    if (tempValEl) tempValEl.textContent = Number(cfg.temperatura).toFixed(1);
+    var lenDescEl = document.getElementById('ba-cfg-len-desc');
+    if (lenDescEl) {
+      for (var i = 0; i < Pages._blogAILengthOptions.length; i++) {
+        if (Pages._blogAILengthOptions[i].value === cfg.longitud) {
+          lenDescEl.textContent = Pages._blogAILengthOptions[i].min + '-' + Pages._blogAILengthOptions[i].max + ' palabras';
+          break;
+        }
+      }
+    }
+  },
+
   renderBlogAdmin(container) {
     var categorias = ['Historias', 'Beneficios', 'Investigaciones', 'Curiosidades', 'Origenes'];
     var savedKey = localStorage.getItem('arcano_gemini_key') || '';
-    var h = '<div class="card mb-16">' +
+
+    // === CARD CONFIGURACION DE IA (plegable) ===
+    var h = '<details class="card mb-16" id="ba-cfg-card" style="background:var(--bg2)">' +
+      '<summary style="cursor:pointer;padding:14px 16px;font-weight:700;color:var(--gold);user-select:none">' +
+        'Configuracion de IA  ' +
+        '<span class="text-sm text-muted" style="font-weight:400">(modelo, temperatura, tokens, tono, longitud)</span>' +
+      '</summary>' +
+      '<div class="card-body">' +
+        '<div class="g2">' +
+          '<div class="form-group"><label>Modelo de Gemini</label>' +
+            '<select class="input" id="ba-cfg-modelo">';
+    for (var mi = 0; mi < Pages._blogAIModelOptions.length; mi++) {
+      h += '<option value="' + Pages._blogAIModelOptions[mi].value + '">' + Pages._blogAIModelOptions[mi].label + '</option>';
+    }
+    h += '</select>' +
+          '<p class="text-xs text-muted mt-4">2.5 Flash = rapido y economico (recomendado). Pro = mejor calidad pero mas lento y consume mas cuota.</p>' +
+          '</div>' +
+          '<div class="form-group"><label>Temperatura: <span id="ba-cfg-temp-val" style="color:var(--gold);font-weight:700">0.8</span></label>' +
+            '<input type="range" class="input" id="ba-cfg-temp" min="0" max="1.5" step="0.1" value="0.8" ' +
+              'oninput="document.getElementById(\'ba-cfg-temp-val\').textContent=parseFloat(this.value).toFixed(1)">' +
+            '<p class="text-xs text-muted mt-4">0 = determinista. 1.5 = muy creativo. 0.8 = balance recomendado.</p>' +
+          '</div>' +
+        '</div>' +
+        '<div class="g2 mt-8">' +
+          '<div class="form-group"><label>Max tokens de respuesta</label>' +
+            '<select class="input" id="ba-cfg-tokens">' +
+              '<option value="2000">2000  (articulo corto)</option>' +
+              '<option value="4000">4000  (articulo medio, recomendado)</option>' +
+              '<option value="8000">8000  (articulo largo)</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="form-group"><label>Tono del redactor</label>' +
+            '<select class="input" id="ba-cfg-tono">';
+    for (var ti = 0; ti < Pages._blogAIToneOptions.length; ti++) {
+      h += '<option value="' + Pages._blogAIToneOptions[ti].value + '">' + Pages._blogAIToneOptions[ti].label + '</option>';
+    }
+    h += '</select></div>' +
+        '</div>' +
+        '<div class="g2 mt-8">' +
+          '<div class="form-group"><label>Longitud del articulo</label>' +
+            '<select class="input" id="ba-cfg-longitud" onchange="var d=Pages._blogAILengthOptions.find(function(o){return o.value===this.value}.bind(this));if(d)document.getElementById(\'ba-cfg-len-desc\').textContent=d.min+\'-\'+d.max+\' palabras\'">';
+    for (var li = 0; li < Pages._blogAILengthOptions.length; li++) {
+      h += '<option value="' + Pages._blogAILengthOptions[li].value + '">' + Pages._blogAILengthOptions[li].label + '</option>';
+    }
+    h += '</select>' +
+            '<p class="text-xs text-muted mt-4">Rango objetivo: <span id="ba-cfg-len-desc" style="color:var(--gold)">700-1200 palabras</span></p>' +
+          '</div>' +
+          '<div class="form-group" style="display:flex;align-items:flex-end;gap:8px">' +
+            '<button class="btn btn-gold" onclick="Pages._saveBlogAIConfig()">Guardar Configuracion</button>' +
+            '<span id="ba-cfg-status" class="text-sm"></span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</details>';
+
+    // === CARD GENERAR ARTICULO (igual que antes) ===
+    h += '<div class="card mb-16">' +
       '<div class="card-header"><h3>Generar Articulo de Blog con IA</h3></div>' +
       '<div class="card-body">' +
         '<div class="form-group"><label>API Key de Gemini (gratis)</label>' +
@@ -6649,7 +6813,7 @@ const Pages = {
           '<button class="btn btn-dark" onclick="Pages._saveBlogKey()">Guardar</button>' +
           '<span id="ba-key-status">' + (savedKey ? ' <span style="color:var(--green)">guardada</span>' : '') + '</span>' +
         '</div>' +
-        '<p class="text-sm text-muted mt-4">Obtene tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (no requiere tarjeta). Modelo: <b>Gemini 3.6 Flash</b>.</p>' +
+        '<p class="text-sm text-muted mt-4">Obtene tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (no requiere tarjeta). Modelo y parametros se configuran arriba.</p>' +
         '</div>' +
         '<div class="g2">' +
           '<div class="form-group"><label>Categoria</label>' +
@@ -6678,6 +6842,7 @@ const Pages = {
     '<input type="file" id="ba-img-input" accept="image/*" style="display:none" onchange="Pages._onBlogImageSelect(event)">';
     container.innerHTML = h;
     Pages._loadGeminiKey('ba-gemini-key', 'ba-key-status');
+    Pages._loadBlogAIConfig();
     Pages._loadBlogAdmin();
   },
 
@@ -6947,6 +7112,9 @@ const Pages = {
     if (!apiKey) { alert('Ingresa tu API Key de Gemini. Obtenla gratis en aistudio.google.com/apikey'); keyInput.focus(); return; }
     localStorage.setItem('arcano_gemini_key', apiKey);
 
+    // === Cargar configuracion de IA ===
+    var cfg = Pages._getBlogAIConfig();
+
     btn.disabled = true;
     btn.textContent = 'Generando...';
     status.textContent = 'Cargando productos y articulos existentes...';
@@ -6966,6 +7134,68 @@ const Pages = {
       ? 'Tema especifico: ' + tema + '. El articulo debe girar alrededor de este tema.'
       : 'Elige un tema creativo e interesante relacionado con la categoria y los productos.';
 
+    // === Mapas de tono y longitud → texto del prompt ===
+    var tonoMap = {
+      'cercano':     'Tono: cercano, conversacional pero profesional. Como un amigo experto en cocina que comparte lo que sabe.',
+      'profesional': 'Tono: profesional y divulgativo. Informacion clara, precisa y objetiva. Evitar coloquialismos excesivos pero mantener la cercania.',
+      'narrativo':   'Tono: narrativo / storytelling. Cuenta una historia con principio, desarrollo y cierre. Transporta al lector al lugar de origen o al momento historico.',
+      'academico':   'Tono: academico / investigador. Citas implicitas a fuentes, datos historicos verificables, lenguaje preciso y tecnico cuando aplique.'
+    };
+    var tonoInstr = tonoMap[cfg.tono] || tonoMap['cercano'];
+
+    // Longitud: elegir estructura segun el rango objetivo
+    var lenOpt = Pages._blogAILengthOptions.find(function(o) { return o.value === cfg.longitud; }) || Pages._blogAILengthOptions[1];
+    var estructuraHtml = '';
+    var totalPalabrasTxt = lenOpt.min + ' y ' + lenOpt.max + ' palabras';
+
+    if (cfg.longitud === 'corta') {
+      estructuraHtml =
+        '<p>[Lead paragraph: 100-150 palabras. Arranca DIRECTO con el tema, sin "En este articulo te contaremos...".\n' +
+        '   Conecta el tema con al menos UN blend del catalogo, usando su nombre EXACTO como enlace clickable.]</p>\n\n' +
+        '<h2>[Subtitulo 1: atractivo, descriptivo, con keyword si encaja]</h2>\n' +
+        '<p>[1-2 parrafos, 150-200 palabras total]</p>\n\n' +
+        '<h2>[Subtitulo 2]</h2>\n' +
+        '<p>[1-2 parrafos, 150-200 palabras total]</p>\n\n' +
+        '<blockquote>[Frase memorable o dato destacado del articulo, 1 oracion]</blockquote>\n\n' +
+        '<h2>Para llevar a tu cocina</h2>\n' +
+        '<p>[Conclusion + CTA sutil a la tienda, 80-100 palabras. No agresivo.]</p>';
+    } else if (cfg.longitud === 'larga') {
+      estructuraHtml =
+        '<p>[Lead paragraph: 200-250 palabras. Arranca DIRECTO con el tema, sin "En este articulo te contaremos...".\n' +
+        '   Conecta el tema con al menos UN blend del catalogo, usando su nombre EXACTO como enlace clickable.\n' +
+        '   Plantea una pregunta o tension que el articulo resolvera.]</p>\n\n' +
+        '<h2>[Subtitulo 1: atractivo, descriptivo, con keyword si encaja]</h2>\n' +
+        '<p>[2-3 parrafos, 300-400 palabras total]</p>\n' +
+        '<p>[...]</p>\n\n' +
+        '<h2>[Subtitulo 2]</h2>\n' +
+        '<p>[2-3 parrafos, 300-400 palabras total]</p>\n' +
+        '<p>[...]</p>\n\n' +
+        '<h2>[Subtitulo 3]</h2>\n' +
+        '<p>[2-3 parrafos, 300-400 palabras total]</p>\n' +
+        '<p>[...]</p>\n\n' +
+        '<h2>[Subtitulo 4 - opcional, profundizacion tecnica o historica]</h2>\n' +
+        '<p>[1-2 parrafos, 200-250 palabras]</p>\n\n' +
+        '<blockquote>[Frase memorable o dato destacado del articulo, 1-2 oraciones]</blockquote>\n\n' +
+        '<h2>Para llevar a tu cocina</h2>\n' +
+        '<p>[Conclusion + CTA sutil a la tienda, 150-200 palabras. No agresivo. Ej: "Si quieres explorar estos sabores, en nuestra tienda encontraras..."]</p>';
+    } else {
+      // media (default, el que ya existia)
+      estructuraHtml =
+        '<p>[Lead paragraph: 150-200 palabras. Arranca DIRECTO con el tema, sin "En este articulo te contaremos...".\n' +
+        '   Conecta el tema con al menos UN blend del catalogo, usando su nombre EXACTO como enlace clickable.]</p>\n\n' +
+        '<h2>[Subtitulo 1: atractivo, descriptivo, con keyword si encaja]</h2>\n' +
+        '<p>[2-3 parrafos, 200-300 palabras total]</p>\n' +
+        '<p>[...]</p>\n\n' +
+        '<h2>[Subtitulo 2]</h2>\n' +
+        '<p>[2-3 parrafos, 200-300 palabras total]</p>\n' +
+        '<p>[...]</p>\n\n' +
+        '<h2>[Subtitulo 3 - opcional si el tema lo permite]</h2>\n' +
+        '<p>[1-2 parrafos, 150-200 palabras]</p>\n\n' +
+        '<blockquote>[Frase memorable o dato destacado del articulo, 1-2 oraciones]</blockquote>\n\n' +
+        '<h2>Para llevar a tu cocina</h2>\n' +
+        '<p>[Conclusion + CTA sutil a la tienda, 100-150 palabras. No agresivo. Ej: "Si quieres explorar estos sabores, en nuestra tienda encontraras..."]</p>';
+    }
+
     try {
       firebase.database().ref('arcano/db/blog').once('value', function(snap) {
         var data = snap.val();
@@ -6980,7 +7210,7 @@ const Pages = {
         var prompt =
           'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias (tienda colombiana online).\n' +
           'Escribes en ESPANOL NEUTRO INTERNACIONAL (no argentino, no voseo, no "vos", no "che", no "pibe"). Usas "tu" y "tienes".\n' +
-          'Tono: cercano, conversacional pero profesional. Como un amigo experto en cocina que comparte lo que sabe.\n\n' +
+          tonoInstr + '\n\n' +
           'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos):\n' + productContext + '\n\n' +
           '=== INSTRUCCION DE KEYWORDS (MUY IMPORTANTE) ===\n' +
           '1. ANTES de escribir, identifica 5-8 keywords transaccionales e informativas del mercado de especias online en Colombia.\n' +
@@ -6994,23 +7224,11 @@ const Pages = {
           '6. Incluye las keywords en el JSON de respuesta (campo "keywords").\n\n' +
           '=== ESTRUCTURA OBLIGATORIA DEL ARTICULO ===\n' +
           'El contenido HTML debe seguir esta estructura exacta:\n\n' +
-          '<p>[Lead paragraph: 150-200 palabras. Arranca DIRECTO con el tema, sin "En este articulo te contaremos...".\n' +
-          '   Conecta el tema con al menos UN blend del catalogo, usando su nombre EXACTO como enlace clickable.]</p>\n\n' +
-          '<h2>[Subtitulo 1: atractivo, descriptivo, con keyword si encaja]</h2>\n' +
-          '<p>[2-3 parrafos, 200-300 palabras total]</p>\n' +
-          '<p>[...]</p>\n\n' +
-          '<h2>[Subtitulo 2]</h2>\n' +
-          '<p>[2-3 parrafos, 200-300 palabras total]</p>\n' +
-          '<p>[...]</p>\n\n' +
-          '<h2>[Subtitulo 3 - opcional si el tema lo permite]</h2>\n' +
-          '<p>[1-2 parrafos, 150-200 palabras]</p>\n\n' +
-          '<blockquote>[Frase memorable o dato destacado del articulo, 1-2 oraciones]</blockquote>\n\n' +
-          '<h2>Para llevar a tu cocina</h2>\n' +
-          '<p>[Conclusion + CTA sutil a la tienda, 100-150 palabras. No agresivo. Ej: "Si quieres explorar estos sabores, en nuestra tienda encontraras..."]</p>\n\n' +
-          'TOTAL: entre 700 y 1200 palabras.\n\n' +
+          estructuraHtml + '\n\n' +
+          'TOTAL: entre ' + totalPalabrasTxt + '.\n\n' +
           '=== REGLAS DE ESTILO ===\n' +
           '1. Espresion: ESPANOL NEUTRO. Sin voseo, sin argentismos, sin "vos". Usar "tu" y "tienes".\n' +
-          '2. Tono: cercano, conversacional, como hablar con un amigo que sabe de cocina.\n' +
+          '2. ' + tonoInstr + '\n' +
           '3. Sin emojis en el cuerpo del articulo (solo en CTA si quieres).\n' +
           '4. Sin frases hechas: no usar "En este articulo te contaremos", "A continuacion", "Como puedes ver".\n' +
           '5. Sin palabras relleno: limitar a 1 por articulo el uso de "delicioso", "increible", "magico", "fascinante".\n' +
@@ -7037,16 +7255,16 @@ const Pages = {
           'Escribe un articulo de blog categoria "' + categoria + '". ' + temaInstr + '\n' +
           'Recuerda: investiga keywords del mercado de especias en Colombia y usalas de forma sutil.';
 
-        status.textContent = 'Consultando Gemini 3.6 Flash...';
+        status.textContent = 'Consultando ' + cfg.modelo + ' (temp ' + cfg.temperatura + ', ' + cfg.maxTokens + ' tokens)...';
 
-        var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey;
+        var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + cfg.modelo + ':generateContent?key=' + apiKey;
 
         fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.8, maxOutputTokens: 4000 }
+            generationConfig: { temperature: cfg.temperatura, maxOutputTokens: cfg.maxTokens }
           })
         })
         .then(function(res) {
@@ -7129,13 +7347,16 @@ const Pages = {
       if (sl > 180) errores.push('Subtitulo muy largo (' + sl + ' chars, maximo 180)');
     }
     
-    // 4. Contar palabras del contenido (700-1200)
+    // 4. Contar palabras del contenido (segun longitud configurada)
     if (articulo.contenido) {
       var textoPlano = articulo.contenido.replace(/<[^>]+>/g, ' ');
       var palabras = textoPlano.split(/\s+/).filter(function(w) { return w.length > 0; });
       var numPalabras = palabras.length;
-      if (numPalabras < 700) errores.push('Contenido muy corto (' + numPalabras + ' palabras, minimo 700)');
-      if (numPalabras > 1300) errores.push('Contenido muy largo (' + numPalabras + ' palabras, maximo 1200)');
+      var lenCfg = Pages._blogAILengthOptions.find(function(o) { return o.value === Pages._getBlogAIConfig().longitud; }) || Pages._blogAILengthOptions[1];
+      var minW = lenCfg.min;
+      var maxW = lenCfg.max + Math.round(lenCfg.max * 0.1); // tolerancia 10% arriba
+      if (numPalabras < minW) errores.push('Contenido muy corto (' + numPalabras + ' palabras, minimo ' + minW + ')');
+      if (numPalabras > maxW) errores.push('Contenido muy largo (' + numPalabras + ' palabras, maximo ' + maxW + ')');
     }
     
     // 5. Contar links a blends (min 1, max 3)
@@ -7240,7 +7461,8 @@ const Pages = {
     // Contar palabras
     var textoPlano = (articulo.contenido || '').replace(/<[^>]+>/g, ' ');
     var numPalabras = textoPlano.split(/\s+/).filter(function(w) { return w.length > 0; }).length;
-    var palabrasColor = numPalabras >= 700 && numPalabras <= 1200 ? 'var(--green)' : '#f59e0b';
+    var _lenCfg = Pages._blogAILengthOptions.find(function(o) { return o.value === Pages._getBlogAIConfig().longitud; }) || Pages._blogAILengthOptions[1];
+    var palabrasColor = (numPalabras >= _lenCfg.min && numPalabras <= _lenCfg.max + Math.round(_lenCfg.max * 0.1)) ? 'var(--green)' : '#f59e0b';
     
     var h = advertenciasHtml +
       '<h2 style="margin-bottom:4px">' + (articulo.titulo || '') + '</h2>' +
