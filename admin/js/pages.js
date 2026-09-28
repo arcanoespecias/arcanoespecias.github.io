@@ -7509,8 +7509,12 @@ const Pages = {
   _renderBlogList: function(articulos) {
     var countEl = document.getElementById('ba-count');
     var listEl = document.getElementById('ba-list');
-    if (!countEl || !listEl) return;
-    countEl.textContent = articulos.length;
+    // Solo necesitamos listEl para renderizar. countEl es opcional (puede no existir).
+    if (!listEl) {
+      console.error('[blog-admin] _renderBlogList: listEl (ba-list) no encontrado');
+      return;
+    }
+    if (countEl) countEl.textContent = articulos.length;
     if (articulos.length === 0) {
       listEl.innerHTML = '<div style="text-align:center;padding:32px">' +
         '<p class="text-muted mb-12">No hay articulos todavía.</p>' +
