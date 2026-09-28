@@ -605,6 +605,22 @@ function _renderDetail(products, idx) {
   var ingsHtml = '';
   if (isBlend && p.ingredientes && p.ingredientes.length > 0) {
     ingsHtml = '<div class="detail-ingredients"><div class="detail-ingredients-label">Ingredientes</div>';
+  }
+  // Para packs: mostrar los blends que lo componen
+  if (isPack && p.blendItems && p.blendItems.length > 0) {
+    ingsHtml = '<div class="detail-ingredients"><div class="detail-ingredients-label">Blends del Pack</div>';
+    for (var bi = 0; bi < p.blendItems.length; bi++) {
+      var bItem = p.blendItems[bi];
+      var bName = 'Blend';
+      var bTalla = bItem.talla || 'chico';
+      if (_sDb && _sDb.blends) {
+        var bObj = _sDb.blends[bItem.blendId] || _sDb.blends[String(bItem.blendId)];
+        if (bObj && bObj.nombre) bName = bObj.nombre;
+      }
+      var tallaLabel = bTalla === 'grande' ? 'Grande' : 'Pequeño';
+      ingsHtml += '<span class="detail-ingredient-chip" style="border-color:var(--gold)">' + bName + ' (' + tallaLabel + ')</span>';
+    }
+    ingsHtml += '</div>';
     for (var ii = 0; ii < p.ingredientes.length; ii++) {
       var ingName = p.ingredientes[ii].especiaNombre;
       if (!ingName && p.ingredientes[ii].especiaId != null && _sDb && _sDb.especias) {
@@ -648,6 +664,29 @@ function _renderDetail(products, idx) {
   html += '<h2>' + p.nombre + '</h2>';
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
   html += descHtml + ingsHtml + _usosHtml(p);
+  // Pack configurable: selector de blends
+  if (isPack && p.configurable && p.blendCount > 0) {
+    var allBlends = getStoreProducts().filter(function(b) { return b.tipo === 'blend' && (b.stockChico > 0 || b.stockGrande > 0); });
+    var blendCount = p.blendCount;
+    var configTalla = p.configTalla || 'chico';
+    var configPrice = p.precio || 0;
+    html += '<div class="detail-config-pack">';
+    html += '<div class="detail-ingredients-label">Elegí ' + blendCount + ' blends para tu pack</div>';
+    html += '<p class="text-xs text-muted" style="margin-bottom:12px">Seleccioná ' + blendCount + ' blends. Talla: ' + (configTalla === 'grande' ? 'Grande (80g)' : 'Pequeño (30g)') + '</p>';
+    html += '<div id="config-blend-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px">';
+    for (var cb = 0; cb < allBlends.length; cb++) {
+      var bld = allBlends[cb];
+      html += '<div class="config-blend-chip" data-blend-id="' + bld.id + '" data-blend-name="' + (bld.nombre || '').replace(/"/g, '&quot;') + '" onclick="_toggleConfigBlend(this)" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:8px;padding:10px;cursor:pointer;text-align:center;transition:all .2s">';
+      html += '<div style="font-size:.8rem;color:#e8dcc4">' + (bld.nombre || '') + '</div>';
+      html += '<div style="font-size:.7rem;color:#a08b6e;margin-top:2px">' + (bld.categoria || '') + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount + ' seleccionados</div>';
+    html += '<button class="detail-price-card" style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer" id="config-add-cart-btn" onclick="_addConfigPackToCart(' + p.id + ',\'' + (p.nombre || '').replace(/'/g, "\\'") + '\,' + configPrice + ',\"' + configTalla + '",' + blendCount + ')" disabled>Agregar al carrito — $' + configPrice.toLocaleString() + '</button>';
+    html += '</div>';
+    html += '<style>.config-blend-chip.selected{border-color:#c9a84c !important;background:rgba(201,168,76,.15) !important}.config-blend-chip:hover{border-color:#c9a84c}</style>';
+  }
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
   html += '</div>';
   overlay.innerHTML = html;
@@ -659,6 +698,59 @@ function _renderDetail(products, idx) {
   // SIN swipe — removido para evitar cambio accidental de producto al hacer scroll
 
   _updateTitle(null, p.nombre + ' - Arcano Especias');
+}
+
+// === PACKS CONFIGURABLES ===
+function _toggleConfigBlend(el) {
+  el.classList.toggle('selected');
+  var selected = document.querySelectorAll('.config-blend-chip.selected');
+  var blendCount = parseInt(document.getElementById('config-add-cart-btn').getAttribute('onclick').match(/,\s*(\d+)\)/)[1]);
+  var countEl = document.getElementById('config-selected-count');
+  var btn = document.getElementById('config-add-cart-btn');
+  countEl.textContent = selected.length + ' de ' + blendCount + ' seleccionados';
+  if (selected.length === blendCount) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+  }
+}
+
+function _addConfigPackToCart(packId, packName, price, talla, blendCount) {
+  var selected = document.querySelectorAll('.config-blend-chip.selected');
+  if (selected.length !== blendCount) {
+    alert('Debes seleccionar exactamente ' + blendCount + ' blends');
+    return;
+  }
+  var selectedBlends = [];
+  for (var i = 0; i < selected.length; i++) {
+    selectedBlends.push({
+      id: selected[i].getAttribute('data-blend-id'),
+      nombre: selected[i].getAttribute('data-blend-name')
+    });
+  }
+  var blendNames = selectedBlends.map(function(b) { return b.nombre; }).join(', ');
+  var cart = JSON.parse(localStorage.getItem('arcano_cart') || '[]');
+  cart.push({
+    productId: packId,
+    nombre: packName + ' (' + blendNames + ')',
+    tipo: 'pack',
+    talla: 'pack',
+    precio: price,
+    qty: 1,
+    configBlends: selectedBlends,
+    configTalla: talla
+  });
+  localStorage.setItem('arcano_cart', JSON.stringify(cart));
+  // Cerrar modal
+  var ov = document.getElementById('detail-ov');
+  if (ov) ov.remove();
+  // Toast
+  _showToast('Pack agregado al carrito');
+  updateCartBadge();
 }
 
 function _swipeDetail(currentIdx, direction) {

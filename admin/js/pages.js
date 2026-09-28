@@ -982,6 +982,23 @@ const Pages = {
         '<div class="form-group"><label>Imagen</label><div class="img-upload-area" id="img-area-pk"><input type="file" accept="image/*" id="f-pk-img" style="display:none" onchange="Pages.handleImageUpload(this,\'img-area-pk\')">' +
         (isEdit && existing.imagen ? '<img src="' + existing.imagen + '" class="img-preview" id="img-preview-pk"><button class="btn btn-sm btn-red" style="margin-top:6px" onclick="Pages.removeImage(\'img-area-pk\',\'f-pk-img\')">Quitar imagen</button>' : '') +
         '<div class="img-upload-placeholder" onclick="document.getElementById(\'f-pk-img\').click()"><span>+ Click para subir imagen</span></div></div></div>' +
+        // === Tipo de Pack: fijo o configurable ===
+        '<div class="card mt-12" style="border-color:var(--gold)"><div class="card-body">' +
+        '<div class="form-group" style="display:flex;align-items:center;gap:12px;padding:8px;background:var(--bg);border-radius:8px">' +
+        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">' +
+        '<input type="checkbox" id="f-pk-configurable" ' + (isEdit && existing.configurable ? 'checked' : '') + ' onchange="Pages._toggleConfigurablePack()">' +
+        '<span>Pack Configurable (el usuario elige los blends)</span></label></div>' +
+        '<div id="f-pk-configurable-options" style="display:' + (isEdit && existing.configurable ? 'block' : 'none') + ';margin-top:12px">' +
+        '<div class="form-group"><label>Cantidad de blends que el usuario debe elegir</label>' +
+        '<input type="number" class="input" id="f-pk-blend-count" value="' + (isEdit && existing.blendCount ? existing.blendCount : 3) + '" min="2" max="10" style="max-width:100px"></div>' +
+        '<div class="form-group"><label>Talla de los frascos del pack</label>' +
+        '<select class="input" id="f-pk-config-talla" style="max-width:200px">' +
+        '<option value="chico"' + (isEdit && existing.configTalla === 'grande' ? '' : ' selected') + '>Pequeño (30g)</option>' +
+        '<option value="grande"' + (isEdit && existing.configTalla === 'grande' ? ' selected' : '') + '>Grande (80g)</option>' +
+        '</select></div>' +
+        '<p class="text-xs text-muted">El usuario podrá elegir ' + (isEdit && existing.blendCount ? existing.blendCount : 3) + ' blends de los disponibles en la tienda para armar su pack personalizado.</p>' +
+        '</div></div></div>' +
+        '<div id="f-pk-fixed-items">' +
         '<h4 class="mt-12 mb-8">Blends que componen el Pack</h4><div id="f-pk-items">';
 
     var items = isEdit ? (existing.blendItems || []) : [];
@@ -1000,7 +1017,8 @@ const Pages = {
 
     inner += '</div><button class="btn btn-sm btn-outline" onclick="Pages._addPackItem()">+ Agregar Blend</button>' +
       '<div id="f-pk-cost-preview" class="mt-12"></div>' +
-      '</div><div class="modal-footer">' +
+      '</div></div>' +  // cierra f-pk-items y f-pk-fixed-items
+      '<div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
         '<button class="btn btn-gold" id="btn-pk-save">Guardar Pack</button>' +
       '</div></div>';
@@ -1012,24 +1030,35 @@ const Pages = {
     document.getElementById('btn-pk-save').addEventListener('click', function() {
       var nombre = document.getElementById('f-pk-nombre').value.trim();
       if (!nombre) { alert('Ingresa un nombre'); return; }
-      var blendItems = [];
-      var itemEls = document.querySelectorAll('.pk-item');
-      for (var j = 0; j < itemEls.length; j++) {
-        var sel = itemEls[j].querySelector('.pk-blend-sel');
-        var tallaSel = itemEls[j].querySelector('.pk-talla-sel');
-        if (sel && sel.value) {
-          blendItems.push({ blendId: Number(sel.value), talla: tallaSel ? tallaSel.value : 'chico' });
-        }
-      }
-      if (blendItems.length < 2) { alert('Un pack debe tener al menos 2 blends'); return; }
+      var isConfigurable = document.getElementById('f-pk-configurable').checked;
       var data = {
         nombre: nombre,
         descripcion: document.getElementById('f-pk-desc').value.trim(),
         precio: Number(document.getElementById('f-pk-precio').value) || 0,
         imagen: (document.getElementById('img-preview-pk') || {}).src || '',
-        blendItems: blendItems,
         enTienda: isEdit ? (existing.enTienda || false) : false
       };
+      if (isConfigurable) {
+        // Pack configurable: el usuario elige los blends en la tienda
+        data.configurable = true;
+        data.blendCount = Number(document.getElementById('f-pk-blend-count').value) || 3;
+        data.configTalla = document.getElementById('f-pk-config-talla').value || 'chico';
+        data.blendItems = []; // vacío — el usuario los elegirá
+      } else {
+        // Pack fijo: el admin define los blends
+        var blendItems = [];
+        var itemEls = document.querySelectorAll('.pk-item');
+        for (var j = 0; j < itemEls.length; j++) {
+          var sel = itemEls[j].querySelector('.pk-blend-sel');
+          var tallaSel = itemEls[j].querySelector('.pk-talla-sel');
+          if (sel && sel.value) {
+            blendItems.push({ blendId: Number(sel.value), talla: tallaSel ? tallaSel.value : 'chico' });
+          }
+        }
+        if (blendItems.length < 2) { alert('Un pack debe tener al menos 2 blends'); return; }
+        data.configurable = false;
+        data.blendItems = blendItems;
+      }
       if (isEdit) data.id = editId;
       try {
         var saved = ArcanoDB.savePack(data);
@@ -1039,6 +1068,19 @@ const Pages = {
         Pages._updateSitemap();
       } catch (err) { alert('Error: ' + err.message); }
     });
+  },
+
+  _toggleConfigurablePack: function() {
+    var isChecked = document.getElementById('f-pk-configurable').checked;
+    var optsDiv = document.getElementById('f-pk-configurable-options');
+    var fixedDiv = document.getElementById('f-pk-fixed-items');
+    if (isChecked) {
+      optsDiv.style.display = 'block';
+      fixedDiv.style.display = 'none';
+    } else {
+      optsDiv.style.display = 'none';
+      fixedDiv.style.display = 'block';
+    }
   },
 
   _addPackItem: function() {

@@ -760,7 +760,10 @@ function getStoreProducts() {
       precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
       stockChico: 0, stockGrande: 0, stock: packStock,
       region: '', uso: '', descripcion: pk.descripcion || '', imagen: _fixImageUrl(pk.imagen, pkUpdated), tags: pk.tags || [],
-      blendItems: pk.blendItems || []
+      blendItems: pk.blendItems || [],
+      configurable: pk.configurable || false,
+      blendCount: pk.blendCount || 0,
+      configTalla: pk.configTalla || 'chico'
     });
   }
   return products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
