@@ -139,32 +139,72 @@ export async function onRequestPost({ request, env }) {
     }), { headers: corsHeaders });
   }
 
-  // === Llamar a Gemini ===
+  // === Llamar a Gemini con auto-retry en 429 ===
   console.log('[generate-article] Calling Gemini:', modelo);
 
-  let geminiResp;
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
-    geminiResp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: 'Eres un redactor creativo experto en especias y gastronomía. Respondes SIEMPRE con JSON válido, sin markdown code blocks, sin texto adicional.' }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: isNaN(temperatura) ? 0.8 : temperatura,
-          maxOutputTokens: maxTokens,
-          responseMimeType: 'application/json'
+  const maxRetries = 3;
+  let geminiResp = null;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
+      console.log(`[generate-article] Attempt ${attempt}/${maxRetries} → Gemini ${modelo}`);
+      geminiResp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: 'Eres un redactor creativo experto en especias y gastronomía. Respondes SIEMPRE con JSON válido, sin markdown code blocks, sin texto adicional.' }] },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: isNaN(temperatura) ? 0.8 : temperatura,
+            maxOutputTokens: maxTokens,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+      console.log('[generate-article] Gemini responded status:', geminiResp.status);
+
+      // === 429: cuota agotada, esperar y reintentar ===
+      if (geminiResp.status === 429) {
+        let waitSec = 6;
+        try {
+          const errBody = await geminiResp.json();
+          const msg = errBody?.error?.message || '';
+          const m = msg.match(/retry\s+in\s+(\d+(?:\.\d+)?)\s*s/i);
+          if (m) waitSec = Math.ceil(parseFloat(m[1])) + 1;
+        } catch(_) {}
+        console.log(`[generate-article] 429 cuota agotada, esperando ${waitSec}s antes de reintentar...`);
+
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, waitSec * 1000));
+          continue;
         }
-      })
-    });
-    console.log('[generate-article] Gemini responded status:', geminiResp.status);
-  } catch (e) {
-    console.error('[generate-article] Fetch error:', e.message);
+        // Si era el último intento, seguir y devolver el error abajo
+      }
+
+      // Si llegamos aca con status OK o error distinto de 429, salimos del loop
+      break;
+    } catch (e) {
+      console.error(`[generate-article] Attempt ${attempt} fetch error:`, e.message);
+      lastError = e;
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 2000));
+      } else {
+        return new Response(JSON.stringify({
+          error: 'No se pudo conectar con Gemini API después de ' + maxRetries + ' intentos',
+          detail: e.message,
+          step: 'fetch_gemini'
+        }), { status: 502, headers: corsHeaders });
+      }
+    }
+  }
+
+  if (!geminiResp) {
     return new Response(JSON.stringify({
-      error: 'No se pudo conectar con Gemini API',
-      detail: e.message,
-      step: 'fetch_gemini'
+      error: 'Sin respuesta de Gemini',
+      detail: lastError?.message || 'unknown',
+      step: 'no_response'
     }), { status: 502, headers: corsHeaders });
   }
 
