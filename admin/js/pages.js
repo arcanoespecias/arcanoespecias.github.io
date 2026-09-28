@@ -6803,10 +6803,93 @@ const Pages = {
     '</div>' +
 
     '<input type="file" id="ba-img-input" accept="image/*" style="display:none" onchange="Pages._onBlogImageSelect(event)">';
+
+    // === Preservar estado del editor si esta abierto ===
+    // El listener global de Firebase re-renderiza el panel Blog entero en cada
+    // cambio remoto, lo que destruiria el editor y perderia el texto sin guardar.
+    // Capturamos el estado actual antes de reemplazar el HTML y lo restauramos despues.
+    var editorState = Pages._captureEditorState();
+    console.log('[blog-admin] editorState capturado:', editorState ? 'abierto' : 'cerrado');
+
     container.innerHTML = h;
     // Auto-publicar articulos programados cuya fecha ya llego
     Pages._autoPublishScheduled();
     Pages._loadBlogAdmin();
+
+    // === Restaurar editor si estaba abierto ===
+    if (editorState) {
+      // Dar tiempo a que _loadBlogAdmin() pinte la lista antes de reabrir el editor
+      setTimeout(function() {
+        Pages._restoreEditorState(editorState);
+      }, 50);
+    }
+  },
+
+  // === Captura el estado actual del editor (inputs + textarea + scroll) ===
+  // Retorna null si el editor no esta abierto
+  _captureEditorState: function() {
+    var editorCard = document.getElementById('ba-editor-card');
+    if (!editorCard || editorCard.style.display === 'none') return null;
+
+    var state = {
+      editKey: Pages._blogEditKey,
+      title: '',
+      fields: {}
+    };
+
+    // Capturar todos los inputs y textareas del editor
+    var editorBody = document.getElementById('ba-editor-body');
+    if (!editorBody) return state;
+
+    var fields = ['be-titulo', 'be-subtitulo', 'be-categoria', 'be-fecha', 'be-meta', 'be-keywords', 'be-contenido', 'be-imagen-url'];
+    for (var i = 0; i < fields.length; i++) {
+      var el = document.getElementById(fields[i]);
+      if (el) {
+        state.fields[fields[i]] = {
+          value: el.value,
+          selectionStart: el.selectionStart,
+          selectionEnd: el.selectionEnd
+        };
+      }
+    }
+
+    // Capturar el titulo del editor (Nuevo Articulo / Editar Articulo)
+    var titleEl = document.getElementById('ba-editor-title');
+    if (titleEl) state.title = titleEl.textContent;
+
+    // Scroll position del contenido
+    var contenido = document.getElementById('be-contenido');
+    if (contenido) state.contenidoScroll = contenido.scrollTop;
+
+    console.log('[blog-admin] Editor state capturado:', Object.keys(state.fields).length, 'campos');
+    return state;
+  },
+
+  // === Restaura el editor al estado capturado ===
+  _restoreEditorState: function(state) {
+    if (!state || !state.fields) return;
+    console.log('[blog-admin] Restaurando editor:', state.editKey ? 'editar' : 'nuevo');
+
+    // Reconstruir el editor con los datos capturados
+    Pages._blogEditKey = state.editKey;
+    Pages._renderEditor({
+      titulo: state.fields['be-titulo'] ? state.fields['be-titulo'].value : '',
+      subtitulo: state.fields['be-subtitulo'] ? state.fields['be-subtitulo'].value : '',
+      categoria: state.fields['be-categoria'] ? state.fields['be-categoria'].value : Pages._blogCategorias[0],
+      descripcion_meta: state.fields['be-meta'] ? state.fields['be-meta'].value : '',
+      keywords: state.fields['be-keywords'] ? state.fields['be-keywords'].value.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; }) : [],
+      contenido: state.fields['be-contenido'] ? state.fields['be-contenido'].value : '',
+      imagen_url: state.fields['be-imagen-url'] ? state.fields['be-imagen-url'].value : '',
+      fechaPublicacion: state.fields['be-fecha'] ? state.fields['be-fecha'].value : new Date().toISOString().slice(0, 16),
+      publicado: true
+    }, state.title);
+
+    // Restaurar posicion del cursor en el contenido (donde mas se rompe al re-render)
+    setTimeout(function() {
+      var contenido = document.getElementById('be-contenido');
+      if (contenido && state.contenidoScroll) contenido.scrollTop = state.contenidoScroll;
+      // No restaurar selectionStart porque a veces da problemas despues del re-render
+    }, 10);
   },
 
   // ============================================================
