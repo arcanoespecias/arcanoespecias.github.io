@@ -6876,7 +6876,7 @@ const Pages = {
   _callZaiAPI: function(prompt, cfg, statusEl) {
     return new Promise(function(resolve, reject) {
       if (statusEl) {
-        statusEl.innerHTML = '<span style="color:var(--gold)">Generando con IA de z.ai (GLM-4-Plus)...</span>';
+        statusEl.innerHTML = '<span style="color:var(--gold)">Generando con Gemini...</span>';
       }
 
       fetch('/api/generate-article', {
@@ -6891,15 +6891,23 @@ const Pages = {
         })
       })
       .then(function(res) {
-        if (!res.ok) {
-          return res.json().then(function(e) {
-            throw new Error((e && (e.detail || e.error)) || 'Error ' + res.status);
-          }).catch(function(parseErr) {
-            // Si ni siquiera podemos parsear el error, devolver generico
-            throw new Error('Error ' + res.status + ' desde /api/generate-article');
-          });
-        }
-        return res.json();
+        // Guardar status para diagnostico
+        var httpStatus = res.status;
+        return res.text().then(function(textBody) {
+          // Intentar parsear como JSON
+          var parsed;
+          try { parsed = JSON.parse(textBody); } catch(e) { parsed = null; }
+
+          if (!res.ok) {
+            var errMsg = (parsed && (parsed.detail || parsed.error)) || ('Error ' + httpStatus);
+            var err = new Error(errMsg);
+            err.status = httpStatus;
+            err.parsed = parsed;
+            err.rawBody = textBody.slice(0, 300);
+            throw err;
+          }
+          return parsed || { text: textBody };
+        });
       })
       .then(function(data) {
         if (!data || !data.text) {
@@ -7590,7 +7598,20 @@ const Pages = {
           btn.textContent = 'Generar Articulo';
         })
         .catch(function(err) {
-          status.innerHTML = '<span style="color:var(--red)">Error: ' + (err.message || err) + '</span>';
+          // Mensaje de error amigable segun el tipo de error
+          var errMsg = err.message || err;
+          var errColor = 'var(--red)';
+          // Si es 429 (cuota), mostrar mensaje especial con accion
+          if (err.status === 429 || errMsg.indexOf('cuota') !== -1 || errMsg.indexOf('429') !== -1) {
+            errMsg = '⏳ ' + errMsg + ' — Espera 1 minuto y vuelve a intentar.';
+            errColor = '#f59e0b'; // naranja en vez de rojo
+          } else if (err.status === 502) {
+            // Si el body crudo viene de Cloudflare (no JSON), dar hint
+            if (err.rawBody && err.rawBody.indexOf('error code: 502') !== -1) {
+              errMsg = 'El servicio de IA tardó demasiado (timeout). Espera 1 minuto y vuelve a intentar. Si persiste, puede ser que Gemini esté saturado.';
+            }
+          }
+          status.innerHTML = '<span style="color:' + errColor + '">Error: ' + errMsg + '</span>';
           btn.disabled = false;
           btn.textContent = 'Generar Articulo';
         });

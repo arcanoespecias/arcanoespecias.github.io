@@ -140,9 +140,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   // === Llamar a Gemini con auto-retry en 429 ===
+  // NOTA: Cloudflare Pages Functions tiene un timeout de 30s. Si Gemini
+  // devuelve 429 (cuota), el mensaje "retry in Xs" suele ser de 5-6s.
+  // Solo tenemos tiempo para 1 retry como maximo.
   console.log('[generate-article] Calling Gemini:', modelo);
 
-  const maxRetries = 3;
+  const maxRetries = 2;  // 1 intento + 1 retry max (por timeout de 30s)
   let geminiResp = null;
   let lastError = null;
 
@@ -165,22 +168,35 @@ export async function onRequestPost({ request, env }) {
       });
       console.log('[generate-article] Gemini responded status:', geminiResp.status);
 
-      // === 429: cuota agotada, esperar y reintentar ===
+      // === 429: cuota agotada ===
       if (geminiResp.status === 429) {
         let waitSec = 6;
+        let retryInMsg = '6s';
         try {
           const errBody = await geminiResp.json();
           const msg = errBody?.error?.message || '';
           const m = msg.match(/retry\s+in\s+(\d+(?:\.\d+)?)\s*s/i);
-          if (m) waitSec = Math.ceil(parseFloat(m[1])) + 1;
+          if (m) {
+            waitSec = Math.ceil(parseFloat(m[1])) + 1;
+            retryInMsg = waitSec + 's';
+          }
         } catch(_) {}
-        console.log(`[generate-article] 429 cuota agotada, esperando ${waitSec}s antes de reintentar...`);
 
-        if (attempt < maxRetries) {
+        if (attempt < maxRetries && waitSec <= 15) {
+          console.log(`[generate-article] 429 cuota agotada, esperando ${waitSec}s y reintentando...`);
           await new Promise(r => setTimeout(r, waitSec * 1000));
           continue;
         }
-        // Si era el último intento, seguir y devolver el error abajo
+        // Si waitSec > 15 o era ultimo intento, devolver error amigable sin mas retries
+        console.log(`[generate-article] 429 - devolviendo error al usuario (waitSec=${waitSec})`);
+        return new Response(JSON.stringify({
+          error: 'Cuota de Gemini agotada. Gemini pide esperar ' + retryInMsg + ' antes del proximo request.',
+          detail: 'El limite del free tier es 20 requests por minuto. Espera 1 minuto y vuelve a intentar.',
+          status: 429,
+          retryIn: retryInMsg,
+          step: 'gemini_429',
+          modelo: modelo
+        }), { status: 429, headers: corsHeaders });
       }
 
       // Si llegamos aca con status OK o error distinto de 429, salimos del loop
@@ -189,7 +205,7 @@ export async function onRequestPost({ request, env }) {
       console.error(`[generate-article] Attempt ${attempt} fetch error:`, e.message);
       lastError = e;
       if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1000));
       } else {
         return new Response(JSON.stringify({
           error: 'No se pudo conectar con Gemini API después de ' + maxRetries + ' intentos',
