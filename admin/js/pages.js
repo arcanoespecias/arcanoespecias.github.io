@@ -6838,13 +6838,15 @@ const Pages = {
     h += '<div class="card mb-16">' +
       '<div class="card-header"><h3>Generar Articulo de Blog con IA</h3></div>' +
       '<div class="card-body">' +
-        '<div class="form-group"><label>API Key de Gemini (gratis)</label>' +
-        '<div class="input-group">' +
-          '<input type="password" class="input" id="ba-gemini-key" placeholder="AIza... (obtenla gratis en aistudio.google.com)" value="' + savedKey.replace(/"/g, '&quot;') + '">' +
-          '<button class="btn btn-dark" onclick="Pages._saveBlogKey()">Guardar</button>' +
-          '<span id="ba-key-status">' + (savedKey ? ' <span style="color:var(--green)">guardada</span>' : '') + '</span>' +
+        '<div class="form-group"><label>API Keys de Gemini (una por linea)</label>' +
+        '<div class="input-group" style="align-items:flex-start;flex-direction:column;gap:8px">' +
+          '<textarea class="input" id="ba-gemini-key" rows="2" placeholder="AIza... (una clave por linea — puedes usar varias para repartir cuota)" style="font-family:monospace;font-size:0.85rem;resize:vertical;width:100%">' + savedKey.replace(/</g, '&lt;') + '</textarea>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            '<button class="btn btn-dark" onclick="Pages._saveBlogKey()">Guardar</button>' +
+            '<span id="ba-key-status">' + (savedKey ? ' <span style="color:var(--green)">guardada</span>' : '') + '</span>' +
+          '</div>' +
         '</div>' +
-        '<p class="text-sm text-muted mt-4">Obtene tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (no requiere tarjeta). Modelo y parametros se configuran arriba.</p>' +
+        '<p class="text-sm text-muted mt-4">Obtene tus claves gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (no requiere tarjeta). <b>Cada cuenta Google tiene su propia cuota de 20 req/min</b> — si pegas varias claves (de varias cuentas Google), el sistema las rota automaticamente.</p>' +
         '</div>' +
         '<div class="g2">' +
           '<div class="form-group"><label>Categoria</label>' +
@@ -6877,28 +6879,178 @@ const Pages = {
     Pages._loadBlogAdmin();
   },
 
+  _parseGeminiKeys: function(str) {
+    if (!str) return [];
+    return str.split(/[\n,]/)
+      .map(function(k) { return k.trim(); })
+      .filter(function(k) { return k.length > 0; });
+  },
+
+  // Llama a Gemini con reintentos automaticos en caso de cuota agotada (429).
+  // - keys: array de API keys (se rotan)
+  // - prompt: texto del prompt
+  // - cfg: configuracion de IA (modelo, temperatura, maxTokens)
+  // - statusEl: elemento HTML donde mostrar progreso (opcional)
+  // Retorna Promise que resuelve con el JSON de respuesta de Gemini.
+  _callGeminiWithRetry: function(keys, prompt, cfg, statusEl) {
+    return new Promise(function(resolve, reject) {
+      var attempt = 0;
+      var maxAttempts = Math.max(3, keys.length * 2);  // al menos 3 intentos
+      var keyIdx = 0;
+      var countdownInterval = null;
+
+      function cleanup() {
+        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+      }
+
+      function tryCall() {
+        var apiKey = keys[keyIdx % keys.length];
+        attempt++;
+
+        if (statusEl) {
+          var progressMsg = keys.length > 1
+            ? 'Generando con clave #' + ((keyIdx % keys.length) + 1) + ' de ' + keys.length + ' (intento ' + attempt + '/' + maxAttempts + ')...'
+            : 'Generando (intento ' + attempt + '/' + maxAttempts + ')...';
+          statusEl.innerHTML = '<span style="color:var(--gold)">' + progressMsg + '</span>';
+        }
+
+        var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + cfg.modelo + ':generateContent?key=' + apiKey;
+
+        fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: cfg.temperatura,
+              maxOutputTokens: cfg.maxTokens,
+              responseMimeType: 'application/json'
+            }
+          })
+        })
+        .then(function(res) {
+          // === Cuota agotada (429) ===
+          if (res.status === 429) {
+            return res.json().then(function(e) {
+              var errMsg = (e.error && e.error.message) || 'Cuota excedida';
+              var waitMatch = errMsg.match(/retry\s+in\s+(\d+(?:\.\d+)?)\s*s/i);
+              var waitMs = waitMatch ? parseFloat(waitMatch[1]) * 1000 + 500 : 5500;
+              waitMs = Math.min(waitMs, 30000);  // cap 30s
+              var waitSec = Math.ceil(waitMs / 1000);
+
+              if (attempt >= maxAttempts) {
+                cleanup();
+                var finalErr = 'Cuota agotada despues de ' + attempt + ' intentos. ';
+                if (keys.length === 1) {
+                  finalErr += 'Agrega mas claves de Gemini (varias cuentas Google) en el campo de arriba para repartir la carga.';
+                } else {
+                  finalErr += 'Todas las ' + keys.length + ' claves estan en cooldown. Intenta de nuevo en 1 minuto.';
+                }
+                reject(new Error(finalErr));
+                return null;
+              }
+
+              // Si hay varias claves, probar la siguiente rapidamente (sin esperar)
+              if (keys.length > 1) {
+                keyIdx++;
+                if (statusEl) {
+                  statusEl.innerHTML = '<span style="color:var(--gold)">Cuota agotada en clave #' + ((keyIdx - 1) % keys.length + 1) + '. Rotando a la siguiente...</span>';
+                }
+                setTimeout(tryCall, 300);
+                return null;  // sentinel: estamos reintentando
+              }
+
+              // Solo una clave: esperar el tiempo sugerido con countdown
+              if (statusEl) {
+                var remaining = waitSec;
+                statusEl.innerHTML = '<span style="color:var(--gold)">Limite de cuota. Reintentando en ' + remaining + 's...</span>';
+                countdownInterval = setInterval(function() {
+                  remaining--;
+                  if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                  } else if (statusEl) {
+                    statusEl.innerHTML = '<span style="color:var(--gold)">Reintentando en ' + remaining + 's...</span>';
+                  }
+                }, 1000);
+              }
+              setTimeout(tryCall, waitMs);
+              return null;  // sentinel
+            });
+          }
+
+          // === Otros errores HTTP ===
+          if (!res.ok) {
+            return res.text().then(function(bodyTxt) {
+              var msg = 'Error ' + res.status + ' ' + res.statusText;
+              try {
+                var e = JSON.parse(bodyTxt);
+                if (e.error && e.error.message) msg = e.error.message;
+                if (e.error && e.error.details) {
+                  for (var di = 0; di < e.error.details.length; di++) {
+                    if (e.error.details[di].reason === 'MODEL_DEPRECATED' || e.error.details[di].reason === 'NOT_FOUND') {
+                      msg += ' (Modelo: ' + cfg.modelo + ' no disponible. Revisa la configuracion de IA arriba.)';
+                    }
+                  }
+                }
+              } catch(pe) {
+                if (bodyTxt) msg += ' — ' + bodyTxt.slice(0, 200);
+              }
+              throw new Error(msg);
+            });
+          }
+
+          return res.json();
+        })
+        .then(function(data) {
+          if (data === null) return;  // sentinel: estamos reintentando
+          cleanup();
+          resolve(data);
+        })
+        .catch(function(err) {
+          cleanup();
+          reject(err);
+        });
+      }
+
+      tryCall();
+    });
+  },
+
   _saveBlogKey: function() {
     var inp = document.getElementById('ba-gemini-key');
     if (!inp) return;
-    var key = inp.value.trim();
+    var raw = inp.value;
+    var keys = Pages._parseGeminiKeys(raw);
     var statusEl = document.getElementById('ba-key-status');
-    if (!key) { if (statusEl) statusEl.innerHTML = ' <span style="color:var(--red)">vacia</span>'; return; }
-    localStorage.setItem('arcano_gemini_key', key);
-    firebase.database().ref('arcano/db/config/gemini_key').set(key);
-    if (statusEl) statusEl.innerHTML = ' <span style="color:var(--green)">guardada</span>';
+    if (keys.length === 0) {
+      if (statusEl) statusEl.innerHTML = ' <span style="color:var(--red)">vacia</span>';
+      return;
+    }
+    // Guardar raw (preserva newlines) para poder parsear despues
+    localStorage.setItem('arcano_gemini_key', raw);
+    firebase.database().ref('arcano/db/config/gemini_key').set(raw);
+    if (statusEl) {
+      var label = keys.length === 1 ? 'guardada' : (keys.length + ' claves guardadas');
+      statusEl.innerHTML = ' <span style="color:var(--green)">' + label + '</span>';
+    }
   },
 
   _loadGeminiKey: function(inputId, statusId) {
     var inp = document.getElementById(inputId);
     var statusEl = document.getElementById(statusId);
-    var localKey = localStorage.getItem('arcano_gemini_key') || '';
-    if (inp && localKey) inp.value = localKey;
+    var localRaw = localStorage.getItem('arcano_gemini_key') || '';
+    if (inp && localRaw) inp.value = localRaw;
     firebase.database().ref('arcano/db/config/gemini_key').once('value', function(snap) {
-      var fbKey = snap.val();
-      if (fbKey) {
-        localStorage.setItem('arcano_gemini_key', fbKey);
-        if (inp) inp.value = fbKey;
-        if (statusEl) statusEl.innerHTML = ' <span style="color:var(--green)">guardada</span>';
+      var fbRaw = snap.val();
+      if (fbRaw) {
+        localStorage.setItem('arcano_gemini_key', fbRaw);
+        if (inp) inp.value = fbRaw;
+        var keys = Pages._parseGeminiKeys(fbRaw);
+        if (statusEl) {
+          var label = keys.length === 1 ? 'guardada' : (keys.length + ' claves guardadas');
+          statusEl.innerHTML = ' <span style="color:var(--green)">' + label + '</span>';
+        }
       }
     });
   },
@@ -7140,7 +7292,14 @@ const Pages = {
     var categoria = catSelect.value;
     var tema = temaInput.value.trim();
 
-    if (!apiKey) { alert('Ingresa tu API Key de Gemini. Obtenla gratis en aistudio.google.com/apikey'); keyInput.focus(); return; }
+    // === Parsear multiples claves (una por linea) ===
+    var keys = Pages._parseGeminiKeys(apiKey);
+    if (keys.length === 0) {
+      alert('Ingresa al menos una API Key de Gemini. Obtenla gratis en aistudio.google.com/apikey');
+      keyInput.focus();
+      return;
+    }
+    // Guardar raw (preserva newlines si hay multiples claves)
     localStorage.setItem('arcano_gemini_key', apiKey);
 
     // === Cargar configuracion de IA ===
@@ -7288,45 +7447,7 @@ const Pages = {
 
         status.textContent = 'Consultando ' + cfg.modelo + ' (temp ' + cfg.temperatura + ', ' + cfg.maxTokens + ' tokens)...';
 
-        var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + cfg.modelo + ':generateContent?key=' + apiKey;
-
-        fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: cfg.temperatura,
-              maxOutputTokens: cfg.maxTokens,
-              responseMimeType: 'application/json'
-            }
-          })
-        })
-        .then(function(res) {
-          // Si no es 2xx, intentar leer el body como JSON primero; si no se puede, leer como texto.
-          if (!res.ok) {
-            return res.text().then(function(bodyTxt) {
-              var msg = 'Error ' + res.status + ' ' + res.statusText;
-              try {
-                var e = JSON.parse(bodyTxt);
-                if (e.error && e.error.message) msg = e.error.message;
-                // Si el error sugiere un modelo alternativo, lo incluimos
-                if (e.error && e.error.details) {
-                  for (var di = 0; di < e.error.details.length; di++) {
-                    if (e.error.details[di].reason === 'MODEL_DEPRECATED' || e.error.details[di].reason === 'NOT_FOUND') {
-                      msg += ' (Modelo: ' + cfg.modelo + ' no disponible. Revisa la configuracion de IA arriba.)';
-                    }
-                  }
-                }
-              } catch(pe) {
-                // El body no es JSON — incluir los primeros 200 chars
-                if (bodyTxt) msg += ' — ' + bodyTxt.slice(0, 200);
-              }
-              throw new Error(msg);
-            });
-          }
-          return res.json();
-        })
+        Pages._callGeminiWithRetry(keys, prompt, cfg, status)
         .then(function(data) {
           // === DIAGNOSTICO: manejar varias estructuras de respuesta ===
           // Caso 1: candidates[].content.parts[].text  (normal)
