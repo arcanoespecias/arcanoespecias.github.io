@@ -570,7 +570,12 @@ function renderProducts(filter) {
 function openDetail(pid) {
   var products = getStoreProducts();
   var currentIdx = -1;
-  for (var i = 0; i < products.length; i++) { if (products[i].id == pid) { currentIdx = i; break; } }
+  // Primero buscar packs (por si hay colisión de IDs con especias)
+  for (var i = 0; i < products.length; i++) { if (products[i].id == pid && products[i].tipo === 'pack') { currentIdx = i; break; } }
+  // Si no es pack, buscar cualquier producto con ese ID
+  if (currentIdx === -1) {
+    for (var i = 0; i < products.length; i++) { if (products[i].id == pid) { currentIdx = i; break; } }
+  }
   if (currentIdx === -1) return;
   _renderDetail(products, currentIdx);
 }
@@ -676,14 +681,16 @@ function _renderDetail(products, idx) {
     html += '<div id="config-blend-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px">';
     for (var cb = 0; cb < allBlends.length; cb++) {
       var bld = allBlends[cb];
-      html += '<div class="config-blend-chip" data-blend-id="' + bld.id + '" data-blend-name="' + (bld.nombre || '').replace(/"/g, '&quot;') + '" onclick="_toggleConfigBlend(this)" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:8px;padding:10px;cursor:pointer;text-align:center;transition:all .2s">';
-      html += '<div style="font-size:.8rem;color:#e8dcc4">' + (bld.nombre || '') + '</div>';
-      html += '<div style="font-size:.7rem;color:#a08b6e;margin-top:2px">' + (bld.categoria || '') + '</div>';
+      var bldImg = bld.imagen || '';
+      html += '<div class="config-blend-chip" data-blend-id="' + bld.id + '" data-blend-name="' + (bld.nombre || '').replace(/"/g, '&quot;') + '" onclick="_toggleConfigBlend(this)" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;overflow:hidden">';
+      if (bldImg) html += '<img src="' + bldImg + '" alt="' + (bld.nombre || '') + '" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">';
+      html += '<div style="font-size:.75rem;color:#e8dcc4;padding:4px">' + (bld.nombre || '') + '</div>';
       html += '</div>';
     }
     html += '</div>';
     html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount + ' seleccionados</div>';
-    html += '<button class="detail-price-card" style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer" id="config-add-cart-btn" onclick="_addConfigPackToCart(' + p.id + ',\'' + (p.nombre || '').replace(/'/g, "\\'") + '\,' + configPrice + ',\"' + configTalla + '",' + blendCount + ')" disabled>Agregar al carrito — $' + configPrice.toLocaleString() + '</button>';
+    html += '<button class="detail-price-card" style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" disabled>Agregar al carrito — $' + configPrice.toLocaleString() + '</button>';
+    html += '<script>document.getElementById("config-add-cart-btn").addEventListener("click", function() { _addConfigPackToCart(' + p.id + ', "' + (p.nombre || '').replace(/"/g, '\\"') + '", ' + configPrice + ', "' + configTalla + '", ' + blendCount + '); });</script>';
     html += '</div>';
     html += '<style>.config-blend-chip.selected{border-color:#c9a84c !important;background:rgba(201,168,76,.15) !important}.config-blend-chip:hover{border-color:#c9a84c}</style>';
   }
@@ -831,6 +838,31 @@ function _updateDetailContent(overlay, products, idx) {
   html += '<h2>' + p.nombre + '</h2>';
   if (tagsHtml) html += '<div class="detail-tags">' + tagsHtml + '</div>';
   html += descHtml + ingsHtml + _usosHtml(p);
+  // Pack configurable: selector de blends (duplicado de _renderDetail para swipe)
+  if (isPack && p.configurable && p.blendCount > 0) {
+    var allBlends2 = getStoreProducts().filter(function(b) { return b.tipo === 'blend' && (b.stockChico > 0 || b.stockGrande > 0); });
+    var blendCount2 = p.blendCount;
+    var configTalla2 = p.configTalla || 'chico';
+    var configPrice2 = p.precio || 0;
+    html += '<div class="detail-config-pack">';
+    html += '<div class="detail-ingredients-label">Elegí ' + blendCount2 + ' blends para tu pack</div>';
+    html += '<p class="text-xs text-muted" style="margin-bottom:12px">Seleccioná ' + blendCount2 + ' blends. Talla: ' + (configTalla2 === 'grande' ? 'Grande (80g)' : 'Pequeño (30g)') + '</p>';
+    html += '<div id="config-blend-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px">';
+    for (var cb2 = 0; cb2 < allBlends2.length; cb2++) {
+      var bld2 = allBlends2[cb2];
+      var bldImg = bld2.imagen || '';
+      html += '<div class="config-blend-chip" data-blend-id="' + bld2.id + '" data-blend-name="' + (bld2.nombre || '').replace(/"/g, '&quot;') + '" onclick="_toggleConfigBlend(this)" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;overflow:hidden">';
+      if (bldImg) html += '<img src="' + bldImg + '" alt="' + (bld2.nombre || '') + '" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">';
+      html += '<div style="font-size:.75rem;color:#e8dcc4;padding:4px">' + (bld2.nombre || '') + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount2 + ' seleccionados</div>';
+    html += '<button style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" disabled>Agregar al carrito — $' + configPrice2.toLocaleString() + '</button>';
+    html += '<script>document.getElementById("config-add-cart-btn").addEventListener("click", function() { _addConfigPackToCart(' + p.id + ', "' + (p.nombre || '').replace(/"/g, '\\"') + '", ' + configPrice2 + ', "' + configTalla2 + '", ' + blendCount2 + '); });</script>';
+    html += '</div>';
+    html += '<style>.config-blend-chip.selected{border-color:#c9a84c !important;background:rgba(201,168,76,.15) !important}.config-blend-chip:hover{border-color:#c9a84c}</style>';
+  }
   if (pricesHtml) html += '<div class="detail-prices-row">' + pricesHtml + '</div>';
   html += '</div>';
   // Actualizar el contenido del overlay
