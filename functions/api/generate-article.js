@@ -63,6 +63,16 @@ export async function onRequestPost({ request }) {
   const maxTokens = Number(config?.maxTokens) || 4000;
   console.log('[generate-article] Step 3: config parsed, temp=', temperatura, 'tokens=', maxTokens);
 
+  // === MODO TEST: si el prompt es exactamente "TEST", no llamar a z.ai ===
+  if (prompt === 'TEST') {
+    console.log('[generate-article] TEST mode: skipping z.ai call');
+    return new Response(JSON.stringify({
+      text: '{"titulo":"Test OK","subtitulo":"Respuesta de prueba sin z.ai","contenido":"<p>Test</p>"}',
+      model: 'test-mode',
+      usage: null
+    }), { headers: corsHeaders });
+  }
+
   // === PASO 4: Llamar a z.ai ===
   let zaiResp;
   try {
