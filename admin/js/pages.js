@@ -7470,11 +7470,14 @@ const Pages = {
   },
 
   _loadBlogAdmin: function() {
+    var listEl = document.getElementById('ba-list');
+    if (listEl) listEl.innerHTML = '<div class="text-center text-muted">Cargando...</div>';
     try {
       // IMPORTANTE: No usar orderByChild('fecha') porque requiere index en Firebase rules
       var ref = firebase.database().ref('arcano/db/blog');
       ref.once('value', function(snap) {
         var data = snap.val();
+        console.log('[blog-admin] Firebase response:', snap.exists() ? 'exists' : 'NOT exists', '— data:', data ? Object.keys(data).length + ' articulos' : 'null');
         var articulos = [];
         if (data) {
           var keys = Object.keys(data);
@@ -7483,16 +7486,23 @@ const Pages = {
             a._key = keys[i];
             articulos.push(a);
           }
+        } else {
+          console.warn('[blog-admin] Firebase devolvio null o vacio. Sugerencia: verificar reglas de Firebase, posibles filtros.');
         }
         // Sort en JS por fechaPublicacion (fallback a fecha para legacy)
         articulos.sort(function(a, b) {
           return (b.fechaPublicacion || b.fecha || '').localeCompare(a.fechaPublicacion || a.fecha || '');
         });
+        console.log('[blog-admin] Articulos a renderizar:', articulos.length);
         Pages._renderBlogList(articulos);
+      }, function(err) {
+        // Error callback de Firebase
+        console.error('[blog-admin] Firebase error:', err);
+        if (listEl) listEl.innerHTML = '<p class="text-center" style="color:var(--red)">Error al cargar: ' + (err.message || err.code || err) + '</p>';
       });
     } catch(e) {
-      var listEl = document.getElementById('ba-list');
-      if (listEl) listEl.innerHTML = '<p class="text-center text-muted">Error al cargar articulos.</p>';
+      console.error('[blog-admin] _loadBlogAdmin exception:', e);
+      if (listEl) listEl.innerHTML = '<p class="text-center text-muted">Error al cargar articulos: ' + (e.message || e) + '</p>';
     }
   },
 
