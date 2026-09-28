@@ -811,7 +811,9 @@ var _blogInited = false;
 function initBlog() {
   if (_blogInited) return;
   _blogInited = true;
-  var ref = firebase.database().ref('arcano/db/blog').orderByChild('fecha');
+  // IMPORTANTE: No usar orderByChild('fecha') porque requiere index en Firebase rules
+  // Hacemos el sort en JS despues de recibir los datos
+  var ref = firebase.database().ref('arcano/db/blog');
   ref.on('value', function(snap) {
     var d = snap.val();
     _blogPosts = [];
@@ -828,7 +830,8 @@ function initBlog() {
           var fp = new Date(p.fechaPublicacion).getTime();
           if (!isNaN(fp) && fp > ahora) continue;
         }
-        // 3. Borrador (publicado === false, sin programar) → no mostrar
+        // 3. Borrador (publicado === false explicito, sin programar) → no mostrar
+        //    Nota: si publicado es undefined (articulos legacy), se considera publicado
         if (p.publicado === false && p.programado !== true) continue;
         _blogPosts.push(p);
       }

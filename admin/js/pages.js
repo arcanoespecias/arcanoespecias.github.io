@@ -7471,7 +7471,8 @@ const Pages = {
 
   _loadBlogAdmin: function() {
     try {
-      var ref = firebase.database().ref('arcano/db/blog').orderByChild('fecha');
+      // IMPORTANTE: No usar orderByChild('fecha') porque requiere index en Firebase rules
+      var ref = firebase.database().ref('arcano/db/blog');
       ref.once('value', function(snap) {
         var data = snap.val();
         var articulos = [];
@@ -7483,7 +7484,10 @@ const Pages = {
             articulos.push(a);
           }
         }
-        articulos.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+        // Sort en JS por fechaPublicacion (fallback a fecha para legacy)
+        articulos.sort(function(a, b) {
+          return (b.fechaPublicacion || b.fecha || '').localeCompare(a.fechaPublicacion || a.fecha || '');
+        });
         Pages._renderBlogList(articulos);
       });
     } catch(e) {
