@@ -6785,7 +6785,7 @@ const Pages = {
         '<span class="text-sm text-muted" style="font-weight:400">(temperatura, tokens, tono, longitud)</span>' +
       '</summary>' +
       '<div class="card-body">' +
-        '<div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.85rem;color:var(--green)">Modelo IA: <b>GLM-4-Plus</b> (z.ai) — sin configuracion necesaria</div>' +
+        '<div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.85rem;color:var(--green)">Modelo IA: <b>Llama 3.3 70B</b> (Cloudflare Workers AI) — 10K/dia gratis</div>' +
         '<div class="g2">' +
           '<div class="form-group"><label>Temperatura: <span id="ba-cfg-temp-val" style="color:var(--gold);font-weight:700">0.8</span></label>' +
             '<input type="range" class="input" id="ba-cfg-temp" min="0" max="1.5" step="0.1" value="0.8" ' +
@@ -6828,12 +6828,12 @@ const Pages = {
     // === CARD GENERAR ARTICULO ===
     h += '<div class="card mb-16">' +
       '<div class="card-header"><h3>Generar Articulo de Blog con IA</h3>' +
-        '<span class="badge badge-green" style="margin-left:auto;align-self:center">IA de z.ai integrada</span>' +
+        '<span class="badge badge-green" style="margin-left:auto;align-self:center">Cloudflare Workers AI</span>' +
       '</div>' +
       '<div class="card-body">' +
         '<div style="background:rgba(34,197,94,0.1);border:1px solid var(--green);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">' +
           '<span style="font-size:1.2rem">✓</span>' +
-          '<span style="color:var(--green);font-size:0.85rem">Servicio de IA z.ai (GLM-4-Plus) integrado. No necesitas API keys ni configurar nada — el servicio ya está activo.</span>' +
+          '<span style="color:var(--green);font-size:0.85rem">IA integrada con Cloudflare Workers AI (Llama 3.3 70B). 10,000 generaciones gratuitas por dia.</span>' +
         '</div>' +
         '<div class="g2">' +
           '<div class="form-group"><label>Categoria</label>' +
@@ -7484,7 +7484,7 @@ const Pages = {
           'Escribe un articulo de blog categoria "' + categoria + '". ' + temaInstr + '\n' +
           'Recuerda: investiga keywords del mercado de especias en Colombia y usalas de forma sutil.';
 
-        status.textContent = 'Generando con IA de z.ai (GLM-4-Plus)...';
+        status.textContent = 'Generando con Cloudflare Workers AI (Llama 3.3 70B)...';
 
         Pages._callZaiAPI(prompt, cfg, status)
         .then(function(data) {
