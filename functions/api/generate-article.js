@@ -45,16 +45,30 @@ async function getApiKey(env) {
   }
 
   // 3. Leer de Firebase (public read)
+  //    Primero buscar en arcano/db/config/gemini_key (panel Blog)
+  //    Luego en arcano/db/chatbot/config/apiKey (panel Chatbot IA)
+  //    Aceptar cualquier de los 2 paths para compatibilidad.
   try {
-    const r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot.json');
-    if (!r.ok) return null;
-    const data = await r.json();
-    const key = data?.config?.apiKey;
-    // Aceptar formatos AIzaSy... (legacy) y AQ.... (nuevo Gemini 2026)
-    if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
-      _cachedKey = key;
-      _cachedKeyTs = Date.now();
-      return key;
+    // Intento 1: arcano/db/config/gemini_key
+    let r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/config/gemini_key.json');
+    if (r.ok) {
+      const key = await r.json();
+      // Aceptar formatos AIzaSy... (legacy) y AQ.... (nuevo Gemini 2026)
+      if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
+        _cachedKey = key;
+        _cachedKeyTs = Date.now();
+        return key;
+      }
+    }
+    // Intento 2: arcano/db/chatbot/config/apiKey
+    r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot/config/apiKey.json');
+    if (r.ok) {
+      const key = await r.json();
+      if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
+        _cachedKey = key;
+        _cachedKeyTs = Date.now();
+        return key;
+      }
     }
     return null;
   } catch (e) {
