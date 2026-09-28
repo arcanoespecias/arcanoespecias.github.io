@@ -153,7 +153,7 @@ function goTo(page) {
 function hasVisiblePacks() {
   var products = getStoreProducts();
   for (var i = 0; i < products.length; i++) {
-    if (products[i].tipo === 'pack' && (products[i].stock || 0) > 0) return true;
+    if (products[i].tipo === 'pack') return true;
   }
   return false;
 }

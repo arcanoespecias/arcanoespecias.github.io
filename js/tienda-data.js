@@ -746,8 +746,13 @@ function getStoreProducts() {
   for (var pi = 0; pi < pkKeys.length; pi++) {
     var pk = _sDb.packs[pkKeys[pi]];
     if (!pk || !pk.enTienda) continue;
-    var packStock = pk.stock || 0;
-    if (packStock <= 0) continue;
+    // Packs: si no hay stock definido (null/0), asumimos que está disponible
+    // para venta (los packs se arman al momento del pedido).
+    // Solo se filtra si stock fue explícitamente seteado en 0.
+    var packStock = pk.stock;
+    if (packStock === null || packStock === undefined || packStock === 0) {
+      packStock = 999;  // stock "ilimitado" si no se maneja stock de packs
+    }
     var pkUpdated = pk.imagenUpdatedAt || pk.actualizadoEn || pk.creado || 0;
     if (typeof pkUpdated === 'string') pkUpdated = new Date(pkUpdated).getTime() || 0;
     products.push({
