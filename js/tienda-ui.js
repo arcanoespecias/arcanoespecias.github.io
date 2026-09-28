@@ -682,12 +682,14 @@ function _renderDetail(products, idx) {
     for (var cb = 0; cb < allBlends.length; cb++) {
       var bld = allBlends[cb];
       var bldImg = bld.imagen || '';
-      html += '<div class="config-blend-chip" data-blend-id="' + bld.id + '" data-blend-name="' + (bld.nombre || '').replace(/"/g, '&quot;') + '" onclick="_toggleConfigBlend(this)" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;overflow:hidden">';
+      var bldDesc = (bld.descripcion || '').replace(/"/g, '&quot;').substring(0, 200);
+      html += '<div class="config-blend-chip" data-blend-id="' + bld.id + '" data-blend-name="' + (bld.nombre || '').replace(/"/g, '&quot;') + '" data-blend-desc="' + bldDesc + '" onclick="_toggleConfigBlend(this)" onmouseenter="_showBlendTooltip(this)" onmouseleave="_hideBlendTooltip()" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;overflow:hidden;position:relative">';
       if (bldImg) html += '<img src="' + bldImg + '" alt="' + (bld.nombre || '') + '" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">';
       html += '<div style="font-size:.75rem;color:#e8dcc4;padding:4px">' + (bld.nombre || '') + '</div>';
       html += '</div>';
     }
     html += '</div>';
+    html += '<div id="config-blend-tooltip" style="display:none;position:fixed;z-index:100000;background:#2d1a10;border:1px solid #c9a84c;border-radius:8px;padding:12px;max-width:260px;font-size:.8rem;color:#e8dcc4;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none"></div>';
     html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount + ' seleccionados</div>';
     html += '<button class="detail-price-card" style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" data-blend-count="' + blendCount + '" data-pack-id="' + p.id + '" data-pack-name="' + (p.nombre || '').replace(/"/g, '&quot;') + '" data-pack-price="' + configPrice + '" data-pack-talla="' + configTalla + '" disabled>Agregar al carrito — $' + configPrice.toLocaleString() + '</button>';
     html += '</div>';
@@ -720,6 +722,30 @@ function _renderDetail(products, idx) {
 }
 
 // === PACKS CONFIGURABLES ===
+function _showBlendTooltip(el) {
+  var tooltip = document.getElementById('config-blend-tooltip');
+  if (!tooltip) return;
+  var name = el.getAttribute('data-blend-name') || '';
+  var desc = el.getAttribute('data-blend-desc') || '';
+  if (!desc) desc = 'Sin descripción disponible';
+  tooltip.innerHTML = '<div style="color:#c9a84c;font-weight:700;margin-bottom:6px">' + name + '</div><div style="color:#e8dcc4;line-height:1.5">' + desc + '</div>';
+  tooltip.style.display = 'block';
+  // Posicionar cerca del elemento
+  var rect = el.getBoundingClientRect();
+  var tooltipWidth = 260;
+  var left = rect.right + 8;
+  if (left + tooltipWidth > window.innerWidth) left = rect.left - tooltipWidth - 8;
+  if (left < 0) left = rect.left;
+  var top = rect.top;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+
+function _hideBlendTooltip() {
+  var tooltip = document.getElementById('config-blend-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+}
+
 function _toggleConfigBlend(el) {
   el.classList.toggle('selected');
   var selected = document.querySelectorAll('.config-blend-chip.selected');
@@ -863,12 +889,14 @@ function _updateDetailContent(overlay, products, idx) {
     for (var cb2 = 0; cb2 < allBlends2.length; cb2++) {
       var bld2 = allBlends2[cb2];
       var bldImg = bld2.imagen || '';
-      html += '<div class="config-blend-chip" data-blend-id="' + bld2.id + '" data-blend-name="' + (bld2.nombre || '').replace(/"/g, '&quot;') + '" onclick="_toggleConfigBlend(this)" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;overflow:hidden">';
+      var bldDesc2 = (bld2.descripcion || '').replace(/"/g, '&quot;').substring(0, 200);
+      html += '<div class="config-blend-chip" data-blend-id="' + bld2.id + '" data-blend-name="' + (bld2.nombre || '').replace(/"/g, '&quot;') + '" data-blend-desc="' + bldDesc2 + '" onclick="_toggleConfigBlend(this)" onmouseenter="_showBlendTooltip(this)" onmouseleave="_hideBlendTooltip()" style="background:#2d1a10;border:1px solid #3a2a1e;border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;overflow:hidden;position:relative">';
       if (bldImg) html += '<img src="' + bldImg + '" alt="' + (bld2.nombre || '') + '" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px">';
       html += '<div style="font-size:.75rem;color:#e8dcc4;padding:4px">' + (bld2.nombre || '') + '</div>';
       html += '</div>';
     }
     html += '</div>';
+    html += '<div id="config-blend-tooltip" style="display:none;position:fixed;z-index:100000;background:#2d1a10;border:1px solid #c9a84c;border-radius:8px;padding:12px;max-width:260px;font-size:.8rem;color:#e8dcc4;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none"></div>';
     html += '<div id="config-selected-count" style="margin-top:12px;color:#a08b6e;font-size:.9rem">0 de ' + blendCount2 + ' seleccionados</div>';
     html += '<button style="margin-top:16px;width:100%;background:#c9a84c;color:#1b0b07;border:none;padding:14px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;opacity:.5" id="config-add-cart-btn" data-blend-count="' + blendCount2 + '" data-pack-id="' + p.id + '" data-pack-name="' + (p.nombre || '').replace(/"/g, '&quot;') + '" data-pack-price="' + configPrice2 + '" data-pack-talla="' + configTalla2 + '" disabled>Agregar al carrito — $' + configPrice2.toLocaleString() + '</button>';
     html += '</div>';
