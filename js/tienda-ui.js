@@ -1233,15 +1233,15 @@ function renderBlendBuilder() {
     h += '<p class="bb-step-desc">Selecciona el tama\u00F1o del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
-    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco peque\u00F1o"></div>';
-    h += '<div class="bb-size-card-info"><div class="bb-size-card-name">Peque\u00F1o</div>';
+    h += '<img src="icons/frasco-chico.png" alt="Peque\u00F1o" class="bb-size-card-img">';
+    h += '<div class="bb-size-card-name">Peque\u00F1o</div>';
     if (precioChico > 0) h += '<div class="bb-size-card-price">$' + precioChico.toLocaleString() + '</div>';
-    h += '</div></div>';
+    h += '</div>';
     h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
-    h += '<div class="bb-size-card-icon"><img src="icons/frasco-grande.png" alt="Frasco grande"></div>';
-    h += '<div class="bb-size-card-info"><div class="bb-size-card-name">Grande</div>';
+    h += '<img src="icons/frasco-grande.png" alt="Grande" class="bb-size-card-img">';
+    h += '<div class="bb-size-card-name">Grande</div>';
     if (precioGrande > 0) h += '<div class="bb-size-card-price">$' + precioGrande.toLocaleString() + '</div>';
-    h += '</div></div>';
+    h += '</div>';
     h += '</div></div>';
   }
 
@@ -1260,15 +1260,13 @@ function renderBlendBuilder() {
         if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
       }
       var safeName = especias[e].nombre.replace(/'/g, "\\'");
-      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 80) : '';
       var disabled = state.especias.length >= 5 && !isSelected;
       var cardCls = 'bb-esp-card' + (isSelected ? ' selected' : '') + (disabled ? ' disabled' : '');
       var clickHandler = disabled ? '' : (isSelected ? '_bbRemoveSpiceByName(\'' + safeName + '\')' : '_bbAddSpice(\'' + safeName + '\')');
-      h += '<div class="' + cardCls + '" onclick="' + clickHandler + '">';
-      h += '<div class="bb-esp-card-check">' + (isSelected ? '\u2713' : '+') + '</div>';
-      h += '<div class="bb-esp-card-name">' + especias[e].nombre + '</div>';
-      if (espDesc) h += '<div class="bb-esp-card-desc">' + espDesc + (especias[e].descripcion.length > 80 ? '...' : '') + '</div>';
-      h += '</div>';
+      h += '<button type="button" class="' + cardCls + '" onclick="' + clickHandler + '">';
+      h += '<span class="bb-esp-card-check">' + (isSelected ? '\u2713' : '+') + '</span>';
+      h += '<span class="bb-esp-card-name">' + especias[e].nombre + '</span>';
+      h += '</button>';
     }
     h += '</div></div>';
   }
@@ -1296,9 +1294,11 @@ function renderBlendBuilder() {
 
   // Step 6: Exito
   if (step === 6) {
+    var frascoFinal = state.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
     h += '<div class="bb-step-content bb-success">';
-    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fant\u00E1stico</h3>';
-    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho car\u00E1cter y estilo.</p>';
+    h += '<img src="' + frascoFinal + '" alt="Tu blend" class="bb-success-frasco">';
+    h += '<h3 class="bb-step-title bb-success-title">\u00A1Tu Blend est\u00E1 listo!</h3>';
+    h += '<p class="bb-step-desc bb-success-desc">' + (state.nombre || 'Tu blend') + ' ha quedado fant\u00E1stico.</p>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
     h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
