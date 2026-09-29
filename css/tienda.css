@@ -2450,3 +2450,259 @@ html.no-opening #opening-overlay {
     font-size: 0.78rem !important;
   }
 }
+/* ============================================================
+   ARMA TU BLEND — UI rediseñada + animación de preparación
+   ============================================================ */
+
+/* === Paso 2: cards de tamaño con precio visible === */
+.bb-size-card-cap {
+  font-size: 0.7rem; color: var(--text-muted); font-weight: 400;
+  margin-left: 4px;
+}
+.bb-size-card-price {
+  margin-top: 6px; font-size: 1.1rem; font-weight: 700;
+  color: var(--gold);
+}
+
+/* === Paso 3: grid de especias rediseñado === */
+.bb-selected-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px; padding: 8px 14px;
+  background: rgba(232,184,75,0.08);
+  border: 1px solid rgba(232,184,75,0.25);
+  border-radius: 8px; font-size: 0.85rem; color: var(--text-sec);
+}
+.bb-selected-pill {
+  background: var(--gold); color: #1b0b07;
+  padding: 2px 10px; border-radius: 100px;
+  font-weight: 700; font-size: 0.8rem;
+}
+.bb-esp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.bb-esp-card {
+  position: relative; padding: 16px 14px;
+  border: 2px solid var(--border-light);
+  border-radius: 12px; cursor: pointer;
+  background: var(--surface);
+  transition: all 0.2s ease;
+  min-height: 90px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.bb-esp-card:hover:not(.disabled) {
+  border-color: var(--gold);
+  background: rgba(232,184,75,0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(232,184,75,0.15);
+}
+.bb-esp-card.selected {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(232,184,75,0.12), rgba(232,184,75,0.04));
+  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+.bb-esp-card.disabled {
+  opacity: 0.4; cursor: not-allowed;
+}
+.bb-esp-check {
+  position: absolute; top: 10px; right: 10px;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700;
+  background: var(--surface); color: var(--gold);
+  border: 1.5px solid var(--gold);
+}
+.bb-esp-card.selected .bb-esp-check {
+  background: var(--gold); color: #1b0b07;
+}
+.bb-esp-name {
+  font-weight: 600; font-size: 0.95rem; color: var(--text);
+  padding-right: 28px;
+}
+.bb-esp-desc {
+  font-size: 0.75rem; color: var(--text-muted);
+  line-height: 1.3; max-height: 2.6em; overflow: hidden;
+}
+
+/* === Paso 4: proporciones rediseñado === */
+.bb-mix-preview {
+  margin-bottom: 20px;
+}
+.bb-mix-preview-bar {
+  display: flex; height: 36px; border-radius: 8px;
+  overflow: hidden; border: 1px solid var(--border-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.bb-mix-preview-seg {
+  transition: width 0.3s ease;
+  position: relative;
+}
+.bb-mix-preview-seg:not(:last-child) {
+  border-right: 1px solid rgba(0,0,0,0.2);
+}
+.bb-mix-row-v2 {
+  padding: 12px 14px; margin-bottom: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+}
+.bb-mix-row-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.bb-mix-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  flex-shrink: 0; box-shadow: 0 0 6px currentColor;
+}
+.bb-mix-name {
+  flex: 1; font-weight: 600; font-size: 0.95rem; color: var(--text);
+}
+.bb-mix-pct-val {
+  font-weight: 700; color: var(--gold); font-size: 1rem;
+  min-width: 50px; text-align: right;
+}
+.bb-mix-controls-v2 {
+  display: flex; align-items: center; gap: 10px;
+}
+.bb-pct-btn-v2 {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--gold); font-size: 1.1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s ease;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bb-pct-btn-v2:hover {
+  background: var(--gold); color: #1b0b07;
+}
+.bb-pct-slider {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 6px; border-radius: 3px;
+  background: var(--border-light);
+  outline: none; cursor: pointer;
+}
+.bb-pct-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--pct-color, var(--gold));
+  cursor: pointer; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.bb-pct-slider::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--pct-color, var(--gold));
+  cursor: pointer; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* === Animación "Preparando Blend" === */
+#bb-prep-overlay {
+  font-family: inherit;
+}
+.bb-prep-scene {
+  position: relative; width: 200px; height: 200px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: center;
+}
+.bb-prep-frasco {
+  animation: bb-prep-shake 0.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(232,184,75,0.6));
+  z-index: 2; position: relative;
+}
+@keyframes bb-prep-shake {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-8deg) translateY(-3px); }
+  50% { transform: rotate(0deg) translateY(0); }
+  75% { transform: rotate(8deg) translateY(-3px); }
+}
+.bb-prep-glow {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,184,75,0.4) 0%, rgba(199,85,63,0.2) 40%, transparent 70%);
+  animation: bb-prep-glow-pulse 1.5s ease-in-out infinite;
+  z-index: 1;
+}
+@keyframes bb-prep-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+.bb-prep-particles {
+  position: absolute; inset: 0;
+  z-index: 3; pointer-events: none;
+}
+.bb-particle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--p-color);
+  box-shadow: 0 0 8px var(--p-color);
+  animation: bb-particle-orbit var(--p-dur) ease-in-out infinite;
+  animation-delay: var(--p-delay);
+}
+@keyframes bb-particle-orbit {
+  0% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1; transform: translate(-50%, -50%) translate(60px, -40px) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(80px, 30px) scale(0.7);
+    opacity: 0.8;
+  }
+  80% {
+    transform: translate(-50%, -50%) translate(40px, 60px) scale(0.5);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(0);
+    opacity: 0;
+  }
+}
+.bb-prep-title {
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--gold); margin-bottom: 6px;
+  letter-spacing: 0.02em;
+  animation: bb-prep-title-fade 0.5s ease-out;
+}
+@keyframes bb-prep-title-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bb-prep-subtitle {
+  font-size: 1rem; color: var(--text-sec);
+  margin-bottom: 16px; max-width: 280px;
+  text-align: center;
+}
+.bb-prep-dots {
+  display: flex; gap: 4px;
+  color: var(--gold); font-size: 1.5rem; font-weight: 700;
+}
+.bb-prep-dots span {
+  animation: bb-prep-dot-bounce 1.4s ease-in-out infinite;
+}
+.bb-prep-dots span:nth-child(2) { animation-delay: 0.2s; }
+.bb-prep-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bb-prep-dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40% { transform: translateY(-8px); opacity: 1; }
+}
+
+/* === Responsive: cards más chicas en mobile === */
+@media (max-width: 640px) {
+  .bb-esp-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .bb-esp-card {
+    padding: 12px 10px; min-height: 80px;
+  }
+  .bb-esp-name { font-size: 0.85rem; }
+  .bb-esp-desc { display: none; }
+  .bb-mix-preview-bar { height: 28px; }
+  .bb-prep-title { font-size: 1.3rem; }
+  .bb-prep-scene { width: 160px; height: 160px; }
+  .bb-prep-frasco { width: 80px; height: 112px; }
+}

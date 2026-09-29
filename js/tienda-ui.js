@@ -1224,70 +1224,89 @@ function renderBlendBuilder() {
     h += '</div>';
   }
 
-  // Step 2: Tama\u00F1o
+  // Step 2: Tama\u00F1o — precios visibles siempre (sin click)
   if (step === 2) {
+    var precioChico = _getCustomBlendPrice('chico');
+    var precioGrande = _getCustomBlendPrice('grande');
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Elige el tama\u00F1o</h3>';
     h += '<p class="bb-step-desc">Selecciona el tama\u00F1o del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
     h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco peque\u00F1o"></div>';
-    h += '<div class="bb-size-card-name">Peque\u00F1o</div>';
-    if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
+    h += '<div class="bb-size-card-name">Peque\u00F1o <span class="bb-size-card-cap">30g</span></div>';
+    if (precioChico > 0) h += '<div class="bb-size-card-price">$' + precioChico.toLocaleString() + '</div>';
     h += '</div>';
     h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
     h += '<div class="bb-size-card-icon"><img src="icons/frasco-grande.png" alt="Frasco grande"></div>';
-    h += '<div class="bb-size-card-name">Grande</div>';
-    if (precio > 0 && state.talla === 'grande') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
+    h += '<div class="bb-size-card-name">Grande <span class="bb-size-card-cap">80g</span></div>';
+    if (precioGrande > 0) h += '<div class="bb-size-card-price">$' + precioGrande.toLocaleString() + '</div>';
     h += '</div>';
     h += '</div></div>';
   }
 
-  // Step 3: Especias
+  // Step 3: Especias — grid con cards visuales (UI redise\u00F1ada)
   if (step === 3) {
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Elige tus especias</h3>';
-    h += '<p class="bb-step-desc">Selecciona entre 2 y 5 especias para tu blend.</p>';
+    h += '<p class="bb-step-desc">Toca para seleccionar. M\u00EDnimo 2, m\u00E1ximo 5.</p>';
     if (state.especias.length > 0) {
-      h += '<div class="bb-selected-count">' + state.especias.length + ' de 5 seleccionadas</div>';
+      h += '<div class="bb-selected-bar"><span class="bb-selected-pill">' + state.especias.length + ' de 5</span> seleccionadas</div>';
     }
-    h += '<div class="bb-chips-grid">';
+    h += '<div class="bb-esp-grid">';
     for (var e = 0; e < especias.length; e++) {
       var isSelected = false;
       for (var s = 0; s < state.especias.length; s++) {
         if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
       }
       var safeName = especias[e].nombre.replace(/'/g, "\\'");
-      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 120) : '';
-      var tooltipHtml = espDesc ? '<span class="bb-chip-tooltip">' + espDesc + (especias[e].descripcion.length > 120 ? '...' : '') + '</span>' : '';
-      if (isSelected) {
-        h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">\u2713</span>' + tooltipHtml + '</button>';
-      } else {
-        var disabled = state.especias.length >= 5 ? ' disabled' : '';
-        h += '<button class="bb-chip' + disabled + '" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + tooltipHtml + '</button>';
-      }
+      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 100) : '';
+      var disabled = state.especias.length >= 5 && !isSelected;
+      var cardCls = 'bb-esp-card' + (isSelected ? ' selected' : '') + (disabled ? ' disabled' : '');
+      var clickHandler = isSelected ? '_bbRemoveSpiceByName(\'' + safeName + '\')' : '_bbAddSpice(\'' + safeName + '\')';
+      h += '<div class="' + cardCls + '" onclick="' + (disabled ? '' : clickHandler) + '">';
+      h += '<div class="bb-esp-check">' + (isSelected ? '\u2713' : '+') + '</div>';
+      h += '<div class="bb-esp-name">' + especias[e].nombre + '</div>';
+      if (espDesc) h += '<div class="bb-esp-desc">' + espDesc + (especias[e].descripcion.length > 100 ? '...' : '') + '</div>';
+      h += '</div>';
     }
     h += '</div></div>';
   }
 
-  // Step 4: Proporciones
+  // Step 4: Proporciones — UI redise\u00F1ada con barras visuales + colores
   if (step === 4) {
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Define las proporciones</h3>';
-    h += '<p class="bb-step-desc">Ajusta el porcentaje de cada especia. El total debe ser 100%.</p>';
+    h += '<p class="bb-step-desc">Arrastra los sliders para ajustar cada especia. El total debe sumar 100%.</p>';
+    // Barra de previsualizaci\u00F3n del blend (colores)
+    var blendColors = ['#c7553f', '#e8b84b', '#8a5a2c', '#6b8e4e', '#7a4a3a'];
+    h += '<div class="bb-mix-preview"><div class="bb-mix-preview-bar">';
+    var acc = 0;
+    for (var i = 0; i < state.especias.length; i++) {
+      var pct = state.especias[i].porcentaje;
+      var color = blendColors[i % blendColors.length];
+      h += '<div class="bb-mix-preview-seg" style="width:' + pct + '%;background:' + color + '" title="' + state.especias[i].nombre + ': ' + pct + '%"></div>';
+      acc += pct;
+    }
+    h += '</div></div>';
+    // Lista de especias con sliders
     h += '<div class="bb-mix-list">';
     for (var i = 0; i < state.especias.length; i++) {
       var sp = state.especias[i];
-      h += '<div class="bb-mix-row"><span class="bb-mix-name">' + sp.nombre + '</span><div class="bb-mix-controls">';
-      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',-5)">-</button>';
-      h += '<div class="bb-pct-display"><input class="bb-pct-input" id="bb-pct-' + i + '" type="number" min="1" max="100" value="' + sp.porcentaje + '" onchange="_bbSetPctDirect(' + i + ',this.value)"><span class="bb-pct-sym">%</span></div>';
-      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',5)">+</button>';
-      h += '</div></div>';
+      var color = blendColors[i % blendColors.length];
+      h += '<div class="bb-mix-row-v2">';
+      h += '<div class="bb-mix-row-head"><span class="bb-mix-dot" style="background:' + color + '"></span><span class="bb-mix-name">' + sp.nombre + '</span><span class="bb-mix-pct-val">' + sp.porcentaje + '%</span></div>';
+      h += '<div class="bb-mix-controls-v2">';
+      h += '<button class="bb-pct-btn-v2" onclick="_bbChangePct(' + i + ',-5)">\u2212</button>';
+      h += '<input class="bb-pct-slider" type="range" min="1" max="100" value="' + sp.porcentaje + '" oninput="_bbSetPctDirect(' + i + ',this.value)" style="--pct-color:' + color + '">';
+      h += '<button class="bb-pct-btn-v2" onclick="_bbChangePct(' + i + ',5)">+</button>';
+      h += '</div>';
+      h += '</div>';
     }
     h += '</div>';
     var barColor = total === 100 ? 'var(--success)' : (total > 100 ? 'var(--error)' : 'var(--gold)');
     h += '<div class="bb-total-section"><div class="bb-total-bar"><div class="bb-total-fill" style="width:' + Math.min(total, 100) + '%;background:' + barColor + '"></div></div>';
-    h += '<div class="bb-total-text" style="color:' + barColor + '">' + (total > 100 ? 'Excedes el 100%' : 'Total: ' + total + '%') + '</div></div>';
+    h += '<div class="bb-total-text" style="color:' + barColor + '">' + (total > 100 ? 'Excedes el 100%' : (total < 100 ? 'Te faltan ' + (100 - total) + '%' : '\u2713 Total: 100%')) + '</div></div>';
     h += '</div>';
   }
 
@@ -1303,7 +1322,7 @@ function renderBlendBuilder() {
     h += '</div></div>';
   }
 
-  // Step 5: Confirmar
+  // Step 5: Confirmar — bot\u00F3n cambia a "Preparar Blend"
   if (step === 5) {
     var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Peque\u00F1o';
     h += '<div class="bb-step-content">';
@@ -1333,7 +1352,7 @@ function renderBlendBuilder() {
     var canNext = _bbCanNext(step);
     h += '<button id="bb-btn-next" class="bb-nav-btn next' + (canNext ? '' : ' disabled') + '" onclick="_bbGoStep(' + (step + 1) + ')"' + (canNext ? '' : ' disabled') + '>Siguiente</button>';
   } else {
-    h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Agregar al carrito</button>';
+    h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Preparar Blend</button>';
   }
   h += '</div>';
   }
@@ -1408,10 +1427,80 @@ function addCustomBlendToCart() {
   for (var i = 0; i < _blendBuilderState.especias.length; i++) {
     customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
   }
-  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
-  saveCart(); updateCartBadge();
-  _blendBuilderState.step = 6;
-  renderBlendBuilder();
+
+  // === Animacion "Preparando Blend" (3 segundos) ===
+  _showBlendAnimation(_blendBuilderState, function() {
+    // Despues de la animacion: agregar al carrito
+    cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
+    saveCart(); updateCartBadge();
+    _blendBuilderState.step = 6;
+    renderBlendBuilder();
+  });
+}
+
+// === Animacion de "Preparando Blend" ===
+// Muestra overlay con frasco girando, particulas de colores, "mezclando..."
+function _showBlendAnimation(state, onComplete) {
+  // Crear overlay
+  var overlay = document.createElement('div');
+  overlay.id = 'bb-prep-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,10,7,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+
+  // Particulas de colores que orbitan el frasco
+  var colors = ['#c7553f', '#e8b84b', '#8a5a2c', '#6b8e4e', '#d4a574', '#a0522d'];
+  var particles = '';
+  for (var i = 0; i < 16; i++) {
+    var c = colors[i % colors.length];
+    var delay = (i * 0.15).toFixed(2);
+    var dur = (2 + Math.random()).toFixed(2);
+    particles += '<div class="bb-particle" style="--p-color:' + c + ';--p-delay:' + delay + 's;--p-dur:' + dur + 's"></div>';
+  }
+
+  // Frasco SVG animado (rotando + vibrando)
+  var frascoSvg = '<svg viewBox="0 0 100 140" width="100" height="140" class="bb-prep-frasco">' +
+    '<defs><linearGradient id="bbGlass" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="#3a2818" stop-opacity="0.9"/>' +
+    '<stop offset="0.5" stop-color="#1a0d08" stop-opacity="0.85"/>' +
+    '<stop offset="1" stop-color="#3a2818" stop-opacity="0.9"/>' +
+    '</linearGradient>' +
+    '<linearGradient id="bbContent" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#c7553f" stop-opacity="0.3"/>' +
+    '<stop offset="0.5" stop-color="#e8b84b" stop-opacity="0.95"/>' +
+    '<stop offset="1" stop-color="#8a5a2c" stop-opacity="0.95"/>' +
+    '</linearGradient></defs>' +
+    '<path d="M 30 20 L 30 8 L 70 8 L 70 20 Z" fill="#5a4030" stroke="#8a6f4f" stroke-width="1.5"/>' +
+    '<path d="M 28 20 Q 22 25, 22 35 L 22 120 Q 22 132, 32 132 L 68 132 Q 78 132, 78 120 L 78 35 Q 78 25, 72 20 Z" fill="url(#bbGlass)" stroke="#c9a86b" stroke-width="2"/>' +
+    '<rect x="28" y="55" width="44" height="65" rx="3" fill="url(#bbContent)" opacity="0.9"/>' +
+    '<ellipse cx="50" cy="58" rx="22" ry="4" fill="rgba(255,200,100,0.4)"/>' +
+    '<rect x="32" y="95" width="36" height="14" rx="2" fill="#1a0d08" opacity="0.7"/>' +
+    '<text x="50" y="105" text-anchor="middle" fill="#e8b84b" font-size="8" font-family="serif" font-weight="bold">' + (state.nombre || 'ARCANO').toUpperCase().substring(0, 12) + '</text>' +
+    '</svg>';
+
+  overlay.innerHTML =
+    '<div class="bb-prep-scene">' +
+      '<div class="bb-prep-particles">' + particles + '</div>' +
+      frascoSvg +
+      '<div class="bb-prep-glow"></div>' +
+    '</div>' +
+    '<div class="bb-prep-title">Preparando tu Blend</div>' +
+    '<div class="bb-prep-subtitle">' + (state.nombre || '') + '</div>' +
+    '<div class="bb-prep-dots"><span>.</span><span>.</span><span>.</span></div>';
+
+  document.body.appendChild(overlay);
+
+  // Forzar reflow para que la animacion arranque
+  void overlay.offsetWidth;
+
+  // Despues de 3 segundos, ejecutar onComplete y quitar overlay
+  setTimeout(function() {
+    // Fade out
+    overlay.style.transition = 'opacity 0.4s ease';
+    overlay.style.opacity = '0';
+    setTimeout(function() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      onComplete();
+    }, 400);
+  }, 3000);
 }
 
 
