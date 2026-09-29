@@ -1046,29 +1046,26 @@ function compartirReceta(key) {
     document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     _showToast('Receta copiada');
   }
-}/* === BLEND BUILDER v6 — El Frasco Alquímico ===
-   Experiencia tipo juego: frasco visual que se llena con capas de colores,
-   especias como gemas, proporciones con barra de segmentos clickeables.
-*/
+}
+
+/* === BLEND BUILDER v7 — Una pantalla, frasco real, sin scroll === */
 
 function _getEspeciasDisponibles() {
   if (!_sDb || !_sDb.especias) return [];
-  var especias = [];
+  var esp = [];
   var items = _sDb.especias;
   for (var i = 0; i < items.length; i++) {
     var e = items[i]; if (!e || !e.nombre) continue;
-    if ((e.stockBolsa || 0) > 0) especias.push({ nombre: e.nombre, id: e.id });
+    if ((e.stockBolsa || 0) > 0) esp.push({ nombre: e.nombre, id: e.id });
   }
-  especias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
-  return especias;
+  esp.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+  return esp;
 }
-
 function _getCustomBlendPrice(talla) {
   var config = getTiendaConfig();
   if (talla === 'grande') return config.precioBlendGrande || 0;
   return config.precioBlendChico || 0;
 }
-
 function _bbGetTotal() {
   var t = 0;
   for (var i = 0; i < _blendBuilderState.especias.length; i++) t += _blendBuilderState.especias[i].porcentaje;
@@ -1076,15 +1073,12 @@ function _bbGetTotal() {
 }
 
 var _BB_COLORS = ['#c7553f','#e8b84b','#8a5a2c','#6b8e4e','#7a4a3a'];
-var _BB_PCTS = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100];
-
-function _bbIsSel(n) { for (var i=0;i<_blendBuilderState.especias.length;i++){if(_blendBuilderState.especias[i].nombre===n)return true;} return false; }
-function _bbIdx(n) { for (var i=0;i<_blendBuilderState.especias.length;i++){if(_blendBuilderState.especias[i].nombre===n)return i;} return -1; }
+function _bbIsSel(n){for(var i=0;i<_blendBuilderState.especias.length;i++){if(_blendBuilderState.especias[i].nombre===n)return i;}return -1;}
 
 function renderBlendBuilder() {
   var c = document.getElementById('blend-builder');
   if (!c) return;
-  if (!_blendBuilderState._v6) _blendBuilderState = { nombre:'', talla:'', especias:[], _v6:true };
+  if (!_blendBuilderState._v7) _blendBuilderState = { nombre:'', talla:'', especias:[], _v7:true };
   _bbRender();
 }
 
@@ -1092,174 +1086,129 @@ function _bbRender() {
   var c = document.getElementById('blend-builder');
   if (!c) return;
   var s = _blendBuilderState;
-  var pChico = _getCustomBlendPrice('chico');
-  var pGrande = _getCustomBlendPrice('grande');
+  var pC = _getCustomBlendPrice('chico');
+  var pG = _getCustomBlendPrice('grande');
+  var frascoImg = s.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
 
-  var h = '<div class="bb6">';
+  var h = '<div class="bb7">';
 
-  // === FRASCO VISUAL CENTRAL ===
-  h += '<div class="bb6-frasco-stage">';
-  h += '<div class="bb6-frasco' + (s.talla ? ' active' : '') + '">';
-  h += '<div class="bb6-frasco-cap"></div>';
-  h += '<div class="bb6-frasco-neck"></div>';
-  h += '<div class="bb6-frasco-body">';
-  h += '<div class="bb6-frasco-layers">';
-  // Capas de colores (de abajo hacia arriba)
+  // === COLUMNA IZQUIERDA: Frasco real con overlay de capas ===
+  h += '<div class="bb7-left">';
+  h += '<div class="bb7-frasco-wrap">';
+  // Contenedor de capas (detras de la imagen)
+  h += '<div class="bb7-frasco-layers">';
   if (s.especias.length > 0) {
-    var acumulado = 0;
+    var acum = 0;
     for (var i = s.especias.length - 1; i >= 0; i--) {
       var sp = s.especias[i];
       var col = _BB_COLORS[i % _BB_COLORS.length];
-      var pct = sp.porcentaje;
-      h += '<div class="bb6-layer" style="height:' + pct + '%;background:linear-gradient(180deg,' + col + 'dd,' + col + '99);bottom:' + acumulado + '%"></div>';
-      acumulado += pct;
+      h += '<div class="bb7-layer" style="height:'+sp.porcentaje+'%;bottom:'+acum+'%;background:linear-gradient(180deg,'+col+'cc,'+col+'88)"></div>';
+      acum += sp.porcentaje;
     }
   }
   h += '</div>';
-  h += '<div class="bb6-frasco-shine"></div>';
-  // Etiqueta del frasco
-  if (s.nombre) {
-    h += '<div class="bb6-frasco-label">' + s.nombre.substring(0,15) + '</div>';
-  }
+  // Imagen del frasco real encima
+  h += '<img src="'+frascoImg+'" alt="Frasco" class="bb7-frasco-img">';
+  // Glow
+  if (s.especias.length > 0) h += '<div class="bb7-frasco-glow active"></div>';
+  else h += '<div class="bb7-frasco-glow"></div>';
+  // Label
+  if (s.nombre) h += '<div class="bb7-frasco-label">'+s.nombre.substring(0,12)+'</div>';
   h += '</div>';
+  // Selector de tamaño
+  h += '<div class="bb7-sizes">';
+  h += '<button class="bb7-size'+(s.talla==='chico'?' on':'')+'" onclick="_bbSetTalla(\'chico\')">Pequeño 30g<br>$'+pC.toLocaleString()+'</button>';
+  h += '<button class="bb7-size'+(s.talla==='grande'?' on':'')+'" onclick="_bbSetTalla(\'grande\')">Grande 80g<br>$'+pG.toLocaleString()+'</button>';
   h += '</div>';
-  // Glow debajo
-  h += '<div class="bb6-frasco-glow' + (s.especias.length > 0 ? ' active' : '') + '"></div>';
-  h += '</div>';
+  h += '</div>'; // bb7-left
 
-  // === SELECTOR DE FRASCO ===
-  if (!s.talla) {
-    h += '<div class="bb6-section-title">Elige tu frasco</div>';
-  }
-  h += '<div class="bb6-sizes">';
-  h += '<button class="bb6-size' + (s.talla==='chico'?' on':'') + '" onclick="_bbSetTalla(\'chico\')">';
-  h += '<img src="icons/frasco-chico.png" alt="">';
-  h += '<span class="bb6-size-name">Pequeño</span>';
-  h += '<span class="bb6-size-info">30g</span>';
-  h += '<span class="bb6-size-price">$' + pChico.toLocaleString() + '</span>';
-  h += '</button>';
-  h += '<button class="bb6-size' + (s.talla==='grande'?' on':'') + '" onclick="_bbSetTalla(\'grande\')">';
-  h += '<img src="icons/frasco-grande.png" alt="">';
-  h += '<span class="bb6-size-name">Grande</span>';
-  h += '<span class="bb6-size-info">80g</span>';
-  h += '<span class="bb6-size-price">$' + pGrande.toLocaleString() + '</span>';
-  h += '</button>';
-  h += '</div>';
+  // === COLUMNA DERECHA: todo lo demas ===
+  h += '<div class="bb7-right">';
 
-  // === ESPECIAS ===
-  h += '<div class="bb6-section">';
-  h += '<div class="bb6-section-title">Especias <span class="bb6-count">' + s.especias.length + '/5</span></div>';
+  // Especias disponibles — chips
+  h += '<div class="bb7-section">';
+  h += '<div class="bb7-label">Especias <span class="bb7-count">'+s.especias.length+'/5</span></div>';
+  h += '<div class="bb7-chips">';
   var especias = _getEspeciasDisponibles();
-  h += '<div class="bb6-esp-grid">';
   for (var i=0; i<especias.length; i++) {
-    var sel = _bbIsSel(especias[i].nombre);
+    var idx = _bbIsSel(especias[i].nombre);
+    var sel = idx >= 0;
     var dis = s.especias.length>=5 && !sel;
     var sn = especias[i].nombre.replace(/'/g,"\\'");
-    // Color basado en el index de seleccion (si esta seleccionada)
-    var colorIdx = sel ? _bbIdx(especias[i].nombre) : i;
-    var col = _BB_COLORS[colorIdx % _BB_COLORS.length];
-    h += '<button class="bb6-esp' + (sel?' on':'') + (dis?' off':'') + '" onclick="'+(dis?'':'_bbToggle(\''+sn+'\')')+'" style="--c:'+col+'">';
-    h += '<span class="bb6-esp-gem"></span>';
-    h += '<span class="bb6-esp-name">'+especias[i].nombre+'</span>';
-    if (sel) h += '<span class="bb6-esp-pct">'+s.especias[_bbIdx(especias[i].nombre)].porcentaje+'%</span>';
-    h += '</button>';
+    var col = sel ? _BB_COLORS[idx % _BB_COLORS.length] : _BB_COLORS[i % _BB_COLORS.length];
+    h += '<button class="bb7-chip'+(sel?' on':'')+(dis?' off':'')+'" style="--c:'+col+'" onclick="'+(dis?'':'_bbToggle(\''+sn+'\')')+'">'+especias[i].nombre+(sel?' ×':'')+'</button>';
   }
   h += '</div>';
   h += '</div>';
 
-  // === PROPORCIONES ===
+  // Especias seleccionadas con % — compacto
   if (s.especias.length > 0) {
-    h += '<div class="bb6-section">';
-    h += '<div class="bb6-section-title">Proporciones</div>';
-    h += '<div class="bb6-mix-list">';
+    h += '<div class="bb7-section">';
+    h += '<div class="bb7-label">Tu mezcla</div>';
+    h += '<div class="bb7-mix">';
     for (var i=0; i<s.especias.length; i++) {
       var sp = s.especias[i];
       var col = _BB_COLORS[i % _BB_COLORS.length];
-      h += '<div class="bb6-mix-item">';
-      h += '<div class="bb6-mix-head">';
-      h += '<span class="bb6-mix-dot" style="background:'+col+'"></span>';
-      h += '<span class="bb6-mix-name">'+sp.nombre+'</span>';
-      h += '<span class="bb6-mix-pct">'+sp.porcentaje+'%</span>';
-      h += '</div>';
-      // Barra de segmentos clickeables
-      h += '<div class="bb6-seg-bar" data-i="'+i+'">';
-      for (var pi=0; pi<_BB_PCTS.length; pi++) {
-        var p = _BB_PCTS[pi];
-        var other = _bbGetTotal() - sp.porcentaje;
-        var wouldX = (other + p) > 100;
-        var filled = p <= sp.porcentaje;
-        var sel2 = p === sp.porcentaje;
-        var cls = 'bb6-seg' + (filled?' filled':'') + (sel2?' sel':'') + (wouldX && !sel2?' x':'');
-        h += '<button class="'+cls+'"'+(wouldX && !sel2?' disabled':'')+' onclick="_bbSetPct('+i+','+p+')" style="--c:'+col+'" title="'+p+'%"></button>';
-      }
-      h += '<div class="bb6-seg-marks"><span>5</span><span>25</span><span>50</span><span>75</span><span>100</span></div>';
-      h += '</div>';
+      h += '<div class="bb7-mix-row">';
+      h += '<span class="bb7-mix-dot" style="background:'+col+'"></span>';
+      h += '<span class="bb7-mix-name">'+sp.nombre+'</span>';
+      h += '<div class="bb7-mix-bar"><div class="bb7-mix-fill" style="width:'+sp.porcentaje+'%;background:'+col+'"></div></div>';
+      h += '<button class="bb7-mix-btn" onclick="_bbChangePct('+i+',-5)">−</button>';
+      h += '<span class="bb7-mix-pct">'+sp.porcentaje+'%</span>';
+      h += '<button class="bb7-mix-btn" onclick="_bbChangePct('+i+',5)">+</button>';
       h += '</div>';
     }
     h += '</div>';
     // Total
     var total = _bbGetTotal();
     var bc = total===100?'#10b981':(total>100?'#ef4444':'#e8b84b');
-    var txt = total>100?'Excede 100%':(total<100?'Faltan '+(100-total)+'%':'¡Listo! 100%');
-    h += '<div class="bb6-total">';
-    h += '<div class="bb6-total-bar"><div class="bb6-total-fill" style="width:'+Math.min(total,100)+'%;background:'+bc+'"></div></div>';
-    h += '<span class="bb6-total-txt" style="color:'+bc+'">'+txt+'</span>';
-    h += '</div>';
+    var txt = total===100?'✓ 100%':'Faltan '+(100-total)+'%';
+    h += '<div class="bb7-total"><div class="bb7-total-bar"><div class="bb7-total-fill" style="width:'+Math.min(total,100)+'%;background:'+bc+'"></div></div><span style="color:'+bc+'">'+txt+'</span></div>';
     h += '</div>';
   }
 
-  // === NOMBRE + BOTÓN ===
-  h += '<div class="bb6-final">';
-  h += '<div class="bb6-name-wrap">';
-  h += '<input class="bb6-name" type="text" value="'+(s.nombre||'').replace(/"/g,'&quot;')+'" placeholder="Bautiza tu blend..." maxlength="30" oninput="_blendBuilderState.nombre=this.value;_bbUpdateFrascoLabel()">';
-  h += '</div>';
+  // Nombre + boton
+  h += '<div class="bb7-foot">';
+  h += '<input class="bb7-name" type="text" value="'+(s.nombre||'').replace(/"/g,'&quot;')+'" placeholder="Bautiza tu blend..." maxlength="30" oninput="_blendBuilderState.nombre=this.value;_bbUpdateLabel()">';
   var can = s.talla && s.especias.length>=2 && _bbGetTotal()===100 && s.nombre.trim();
   var precio = s.talla ? _getCustomBlendPrice(s.talla) : 0;
-  h += '<button class="bb6-go'+(can?'':' off')+'" '+(can?'':'disabled')+' onclick="addCustomBlendToCart()">';
-  h += '<span>Preparar Blend</span>';
+  h += '<button class="bb7-go'+(can?'':' off')+'" '+(can?'':'disabled')+' onclick="addCustomBlendToCart()">';
+  h += '<span>Preparar</span>';
   h += '<b>$'+(s.talla?precio.toLocaleString():'—')+'</b>';
   h += '</button>';
   h += '</div>';
 
-  h += '</div>';
+  h += '</div>'; // bb7-right
+  h += '</div>'; // bb7
+
   c.innerHTML = h;
 }
 
-function _bbUpdateFrascoLabel() {
-  // Update solo el label del frasco sin re-renderizar todo
-  var label = document.querySelector('.bb6-frasco-label');
-  if (label) {
-    label.textContent = _blendBuilderState.nombre.substring(0,15);
-  } else {
-    _bbRender();
-  }
+function _bbUpdateLabel() {
+  var l = document.querySelector('.bb7-frasco-label');
+  if (l) l.textContent = _blendBuilderState.nombre.substring(0,12);
+  else _bbRender();
 }
-
-function _bbSetTalla(t) {
-  _blendBuilderState.talla = t;
-  _bbRender();
-}
-
+function _bbSetTalla(t) { _blendBuilderState.talla = t; _bbRender(); }
 function _bbToggle(n) {
-  if (_bbIsSel(n)) {
-    var i = _bbIdx(n);
-    _blendBuilderState.especias.splice(i,1);
-  } else {
-    if (_blendBuilderState.especias.length>=5) return;
-    _blendBuilderState.especias.push({nombre:n,porcentaje:0});
-    _bbAutoDist();
-  }
+  var idx = _bbIsSel(n);
+  if (idx >= 0) { _blendBuilderState.especias.splice(idx,1); }
+  else { if (_blendBuilderState.especias.length>=5) return; _blendBuilderState.especias.push({nombre:n,porcentaje:0}); _bbAutoDist(); }
   _bbRender();
 }
-
-function _bbSetPct(i,p) {
+function _bbChangePct(i,d) {
   if (i<0||i>=_blendBuilderState.especias.length) return;
-  var other = _bbGetTotal() - _blendBuilderState.especias[i].porcentaje;
-  if (other + p > 100) return;
-  _blendBuilderState.especias[i].porcentaje = p;
+  var c = _blendBuilderState.especias[i].porcentaje;
+  var other = _bbGetTotal() - c;
+  var n = c + d;
+  if (n < 5) n = 5;
+  if (other + n > 100) n = 100 - other;
+  if (n < 5) n = 5;
+  // Redondear a multiplo de 5
+  n = Math.round(n/5)*5;
+  _blendBuilderState.especias[i].porcentaje = n;
   _bbRender();
 }
-
 function _bbAutoDist() {
   var n = _blendBuilderState.especias.length; if (!n) return;
   var base = Math.floor(100/n/5)*5;
@@ -1282,7 +1231,7 @@ function addCustomBlendToCart() {
   _showBlendAnim(s, function() {
     cart.push({productId:'custom-blend-'+Date.now(), nombre:cn, tipo:'custom-blend', talla:s.talla, precio:precio, qty:1, customBlend:cb});
     saveCart(); updateCartBadge();
-    _blendBuilderState = {nombre:'',talla:'',especias:[],_v6:true};
+    _blendBuilderState = {nombre:'',talla:'',especias:[],_v7:true};
     _bbRender();
     setTimeout(function(){ toggleCartDrawer(); }, 300);
   });
