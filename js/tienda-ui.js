@@ -1048,7 +1048,7 @@ function compartirReceta(key) {
   }
 }
 
-/* === BLEND BUILDER v8 — Frasco interactivo con etiquetas laterales === */
+/* === BLEND BUILDER v9 — Frasco real + drag labels + chips === */
 
 function _getEspeciasDisponibles() {
   if (!_sDb || !_sDb.especias) return [];
@@ -1075,10 +1075,13 @@ function _bbGetTotal() {
 var _BB_COLORS = ['#c7553f','#e8b84b','#8a5a2c','#6b8e4e','#7a4a3a'];
 function _bbIdx(n){for(var i=0;i<_blendBuilderState.especias.length;i++){if(_blendBuilderState.especias[i].nombre===n)return i;}return -1;}
 
+// Estado de drag
+var _bbDrag = { active: false, idx: -1, startY: 0, startPct: 0, containerH: 130 };
+
 function renderBlendBuilder() {
   var c = document.getElementById('blend-builder');
   if (!c) return;
-  if (!_blendBuilderState._v8) _blendBuilderState = { nombre:'', talla:'', especias:[], _v8:true };
+  if (!_blendBuilderState._v9) _blendBuilderState = { nombre:'', talla:'', especias:[], _v9:true };
   _bbRender();
 }
 
@@ -1088,176 +1091,178 @@ function _bbRender() {
   var s = _blendBuilderState;
   var pC = _getCustomBlendPrice('chico');
   var pG = _getCustomBlendPrice('grande');
-  var frascoImg = s.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
 
-  var h = '<div class="bb8">';
+  var h = '<div class="bb9">';
 
-  // === Selector de tamaño (arriba, compacto) ===
-  h += '<div class="bb8-sizes">';
-  h += '<button class="bb8-size'+(s.talla==='chico'?' on':'')+'" onclick="_bbSetTalla(\'chico\')">Pequeño 30g · $'+pC.toLocaleString()+'</button>';
-  h += '<button class="bb8-size'+(s.talla==='grande'?' on':'')+'" onclick="_bbSetTalla(\'grande\')">Grande 80g · $'+pG.toLocaleString()+'</button>';
+  // === Selector de tamaño (arriba) ===
+  h += '<div class="bb9-sizes">';
+  h += '<button class="bb9-size'+(s.talla==='chico'?' on':'')+'" onclick="_bbSetTalla(\'chico\')">Pequeño · $'+pC.toLocaleString()+'</button>';
+  h += '<button class="bb9-size'+(s.talla==='grande'?' on':'')+'" onclick="_bbSetTalla(\'grande\')">Grande · $'+pG.toLocaleString()+'</button>';
   h += '</div>';
 
-  // === Centro: frasco + etiquetas laterales ===
-  h += '<div class="bb8-stage">';
+  // === Chips de especias ===
+  h += '<div class="bb9-chips-section">';
+  h += '<div class="bb9-chips-label">Especias <span class="bb9-count">'+s.especias.length+'/5</span></div>';
+  h += '<div class="bb9-chips">';
+  var especias = _getEspeciasDisponibles();
+  for (var i=0; i<especias.length; i++) {
+    var idx = _bbIdx(especias[i].nombre);
+    var sel = idx >= 0;
+    var dis = s.especias.length>=5 && !sel;
+    var sn = especias[i].nombre.replace(/'/g,"\\'");
+    var col = sel ? _BB_COLORS[idx % _BB_COLORS.length] : _BB_COLORS[i % _BB_COLORS.length];
+    h += '<button class="bb9-chip'+(sel?' on':'')+(dis?' off':'')+'" style="--c:'+col+'" onclick="'+(dis?'':'_bbToggle(\''+sn+'\')')+'">'+especias[i].nombre+(sel?' ×':'')+'</button>';
+  }
+  h += '</div>';
+  h += '</div>';
 
-  // Etiquetas izquierda (especias 0, 2, 4)
-  h += '<div class="bb8-tags bb8-tags-left">';
+  // === Frasco central con etiquetas laterales arrastrables ===
+  h += '<div class="bb9-stage">';
+  h += '<div class="bb9-tags-left">';
   for (var i = 0; i < s.especias.length; i++) {
-    if (i % 2 === 0) {
-      var sp = s.especias[i];
-      var col = _BB_COLORS[i % _BB_COLORS.length];
-      // Posicion vertical = altura de la capa en el frasco
-      var acumulado = 0;
-      for (var j = 0; j < i; j++) acumulado += s.especias[j].porcentaje;
-      var midPct = acumulado + sp.porcentaje / 2;
-      var bottomPx = Math.round(midPct * 1.3); // 1.3px por %
-      h += '<div class="bb8-tag" style="bottom:'+bottomPx+'px;--c:'+col+'" onclick="_bbFocusEsp('+i+')">';
-      h += '<div class="bb8-tag-line"></div>';
-      h += '<div class="bb8-tag-body">';
-      h += '<span class="bb8-tag-name">'+sp.nombre+'</span>';
-      h += '<div class="bb8-tag-ctrl">';
-      h += '<button onclick="event.stopPropagation();_bbChangePct('+i+',-5)">−</button>';
-      h += '<span class="bb8-tag-pct">'+sp.porcentaje+'%</span>';
-      h += '<button onclick="event.stopPropagation();_bbChangePct('+i+',5)">+</button>';
-      h += '</div>';
-      h += '</div>';
-      h += '</div>';
-    }
+    if (i % 2 === 0) h += _bbRenderTag(s, i, 'left');
   }
   h += '</div>';
 
-  // Frasco central
-  h += '<div class="bb8-frasco-wrap">';
-  h += '<div class="bb8-frasco-layers">';
+  // Frasco
+  h += '<div class="bb9-frasco-wrap">';
+  h += '<div class="bb9-frasco-layers" id="bb9-layers">';
   if (s.especias.length > 0) {
     var acum = 0;
     for (var i = s.especias.length - 1; i >= 0; i--) {
       var sp = s.especias[i];
       var col = _BB_COLORS[i % _BB_COLORS.length];
-      h += '<div class="bb8-layer" style="height:'+sp.porcentaje+'%;bottom:'+acum+'%;background:linear-gradient(180deg,'+col+'dd,'+col+'99)" data-i="'+i+'"></div>';
+      h += '<div class="bb9-layer" style="height:'+sp.porcentaje+'%;bottom:'+acum+'%;background:linear-gradient(180deg,'+col+'cc,'+col+'77)"></div>';
       acum += sp.porcentaje;
     }
   }
   h += '</div>';
-  h += '<img src="'+frascoImg+'" alt="Frasco" class="bb8-frasco-img">';
-  if (s.especias.length > 0) h += '<div class="bb8-frasco-glow active"></div>';
-  else h += '<div class="bb8-frasco-glow"></div>';
-  if (s.nombre) h += '<div class="bb8-frasco-label">'+s.nombre.substring(0,12)+'</div>';
+  h += '<img src="icons/frasco-vacio.jpeg" alt="Frasco" class="bb9-frasco-img">';
+  if (s.especias.length > 0) h += '<div class="bb9-frasco-glow active"></div>';
+  else h += '<div class="bb9-frasco-glow"></div>';
+  if (s.nombre) h += '<div class="bb9-frasco-label">'+s.nombre.substring(0,14)+'</div>';
   h += '</div>';
 
-  // Etiquetas derecha (especias 1, 3)
-  h += '<div class="bb8-tags bb8-tags-right">';
+  h += '<div class="bb9-tags-right">';
   for (var i = 0; i < s.especias.length; i++) {
-    if (i % 2 === 1) {
-      var sp = s.especias[i];
-      var col = _BB_COLORS[i % _BB_COLORS.length];
-      var acumulado = 0;
-      for (var j = 0; j < i; j++) acumulado += s.especias[j].porcentaje;
-      var midPct = acumulado + sp.porcentaje / 2;
-      var bottomPx = Math.round(midPct * 1.3);
-      h += '<div class="bb8-tag" style="bottom:'+bottomPx+'px;--c:'+col+'" onclick="_bbFocusEsp('+i+')">';
-      h += '<div class="bb8-tag-body">';
-      h += '<span class="bb8-tag-name">'+sp.nombre+'</span>';
-      h += '<div class="bb8-tag-ctrl">';
-      h += '<button onclick="event.stopPropagation();_bbChangePct('+i+',-5)">−</button>';
-      h += '<span class="bb8-tag-pct">'+sp.porcentaje+'%</span>';
-      h += '<button onclick="event.stopPropagation();_bbChangePct('+i+',5)">+</button>';
-      h += '</div>';
-      h += '</div>';
-      h += '<div class="bb8-tag-line"></div>';
-      h += '</div>';
-    }
+    if (i % 2 === 1) h += _bbRenderTag(s, i, 'right');
   }
   h += '</div>';
+  h += '</div>'; // stage
 
-  h += '</div>'; // bb8-stage
-
-  // === Selector de especias (dropdown, no chips) ===
-  h += '<div class="bb8-selector">';
-  if (s.especias.length < 5) {
-    h += '<details class="bb8-dropdown">';
-    h += '<summary>+ Agregar especia</summary>';
-    h += '<div class="bb8-dropdown-list">';
-    var especias = _getEspeciasDisponibles();
-    for (var i = 0; i < especias.length; i++) {
-      var sel = _bbIdx(especias[i].nombre) >= 0;
-      if (sel) continue;
-      var sn = especias[i].nombre.replace(/'/g, "\\'");
-      var col = _BB_COLORS[s.especias.length % _BB_COLORS.length];
-      h += '<button class="bb8-dropdown-item" onclick="_bbAdd(\''+sn+'\')">';
-      h += '<span class="bb8-dropdown-dot" style="background:'+col+'"></span>';
-      h += especias[i].nombre;
-      h += '</button>';
-    }
-    h += '</div>';
-    h += '</details>';
-  }
-  // Lista de seleccionadas con opcion de quitar
-  if (s.especias.length > 0) {
-    h += '<div class="bb8-selected-list">';
-    for (var i = 0; i < s.especias.length; i++) {
-      var sp = s.especias[i];
-      var col = _BB_COLORS[i % _BB_COLORS.length];
-      h += '<button class="bb8-selected-tag" style="--c:'+col+'" onclick="_bbRemove('+i+')">'+sp.nombre+' ×</button>';
-    }
-    h += '</div>';
-  }
-  h += '</div>';
-
-  // === Total + nombre + boton (abajo, compacto) ===
-  h += '<div class="bb8-foot">';
-  // Total
+  // === Total ===
   var total = _bbGetTotal();
   var bc = total===100?'#10b981':(total>100?'#ef4444':'#e8b84b');
-  var txt = total===100?'✓':'Faltan '+(100-total)+'%';
-  h += '<div class="bb8-total"><div class="bb8-total-bar"><div class="bb8-total-fill" style="width:'+Math.min(total,100)+'%;background:'+bc+'"></div></div><span style="color:'+bc+'">'+txt+'</span></div>';
-  // Nombre
-  h += '<input class="bb8-name" type="text" value="'+(s.nombre||'').replace(/"/g,'&quot;')+'" placeholder="Bautiza tu blend..." maxlength="30" oninput="_blendBuilderState.nombre=this.value;_bbUpdateLabel()">';
-  // Boton
+  var txt = total===100?'✓ 100%':'Faltan '+(100-total)+'%';
+  h += '<div class="bb9-total"><div class="bb9-total-bar"><div class="bb9-total-fill" style="width:'+Math.min(total,100)+'%;background:'+bc+'"></div></div><span style="color:'+bc+'">'+txt+'</span></div>';
+
+  // === Nombre + boton ===
+  h += '<div class="bb9-foot">';
+  h += '<input class="bb9-name" type="text" value="'+(s.nombre||'').replace(/"/g,'&quot;')+'" placeholder="Bautiza tu blend..." maxlength="30" oninput="_blendBuilderState.nombre=this.value;_bbUpdateLabel()">';
   var can = s.talla && s.especias.length>=2 && total===100 && s.nombre.trim();
   var precio = s.talla ? _getCustomBlendPrice(s.talla) : 0;
-  h += '<button class="bb8-go'+(can?'':' off')+'" '+(can?'':'disabled')+' onclick="addCustomBlendToCart()"><span>Preparar</span><b>$'+(s.talla?precio.toLocaleString():'—')+'</b></button>';
+  h += '<button class="bb9-go'+(can?'':' off')+'" '+(can?'':'disabled')+' onclick="addCustomBlendToCart()"><span>Preparar</span><b>$'+(s.talla?precio.toLocaleString():'—')+'</b></button>';
   h += '</div>';
 
-  h += '</div>'; // bb8
+  h += '</div>';
   c.innerHTML = h;
+  _bbAttachDragListeners();
+}
+
+function _bbRenderTag(s, i, side) {
+  var sp = s.especias[i];
+  var col = _BB_COLORS[i % _BB_COLORS.length];
+  // Calcular posicion vertical basada en el % acumulado + mitad del propio
+  var acumulado = 0;
+  for (var j = 0; j < i; j++) acumulado += s.especias[j].porcentaje;
+  var midPct = acumulado + sp.porcentaje / 2;
+  // Mapear 0-100% a posicion vertical del contenedor de capas (130px height)
+  var bottomPx = Math.round(midPct * 1.3);
+  var h = '<div class="bb9-tag bb9-tag-'+side+'" style="bottom:'+bottomPx+'px;--c:'+col+'" data-idx="'+i+'">';
+  h += '<div class="bb9-tag-line"></div>';
+  h += '<div class="bb9-tag-body">';
+  h += '<span class="bb9-tag-name">'+sp.nombre+'</span>';
+  h += '<span class="bb9-tag-pct">'+sp.porcentaje+'%</span>';
+  h += '</div>';
+  // Indicator de arrastre
+  h += '<div class="bb9-tag-handle" title="Arrastra para cambiar %">⠿</div>';
+  h += '</div>';
+  return h;
+}
+
+// === Drag handlers ===
+function _bbAttachDragListeners() {
+  var tags = document.querySelectorAll('.bb9-tag');
+  for (var i = 0; i < tags.length; i++) {
+    var tag = tags[i];
+    var idx = parseInt(tag.getAttribute('data-idx'), 10);
+    // Mouse
+    tag.addEventListener('mousedown', function(e) { _bbDragStart(e, this.getAttribute('data-idx')); }.bind(tag));
+    tag.addEventListener('touchstart', function(e) { _bbDragStart(e, this.getAttribute('data-idx')); }.bind(tag), { passive: false });
+  }
+  // Global move/up
+  document.addEventListener('mousemove', _bbDragMove);
+  document.addEventListener('mouseup', _bbDragEnd);
+  document.addEventListener('touchmove', _bbDragMove, { passive: false });
+  document.addEventListener('touchend', _bbDragEnd);
+}
+
+function _bbDragStart(e, idxStr) {
+  var idx = parseInt(idxStr, 10);
+  if (isNaN(idx) || idx < 0 || idx >= _blendBuilderState.especias.length) return;
+  e.preventDefault();
+  var y = e.touches ? e.touches[0].clientY : e.clientY;
+  _bbDrag.active = true;
+  _bbDrag.idx = idx;
+  _bbDrag.startY = y;
+  _bbDrag.startPct = _blendBuilderState.especias[idx].porcentaje;
+  var layers = document.getElementById('bb9-layers');
+  _bbDrag.containerH = layers ? layers.offsetHeight : 130;
+  // Visual: marcar tag como activo
+  var tags = document.querySelectorAll('.bb9-tag');
+  for (var i = 0; i < tags.length; i++) {
+    if (parseInt(tags[i].getAttribute('data-idx'), 10) === idx) tags[i].classList.add('dragging');
+  }
+}
+
+function _bbDragMove(e) {
+  if (!_bbDrag.active) return;
+  e.preventDefault();
+  var y = e.touches ? e.touches[0].clientY : e.clientY;
+  var deltaPx = _bbDrag.startY - y; // positivo = arriba = aumentar %
+  var deltaPct = Math.round((deltaPx / _bbDrag.containerH) * 100 / 5) * 5; // multiplos de 5
+  var newPct = _bbDrag.startPct + deltaPct;
+  // Validar
+  if (newPct < 5) newPct = 5;
+  var otherTotal = _bbGetTotal() - _blendBuilderState.especias[_bbDrag.idx].porcentaje;
+  if (otherTotal + newPct > 100) newPct = 100 - otherTotal;
+  if (newPct < 5) newPct = 5;
+  // Solo actualizar si cambio
+  if (newPct !== _blendBuilderState.especias[_bbDrag.idx].porcentaje) {
+    _blendBuilderState.especias[_bbDrag.idx].porcentaje = newPct;
+    _bbRender();
+  }
+}
+
+function _bbDragEnd() {
+  if (!_bbDrag.active) return;
+  _bbDrag.active = false;
+  _bbDrag.idx = -1;
+  var tags = document.querySelectorAll('.bb9-tag.dragging');
+  for (var i = 0; i < tags.length; i++) tags[i].classList.remove('dragging');
 }
 
 function _bbUpdateLabel() {
-  var l = document.querySelector('.bb8-frasco-label');
-  if (l) l.textContent = _blendBuilderState.nombre.substring(0,12);
+  var l = document.querySelector('.bb9-frasco-label');
+  if (l) l.textContent = _blendBuilderState.nombre.substring(0,14);
   else _bbRender();
 }
 function _bbSetTalla(t) { _blendBuilderState.talla = t; _bbRender(); }
-function _bbAdd(n) {
-  if (_blendBuilderState.especias.length>=5) return;
-  if (_bbIdx(n) >= 0) return;
-  _blendBuilderState.especias.push({nombre:n,porcentaje:0});
-  _bbAutoDist();
+function _bbToggle(n) {
+  var idx = _bbIdx(n);
+  if (idx >= 0) { _blendBuilderState.especias.splice(idx,1); }
+  else { if (_blendBuilderState.especias.length>=5) return; _blendBuilderState.especias.push({nombre:n,porcentaje:0}); _bbAutoDist(); }
   _bbRender();
-}
-function _bbRemove(i) {
-  _blendBuilderState.especias.splice(i,1);
-  _bbRender();
-}
-function _bbChangePct(i,d) {
-  if (i<0||i>=_blendBuilderState.especias.length) return;
-  var c = _blendBuilderState.especias[i].porcentaje;
-  var other = _bbGetTotal() - c;
-  var n = c + d;
-  if (n < 5) n = 5;
-  if (other + n > 100) n = 100 - other;
-  if (n < 5) n = 5;
-  n = Math.round(n/5)*5;
-  _blendBuilderState.especias[i].porcentaje = n;
-  _bbRender();
-}
-function _bbFocusEsp(i) {
-  // Podria abrir un control inline, por ahora solo hace scroll
-  var tag = document.querySelectorAll('.bb8-tag')[i];
-  if (tag) tag.classList.add('pulse');
-  setTimeout(function(){ if(tag) tag.classList.remove('pulse'); }, 600);
 }
 function _bbAutoDist() {
   var n = _blendBuilderState.especias.length; if (!n) return;
@@ -1281,14 +1286,14 @@ function addCustomBlendToCart() {
   _showBlendAnim(s, function() {
     cart.push({productId:'custom-blend-'+Date.now(), nombre:cn, tipo:'custom-blend', talla:s.talla, precio:precio, qty:1, customBlend:cb});
     saveCart(); updateCartBadge();
-    _blendBuilderState = {nombre:'',talla:'',especias:[],_v8:true};
+    _blendBuilderState = {nombre:'',talla:'',especias:[],_v9:true};
     _bbRender();
     setTimeout(function(){ toggleCartDrawer(); }, 300);
   });
 }
 
 function _showBlendAnim(state, onComplete) {
-  var fi = state.talla==='grande'?'icons/frasco-grande.png':'icons/frasco-chico.png';
+  var fi = 'icons/frasco-vacio.jpeg';
   var o = document.createElement('div');
   o.id='bb-prep-overlay';
   o.style.cssText='position:fixed;inset:0;background:rgba(15,10,7,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
