@@ -1411,10 +1411,44 @@ function addCustomBlendToCart() {
   for (var i = 0; i < _blendBuilderState.especias.length; i++) {
     customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
   }
-  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
-  saveCart(); updateCartBadge();
-  _blendBuilderState.step = 6;
-  renderBlendBuilder();
+
+  // === Animacion "Preparando Blend" (3s) con frasco real ===
+  var frascoImg = _blendBuilderState.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
+  var overlay = document.createElement('div');
+  overlay.id = 'bb-prep-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,10,7,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+  var colors = ['#c7553f','#e8b84b','#8a5a2c','#6b8e4e','#d4a574','#a0522d'];
+  var particles = '';
+  for (var i = 0; i < 14; i++) {
+    var c = colors[i % colors.length];
+    var delay = (i * 0.18).toFixed(2);
+    var dur = (2.2 + Math.random() * 0.6).toFixed(2);
+    particles += '<div class="bb-particle" style="--p-color:' + c + ';--p-delay:' + delay + 's;--p-dur:' + dur + 's"></div>';
+  }
+  overlay.innerHTML =
+    '<div class="bb-prep-scene">' +
+      '<div class="bb-prep-particles">' + particles + '</div>' +
+      '<div class="bb-prep-glow"></div>' +
+      '<img src="' + frascoImg + '" alt="" class="bb-prep-frasco-img">' +
+    '</div>' +
+    '<div class="bb-prep-title">Preparando tu Blend</div>' +
+    '<div class="bb-prep-subtitle">' + nombre + '</div>' +
+    '<div class="bb-prep-dots"><span>.</span><span>.</span><span>.</span></div>';
+  document.body.appendChild(overlay);
+  void overlay.offsetWidth;
+
+  setTimeout(function() {
+    overlay.style.transition = 'opacity 0.4s ease';
+    overlay.style.opacity = '0';
+    setTimeout(function() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      // Agregar al carrito despues de la animacion
+      cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
+      saveCart(); updateCartBadge();
+      _blendBuilderState.step = 6;
+      renderBlendBuilder();
+    }, 400);
+  }, 3000);
 }
 
 
