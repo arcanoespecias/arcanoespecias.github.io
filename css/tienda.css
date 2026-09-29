@@ -2477,98 +2477,82 @@ html.no-opening #opening-overlay {
   padding: 2px 10px; border-radius: 100px;
   font-weight: 700; font-size: 0.8rem;
 }
-.bb-esp-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+.bb-esp-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
 }
-.bb-esp-card {
-  position: relative; padding: 16px 14px;
-  border: 2px solid var(--border-light);
-  border-radius: 12px; cursor: pointer;
-  background: var(--surface);
-  transition: all 0.2s ease;
-  min-height: 90px;
-  display: flex; flex-direction: column; gap: 6px;
+.bb-esp-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 100px;
+  border: 1.5px solid var(--border-light);
+  background: var(--surface); color: var(--text);
+  font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.15s ease;
+  user-select: none;
 }
-.bb-esp-card:hover:not(.disabled) {
+.bb-esp-pill:hover:not(.disabled) {
   border-color: var(--gold);
-  background: rgba(232,184,75,0.05);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(232,184,75,0.15);
+  background: rgba(232,184,75,0.08);
 }
-.bb-esp-card.selected {
+.bb-esp-pill.selected {
   border-color: var(--gold);
-  background: linear-gradient(135deg, rgba(232,184,75,0.12), rgba(232,184,75,0.04));
-  box-shadow: 0 0 0 1px var(--gold) inset;
+  background: var(--gold); color: #1b0b07;
+  font-weight: 600;
 }
-.bb-esp-card.disabled {
+.bb-esp-pill.disabled {
   opacity: 0.4; cursor: not-allowed;
 }
-.bb-esp-check {
-  position: absolute; top: 10px; right: 10px;
-  width: 24px; height: 24px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.85rem; font-weight: 700;
-  background: var(--surface); color: var(--gold);
-  border: 1.5px solid var(--gold);
-}
-.bb-esp-card.selected .bb-esp-check {
-  background: var(--gold); color: #1b0b07;
-}
-.bb-esp-name {
-  font-weight: 600; font-size: 0.95rem; color: var(--text);
-  padding-right: 28px;
-}
-.bb-esp-desc {
-  font-size: 0.75rem; color: var(--text-muted);
-  line-height: 1.3; max-height: 2.6em; overflow: hidden;
+.bb-esp-pill-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  background: #1b0b07; color: var(--gold);
+  border-radius: 50%; font-size: 0.7rem;
 }
 
-/* === Paso 4: proporciones rediseñado === */
+/* === Paso 4: proporciones compacto === */
 .bb-mix-preview {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .bb-mix-preview-bar {
-  display: flex; height: 36px; border-radius: 8px;
+  display: flex; height: 24px; border-radius: 6px;
   overflow: hidden; border: 1px solid var(--border-light);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .bb-mix-preview-seg {
-  transition: width 0.3s ease;
-  position: relative;
+  transition: width 0.2s ease;
 }
 .bb-mix-preview-seg:not(:last-child) {
   border-right: 1px solid rgba(0,0,0,0.2);
 }
+.bb-mix-list {
+  display: flex; flex-direction: column; gap: 10px;
+}
 .bb-mix-row-v2 {
-  padding: 12px 14px; margin-bottom: 10px;
+  padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .bb-mix-row-head {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px;
 }
 .bb-mix-dot {
-  width: 12px; height: 12px; border-radius: 50%;
-  flex-shrink: 0; box-shadow: 0 0 6px currentColor;
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
 }
 .bb-mix-name {
-  flex: 1; font-weight: 600; font-size: 0.95rem; color: var(--text);
+  flex: 1; font-weight: 600; font-size: 0.85rem; color: var(--text);
 }
 .bb-mix-pct-val {
-  font-weight: 700; color: var(--gold); font-size: 1rem;
-  min-width: 50px; text-align: right;
+  font-weight: 700; color: var(--gold); font-size: 0.9rem;
+  min-width: 40px; text-align: right;
 }
 .bb-mix-controls-v2 {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 8px;
 }
 .bb-pct-btn-v2 {
-  width: 32px; height: 32px; border-radius: 8px;
+  width: 28px; height: 28px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--bg);
-  color: var(--gold); font-size: 1.1rem; font-weight: 700;
+  color: var(--gold); font-size: 1rem; font-weight: 700;
   cursor: pointer; transition: all 0.15s ease;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -2578,22 +2562,22 @@ html.no-opening #opening-overlay {
 }
 .bb-pct-slider {
   flex: 1; -webkit-appearance: none; appearance: none;
-  height: 6px; border-radius: 3px;
+  height: 4px; border-radius: 2px;
   background: var(--border-light);
   outline: none; cursor: pointer;
 }
 .bb-pct-slider::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--pct-color, var(--gold));
-  cursor: pointer; border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer; border: 2px solid #1b0b07;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 .bb-pct-slider::-moz-range-thumb {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--pct-color, var(--gold));
-  cursor: pointer; border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer; border: 2px solid #1b0b07;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 /* === Animación "Preparando Blend" === */
@@ -2601,31 +2585,33 @@ html.no-opening #opening-overlay {
   font-family: inherit;
 }
 .bb-prep-scene {
-  position: relative; width: 200px; height: 200px;
-  margin-bottom: 24px;
+  position: relative; width: 180px; height: 180px;
+  margin-bottom: 20px;
   display: flex; align-items: center; justify-content: center;
 }
-.bb-prep-frasco {
-  animation: bb-prep-shake 0.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(232,184,75,0.6));
+.bb-prep-frasco-img {
+  width: 130px; height: 130px;
+  object-fit: contain;
+  animation: bb-prep-shake 0.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(232,184,75,0.5));
   z-index: 2; position: relative;
 }
 @keyframes bb-prep-shake {
   0%, 100% { transform: rotate(0deg) translateY(0); }
-  25% { transform: rotate(-8deg) translateY(-3px); }
+  25% { transform: rotate(-6deg) translateY(-2px); }
   50% { transform: rotate(0deg) translateY(0); }
-  75% { transform: rotate(8deg) translateY(-3px); }
+  75% { transform: rotate(6deg) translateY(-2px); }
 }
 .bb-prep-glow {
   position: absolute; inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(232,184,75,0.4) 0%, rgba(199,85,63,0.2) 40%, transparent 70%);
+  background: radial-gradient(circle, rgba(232,184,75,0.35) 0%, rgba(199,85,63,0.15) 40%, transparent 70%);
   animation: bb-prep-glow-pulse 1.5s ease-in-out infinite;
   z-index: 1;
 }
 @keyframes bb-prep-glow-pulse {
   0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.3); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 1; }
 }
 .bb-prep-particles {
   position: absolute; inset: 0;
@@ -2634,7 +2620,7 @@ html.no-opening #opening-overlay {
 .bb-particle {
   position: absolute;
   top: 50%; left: 50%;
-  width: 8px; height: 8px; border-radius: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
   background: var(--p-color);
   box-shadow: 0 0 8px var(--p-color);
   animation: bb-particle-orbit var(--p-dur) ease-in-out infinite;
@@ -2646,14 +2632,14 @@ html.no-opening #opening-overlay {
     opacity: 0;
   }
   20% {
-    opacity: 1; transform: translate(-50%, -50%) translate(60px, -40px) scale(1);
+    opacity: 1; transform: translate(-50%, -50%) translate(55px, -35px) scale(1);
   }
   50% {
-    transform: translate(-50%, -50%) translate(80px, 30px) scale(0.7);
+    transform: translate(-50%, -50%) translate(70px, 25px) scale(0.7);
     opacity: 0.8;
   }
   80% {
-    transform: translate(-50%, -50%) translate(40px, 60px) scale(0.5);
+    transform: translate(-50%, -50%) translate(35px, 50px) scale(0.5);
     opacity: 0.5;
   }
   100% {
@@ -2662,7 +2648,7 @@ html.no-opening #opening-overlay {
   }
 }
 .bb-prep-title {
-  font-size: 1.6rem; font-weight: 700;
+  font-size: 1.4rem; font-weight: 700;
   color: var(--gold); margin-bottom: 6px;
   letter-spacing: 0.02em;
   animation: bb-prep-title-fade 0.5s ease-out;
@@ -2672,13 +2658,13 @@ html.no-opening #opening-overlay {
   to { opacity: 1; transform: translateY(0); }
 }
 .bb-prep-subtitle {
-  font-size: 1rem; color: var(--text-sec);
+  font-size: 0.95rem; color: var(--text-sec);
   margin-bottom: 16px; max-width: 280px;
   text-align: center;
 }
 .bb-prep-dots {
   display: flex; gap: 4px;
-  color: var(--gold); font-size: 1.5rem; font-weight: 700;
+  color: var(--gold); font-size: 1.3rem; font-weight: 700;
 }
 .bb-prep-dots span {
   animation: bb-prep-dot-bounce 1.4s ease-in-out infinite;
@@ -2690,19 +2676,18 @@ html.no-opening #opening-overlay {
   40% { transform: translateY(-8px); opacity: 1; }
 }
 
-/* === Responsive: cards más chicas en mobile === */
+/* === Responsive: pills y slider compactos en mobile === */
 @media (max-width: 640px) {
-  .bb-esp-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
+  .bb-esp-pill {
+    padding: 7px 12px; font-size: 0.8rem;
   }
-  .bb-esp-card {
-    padding: 12px 10px; min-height: 80px;
-  }
-  .bb-esp-name { font-size: 0.85rem; }
-  .bb-esp-desc { display: none; }
-  .bb-mix-preview-bar { height: 28px; }
-  .bb-prep-title { font-size: 1.3rem; }
-  .bb-prep-scene { width: 160px; height: 160px; }
-  .bb-prep-frasco { width: 80px; height: 112px; }
+  .bb-mix-preview-bar { height: 20px; }
+  .bb-mix-row-v2 { padding: 8px 10px; }
+  .bb-mix-name { font-size: 0.8rem; }
+  .bb-pct-btn-v2 { width: 26px; height: 26px; }
+  .bb-pct-slider::-webkit-slider-thumb { width: 16px; height: 16px; }
+  .bb-pct-slider::-moz-range-thumb { width: 16px; height: 16px; }
+  .bb-prep-title { font-size: 1.2rem; }
+  .bb-prep-scene { width: 140px; height: 140px; }
+  .bb-prep-frasco-img { width: 100px; height: 100px; }
 }

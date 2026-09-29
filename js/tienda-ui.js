@@ -1187,33 +1187,43 @@ function _getCustomBlendPrice(talla) {
 function renderBlendBuilder() {
   var container = document.getElementById('blend-builder');
   if (!container) return;
-  var especias = _getEspeciasDisponibles();
   var state = _blendBuilderState;
-  var total = _bbGetTotal();
   var step = state.step || 1;
-  var precio = state.talla ? _getCustomBlendPrice(state.talla) : 0;
-  var activeId = null, selStart = null, selEnd = null;
-  if (document.activeElement && document.activeElement.id) {
-    activeId = document.activeElement.id;
-    if (document.activeElement.setSelectionRange) { selStart = document.activeElement.selectionStart; selEnd = document.activeElement.selectionEnd; }
-  }
 
   // Step indicators (hide on success)
   var steps = ['Nombre', 'Tama\u00F1o', 'Especias', 'Proporciones', 'Confirmar'];
   var h = '<div class="bb-container">';
   if (step < 6) {
-  h += '<div class="bb-steps">';
-  for (var si = 0; si < steps.length; si++) {
-    var sNum = si + 1;
-    var cls = 'bb-step';
-    if (sNum === step) cls += ' active';
-    else if (sNum < step) cls += ' done';
-    h += '<div class="' + cls + '">' +
-         '<div class="bb-step-num">' + (sNum < step ? '\u2713' : sNum) + '</div>' +
-         '<div class="bb-step-label">' + steps[si] + '</div></div>';
+    h += '<div class="bb-steps">';
+    for (var si = 0; si < steps.length; si++) {
+      var sNum = si + 1;
+      var cls = 'bb-step';
+      if (sNum === step) cls += ' active';
+      else if (sNum < step) cls += ' done';
+      h += '<div class="' + cls + '">' +
+           '<div class="bb-step-num">' + (sNum < step ? '\u2713' : sNum) + '</div>' +
+           '<div class="bb-step-label">' + steps[si] + '</div></div>';
+    }
+    h += '</div>';
   }
+
+  h += '<div class="bb-step-body" id="bb-step-body"></div>';
+  h += '<div class="bb-nav" id="bb-nav"></div>';
   h += '</div>';
-  }
+  container.innerHTML = h;
+
+  // Renderizar solo el body del step actual (sin tocar nav ni steps indicator)
+  _bbRenderStepBody();
+  _bbRenderNav();
+}
+
+// === Render SOLO del body del step actual (no toca nav ni steps) ===
+function _bbRenderStepBody() {
+  var body = document.getElementById('bb-step-body');
+  if (!body) return;
+  var state = _blendBuilderState;
+  var step = state.step;
+  var h = '';
 
   // Step 1: Nombre
   if (step === 1) {
@@ -1224,8 +1234,8 @@ function renderBlendBuilder() {
     h += '</div>';
   }
 
-  // Step 2: Tama\u00F1o — precios visibles siempre (sin click)
-  if (step === 2) {
+  // Step 2: Tama\u00F1o — precios visibles siempre
+  else if (step === 2) {
     var precioChico = _getCustomBlendPrice('chico');
     var precioGrande = _getCustomBlendPrice('grande');
     h += '<div class="bb-step-content">';
@@ -1245,85 +1255,67 @@ function renderBlendBuilder() {
     h += '</div></div>';
   }
 
-  // Step 3: Especias — grid con cards visuales (UI redise\u00F1ada)
-  if (step === 3) {
+  // Step 3: Especias — pills compactos (no cards grandes)
+  else if (step === 3) {
+    var especias = _getEspeciasDisponibles();
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Elige tus especias</h3>';
     h += '<p class="bb-step-desc">Toca para seleccionar. M\u00EDnimo 2, m\u00E1ximo 5.</p>';
-    if (state.especias.length > 0) {
-      h += '<div class="bb-selected-bar"><span class="bb-selected-pill">' + state.especias.length + ' de 5</span> seleccionadas</div>';
-    }
-    h += '<div class="bb-esp-grid">';
+    h += '<div class="bb-selected-bar" id="bb-selected-bar"></div>';
+    h += '<div class="bb-esp-pills" id="bb-esp-pills">';
     for (var e = 0; e < especias.length; e++) {
-      var isSelected = false;
-      for (var s = 0; s < state.especias.length; s++) {
-        if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
-      }
+      var isSelected = _bbIsSelected(especias[e].nombre);
       var safeName = especias[e].nombre.replace(/'/g, "\\'");
-      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 100) : '';
       var disabled = state.especias.length >= 5 && !isSelected;
-      var cardCls = 'bb-esp-card' + (isSelected ? ' selected' : '') + (disabled ? ' disabled' : '');
-      var clickHandler = isSelected ? '_bbRemoveSpiceByName(\'' + safeName + '\')' : '_bbAddSpice(\'' + safeName + '\')';
-      h += '<div class="' + cardCls + '" onclick="' + (disabled ? '' : clickHandler) + '">';
-      h += '<div class="bb-esp-check">' + (isSelected ? '\u2713' : '+') + '</div>';
-      h += '<div class="bb-esp-name">' + especias[e].nombre + '</div>';
-      if (espDesc) h += '<div class="bb-esp-desc">' + espDesc + (especias[e].descripcion.length > 100 ? '...' : '') + '</div>';
-      h += '</div>';
+      var cls = 'bb-esp-pill' + (isSelected ? ' selected' : '') + (disabled ? ' disabled' : '');
+      var click = disabled ? '' : (isSelected ? '_bbRemoveSpiceByName(\'' + safeName + '\')' : '_bbAddSpice(\'' + safeName + '\')');
+      h += '<button type="button" class="' + cls + '" data-name="' + especias[e].nombre.replace(/"/g, '&quot;') + '" onclick="' + click + '">' + especias[e].nombre + (isSelected ? ' <span class="bb-esp-pill-x">\u2713</span>' : '') + '</button>';
     }
     h += '</div></div>';
+    _bbUpdateSelectedBar();
   }
 
-  // Step 4: Proporciones — UI redise\u00F1ada con barras visuales + colores
-  if (step === 4) {
+  // Step 4: Proporciones — UI compacta, sliders limpios
+  else if (step === 4) {
+    var blendColors = ['#c7553f', '#e8b84b', '#8a5a2c', '#6b8e4e', '#7a4a3a'];
+    var total = _bbGetTotal();
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Define las proporciones</h3>';
-    h += '<p class="bb-step-desc">Arrastra los sliders para ajustar cada especia. El total debe sumar 100%.</p>';
-    // Barra de previsualizaci\u00F3n del blend (colores)
-    var blendColors = ['#c7553f', '#e8b84b', '#8a5a2c', '#6b8e4e', '#7a4a3a'];
-    h += '<div class="bb-mix-preview"><div class="bb-mix-preview-bar">';
-    var acc = 0;
+    h += '<p class="bb-step-desc">Ajusta cada especia. El total debe ser 100%.</p>';
+    // Barra visual de previsualizaci\u00F3n
+    h += '<div class="bb-mix-preview"><div class="bb-mix-preview-bar" id="bb-mix-preview-bar">';
     for (var i = 0; i < state.especias.length; i++) {
       var pct = state.especias[i].porcentaje;
       var color = blendColors[i % blendColors.length];
-      h += '<div class="bb-mix-preview-seg" style="width:' + pct + '%;background:' + color + '" title="' + state.especias[i].nombre + ': ' + pct + '%"></div>';
-      acc += pct;
+      h += '<div class="bb-mix-preview-seg" style="width:' + pct + '%;background:' + color + '"></div>';
     }
     h += '</div></div>';
-    // Lista de especias con sliders
-    h += '<div class="bb-mix-list">';
+    // Lista de especias con sliders — compacta
+    h += '<div class="bb-mix-list" id="bb-mix-list">';
     for (var i = 0; i < state.especias.length; i++) {
       var sp = state.especias[i];
       var color = blendColors[i % blendColors.length];
-      h += '<div class="bb-mix-row-v2">';
-      h += '<div class="bb-mix-row-head"><span class="bb-mix-dot" style="background:' + color + '"></span><span class="bb-mix-name">' + sp.nombre + '</span><span class="bb-mix-pct-val">' + sp.porcentaje + '%</span></div>';
+      h += '<div class="bb-mix-row-v2" data-idx="' + i + '">';
+      h += '<div class="bb-mix-row-head"><span class="bb-mix-dot" style="background:' + color + '"></span><span class="bb-mix-name">' + sp.nombre + '</span><span class="bb-mix-pct-val" id="bb-pct-val-' + i + '">' + sp.porcentaje + '%</span></div>';
       h += '<div class="bb-mix-controls-v2">';
-      h += '<button class="bb-pct-btn-v2" onclick="_bbChangePct(' + i + ',-5)">\u2212</button>';
-      h += '<input class="bb-pct-slider" type="range" min="1" max="100" value="' + sp.porcentaje + '" oninput="_bbSetPctDirect(' + i + ',this.value)" style="--pct-color:' + color + '">';
-      h += '<button class="bb-pct-btn-v2" onclick="_bbChangePct(' + i + ',5)">+</button>';
+      h += '<button type="button" class="bb-pct-btn-v2" onclick="_bbChangePct(' + i + ',-5)">\u2212</button>';
+      h += '<input class="bb-pct-slider" type="range" min="1" max="100" value="' + sp.porcentaje + '" data-idx="' + i + '" data-color="' + color + '" oninput="_bbOnSliderInput(' + i + ',this.value)">';
+      h += '<button type="button" class="bb-pct-btn-v2" onclick="_bbChangePct(' + i + ',5)">+</button>';
       h += '</div>';
       h += '</div>';
     }
     h += '</div>';
+    // Total
     var barColor = total === 100 ? 'var(--success)' : (total > 100 ? 'var(--error)' : 'var(--gold)');
-    h += '<div class="bb-total-section"><div class="bb-total-bar"><div class="bb-total-fill" style="width:' + Math.min(total, 100) + '%;background:' + barColor + '"></div></div>';
-    h += '<div class="bb-total-text" style="color:' + barColor + '">' + (total > 100 ? 'Excedes el 100%' : (total < 100 ? 'Te faltan ' + (100 - total) + '%' : '\u2713 Total: 100%')) + '</div></div>';
+    var totalTxt = total > 100 ? 'Excedes el 100%' : (total < 100 ? 'Te faltan ' + (100 - total) + '%' : '\u2713 Total: 100%');
+    h += '<div class="bb-total-section"><div class="bb-total-bar"><div class="bb-total-fill" id="bb-total-fill" style="width:' + Math.min(total, 100) + '%;background:' + barColor + '"></div></div>';
+    h += '<div class="bb-total-text" id="bb-total-text" style="color:' + barColor + '">' + totalTxt + '</div></div>';
     h += '</div>';
   }
 
-  // Step 6: Exito
-  if (step === 6) {
-    h += '<div class="bb-step-content bb-success">';
-    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fant\u00E1stico</h3>';
-    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho car\u00E1cter y estilo.</p>';
-    h += '<div class="bb-success-btns">';
-    h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
-    h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
-    h += '<button class="bb-nav-btn success" onclick="toggleCartDrawer()">Ver Carrito</button>';
-    h += '</div></div>';
-  }
-
-  // Step 5: Confirmar — bot\u00F3n cambia a "Preparar Blend"
-  if (step === 5) {
+  // Step 5: Confirmar
+  else if (step === 5) {
+    var precio = state.talla ? _getCustomBlendPrice(state.talla) : 0;
     var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Peque\u00F1o';
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Resumen de tu blend</h3>';
@@ -1340,9 +1332,29 @@ function renderBlendBuilder() {
     h += '</div></div>';
   }
 
-  // Navigation buttons (hide on success)
-  if (step < 6) {
-  h += '<div class="bb-nav">';
+  // Step 6: Exito
+  else if (step === 6) {
+    h += '<div class="bb-step-content bb-success">';
+    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fant\u00E1stico</h3>';
+    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho car\u00E1cter y estilo.</p>';
+    h += '<div class="bb-success-btns">';
+    h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
+    h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
+    h += '<button class="bb-nav-btn success" onclick="toggleCartDrawer()">Ver Carrito</button>';
+    h += '</div></div>';
+  }
+
+  body.innerHTML = h;
+}
+
+// === Render solo del nav (botones Atras/Siguiente) ===
+function _bbRenderNav() {
+  var nav = document.getElementById('bb-nav');
+  if (!nav) return;
+  var state = _blendBuilderState;
+  var step = state.step;
+  if (step >= 6) { nav.innerHTML = ''; return; }
+  var h = '';
   if (step > 1) {
     h += '<button class="bb-nav-btn prev" onclick="_bbGoStep(' + (step - 1) + ')">Atr\u00E1s</button>';
   } else {
@@ -1354,11 +1366,109 @@ function renderBlendBuilder() {
   } else {
     h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Preparar Blend</button>';
   }
-  h += '</div>';
+  nav.innerHTML = h;
+}
+
+// === Updates in-place (sin re-renderizar todo) ===
+
+function _bbIsSelected(nombre) {
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
+    if (_blendBuilderState.especias[i].nombre === nombre) return true;
   }
-  h += '</div>';
-  container.innerHTML = h;
-  if (activeId) { var el = document.getElementById(activeId); if (el) { el.focus(); if (selStart !== null) el.setSelectionRange(selStart, selEnd); } }
+  return false;
+}
+
+function _bbUpdateSelectedBar() {
+  var bar = document.getElementById('bb-selected-bar');
+  if (!bar) return;
+  var n = _blendBuilderState.especias.length;
+  if (n === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="bb-selected-pill">' + n + ' de 5</span> seleccionadas';
+}
+
+function _bbUpdateNextButton() {
+  var btn = document.getElementById('bb-btn-next');
+  if (!btn) return;
+  var canNext = _bbCanNext(_blendBuilderState.step);
+  if (canNext) {
+    btn.removeAttribute('disabled');
+    btn.classList.remove('disabled');
+  } else {
+    btn.setAttribute('disabled', '');
+    btn.classList.add('disabled');
+  }
+}
+
+// Toggle visual de una pill (sin re-render)
+function _bbTogglePillVisual(nombre) {
+  var pills = document.querySelectorAll('.bb-esp-pill');
+  for (var i = 0; i < pills.length; i++) {
+    var pillName = pills[i].getAttribute('data-name');
+    if (pillName === nombre) {
+      var isSelected = _bbIsSelected(nombre);
+      var safeName = nombre.replace(/'/g, "\\'");
+      if (isSelected) {
+        pills[i].classList.add('selected');
+        pills[i].classList.remove('disabled');
+        pills[i].setAttribute('onclick', '_bbRemoveSpiceByName(\'' + safeName + '\')');
+        pills[i].innerHTML = nombre + ' <span class="bb-esp-pill-x">\u2713</span>';
+      } else {
+        pills[i].classList.remove('selected');
+        var disabled = _blendBuilderState.especias.length >= 5;
+        if (disabled) {
+          pills[i].classList.add('disabled');
+          pills[i].setAttribute('onclick', '');
+        } else {
+          pills[i].classList.remove('disabled');
+          pills[i].setAttribute('onclick', '_bbAddSpice(\'' + safeName + '\')');
+        }
+        pills[i].innerHTML = nombre;
+      }
+    } else {
+      // Actualizar disabled de las otras pills si alcanzamos el limite
+      var otherSelected = _bbIsSelected(pills[i].getAttribute('data-name'));
+      var otherDisabled = _blendBuilderState.especias.length >= 5 && !otherSelected;
+      if (otherDisabled) {
+        pills[i].classList.add('disabled');
+        pills[i].setAttribute('onclick', '');
+      } else if (!otherSelected) {
+        pills[i].classList.remove('disabled');
+        var safeOther = pillName.replace(/'/g, "\\'");
+        pills[i].setAttribute('onclick', '_bbAddSpice(\'' + safeOther + '\')');
+      }
+    }
+  }
+  _bbUpdateSelectedBar();
+  _bbUpdateNextButton();
+}
+
+// Update in-place de sliders en paso 4 (sin re-render)
+function _bbUpdateMixUI() {
+  var state = _blendBuilderState;
+  var total = _bbGetTotal();
+  var blendColors = ['#c7553f', '#e8b84b', '#8a5a2c', '#6b8e4e', '#7a4a3a'];
+
+  // Update cada valor + slider
+  for (var i = 0; i < state.especias.length; i++) {
+    var valEl = document.getElementById('bb-pct-val-' + i);
+    if (valEl) valEl.textContent = state.especias[i].porcentaje + '%';
+    var slider = document.querySelector('.bb-pct-slider[data-idx="' + i + '"]');
+    if (slider && parseInt(slider.value, 10) !== state.especias[i].porcentaje) {
+      slider.value = state.especias[i].porcentaje;
+    }
+    // Update barra de previsualizacion segmento i
+    var seg = document.querySelector('.bb-mix-preview-seg:nth-child(' + (i + 1) + ')');
+    if (seg) seg.style.width = state.especias[i].porcentaje + '%';
+  }
+  // Update total
+  var barColor = total === 100 ? 'var(--success)' : (total > 100 ? 'var(--error)' : 'var(--gold)');
+  var totalTxt = total > 100 ? 'Excedes el 100%' : (total < 100 ? 'Te faltan ' + (100 - total) + '%' : '\u2713 Total: 100%');
+  var fill = document.getElementById('bb-total-fill');
+  if (fill) { fill.style.width = Math.min(total, 100) + '%'; fill.style.background = barColor; }
+  var txt = document.getElementById('bb-total-text');
+  if (txt) { txt.textContent = totalTxt; txt.style.color = barColor; }
+  _bbUpdateNextButton();
 }
 
 function _bbCanNext(step) {
@@ -1372,16 +1482,23 @@ function _bbCanNext(step) {
 
 function _bbOnNameInput(el) {
   _blendBuilderState.nombre = el.value;
-  var btn = document.getElementById('bb-btn-next');
-  if (!btn) return;
-  if (el.value.trim().length > 0) {
-    btn.removeAttribute('disabled');
-    btn.classList.remove('disabled');
-  } else {
-    btn.setAttribute('disabled', '');
-    btn.classList.add('disabled');
-  }
+  _bbUpdateNextButton();
 }
+
+// Slider input: actualizar valor + UI in-place (sin re-render completo)
+function _bbOnSliderInput(idx, val) {
+  var num = parseInt(val, 10);
+  if (isNaN(num) || num < 1) num = 1;
+  var o = _bbGetTotal() - _blendBuilderState.especias[idx].porcentaje;
+  if (o + num > 100) num = 100 - o;
+  if (num < 1) num = 1;
+  _blendBuilderState.especias[idx].porcentaje = num;
+  // Si el slider fue limitado por el total, actualizar su valor visual
+  var slider = document.querySelector('.bb-pct-slider[data-idx="' + idx + '"]');
+  if (slider && parseInt(slider.value, 10) !== num) slider.value = num;
+  _bbUpdateMixUI();
+}
+
 function _bbGoStep(n) {
   if (n > _blendBuilderState.step && !_bbCanNext(_blendBuilderState.step)) return;
   // Auto-distribute when entering step 4
@@ -1394,25 +1511,49 @@ function _bbGoStep(n) {
     }
   }
   _blendBuilderState.step = n;
-  renderBlendBuilder();
+  _bbRenderStepBody();
+  _bbRenderNav();
 }
 
 function _bbCreateAnother() { _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 }; renderBlendBuilder(); }
-function _bbSetTalla(t) { _blendBuilderState.talla = t; renderBlendBuilder(); }
+
+function _bbSetTalla(t) {
+  _blendBuilderState.talla = t;
+  // Update visual de las cards sin re-renderizar todo
+  var cards = document.querySelectorAll('.bb-size-card');
+  for (var i = 0; i < cards.length; i++) {
+    var isThis = (i === 0 && t === 'chico') || (i === 1 && t === 'grande');
+    if (isThis) cards[i].classList.add('selected');
+    else cards[i].classList.remove('selected');
+  }
+  _bbUpdateNextButton();
+}
+
 function _bbAddSpice(nombre) {
   if (_blendBuilderState.especias.length >= 5) return;
+  if (_bbIsSelected(nombre)) return;
   _blendBuilderState.especias.push({ nombre: nombre, porcentaje: 0 });
-  renderBlendBuilder();
+  _bbTogglePillVisual(nombre);
 }
-function _bbRemoveSpice(idx) { _blendBuilderState.especias.splice(idx, 1); renderBlendBuilder(); }
+
+function _bbRemoveSpice(idx) { _blendBuilderState.especias.splice(idx, 1); _bbRenderStepBody(); _bbUpdateNextButton(); }
 function _bbRemoveSpiceByName(nombre) {
   for (var i = 0; i < _blendBuilderState.especias.length; i++) {
     if (_blendBuilderState.especias[i].nombre === nombre) { _blendBuilderState.especias.splice(i, 1); break; }
   }
-  renderBlendBuilder();
+  _bbTogglePillVisual(nombre);
 }
-function _bbChangePct(idx, delta) { var c = _blendBuilderState.especias[idx].porcentaje; var o = _bbGetTotal() - c; var n = c + delta; if (n < 1) n = 1; if (o + n > 100) n = 100 - o; if (n < 1) n = 1; _blendBuilderState.especias[idx].porcentaje = n; renderBlendBuilder(); }
-function _bbSetPctDirect(idx, val) { var num = parseInt(val, 10); if (isNaN(num) || num < 1) num = 1; var o = _bbGetTotal() - _blendBuilderState.especias[idx].porcentaje; if (o + num > 100) num = 100 - o; if (num < 1) num = 1; _blendBuilderState.especias[idx].porcentaje = num; renderBlendBuilder(); }
+
+function _bbChangePct(idx, delta) {
+  var c = _blendBuilderState.especias[idx].porcentaje;
+  var o = _bbGetTotal() - c;
+  var n = c + delta;
+  if (n < 1) n = 1;
+  if (o + n > 100) n = 100 - o;
+  if (n < 1) n = 1;
+  _blendBuilderState.especias[idx].porcentaje = n;
+  _bbUpdateMixUI();
+}
 function addCustomBlendToCart() {
   var nombreInput = document.getElementById('bb-name');
   var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
@@ -1439,8 +1580,12 @@ function addCustomBlendToCart() {
 }
 
 // === Animacion de "Preparando Blend" ===
-// Muestra overlay con frasco girando, particulas de colores, "mezclando..."
+// Muestra overlay con frasco real de Arcano (icons/frasco-chico.png o grande.png)
+// que vibra y rotación suave, con partículas de colores orbitando
 function _showBlendAnimation(state, onComplete) {
+  // Elegir frasco según talla
+  var frascoImg = state.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
+
   // Crear overlay
   var overlay = document.createElement('div');
   overlay.id = 'bb-prep-overlay';
@@ -1449,38 +1594,18 @@ function _showBlendAnimation(state, onComplete) {
   // Particulas de colores que orbitan el frasco
   var colors = ['#c7553f', '#e8b84b', '#8a5a2c', '#6b8e4e', '#d4a574', '#a0522d'];
   var particles = '';
-  for (var i = 0; i < 16; i++) {
+  for (var i = 0; i < 14; i++) {
     var c = colors[i % colors.length];
-    var delay = (i * 0.15).toFixed(2);
-    var dur = (2 + Math.random()).toFixed(2);
+    var delay = (i * 0.18).toFixed(2);
+    var dur = (2.2 + Math.random() * 0.6).toFixed(2);
     particles += '<div class="bb-particle" style="--p-color:' + c + ';--p-delay:' + delay + 's;--p-dur:' + dur + 's"></div>';
   }
-
-  // Frasco SVG animado (rotando + vibrando)
-  var frascoSvg = '<svg viewBox="0 0 100 140" width="100" height="140" class="bb-prep-frasco">' +
-    '<defs><linearGradient id="bbGlass" x1="0" y1="0" x2="1" y2="1">' +
-    '<stop offset="0" stop-color="#3a2818" stop-opacity="0.9"/>' +
-    '<stop offset="0.5" stop-color="#1a0d08" stop-opacity="0.85"/>' +
-    '<stop offset="1" stop-color="#3a2818" stop-opacity="0.9"/>' +
-    '</linearGradient>' +
-    '<linearGradient id="bbContent" x1="0" y1="0" x2="0" y2="1">' +
-    '<stop offset="0" stop-color="#c7553f" stop-opacity="0.3"/>' +
-    '<stop offset="0.5" stop-color="#e8b84b" stop-opacity="0.95"/>' +
-    '<stop offset="1" stop-color="#8a5a2c" stop-opacity="0.95"/>' +
-    '</linearGradient></defs>' +
-    '<path d="M 30 20 L 30 8 L 70 8 L 70 20 Z" fill="#5a4030" stroke="#8a6f4f" stroke-width="1.5"/>' +
-    '<path d="M 28 20 Q 22 25, 22 35 L 22 120 Q 22 132, 32 132 L 68 132 Q 78 132, 78 120 L 78 35 Q 78 25, 72 20 Z" fill="url(#bbGlass)" stroke="#c9a86b" stroke-width="2"/>' +
-    '<rect x="28" y="55" width="44" height="65" rx="3" fill="url(#bbContent)" opacity="0.9"/>' +
-    '<ellipse cx="50" cy="58" rx="22" ry="4" fill="rgba(255,200,100,0.4)"/>' +
-    '<rect x="32" y="95" width="36" height="14" rx="2" fill="#1a0d08" opacity="0.7"/>' +
-    '<text x="50" y="105" text-anchor="middle" fill="#e8b84b" font-size="8" font-family="serif" font-weight="bold">' + (state.nombre || 'ARCANO').toUpperCase().substring(0, 12) + '</text>' +
-    '</svg>';
 
   overlay.innerHTML =
     '<div class="bb-prep-scene">' +
       '<div class="bb-prep-particles">' + particles + '</div>' +
-      frascoSvg +
       '<div class="bb-prep-glow"></div>' +
+      '<img src="' + frascoImg + '" alt="Frasco" class="bb-prep-frasco-img">' +
     '</div>' +
     '<div class="bb-prep-title">Preparando tu Blend</div>' +
     '<div class="bb-prep-subtitle">' + (state.nombre || '') + '</div>' +
