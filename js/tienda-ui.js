@@ -1226,20 +1226,22 @@ function renderBlendBuilder() {
 
   // Step 2: Tama\u00F1o
   if (step === 2) {
+    var precioChico = _getCustomBlendPrice('chico');
+    var precioGrande = _getCustomBlendPrice('grande');
     h += '<div class="bb-step-content">';
     h += '<h3 class="bb-step-title">Elige el tama\u00F1o</h3>';
     h += '<p class="bb-step-desc">Selecciona el tama\u00F1o del frasco para tu blend.</p>';
     h += '<div class="bb-size-cards">';
     h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
     h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco peque\u00F1o"></div>';
-    h += '<div class="bb-size-card-name">Peque\u00F1o</div>';
-    if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
-    h += '</div>';
+    h += '<div class="bb-size-card-info"><div class="bb-size-card-name">Peque\u00F1o</div>';
+    if (precioChico > 0) h += '<div class="bb-size-card-price">$' + precioChico.toLocaleString() + '</div>';
+    h += '</div></div>';
     h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
     h += '<div class="bb-size-card-icon"><img src="icons/frasco-grande.png" alt="Frasco grande"></div>';
-    h += '<div class="bb-size-card-name">Grande</div>';
-    if (precio > 0 && state.talla === 'grande') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
-    h += '</div>';
+    h += '<div class="bb-size-card-info"><div class="bb-size-card-name">Grande</div>';
+    if (precioGrande > 0) h += '<div class="bb-size-card-price">$' + precioGrande.toLocaleString() + '</div>';
+    h += '</div></div>';
     h += '</div></div>';
   }
 
@@ -1251,21 +1253,22 @@ function renderBlendBuilder() {
     if (state.especias.length > 0) {
       h += '<div class="bb-selected-count">' + state.especias.length + ' de 5 seleccionadas</div>';
     }
-    h += '<div class="bb-chips-grid">';
+    h += '<div class="bb-esp-grid">';
     for (var e = 0; e < especias.length; e++) {
       var isSelected = false;
       for (var s = 0; s < state.especias.length; s++) {
         if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
       }
       var safeName = especias[e].nombre.replace(/'/g, "\\'");
-      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 120) : '';
-      var tooltipHtml = espDesc ? '<span class="bb-chip-tooltip">' + espDesc + (especias[e].descripcion.length > 120 ? '...' : '') + '</span>' : '';
-      if (isSelected) {
-        h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">\u2713</span>' + tooltipHtml + '</button>';
-      } else {
-        var disabled = state.especias.length >= 5 ? ' disabled' : '';
-        h += '<button class="bb-chip' + disabled + '" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + tooltipHtml + '</button>';
-      }
+      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 80) : '';
+      var disabled = state.especias.length >= 5 && !isSelected;
+      var cardCls = 'bb-esp-card' + (isSelected ? ' selected' : '') + (disabled ? ' disabled' : '');
+      var clickHandler = disabled ? '' : (isSelected ? '_bbRemoveSpiceByName(\'' + safeName + '\')' : '_bbAddSpice(\'' + safeName + '\')');
+      h += '<div class="' + cardCls + '" onclick="' + clickHandler + '">';
+      h += '<div class="bb-esp-card-check">' + (isSelected ? '\u2713' : '+') + '</div>';
+      h += '<div class="bb-esp-card-name">' + especias[e].nombre + '</div>';
+      if (espDesc) h += '<div class="bb-esp-card-desc">' + espDesc + (especias[e].descripcion.length > 80 ? '...' : '') + '</div>';
+      h += '</div>';
     }
     h += '</div></div>';
   }
