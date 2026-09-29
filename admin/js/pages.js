@@ -581,18 +581,34 @@ const Pages = {
     // Las etiquetas base del sistema (Carnes, Pollo, etc.) se muestran como solo lectura.
     // Las personalizadas (agregadas por el admin) tienen botón X para eliminar.
     if (tab === 'modos-uso') {
+      // Lista inicial del sistema (cuando no hay custom guardados en Firebase).
+      // Una vez que el admin guarda cambios, TODO pasa a usosCustom en Firebase
+      // y se vuelve eliminable. La lista base solo se usa como seed inicial.
       var _baseUsos = ['Carnes', 'Pollo', 'Pescados y Mariscos', 'Cerdo', 'Arroces', 'Pastas', 'Sopas y Cremas', 'Ensaladas', 'Guisos y Estofados', 'Salsas', 'Marinadas y Adobos', 'Panaderia', 'Postres', 'Bebidas', 'Vegetales', 'Ceviches', 'Currys', 'Tacos y Burritos', 'Hamburguesas', 'Pizzas'];
+
       var _customUsos = [];
+      var _hasCustomSaved = false;
       try {
         var _cfg = ArcanoDB.getTiendaConfig();
-        if (_cfg && _cfg.usosCustom && Array.isArray(_cfg.usosCustom)) _customUsos = _cfg.usosCustom.slice();
+        if (_cfg && _cfg.usosCustom && Array.isArray(_cfg.usosCustom)) {
+          _customUsos = _cfg.usosCustom.slice();
+          _hasCustomSaved = true;
+        }
       } catch(e) {}
 
-      // Buscar usos "huérfanos" en productos que no están en base ni custom
-      // (pueden venir de importación Excel o datos viejos). Mostrarlos como eliminables.
+      // PRIMERA VEZ: si no hay custom guardados, sembrar la lista base como custom
+      // para que todas las etiquetas sean eliminables desde el inicio
+      if (!_hasCustomSaved) {
+        _customUsos = _baseUsos.slice();
+        try {
+          ArcanoDB.saveTiendaConfig({ usosCustom: _customUsos });
+          toast('Lista de modos de uso inicializada. Ahora todas las etiquetas son eliminables.', 'ok');
+        } catch(e) { console.error('[modos-uso] No se pudo inicializar usosCustom:', e); }
+      }
+
+      // Buscar usos "huérfanos" en productos que no están en custom (pueden venir de Excel)
       var _extraUsos = [];
       var _seen = {};
-      _baseUsos.forEach(function(u){ _seen[u] = true; });
       _customUsos.forEach(function(u){ _seen[u] = true; });
       try {
         var _allEsp = ArcanoDB.getEspecias();
@@ -608,33 +624,30 @@ const Pages = {
         _allBl.forEach(_collectUso);
       } catch(e) {}
 
+      // Auto-guardar extras como custom para que aparezcan en el selector de productos
+      if (_extraUsos.length > 0) {
+        _customUsos = _customUsos.concat(_extraUsos);
+        try { ArcanoDB.saveTiendaConfig({ usosCustom: _customUsos }); } catch(e) {}
+      }
+
       h += '<div class="card"><div class="card-body">';
-      h += '<div style="margin-bottom:18px"><p class="text-sm text-muted" style="margin:0 0 14px">Gestion\u00E1 las etiquetas de <strong>Modo de Uso</strong> que aparecen en el selector del formulario de producto. Las etiquetas base del sistema se muestran como solo lectura; las personalizadas se pueden eliminar.</p>';
+      h += '<div style="margin-bottom:18px"><p class="text-sm text-muted" style="margin:0 0 14px">Gestioná las etiquetas de <strong>Modo de Uso</strong> que aparecen en el selector del formulario de producto y en el modal del producto como "Ideal para". <b>Todas las etiquetas son eliminables</b> — click en X para quitarlas.</p>';
 
       // Input para agregar nuevos modos de uso
       h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">' +
         '<span class="badge badge-gold" style="min-width:100px;text-align:center">+ Nuevo</span>' +
-        '<input type="text" class="input" id="new-uso-input" placeholder="Nuevo modo de uso (ej: Verduras Salteadas)..." style="flex:1;padding:6px 10px;font-size:.85rem" onkeydown="if(event.key===\'Enter\')Pages.doAddUsoMode()">' +
+        '<input type="text" class="input" id="new-uso-input" placeholder="Nuevo modo de uso (ej: Verduras Salteadas o 🥩 Carnes Rojas)..." style="flex:1;padding:6px 10px;font-size:.85rem" onkeydown="if(event.key===\'Enter\')Pages.doAddUsoMode()">' +
         '<button class="btn btn-sm btn-outline" onclick="Pages.doAddUsoMode()">+ Agregar</button></div>';
 
-      // Modos de uso personalizados (eliminables)
-      if (_customUsos.length > 0 || _extraUsos.length > 0) {
-        h += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge badge-blue" style="min-width:100px;text-align:center">Personalizados</span><span class="text-xs text-muted">Click en X para eliminar</span></div>';
-        h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
-        _customUsos.forEach(function(u) {
-          h += '<span class="tag-chip-admin" title="Personalizado"><span>' + u + '</span><button onclick="Pages.doRemoveUsoMode(\'' + u.replace(/'/g, '&apos;') + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:1rem;padding:0 2px">X</button></span>';
-        });
-        _extraUsos.forEach(function(u) {
-          h += '<span class="tag-chip-admin" title="Detectado en productos (hu\u00E9rfano)"><span>' + u + ' <em style="color:var(--text-muted);font-size:.7rem">(huérfano)</em></span><button onclick="Pages.doRemoveUsoMode(\'' + u.replace(/'/g, '&apos;') + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:1rem;padding:0 2px">X</button></span>';
-        });
-        h += '</div></div>';
-      }
-
-      // Modos de uso base (solo lectura)
-      h += '<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge" style="min-width:100px;text-align:center;background:var(--bg3);color:var(--text-muted)">Base sistema</span><span class="text-xs text-muted">No eliminables</span></div>';
+      // === TODAS las etiquetas juntas (eliminables) ===
+      h += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge badge-blue" style="min-width:100px;text-align:center">Etiquetas</span><span class="text-xs text-muted">' + _customUsos.length + ' etiquetas — click en X para eliminar</span></div>';
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
-      _baseUsos.forEach(function(u) {
-        h += '<span class="tag-chip-admin" style="opacity:.7" title="Etiqueta base del sistema (no eliminable)"><span>' + u + '</span></span>';
+      _customUsos.forEach(function(u) {
+        var label = u;
+        // Marcar las que vinieron como "extra" (huérfanas de Excel)
+        var isExtra = _extraUsos.indexOf(u) !== -1;
+        if (isExtra) label = u + ' <em style="color:var(--text-muted);font-size:.7rem">(huérfano)</em>';
+        h += '<span class="tag-chip-admin" title="' + (isExtra ? 'Detectado en productos (huérfano)' : 'Etiqueta personalizada') + '"><span>' + label + '</span><button onclick="Pages.doRemoveUsoMode(\'' + u.replace(/'/g, '&apos;') + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:1rem;padding:0 2px">X</button></span>';
       });
       h += '</div></div>';
 

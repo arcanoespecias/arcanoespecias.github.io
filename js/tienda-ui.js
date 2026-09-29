@@ -2182,6 +2182,8 @@ function _closePopupLateral() {
 /* === Helper: generar HTML de modos de uso === */
 function _usosHtml(p) {
   if (!p.uso) return '';
+  // Split por coma, normalizar espacios, filtrar vacios.
+  // Sin limite de cantidad — se muestran TODOS los usos asignados al producto.
   var usos = p.uso.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
   if (!usos.length) return '';
   var iconos = {
@@ -2190,7 +2192,30 @@ function _usosHtml(p) {
     'Guisos y Estofados': '\u{1F372}', 'Salsas': '\u{1F96B}', 'Marinadas y Adobos': '\u{1F33F}',
     'Panaderia': '\u{1F35E}', 'Postres': '\u{1F370}', 'Bebidas': '\u{1F964}', 'Vegetales': '\u{1F955}',
     'Ceviches': '\u{1F420}', 'Currys': '\u{1F35B}', 'Tacos y Burritos': '\u{1F32E}',
-    'Hamburguesas': '\u{1F354}', 'Pizzas': '\u{1F355}'
+    'Hamburguesas': '\u{1F354}', 'Pizzas': '\u{1F355}',
+    // Etiquetas adicionales comunes detectadas en productos existentes
+    'Marinados': '\u{1F33F}', 'Parrilla': '\u{1F525}', 'Papas': '\u{1F954}', 'Asados': '\u{1F525}',
+    'Picante': '\u{1F336}', 'Ahumado': '\u{1F525}', 'Cordero': '\u{1F411}', 'Pato': '\u{1F986}',
+    'Salmón': '\u{1F41F}', 'Mariscos': '\u{1F41F}', 'Pescados': '\u{1F41F}',
+    'Guisos': '\u{1F372}', 'Sopas': '\u{1F372}', 'Panes': '\u{1F35E}', 'Pizza': '\u{1F355}',
+    'Wraps': '\u{1F959}', 'Cuscús': '\u{1F35C}', 'Noodles': '\u{1F35C}',
+    'Hummus': '\u{1F95E}', 'Pita': '\u{1F95E}', 'Focaccia': '\u{1F35E}',
+    'Legumbres': '\u{1F33F}', 'Tomate': '\u{1F345}', 'Salteados': '\u{1F373}',
+    // Cocteleria / infusiones
+    'Café': '\u{2615}', 'Chai': '\u{2615}', 'Té': '\u{2615}', 'Te': '\u{2615}',
+    'Gin': '\u{1F377}', 'GinTonic': '\u{1F377}', 'Vodka': '\u{1F377}',
+    'Ron': '\u{1F379}', 'Whisky': '\u{1F943}', 'Bourbon': '\u{1F943}',
+    'Mojito': '\u{1F379}', 'Mule': '\u{1F379}', 'Spritz': '\u{1F379}',
+    'Martini': '\u{1F378}', 'Negroni': '\u{1F378}', 'Manhattan': '\u{1F378}',
+    'Daiquiri': '\u{1F379}', 'Vermut': '\u{1F379}',
+    'Coctelería': '\u{1F379}', 'Aperitivo': '\u{1F379}', 'Digestivo': '\u{2615}',
+    'Bebidas Calientes': '\u{2615}',
+    // Estados/estilos
+    'Herbal': '\u{1F33F}', 'Floral': '\u{1F339}', 'Frutal': '\u{1F349}',
+    'Cítrico': '\u{1F34A}', 'Especiado': '\u{1F36C}', 'Refrescante': '\u{1F4A7}',
+    'Calmante': '\u{1F6CB}', 'Relajante': '\u{1F6CB}', 'Energizante': '\u{26A1}',
+    'Tropical': '\u{1F34D}', 'Balsámico': '\u{1FAB6}',
+    'Botánico': '\u{1F33F}', 'Anisado': '\u{1F33C}'
   };
   var html = '<div class="detail-usos"><div class="detail-usos-label">\u2728 Ideal para</div><div class="detail-usos-list">';
   for (var i = 0; i < usos.length; i++) {
