@@ -1048,263 +1048,373 @@ function compartirReceta(key) {
   }
 }
 
-/* === BLEND BUILDER v9 — Frasco real + drag labels + chips === */
-
+/* === BLEND BUILDER === */
 function _getEspeciasDisponibles() {
   if (!_sDb || !_sDb.especias) return [];
-  var esp = [];
-  var items = _sDb.especias;
+  var especias = []; var items = _sDb.especias;
   for (var i = 0; i < items.length; i++) {
     var e = items[i]; if (!e || !e.nombre) continue;
-    if ((e.stockBolsa || 0) > 0) esp.push({ nombre: e.nombre, id: e.id });
+    if ((e.stockBolsa || 0) > 0) especias.push({ nombre: e.nombre, stockPala: e.stockBolsa || 0, id: e.id });
   }
-  esp.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
-  return esp;
+  especias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+  return especias;
 }
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
 function _getCustomBlendPrice(talla) {
   var config = getTiendaConfig();
   if (talla === 'grande') return config.precioBlendGrande || 0;
   return config.precioBlendChico || 0;
 }
+
+// Blend Builder Steps
+
 function _bbGetTotal() {
-  var t = 0;
-  for (var i = 0; i < _blendBuilderState.especias.length; i++) t += _blendBuilderState.especias[i].porcentaje;
-  return t;
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
 }
 
-var _BB_COLORS = ['#c7553f','#e8b84b','#8a5a2c','#6b8e4e','#7a4a3a'];
-function _bbIdx(n){for(var i=0;i<_blendBuilderState.especias.length;i++){if(_blendBuilderState.especias[i].nombre===n)return i;}return -1;}
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
 
-// Estado de drag
-var _bbDrag = { active: false, idx: -1, startY: 0, startPct: 0, containerH: 130 };
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
+
+// Blend Builder Steps
+
+function _bbGetTotal() {
+  var total = 0;
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) total += _blendBuilderState.especias[i].porcentaje;
+  return total;
+}
+
+function _getCustomBlendPrice(talla) {
+  var config = getTiendaConfig();
+  if (talla === 'grande') return config.precioBlendGrande || 0;
+  return config.precioBlendChico || 0;
+}
 
 function renderBlendBuilder() {
-  var c = document.getElementById('blend-builder');
-  if (!c) return;
-  if (!_blendBuilderState._v9) _blendBuilderState = { nombre:'', talla:'', especias:[], _v9:true };
-  _bbRender();
+  var container = document.getElementById('blend-builder');
+  if (!container) return;
+  var especias = _getEspeciasDisponibles();
+  var state = _blendBuilderState;
+  var total = _bbGetTotal();
+  var step = state.step || 1;
+  var precio = state.talla ? _getCustomBlendPrice(state.talla) : 0;
+  var activeId = null, selStart = null, selEnd = null;
+  if (document.activeElement && document.activeElement.id) {
+    activeId = document.activeElement.id;
+    if (document.activeElement.setSelectionRange) { selStart = document.activeElement.selectionStart; selEnd = document.activeElement.selectionEnd; }
+  }
+
+  // Step indicators (hide on success)
+  var steps = ['Nombre', 'Tama\u00F1o', 'Especias', 'Proporciones', 'Confirmar'];
+  var h = '<div class="bb-container">';
+  if (step < 6) {
+  h += '<div class="bb-steps">';
+  for (var si = 0; si < steps.length; si++) {
+    var sNum = si + 1;
+    var cls = 'bb-step';
+    if (sNum === step) cls += ' active';
+    else if (sNum < step) cls += ' done';
+    h += '<div class="' + cls + '">' +
+         '<div class="bb-step-num">' + (sNum < step ? '\u2713' : sNum) + '</div>' +
+         '<div class="bb-step-label">' + steps[si] + '</div></div>';
+  }
+  h += '</div>';
+  }
+
+  // Step 1: Nombre
+  if (step === 1) {
+    h += '<div class="bb-step-content">';
+    h += '<h3 class="bb-step-title">NOMBRE DE TU BLEND</h3>';
+    h += '<p class="bb-step-desc">Para un sabor \u00FAnico, un nombre incre\u00EDble!.</p>';
+    h += '<input class="bb-name-input" id="bb-name" value="' + (state.nombre || '').replace(/"/g, '&quot;') + '" oninput="_bbOnNameInput(this)" placeholder="Ej: Saz\u00F3n Original">';
+    h += '</div>';
+  }
+
+  // Step 2: Tama\u00F1o
+  if (step === 2) {
+    h += '<div class="bb-step-content">';
+    h += '<h3 class="bb-step-title">Elige el tama\u00F1o</h3>';
+    h += '<p class="bb-step-desc">Selecciona el tama\u00F1o del frasco para tu blend.</p>';
+    h += '<div class="bb-size-cards">';
+    h += '<div class="bb-size-card' + (state.talla === 'chico' ? ' selected' : '') + '" onclick="_bbSetTalla(\'chico\')">';
+    h += '<div class="bb-size-card-icon"><img src="icons/frasco-chico.png" alt="Frasco peque\u00F1o"></div>';
+    h += '<div class="bb-size-card-name">Peque\u00F1o</div>';
+    if (precio > 0 && state.talla === 'chico') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
+    h += '</div>';
+    h += '<div class="bb-size-card' + (state.talla === 'grande' ? ' selected' : '') + '" onclick="_bbSetTalla(\'grande\')">';
+    h += '<div class="bb-size-card-icon"><img src="icons/frasco-grande.png" alt="Frasco grande"></div>';
+    h += '<div class="bb-size-card-name">Grande</div>';
+    if (precio > 0 && state.talla === 'grande') h += '<div class="bb-size-card-price">$' + precio.toLocaleString() + '</div>';
+    h += '</div>';
+    h += '</div></div>';
+  }
+
+  // Step 3: Especias
+  if (step === 3) {
+    h += '<div class="bb-step-content">';
+    h += '<h3 class="bb-step-title">Elige tus especias</h3>';
+    h += '<p class="bb-step-desc">Selecciona entre 2 y 5 especias para tu blend.</p>';
+    if (state.especias.length > 0) {
+      h += '<div class="bb-selected-count">' + state.especias.length + ' de 5 seleccionadas</div>';
+    }
+    h += '<div class="bb-chips-grid">';
+    for (var e = 0; e < especias.length; e++) {
+      var isSelected = false;
+      for (var s = 0; s < state.especias.length; s++) {
+        if (state.especias[s].nombre === especias[e].nombre) { isSelected = true; break; }
+      }
+      var safeName = especias[e].nombre.replace(/'/g, "\\'");
+      var espDesc = especias[e].descripcion ? especias[e].descripcion.replace(/'/g, "\\'").replace(/"/g, '&quot;').substring(0, 120) : '';
+      var tooltipHtml = espDesc ? '<span class="bb-chip-tooltip">' + espDesc + (especias[e].descripcion.length > 120 ? '...' : '') + '</span>' : '';
+      if (isSelected) {
+        h += '<button class="bb-chip selected" onclick="_bbRemoveSpiceByName(\'' + safeName + '\')">' + especias[e].nombre + '<span class="bb-chip-check">\u2713</span>' + tooltipHtml + '</button>';
+      } else {
+        var disabled = state.especias.length >= 5 ? ' disabled' : '';
+        h += '<button class="bb-chip' + disabled + '" onclick="_bbAddSpice(\'' + safeName + '\')">' + especias[e].nombre + tooltipHtml + '</button>';
+      }
+    }
+    h += '</div></div>';
+  }
+
+  // Step 4: Proporciones
+  if (step === 4) {
+    h += '<div class="bb-step-content">';
+    h += '<h3 class="bb-step-title">Define las proporciones</h3>';
+    h += '<p class="bb-step-desc">Ajusta el porcentaje de cada especia. El total debe ser 100%.</p>';
+    h += '<div class="bb-mix-list">';
+    for (var i = 0; i < state.especias.length; i++) {
+      var sp = state.especias[i];
+      h += '<div class="bb-mix-row"><span class="bb-mix-name">' + sp.nombre + '</span><div class="bb-mix-controls">';
+      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',-5)">-</button>';
+      h += '<div class="bb-pct-display"><input class="bb-pct-input" id="bb-pct-' + i + '" type="number" min="1" max="100" value="' + sp.porcentaje + '" onchange="_bbSetPctDirect(' + i + ',this.value)"><span class="bb-pct-sym">%</span></div>';
+      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',5)">+</button>';
+      h += '</div></div>';
+    }
+    h += '</div>';
+    var barColor = total === 100 ? 'var(--success)' : (total > 100 ? 'var(--error)' : 'var(--gold)');
+    h += '<div class="bb-total-section"><div class="bb-total-bar"><div class="bb-total-fill" style="width:' + Math.min(total, 100) + '%;background:' + barColor + '"></div></div>';
+    h += '<div class="bb-total-text" style="color:' + barColor + '">' + (total > 100 ? 'Excedes el 100%' : 'Total: ' + total + '%') + '</div></div>';
+    h += '</div>';
+  }
+
+  // Step 6: Exito
+  if (step === 6) {
+    h += '<div class="bb-step-content bb-success">';
+    h += '<h3 class="bb-step-title bb-success-title">Genial, tu Blend ha quedado Fant\u00E1stico</h3>';
+    h += '<p class="bb-step-desc bb-success-desc">Tiene mucho car\u00E1cter y estilo.</p>';
+    h += '<div class="bb-success-btns">';
+    h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
+    h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
+    h += '<button class="bb-nav-btn success" onclick="toggleCartDrawer()">Ver Carrito</button>';
+    h += '</div></div>';
+  }
+
+  // Step 5: Confirmar
+  if (step === 5) {
+    var tallaLabel = state.talla === 'grande' ? 'Grande' : 'Peque\u00F1o';
+    h += '<div class="bb-step-content">';
+    h += '<h3 class="bb-step-title">Resumen de tu blend</h3>';
+    h += '<div class="bb-summary">';
+    h += '<div class="bb-summary-row"><span class="bb-summary-label">Nombre</span><span class="bb-summary-value">' + (state.nombre || '-') + '</span></div>';
+    h += '<div class="bb-summary-row"><span class="bb-summary-label">Tama\u00F1o</span><span class="bb-summary-value">' + tallaLabel + '</span></div>';
+    h += '<div class="bb-summary-row"><span class="bb-summary-label">Precio</span><span class="bb-summary-value bb-summary-price">$' + precio.toLocaleString() + '</span></div>';
+    h += '</div>';
+    h += '<div class="bb-summary-specs">';
+    for (var i = 0; i < state.especias.length; i++) {
+      var sp = state.especias[i];
+      h += '<div class="bb-summary-spec"><span class="bb-spec-name">' + sp.nombre + '</span><span class="bb-spec-pct">' + sp.porcentaje + '%</span></div>';
+    }
+    h += '</div></div>';
+  }
+
+  // Navigation buttons (hide on success)
+  if (step < 6) {
+  h += '<div class="bb-nav">';
+  if (step > 1) {
+    h += '<button class="bb-nav-btn prev" onclick="_bbGoStep(' + (step - 1) + ')">Atr\u00E1s</button>';
+  } else {
+    h += '<div></div>';
+  }
+  if (step < 5) {
+    var canNext = _bbCanNext(step);
+    h += '<button id="bb-btn-next" class="bb-nav-btn next' + (canNext ? '' : ' disabled') + '" onclick="_bbGoStep(' + (step + 1) + ')"' + (canNext ? '' : ' disabled') + '>Siguiente</button>';
+  } else {
+    h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Agregar al carrito</button>';
+  }
+  h += '</div>';
+  }
+  h += '</div>';
+  container.innerHTML = h;
+  if (activeId) { var el = document.getElementById(activeId); if (el) { el.focus(); if (selStart !== null) el.setSelectionRange(selStart, selEnd); } }
 }
 
-function _bbRender() {
-  var c = document.getElementById('blend-builder');
-  if (!c) return;
+function _bbCanNext(step) {
   var s = _blendBuilderState;
-  var pC = _getCustomBlendPrice('chico');
-  var pG = _getCustomBlendPrice('grande');
+  if (step === 1) return s.nombre.trim().length > 0;
+  if (step === 2) return s.talla === 'chico' || s.talla === 'grande';
+  if (step === 3) return s.especias.length >= 2;
+  if (step === 4) return _bbGetTotal() === 100;
+  return false;
+}
 
-  var h = '<div class="bb9">';
-
-  // === Selector de tamaño (arriba) ===
-  h += '<div class="bb9-sizes">';
-  h += '<button class="bb9-size'+(s.talla==='chico'?' on':'')+'" onclick="_bbSetTalla(\'chico\')">Pequeño · $'+pC.toLocaleString()+'</button>';
-  h += '<button class="bb9-size'+(s.talla==='grande'?' on':'')+'" onclick="_bbSetTalla(\'grande\')">Grande · $'+pG.toLocaleString()+'</button>';
-  h += '</div>';
-
-  // === Chips de especias ===
-  h += '<div class="bb9-chips-section">';
-  h += '<div class="bb9-chips-label">Especias <span class="bb9-count">'+s.especias.length+'/5</span></div>';
-  h += '<div class="bb9-chips">';
-  var especias = _getEspeciasDisponibles();
-  for (var i=0; i<especias.length; i++) {
-    var idx = _bbIdx(especias[i].nombre);
-    var sel = idx >= 0;
-    var dis = s.especias.length>=5 && !sel;
-    var sn = especias[i].nombre.replace(/'/g,"\\'");
-    var col = sel ? _BB_COLORS[idx % _BB_COLORS.length] : _BB_COLORS[i % _BB_COLORS.length];
-    h += '<button class="bb9-chip'+(sel?' on':'')+(dis?' off':'')+'" style="--c:'+col+'" onclick="'+(dis?'':'_bbToggle(\''+sn+'\')')+'">'+especias[i].nombre+(sel?' ×':'')+'</button>';
+function _bbOnNameInput(el) {
+  _blendBuilderState.nombre = el.value;
+  var btn = document.getElementById('bb-btn-next');
+  if (!btn) return;
+  if (el.value.trim().length > 0) {
+    btn.removeAttribute('disabled');
+    btn.classList.remove('disabled');
+  } else {
+    btn.setAttribute('disabled', '');
+    btn.classList.add('disabled');
   }
-  h += '</div>';
-  h += '</div>';
-
-  // === Frasco central con etiquetas laterales arrastrables ===
-  h += '<div class="bb9-stage">';
-  h += '<div class="bb9-tags-left">';
-  for (var i = 0; i < s.especias.length; i++) {
-    if (i % 2 === 0) h += _bbRenderTag(s, i, 'left');
-  }
-  h += '</div>';
-
-  // Frasco
-  h += '<div class="bb9-frasco-wrap">';
-  h += '<div class="bb9-frasco-layers" id="bb9-layers">';
-  if (s.especias.length > 0) {
-    var acum = 0;
-    for (var i = s.especias.length - 1; i >= 0; i--) {
-      var sp = s.especias[i];
-      var col = _BB_COLORS[i % _BB_COLORS.length];
-      h += '<div class="bb9-layer" style="height:'+sp.porcentaje+'%;bottom:'+acum+'%;background:linear-gradient(180deg,'+col+'cc,'+col+'77)"></div>';
-      acum += sp.porcentaje;
+}
+function _bbGoStep(n) {
+  if (n > _blendBuilderState.step && !_bbCanNext(_blendBuilderState.step)) return;
+  // Auto-distribute when entering step 4
+  if (n === 4 && _blendBuilderState.step < 4) {
+    var count = _blendBuilderState.especias.length;
+    var base = Math.floor(100 / count);
+    var remainder = 100 - base * count;
+    for (var i = 0; i < count; i++) {
+      _blendBuilderState.especias[i].porcentaje = base + (i === 0 ? remainder : 0);
     }
   }
-  h += '</div>';
-  h += '<img src="icons/frasco-vacio.png" alt="Frasco" class="bb9-frasco-img">';
-  if (s.especias.length > 0) h += '<div class="bb9-frasco-glow active"></div>';
-  else h += '<div class="bb9-frasco-glow"></div>';
-  if (s.nombre) h += '<div class="bb9-frasco-label">'+s.nombre.substring(0,14)+'</div>';
-  h += '</div>';
+  _blendBuilderState.step = n;
+  renderBlendBuilder();
+}
 
-  h += '<div class="bb9-tags-right">';
-  for (var i = 0; i < s.especias.length; i++) {
-    if (i % 2 === 1) h += _bbRenderTag(s, i, 'right');
+function _bbCreateAnother() { _blendBuilderState = { nombre: '', talla: '', especias: [], step: 1 }; renderBlendBuilder(); }
+function _bbSetTalla(t) { _blendBuilderState.talla = t; renderBlendBuilder(); }
+function _bbAddSpice(nombre) {
+  if (_blendBuilderState.especias.length >= 5) return;
+  _blendBuilderState.especias.push({ nombre: nombre, porcentaje: 0 });
+  renderBlendBuilder();
+}
+function _bbRemoveSpice(idx) { _blendBuilderState.especias.splice(idx, 1); renderBlendBuilder(); }
+function _bbRemoveSpiceByName(nombre) {
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
+    if (_blendBuilderState.especias[i].nombre === nombre) { _blendBuilderState.especias.splice(i, 1); break; }
   }
-  h += '</div>';
-  h += '</div>'; // stage
-
-  // === Total ===
-  var total = _bbGetTotal();
-  var bc = total===100?'#10b981':(total>100?'#ef4444':'#e8b84b');
-  var txt = total===100?'✓ 100%':'Faltan '+(100-total)+'%';
-  h += '<div class="bb9-total"><div class="bb9-total-bar"><div class="bb9-total-fill" style="width:'+Math.min(total,100)+'%;background:'+bc+'"></div></div><span style="color:'+bc+'">'+txt+'</span></div>';
-
-  // === Nombre + boton ===
-  h += '<div class="bb9-foot">';
-  h += '<input class="bb9-name" type="text" value="'+(s.nombre||'').replace(/"/g,'&quot;')+'" placeholder="Bautiza tu blend..." maxlength="30" oninput="_blendBuilderState.nombre=this.value;_bbUpdateLabel()">';
-  var can = s.talla && s.especias.length>=2 && total===100 && s.nombre.trim();
-  var precio = s.talla ? _getCustomBlendPrice(s.talla) : 0;
-  h += '<button class="bb9-go'+(can?'':' off')+'" '+(can?'':'disabled')+' onclick="addCustomBlendToCart()"><span>Preparar</span><b>$'+(s.talla?precio.toLocaleString():'—')+'</b></button>';
-  h += '</div>';
-
-  h += '</div>';
-  c.innerHTML = h;
-  _bbAttachDragListeners();
+  renderBlendBuilder();
 }
-
-function _bbRenderTag(s, i, side) {
-  var sp = s.especias[i];
-  var col = _BB_COLORS[i % _BB_COLORS.length];
-  // Calcular posicion vertical basada en el % acumulado + mitad del propio
-  var acumulado = 0;
-  for (var j = 0; j < i; j++) acumulado += s.especias[j].porcentaje;
-  var midPct = acumulado + sp.porcentaje / 2;
-  // Mapear 0-100% a posicion vertical del contenedor de capas (130px height)
-  var bottomPx = Math.round(midPct * 1.3);
-  var h = '<div class="bb9-tag bb9-tag-'+side+'" style="bottom:'+bottomPx+'px;--c:'+col+'" data-idx="'+i+'">';
-  h += '<div class="bb9-tag-line"></div>';
-  h += '<div class="bb9-tag-body">';
-  h += '<span class="bb9-tag-name">'+sp.nombre+'</span>';
-  h += '<span class="bb9-tag-pct">'+sp.porcentaje+'%</span>';
-  h += '</div>';
-  // Indicator de arrastre
-  h += '<div class="bb9-tag-handle" title="Arrastra para cambiar %">⠿</div>';
-  h += '</div>';
-  return h;
-}
-
-// === Drag handlers ===
-function _bbAttachDragListeners() {
-  var tags = document.querySelectorAll('.bb9-tag');
-  for (var i = 0; i < tags.length; i++) {
-    var tag = tags[i];
-    var idx = parseInt(tag.getAttribute('data-idx'), 10);
-    // Mouse
-    tag.addEventListener('mousedown', function(e) { _bbDragStart(e, this.getAttribute('data-idx')); }.bind(tag));
-    tag.addEventListener('touchstart', function(e) { _bbDragStart(e, this.getAttribute('data-idx')); }.bind(tag), { passive: false });
-  }
-  // Global move/up
-  document.addEventListener('mousemove', _bbDragMove);
-  document.addEventListener('mouseup', _bbDragEnd);
-  document.addEventListener('touchmove', _bbDragMove, { passive: false });
-  document.addEventListener('touchend', _bbDragEnd);
-}
-
-function _bbDragStart(e, idxStr) {
-  var idx = parseInt(idxStr, 10);
-  if (isNaN(idx) || idx < 0 || idx >= _blendBuilderState.especias.length) return;
-  e.preventDefault();
-  var y = e.touches ? e.touches[0].clientY : e.clientY;
-  _bbDrag.active = true;
-  _bbDrag.idx = idx;
-  _bbDrag.startY = y;
-  _bbDrag.startPct = _blendBuilderState.especias[idx].porcentaje;
-  var layers = document.getElementById('bb9-layers');
-  _bbDrag.containerH = layers ? layers.offsetHeight : 130;
-  // Visual: marcar tag como activo
-  var tags = document.querySelectorAll('.bb9-tag');
-  for (var i = 0; i < tags.length; i++) {
-    if (parseInt(tags[i].getAttribute('data-idx'), 10) === idx) tags[i].classList.add('dragging');
-  }
-}
-
-function _bbDragMove(e) {
-  if (!_bbDrag.active) return;
-  e.preventDefault();
-  var y = e.touches ? e.touches[0].clientY : e.clientY;
-  var deltaPx = _bbDrag.startY - y; // positivo = arriba = aumentar %
-  var deltaPct = Math.round((deltaPx / _bbDrag.containerH) * 100 / 5) * 5; // multiplos de 5
-  var newPct = _bbDrag.startPct + deltaPct;
-  // Validar
-  if (newPct < 5) newPct = 5;
-  var otherTotal = _bbGetTotal() - _blendBuilderState.especias[_bbDrag.idx].porcentaje;
-  if (otherTotal + newPct > 100) newPct = 100 - otherTotal;
-  if (newPct < 5) newPct = 5;
-  // Solo actualizar si cambio
-  if (newPct !== _blendBuilderState.especias[_bbDrag.idx].porcentaje) {
-    _blendBuilderState.especias[_bbDrag.idx].porcentaje = newPct;
-    _bbRender();
-  }
-}
-
-function _bbDragEnd() {
-  if (!_bbDrag.active) return;
-  _bbDrag.active = false;
-  _bbDrag.idx = -1;
-  var tags = document.querySelectorAll('.bb9-tag.dragging');
-  for (var i = 0; i < tags.length; i++) tags[i].classList.remove('dragging');
-}
-
-function _bbUpdateLabel() {
-  var l = document.querySelector('.bb9-frasco-label');
-  if (l) l.textContent = _blendBuilderState.nombre.substring(0,14);
-  else _bbRender();
-}
-function _bbSetTalla(t) { _blendBuilderState.talla = t; _bbRender(); }
-function _bbToggle(n) {
-  var idx = _bbIdx(n);
-  if (idx >= 0) { _blendBuilderState.especias.splice(idx,1); }
-  else { if (_blendBuilderState.especias.length>=5) return; _blendBuilderState.especias.push({nombre:n,porcentaje:0}); _bbAutoDist(); }
-  _bbRender();
-}
-function _bbAutoDist() {
-  var n = _blendBuilderState.especias.length; if (!n) return;
-  var base = Math.floor(100/n/5)*5;
-  var rem = (100 - base*n) / 5;
-  for (var i=0; i<n; i++) _blendBuilderState.especias[i].porcentaje = base + (i<rem?5:0);
-}
-
+function _bbChangePct(idx, delta) { var c = _blendBuilderState.especias[idx].porcentaje; var o = _bbGetTotal() - c; var n = c + delta; if (n < 1) n = 1; if (o + n > 100) n = 100 - o; if (n < 1) n = 1; _blendBuilderState.especias[idx].porcentaje = n; renderBlendBuilder(); }
+function _bbSetPctDirect(idx, val) { var num = parseInt(val, 10); if (isNaN(num) || num < 1) num = 1; var o = _bbGetTotal() - _blendBuilderState.especias[idx].porcentaje; if (o + num > 100) num = 100 - o; if (num < 1) num = 1; _blendBuilderState.especias[idx].porcentaje = num; renderBlendBuilder(); }
 function addCustomBlendToCart() {
-  var s = _blendBuilderState;
-  var nombre = s.nombre.trim();
-  if (!nombre) { alert('Poné un nombre a tu blend'); return; }
-  if (s.especias.length<2) { alert('Mínimo 2 especias'); return; }
-  if (_bbGetTotal()!==100) { alert('Las proporciones deben sumar 100%'); return; }
-  if (!s.talla) { alert('Elegí un frasco'); return; }
-  var precio = _getCustomBlendPrice(s.talla);
-  var tl = s.talla==='grande'?'Grande':'Pequeño';
-  var cn = 'Blend: '+nombre+' ('+tl+')';
-  var cb = {nombre:nombre, talla:s.talla, especias:[]};
-  for (var i=0; i<s.especias.length; i++) cb.especias.push({nombre:s.especias[i].nombre, porcentaje:s.especias[i].porcentaje});
-  _showBlendAnim(s, function() {
-    cart.push({productId:'custom-blend-'+Date.now(), nombre:cn, tipo:'custom-blend', talla:s.talla, precio:precio, qty:1, customBlend:cb});
-    saveCart(); updateCartBadge();
-    _blendBuilderState = {nombre:'',talla:'',especias:[],_v9:true};
-    _bbRender();
-    setTimeout(function(){ toggleCartDrawer(); }, 300);
-  });
+  var nombreInput = document.getElementById('bb-name');
+  var nombre = nombreInput ? nombreInput.value.trim() : _blendBuilderState.nombre.trim();
+  if (!nombre) { alert('Dale un nombre a tu blend'); return; }
+  var total = _bbGetTotal();
+  if (total !== 100) { alert('El total debe ser 100%'); return; }
+  if (_blendBuilderState.especias.length < 2) { alert('Selecciona al menos 2 especias'); return; }
+  var precio = _getCustomBlendPrice(_blendBuilderState.talla);
+  var tallaLabel = _blendBuilderState.talla === 'grande' ? 'Grande' : 'Peque\u00F1o';
+  var cartNombre = 'Blend: ' + nombre + ' (' + tallaLabel + ')';
+  var customBlend = { nombre: nombre, talla: _blendBuilderState.talla, especias: [] };
+  for (var i = 0; i < _blendBuilderState.especias.length; i++) {
+    customBlend.especias.push({ nombre: _blendBuilderState.especias[i].nombre, porcentaje: _blendBuilderState.especias[i].porcentaje });
+  }
+  cart.push({ productId: 'custom-blend-' + Date.now(), nombre: cartNombre, tipo: 'custom-blend', talla: _blendBuilderState.talla, precio: precio, qty: 1, customBlend: customBlend });
+  saveCart(); updateCartBadge();
+  _blendBuilderState.step = 6;
+  renderBlendBuilder();
 }
 
-function _showBlendAnim(state, onComplete) {
-  var fi = 'icons/frasco-vacio.png';
-  var o = document.createElement('div');
-  o.id='bb-prep-overlay';
-  o.style.cssText='position:fixed;inset:0;background:rgba(15,10,7,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
-  var colors=['#c7553f','#e8b84b','#8a5a2c','#6b8e4e','#d4a574','#a0522d'];
-  var p='';
-  for (var i=0;i<14;i++){var c=colors[i%colors.length];var d=(i*0.18).toFixed(2);var du=(2.2+Math.random()*0.6).toFixed(2);p+='<div class="bb-particle" style="--p-color:'+c+';--p-delay:'+d+'s;--p-dur:'+du+'s"></div>';}
-  o.innerHTML='<div class="bb-prep-scene"><div class="bb-prep-particles">'+p+'</div><div class="bb-prep-glow"></div><img src="'+fi+'" alt="" class="bb-prep-frasco-img"></div><div class="bb-prep-title">Preparando tu Blend</div><div class="bb-prep-subtitle">'+(state.nombre||'')+'</div><div class="bb-prep-dots"><span>.</span><span>.</span><span>.</span></div>';
-  document.body.appendChild(o);
-  void o.offsetWidth;
-  setTimeout(function(){o.style.transition='opacity 0.4s ease';o.style.opacity='0';setTimeout(function(){if(o.parentNode)o.parentNode.removeChild(o);onComplete();},400);},3000);
-}
+
 
 
 function renderFaqPage() {
