@@ -2450,151 +2450,571 @@ html.no-opening #opening-overlay {
     font-size: 0.78rem !important;
   }
 }
+
 /* ============================================================
-   ARMA TU BLEND — UI rediseñada + animación de preparación
+   ARMA TU BLEND v3 — UX/UI Milk Bar + Salt & Straw + Atlas Coffee
+   1 sola pantalla, sidebar siempre visible, sin wizard
    ============================================================ */
 
-/* === Paso 2: cards de tamaño con precio visible === */
-.bb-size-card-cap {
-  font-size: 0.7rem; color: var(--text-muted); font-weight: 400;
-  margin-left: 4px;
+.bb-v3 {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
-.bb-size-card-price {
-  margin-top: 6px; font-size: 1.1rem; font-weight: 700;
+.bb-v3-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-top: 24px;
+}
+.bb-v3-title {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 800;
   color: var(--gold);
+  margin: 0 0 8px;
+  letter-spacing: 0.01em;
+}
+.bb-v3-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-sec);
+  max-width: 540px;
+  margin: 0 auto;
+  line-height: 1.5;
 }
 
-/* === Paso 3: grid de especias rediseñado === */
-.bb-selected-bar {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 16px; padding: 8px 14px;
-  background: rgba(232,184,75,0.08);
-  border: 1px solid rgba(232,184,75,0.25);
-  border-radius: 8px; font-size: 0.85rem; color: var(--text-sec);
+/* === Layout 2 columnas: main + sidebar === */
+.bb-v3-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 48px;
 }
-.bb-selected-pill {
-  background: var(--gold); color: #1b0b07;
-  padding: 2px 10px; border-radius: 100px;
-  font-weight: 700; font-size: 0.8rem;
+.bb-v3-main { min-width: 0; }
+
+/* === Secciones === */
+.bb-v3-section { margin-bottom: 32px; }
+.bb-v3-section-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: 0.01em;
 }
-.bb-esp-pills {
-  display: flex; flex-wrap: wrap; gap: 8px;
-}
-.bb-esp-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-radius: 100px;
-  border: 1.5px solid var(--border-light);
-  background: var(--surface); color: var(--text);
-  font-size: 0.85rem; font-weight: 500;
-  cursor: pointer; transition: all 0.15s ease;
-  user-select: none;
-}
-.bb-esp-pill:hover:not(.disabled) {
-  border-color: var(--gold);
-  background: rgba(232,184,75,0.08);
-}
-.bb-esp-pill.selected {
-  border-color: var(--gold);
-  background: var(--gold); color: #1b0b07;
-  font-weight: 600;
-}
-.bb-esp-pill.disabled {
-  opacity: 0.4; cursor: not-allowed;
-}
-.bb-esp-pill-x {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 16px; height: 16px;
-  background: #1b0b07; color: var(--gold);
-  border-radius: 50%; font-size: 0.7rem;
+.bb-v3-count {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 6px;
 }
 
-/* === Paso 4: proporciones compacto === */
-.bb-mix-preview {
-  margin-bottom: 16px;
+/* === Tamaño del frasco === */
+.bb-v3-sizes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 500px;
 }
-.bb-mix-preview-bar {
-  display: flex; height: 24px; border-radius: 6px;
-  overflow: hidden; border: 1px solid var(--border-light);
-}
-.bb-mix-preview-seg {
-  transition: width 0.2s ease;
-}
-.bb-mix-preview-seg:not(:last-child) {
-  border-right: 1px solid rgba(0,0,0,0.2);
-}
-.bb-mix-list {
-  display: flex; flex-direction: column; gap: 10px;
-}
-.bb-mix-row-v2 {
-  padding: 10px 12px;
+.bb-v3-size {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
   background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-}
-.bb-mix-row-head {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 6px;
-}
-.bb-mix-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  flex-shrink: 0;
-}
-.bb-mix-name {
-  flex: 1; font-weight: 600; font-size: 0.85rem; color: var(--text);
-}
-.bb-mix-pct-val {
-  font-weight: 700; color: var(--gold); font-size: 0.9rem;
-  min-width: 40px; text-align: right;
-}
-.bb-mix-controls-v2 {
-  display: flex; align-items: center; gap: 8px;
-}
-.bb-pct-btn-v2 {
-  width: 28px; height: 28px; border-radius: 6px;
-  border: 1px solid var(--border); background: var(--bg);
-  color: var(--gold); font-size: 1rem; font-weight: 700;
-  cursor: pointer; transition: all 0.15s ease;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.bb-pct-btn-v2:hover {
-  background: var(--gold); color: #1b0b07;
-}
-.bb-pct-slider {
-  flex: 1; -webkit-appearance: none; appearance: none;
-  height: 4px; border-radius: 2px;
-  background: var(--border-light);
-  outline: none; cursor: pointer;
-}
-.bb-pct-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--gold);
-  cursor: pointer; border: 2px solid #1b0b07;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-.bb-pct-slider::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--gold);
-  cursor: pointer; border: 2px solid #1b0b07;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-
-/* === Animación "Preparando Blend" === */
-#bb-prep-overlay {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
   font-family: inherit;
 }
+.bb-v3-size:hover {
+  border-color: var(--gold);
+}
+.bb-v3-size.selected {
+  border-color: var(--gold);
+  background: rgba(232,184,75,0.08);
+  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+.bb-v3-size img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.bb-v3-size-info {
+  flex: 1;
+}
+.bb-v3-size-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.bb-v3-size-cap {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.bb-v3-size-price {
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+/* === Filtros pills horizontales === */
+.bb-v3-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.bb-v3-filter {
+  padding: 7px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-sec);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.bb-v3-filter:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.bb-v3-filter.active {
+  background: var(--gold);
+  color: #1b0b07;
+  border-color: var(--gold);
+  font-weight: 600;
+}
+
+/* === Grid de cards de especias === */
+.bb-v3-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.bb-v3-card {
+  position: relative;
+  padding: 14px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--surface);
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bb-v3-card.selected {
+  border-color: var(--gold);
+  background: rgba(232,184,75,0.06);
+}
+.bb-v3-card.disabled {
+  opacity: 0.45;
+}
+.bb-v3-card-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.3;
+  min-height: 2.6em;
+}
+.bb-v3-add-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: var(--gold);
+  color: #1b0b07;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.bb-v3-add-btn:hover:not(:disabled) {
+  background: #d4a043;
+  transform: translateY(-1px);
+}
+.bb-v3-add-btn:disabled {
+  background: var(--border-light);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.bb-v3-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px;
+  background: var(--gold);
+  border-radius: 6px;
+}
+.bb-v3-spin-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: #1b0b07;
+  color: var(--gold);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bb-v3-spin-btn:hover {
+  background: #2c1810;
+}
+.bb-v3-spin-check {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1b0b07;
+}
+.bb-v3-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 32px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* === SIDEBAR (mini-cart siempre visible) === */
+.bb-v3-sidebar {
+  position: sticky;
+  top: 16px;
+}
+.bb-v3-sb-inner {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.bb-v3-sb-header {
+  text-align: center;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+.bb-v3-sb-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.bb-v3-sb-empty-msg {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.bb-v3-sb-countdown {
+  font-size: 0.85rem;
+  color: var(--text-sec);
+  line-height: 1.4;
+}
+.bb-v3-sb-countdown b {
+  color: var(--gold);
+  font-weight: 700;
+}
+.bb-v3-sb-countdown.ok {
+  color: var(--text-muted);
+}
+.bb-v3-sb-countdown.ok b {
+  color: var(--text);
+}
+.bb-v3-sb-countdown.max {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+/* === Campo nombre === */
+.bb-v3-sb-field {
+  margin-bottom: 16px;
+}
+.bb-v3-sb-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bb-v3-name-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.bb-v3-name-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* === Lista de especias con sliders === */
+.bb-v3-sb-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.bb-v3-sb-mix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.bb-v3-sb-mix-row {
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+}
+.bb-v3-sb-mix-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.bb-v3-sb-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.bb-v3-sb-mix-name {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bb-v3-sb-mix-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 38px;
+  text-align: right;
+}
+.bb-v3-sb-mix-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.bb-v3-sb-mix-remove:hover {
+  background: rgba(239,68,68,0.15);
+  color: #ef4444;
+}
+.bb-v3-sb-mix-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bb-v3-sb-mix-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--gold);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.bb-v3-sb-mix-btn:hover {
+  background: var(--gold);
+  color: #1b0b07;
+}
+.bb-v3-sb-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-light);
+  outline: none;
+  cursor: pointer;
+}
+.bb-v3-sb-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: 2px solid #1b0b07;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.bb-v3-sb-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: 2px solid #1b0b07;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* === Barra total === */
+.bb-v3-sb-total-section {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-light);
+  margin-top: 6px;
+}
+.bb-v3-sb-total-bar {
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.bb-v3-sb-total-fill {
+  height: 100%;
+  transition: width 0.2s ease, background 0.2s ease;
+  border-radius: 3px;
+}
+.bb-v3-sb-total-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* === Footer del sidebar (precio + botón) === */
+.bb-v3-sb-footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+  margin-top: 10px;
+}
+.bb-v3-sb-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: var(--text-sec);
+}
+.bb-v3-sb-price {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+.bb-v3-sb-warn {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(245,158,11,0.08);
+  border-radius: 6px;
+}
+.bb-v3-checkout-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #1b0b07;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+.bb-v3-checkout-btn:hover:not(.disabled) {
+  background: #d4a043;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232,184,75,0.3);
+}
+.bb-v3-checkout-btn.disabled {
+  background: var(--border-light);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.bb-v3-checkout-frasco {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.bb-v3-sb-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* === Responsive: sidebar colapsa abajo === */
+@media (max-width: 900px) {
+  .bb-v3-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .bb-v3-sidebar {
+    position: static;
+    order: -1;  /* Sidebar primero en mobile */
+  }
+}
+@media (max-width: 640px) {
+  .bb-v3-title { font-size: 1.7rem; }
+  .bb-v3-subtitle { font-size: 0.85rem; }
+  .bb-v3-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .bb-v3-card { padding: 10px; }
+  .bb-v3-card-name { font-size: 0.82rem; min-height: 2.4em; }
+  .bb-v3-sizes { grid-template-columns: 1fr 1fr; }
+  .bb-v3-size { padding: 10px 12px; }
+  .bb-v3-size img { width: 40px; height: 40px; }
+  .bb-v3-sb-inner { padding: 14px; }
+}
+
+/* === Animación "Preparando Blend" con frasco real === */
 .bb-prep-scene {
-  position: relative; width: 180px; height: 180px;
+  position: relative;
+  width: 180px;
+  height: 180px;
   margin-bottom: 20px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .bb-prep-frasco-img {
-  width: 130px; height: 130px;
+  width: 130px;
+  height: 130px;
   object-fit: contain;
   animation: bb-prep-shake 0.5s ease-in-out infinite;
   filter: drop-shadow(0 0 18px rgba(232,184,75,0.5));
-  z-index: 2; position: relative;
+  z-index: 2;
+  position: relative;
 }
 @keyframes bb-prep-shake {
   0%, 100% { transform: rotate(0deg) translateY(0); }
@@ -2603,7 +3023,8 @@ html.no-opening #opening-overlay {
   75% { transform: rotate(6deg) translateY(-2px); }
 }
 .bb-prep-glow {
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(232,184,75,0.35) 0%, rgba(199,85,63,0.15) 40%, transparent 70%);
   animation: bb-prep-glow-pulse 1.5s ease-in-out infinite;
@@ -2614,42 +3035,35 @@ html.no-opening #opening-overlay {
   50% { transform: scale(1.25); opacity: 1; }
 }
 .bb-prep-particles {
-  position: absolute; inset: 0;
-  z-index: 3; pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
 }
 .bb-particle {
   position: absolute;
-  top: 50%; left: 50%;
-  width: 7px; height: 7px; border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   background: var(--p-color);
   box-shadow: 0 0 8px var(--p-color);
   animation: bb-particle-orbit var(--p-dur) ease-in-out infinite;
   animation-delay: var(--p-delay);
 }
 @keyframes bb-particle-orbit {
-  0% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(0);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1; transform: translate(-50%, -50%) translate(55px, -35px) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(70px, 25px) scale(0.7);
-    opacity: 0.8;
-  }
-  80% {
-    transform: translate(-50%, -50%) translate(35px, 50px) scale(0.5);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(0);
-    opacity: 0;
-  }
+  0% { transform: translate(-50%, -50%) translate(0, 0) scale(0); opacity: 0; }
+  20% { opacity: 1; transform: translate(-50%, -50%) translate(55px, -35px) scale(1); }
+  50% { transform: translate(-50%, -50%) translate(70px, 25px) scale(0.7); opacity: 0.8; }
+  80% { transform: translate(-50%, -50%) translate(35px, 50px) scale(0.5); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) translate(0, 0) scale(0); opacity: 0; }
 }
 .bb-prep-title {
-  font-size: 1.4rem; font-weight: 700;
-  color: var(--gold); margin-bottom: 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 6px;
   letter-spacing: 0.02em;
   animation: bb-prep-title-fade 0.5s ease-out;
 }
@@ -2658,36 +3072,23 @@ html.no-opening #opening-overlay {
   to { opacity: 1; transform: translateY(0); }
 }
 .bb-prep-subtitle {
-  font-size: 0.95rem; color: var(--text-sec);
-  margin-bottom: 16px; max-width: 280px;
+  font-size: 0.95rem;
+  color: var(--text-sec);
+  margin-bottom: 16px;
+  max-width: 280px;
   text-align: center;
 }
 .bb-prep-dots {
-  display: flex; gap: 4px;
-  color: var(--gold); font-size: 1.3rem; font-weight: 700;
+  display: flex;
+  gap: 4px;
+  color: var(--gold);
+  font-size: 1.3rem;
+  font-weight: 700;
 }
-.bb-prep-dots span {
-  animation: bb-prep-dot-bounce 1.4s ease-in-out infinite;
-}
+.bb-prep-dots span { animation: bb-prep-dot-bounce 1.4s ease-in-out infinite; }
 .bb-prep-dots span:nth-child(2) { animation-delay: 0.2s; }
 .bb-prep-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bb-prep-dot-bounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
   40% { transform: translateY(-8px); opacity: 1; }
-}
-
-/* === Responsive: pills y slider compactos en mobile === */
-@media (max-width: 640px) {
-  .bb-esp-pill {
-    padding: 7px 12px; font-size: 0.8rem;
-  }
-  .bb-mix-preview-bar { height: 20px; }
-  .bb-mix-row-v2 { padding: 8px 10px; }
-  .bb-mix-name { font-size: 0.8rem; }
-  .bb-pct-btn-v2 { width: 26px; height: 26px; }
-  .bb-pct-slider::-webkit-slider-thumb { width: 16px; height: 16px; }
-  .bb-pct-slider::-moz-range-thumb { width: 16px; height: 16px; }
-  .bb-prep-title { font-size: 1.2rem; }
-  .bb-prep-scene { width: 140px; height: 140px; }
-  .bb-prep-frasco-img { width: 100px; height: 100px; }
 }
