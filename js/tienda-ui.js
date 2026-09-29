@@ -1137,7 +1137,7 @@ function _bbRender() {
     }
   }
   h += '</div>';
-  h += '<img src="icons/frasco-vacio.jpeg" alt="Frasco" class="bb9-frasco-img">';
+  h += '<img src="icons/frasco-vacio.png" alt="Frasco" class="bb9-frasco-img">';
   if (s.especias.length > 0) h += '<div class="bb9-frasco-glow active"></div>';
   else h += '<div class="bb9-frasco-glow"></div>';
   if (s.nombre) h += '<div class="bb9-frasco-label">'+s.nombre.substring(0,14)+'</div>';
@@ -1293,7 +1293,7 @@ function addCustomBlendToCart() {
 }
 
 function _showBlendAnim(state, onComplete) {
-  var fi = 'icons/frasco-vacio.jpeg';
+  var fi = 'icons/frasco-vacio.png';
   var o = document.createElement('div');
   o.id='bb-prep-overlay';
   o.style.cssText='position:fixed;inset:0;background:rgba(15,10,7,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)';

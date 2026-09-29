@@ -2603,6 +2603,7 @@ html.no-opening #opening-overlay {
   transition: height 0.15s ease, bottom 0.15s ease;
 }
 .bb9-frasco-img {
+  mix-blend-mode: screen;
   position: relative;
   width: 180px;
   height: 280px;
@@ -2723,7 +2724,8 @@ html.no-opening #opening-overlay {
 @media (max-width: 560px) {
   .bb9-stage { grid-template-columns: 70px 140px 70px; min-height: 240px; }
   .bb9-frasco-wrap { width: 140px; height: 220px; }
-  .bb9-frasco-img { width: 140px; height: 220px; }
+  .bb9-frasco-img {
+  mix-blend-mode: screen; width: 140px; height: 220px; }
   .bb9-frasco-layers { width: 70px; height: 160px; bottom: 16px; }
   .bb9-tag-name { font-size: 0.55rem; }
   .bb9-tag-pct { font-size: 0.62rem; }
