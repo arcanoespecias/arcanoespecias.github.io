@@ -1174,15 +1174,15 @@ function renderBlendBuilder() {
       h += '<div class="bb-mix-bar-label" id="bb-mix-bar-label-' + i + '">' + sp.porcentaje + '%</div>';
       h += '</div>';
       h += '<div class="bb-mix-controls">';
-      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',-5)" aria-label="Restar 5%">\u2212</button>';
+      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',-20)" aria-label="Restar 20%">\u2212</button>';
       h += '<div class="bb-pct-display"><input class="bb-pct-input" id="bb-pct-' + i + '" type="number" min="1" max="100" value="' + sp.porcentaje + '" onchange="_bbSetPctDirect(' + i + ',this.value)" aria-label="Porcentaje"><span class="bb-pct-sym">%</span></div>';
-      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',5)" aria-label="Sumar 5%">+</button>';
+      h += '<button class="bb-pct-btn" onclick="_bbChangePct(' + i + ',20)" aria-label="Sumar 20%">+</button>';
       h += '</div>';
       h += '</div>';
     }
     h += '</div>';
     h += '<div class="bb-mix-tools">';
-    h += '<span class="bb-mix-hint">Toca \u2212/+ para ajustar de a 5%</span>';
+    h += '<span class="bb-mix-hint">Toca \u2212/+ para ajustar de a 20%</span>';
     h += '<button type="button" class="bb-mix-balance" onclick="_bbBalance()">Equilibrar</button>';
     h += '</div>';
     var barColor = total === 100 ? 'var(--success)' : (total > 100 ? 'var(--error)' : 'var(--gold)');
@@ -1196,8 +1196,8 @@ function renderBlendBuilder() {
     var frascoFinal = state.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
     h += '<div class="bb-step-content bb-success">';
     h += '<img src="' + frascoFinal + '" alt="Tu blend" class="bb-success-frasco">';
-    h += '<h3 class="bb-step-title bb-success-title">\u00A1Tu Blend est\u00E1 listo!</h3>';
-    h += '<p class="bb-step-desc bb-success-desc">' + (state.nombre || 'Tu blend') + ' ha quedado fant\u00E1stico.</p>';
+    h += '<h3 class="bb-step-title bb-success-title">TU BLEND QUEDÓ ESPECTACULAR</h3>';
+    h += '<p class="bb-step-desc bb-success-desc">' + (state.nombre || 'Tu blend') + ' ya está en tu carrito</p>';
     h += '<div class="bb-success-btns">';
     h += '<button class="bb-nav-btn success dark" onclick="_bbCreateAnother()">Crear otro</button>';
     h += '<button class="bb-nav-btn success dark" onclick="goTo(\'tienda\')">Volver a la tienda</button>';
@@ -1235,7 +1235,7 @@ function renderBlendBuilder() {
     var canNext = _bbCanNext(step);
     h += '<button id="bb-btn-next" class="bb-nav-btn next' + (canNext ? '' : ' disabled') + '" onclick="_bbGoStep(' + (step + 1) + ')"' + (canNext ? '' : ' disabled') + '>Siguiente</button>';
   } else {
-    h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Agregar al carrito</button>';
+    h += '<button class="bb-nav-btn next cart" onclick="addCustomBlendToCart()">Preparar Blend</button>';
   }
   h += '</div>';
   }
