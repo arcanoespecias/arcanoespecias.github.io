@@ -610,6 +610,16 @@ function _renderDetail(products, idx) {
   var ingsHtml = '';
   if (isBlend && p.ingredientes && p.ingredientes.length > 0) {
     ingsHtml = '<div class="detail-ingredients"><div class="detail-ingredients-label">Ingredientes</div>';
+    for (var ii = 0; ii < p.ingredientes.length; ii++) {
+      var ingName = p.ingredientes[ii].especiaNombre;
+      if (!ingName && p.ingredientes[ii].especiaId != null && _sDb && _sDb.especias) {
+        var esObj = _sDb.especias[p.ingredientes[ii].especiaId];
+        if (esObj && esObj.nombre) ingName = esObj.nombre;
+      }
+      if (!ingName) ingName = 'Especia';
+      ingsHtml += '<span class="detail-ingredient-chip">' + ingName + '</span>';
+    }
+    ingsHtml += '</div>';
   }
   // Para packs: mostrar los blends que lo componen
   if (isPack && p.blendItems && p.blendItems.length > 0) {
@@ -624,16 +634,6 @@ function _renderDetail(products, idx) {
       }
       var tallaLabel = bTalla === 'grande' ? 'Grande' : 'Pequeño';
       ingsHtml += '<span class="detail-ingredient-chip" style="border-color:var(--gold)">' + bName + ' (' + tallaLabel + ')</span>';
-    }
-    ingsHtml += '</div>';
-    for (var ii = 0; ii < p.ingredientes.length; ii++) {
-      var ingName = p.ingredientes[ii].especiaNombre;
-      if (!ingName && p.ingredientes[ii].especiaId != null && _sDb && _sDb.especias) {
-        var esObj = _sDb.especias[p.ingredientes[ii].especiaId];
-        if (esObj && esObj.nombre) ingName = esObj.nombre;
-      }
-      if (!ingName) ingName = 'Especia';
-      ingsHtml += '<span class="detail-ingredient-chip">' + ingName + '</span>';
     }
     ingsHtml += '</div>';
   }
