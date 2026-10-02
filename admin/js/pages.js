@@ -1,6 +1,28 @@
 const Pages = {
   _qrPagoImage: localStorage.getItem('arcano_qr_pago_image') || '',
 
+  // Peso del frasco vac\u00edo (frasco + tapa + etiqueta) en gramos.
+  // Estos valores son fijos: el frasco peque\u00F1o siempre pesa 86g y el grande 126g
+  // sin importar el blend. Se suman a los gramos de especias para dar el peso total.
+  PESO_FRASCO_CHICO: 86,
+  PESO_FRASCO_GRANDE: 126,
+
+  // Helper: peso del frasco vac\u00EDo seg\u00FAn tama\u00F1o
+  _pesoFrascoVacio: function(size) {
+    return size === 'grande' ? Pages.PESO_FRASCO_GRANDE : Pages.PESO_FRASCO_CHICO;
+  },
+
+  // Helper: peso total de UN frasco (frasco + especias) seg\u00FAn tama\u00F1o
+  _pesoTotalFrasco: function(blend, size) {
+    if (!blend || !blend.ingredientes) return Pages._pesoFrascoVacio(size);
+    var especias = 0;
+    for (var i = 0; i < blend.ingredientes.length; i++) {
+      var ing = blend.ingredientes[i];
+      especias += size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+    }
+    return Pages._pesoFrascoVacio(size) + especias;
+  },
+
   // Helper global para construir links de WhatsApp con encoding UTF-8 correcto (emojis y acentos)
   // IMPORTANTE: usar api.whatsapp.com directamente, NO wa.me
   // wa.me rompe los emojis en el redirect 302 (los convierte a U+FFFD)
@@ -499,10 +521,12 @@ const Pages = {
       } else if (filteredBlends.length === 0) {
         h += '<div class="card"><div class="card-body"><p class="text-muted text-center" style="padding:32px">No se encontraron blends para "' + (window._prodSearch || '').replace(/"/g, '&quot;') + '"</p></div></div>';
       } else {
-        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Region</th><th>Ingredientes</th><th>$Peque\u00F1o</th><th>$Grande</th><th>Fr.Ch</th><th>Fr.Gr</th><th>Acciones</th></tr></thead><tbody>';
+        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Region</th><th>Ingredientes</th><th>$Peque\u00F1o</th><th>$Grande</th><th>Peso Pq</th><th>Peso Gr</th><th>Fr.Ch</th><th>Fr.Gr</th><th>Acciones</th></tr></thead><tbody>';
         for (var i = 0; i < filteredBlends.length; i++) {
           var b = filteredBlends[i];
           var ingN = (b.ingredientes||[]).map(function(x){return x.especiaNombre || _espMap[x.especiaId] || '?'}).join(', ');
+          var pesoPq = Pages._pesoTotalFrasco(b, 'chico');
+          var pesoGr = Pages._pesoTotalFrasco(b, 'grande');
           h += '<tr>' +
             '<td class="fw7">' + b.nombre + '</td>' +
             '<td><span class="badge badge-blue">' + ((b.categorias||[]).length ? (b.categorias||[]).join(', ') : (b.categoria||'\u2014')) + '</span></td>' +
@@ -510,6 +534,8 @@ const Pages = {
             '<td class="text-sm text-muted">' + (ingN||'\u2014') + '</td>' +
             '<td>$' + (b.precioChico||0).toLocaleString() + '</td>' +
             '<td>$' + (b.precioGrande||0).toLocaleString() + '</td>' +
+            '<td class="text-sm"><span title="Frasco ' + Pages.PESO_FRASCO_CHICO + 'g + especias ' + (pesoPq - Pages.PESO_FRASCO_CHICO) + 'g">' + pesoPq + 'g</span></td>' +
+            '<td class="text-sm"><span title="Frasco ' + Pages.PESO_FRASCO_GRANDE + 'g + especias ' + (pesoGr - Pages.PESO_FRASCO_GRANDE) + 'g">' + pesoGr + 'g</span></td>' +
             '<td><span class="' + ((b.stockChico||0)<=3?'text-red fw7':'text-green') + '">' + (b.stockChico||0) + '</span></td>' +
             '<td><span class="' + ((b.stockGrande||0)<=3?'text-red fw7':'text-green') + '">' + (b.stockGrande||0) + '</span></td>' +
             '<td style="white-space:nowrap">' +
@@ -911,6 +937,7 @@ const Pages = {
     var pkgG = (costos.envaseGrande||0) + (costos.bolsaGrande||0) + (costos.cinta||0) + (costos.stickerGrande||0);
     var rows = document.querySelectorAll('#blend-ings .g4');
     var costEspC = 0, costEspG = 0;
+    var gramosEspC = 0, gramosEspG = 0;
     var lines = [];
     var especias = ArcanoDB.getEspecias();
     for (var i = 0; i < rows.length; i++) {
@@ -923,6 +950,8 @@ const Pages = {
       var cG = gg * cp;
       costEspC += cC;
       costEspG += cG;
+      gramosEspC += gc;
+      gramosEspG += gg;
       var espName = '';
       for (var s = 0; s < especias.length; s++) { if (Number(especias[s].id) === Number(espId)) { espName = especias[s].nombre; break; } }
       if (gc > 0 || gg > 0) lines.push(espName + ': ' + gc + 'g=$' + cC.toFixed(0) + ' / ' + gg + 'g=$' + cG.toFixed(0));
@@ -935,6 +964,9 @@ const Pages = {
     var margenG = precioG - totalG;
     var pctC = precioC > 0 ? (margenC / precioC * 100).toFixed(1) : '0';
     var pctG = precioG > 0 ? (margenG / precioG * 100).toFixed(1) : '0';
+    // Peso total = frasco vacio + especias
+    var pesoTotalC = Pages.PESO_FRASCO_CHICO + gramosEspC;
+    var pesoTotalG = Pages.PESO_FRASCO_GRANDE + gramosEspG;
     var el = document.getElementById('f-bl-cost-preview');
     if (!el) return;
     el.innerHTML = '<div class="card mt-12" style="background:var(--bg);border-color:var(--gold)"><div class="card-header"><h3>Costo de Produccion</h3></div><div class="card-body">' +
@@ -945,7 +977,15 @@ const Pages = {
           (precioC > 0 ? '<div class="text-xs mt-4">Venta: $' + precioC + ' | Margen: <span style="color:' + (margenC >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + margenC.toFixed(0) + ' (' + pctC + '%)</span></div>' : '') + '</div>' +
         '<div><div class="fw7">Grande</div><div class="text-sm">Especias: $' + costEspG.toFixed(0) + ' + Empaque: $' + pkgG.toFixed(0) + ' = <b style="color:var(--red)">$' + totalG.toFixed(0) + '</b></div>' +
           (precioG > 0 ? '<div class="text-xs mt-4">Venta: $' + precioG + ' | Margen: <span style="color:' + (margenG >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + margenG.toFixed(0) + ' (' + pctG + '%)</span></div>' : '') + '</div>' +
-      '</div></div></div>';
+      '</div>' +
+      '<div class="mt-12" style="padding:10px 12px;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.25);border-radius:8px">' +
+        '<div class="text-xs text-muted mb-6" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:700">Peso total por frasco</div>' +
+        '<div class="g2">' +
+          '<div><span class="text-sm">Peque\u00F1o: </span><b style="color:var(--gold)">' + pesoTotalC + 'g</b> <span class="text-xs text-muted">(frasco ' + Pages.PESO_FRASCO_CHICO + 'g + especias ' + gramosEspC + 'g)</span></div>' +
+          '<div><span class="text-sm">Grande: </span><b style="color:var(--gold)">' + pesoTotalG + 'g</b> <span class="text-xs text-muted">(frasco ' + Pages.PESO_FRASCO_GRANDE + 'g + especias ' + gramosEspG + 'g)</span></div>' +
+        '</div>' +
+      '</div>' +
+      '</div></div>';
   },
 
   delBlend(id) {
@@ -12809,11 +12849,14 @@ Pages._mbBlendCard = function(b) {
   var numIng = (b.ingredientes || []).length;
   var stockChico = b.stockChico || 0;
   var stockGrande = b.stockGrande || 0;
+  var pesoPq = Pages._pesoTotalFrasco(b, 'chico');
+  var pesoGr = Pages._pesoTotalFrasco(b, 'grande');
   return '<div class="mb-blend-card" data-blend-name="' + esc((b.nombre || '').toLowerCase()) + '" onclick="Pages._mbSelectBlend(' + b.id + ')">' +
     '<div class="mb-blend-name">' + esc(b.nombre) + '</div>' +
     '<div class="mb-blend-cat">' + esc(b.categoria || (b.categorias && b.categorias[0]) || '') + '</div>' +
     '<div class="mb-blend-meta">' +
       '<span>' + numIng + ' especias</span>' +
+      '<span>Peso: ' + pesoPq + 'g / ' + pesoGr + 'g</span>' +
       '<span>Stock: ' + stockChico + ' ch / ' + stockGrande + ' gr</span>' +
     '</div>' +
   '</div>';
@@ -12915,9 +12958,10 @@ Pages._mbRenderStep2 = function() {
 
   // Resumen
   h += '<div class="mb-summary">';
-  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso por frasco</div><div class="mb-summary-value">' + pesoFrasco + 'g</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso especias/frasco</div><div class="mb-summary-value">' + pesoFrasco + 'g</div></div>';
+  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso frasco completo</div><div class="mb-summary-value">' + (pesoFrasco + Pages._pesoFrascoVacio(size)) + 'g</div><div class="mb-summary-label" style="font-size:10px;color:var(--text-muted)">frasco ' + Pages._pesoFrascoVacio(size) + 'g + especias</div></div>';
   h += '<div class="mb-summary-item"><div class="mb-summary-label">Frascos a producir</div><div class="mb-summary-value">' + qty + '</div></div>';
-  h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso total</div><div class="mb-summary-value">' + pesoTotal.toLocaleString() + 'g</div></div>';
+  h += '<div class="mb-summary-item mb-resumen-highlight"><div class="mb-summary-label">Peso TOTAL a mezclar</div><div class="mb-summary-value">' + pesoTotal.toLocaleString() + 'g</div></div>';
   h += '</div>';
 
   // Verificaci\u00F3n de stock
@@ -13600,7 +13644,8 @@ Pages._renderCalcMezcla = function() {
 
       // Resumen
       h += '<div class="mb-summary">';
-      h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso por frasco</div><div class="mb-summary-value">' + pesoFrasco + 'g</div></div>';
+      h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso especias/frasco</div><div class="mb-summary-value">' + pesoFrasco + 'g</div></div>';
+      h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso frasco completo</div><div class="mb-summary-value">' + (pesoFrasco + Pages._pesoFrascoVacio(calc.size)) + 'g</div><div class="mb-summary-label" style="font-size:10px;color:var(--text-muted)">frasco ' + Pages._pesoFrascoVacio(calc.size) + 'g + especias</div></div>';
       h += '<div class="mb-summary-item"><div class="mb-summary-label">Frascos a preparar</div><div class="mb-summary-value">' + calc.qty + '</div></div>';
       h += '<div class="mb-summary-item mb-resumen-highlight"><div class="mb-summary-label">Peso TOTAL a mezclar</div><div class="mb-summary-value">' + pesoTotal.toLocaleString() + 'g</div></div>';
       h += '</div>';
@@ -13838,7 +13883,8 @@ Pages._calcPrint = function() {
     '<div class="meta"><strong>Blend:</strong> ' + esc(blend.nombre) + ' \u00B7 ' +
     '<strong>Tama\u00F1o:</strong> ' + (calc.size === 'grande' ? 'Grande' : 'Peque\u00F1o') + ' \u00B7 ' +
     '<strong>Cantidad:</strong> ' + calc.qty + ' frascos \u00B7 ' +
-    '<strong>Peso total:</strong> ' + pesoTotal.toLocaleString() + 'g</div>' +
+    '<strong>Peso a mezclar:</strong> ' + pesoTotal.toLocaleString() + 'g \u00B7 ' +
+    '<strong>Peso frasco completo:</strong> ' + (pesoFrasco + Pages._pesoFrascoVacio(calc.size)) + 'g c/u</div>' +
 
     '<h3>Cantidades a mezclar</h3>' +
     '<table><thead><tr>' +
