@@ -1958,6 +1958,7 @@ const Pages = {
     h += '<button class="tab-btn ' + (self._prodTab === 'historial' ? 'active' : '') + '" onclick="Pages._prodTab=\'historial\';App.renderPage(\'produccion\')">Historial</button>';
     h += '<button class="tab-btn ' + (self._prodTab === 'sugerencias' ? 'active' : '') + '" onclick="Pages._prodTab=\'sugerencias\';App.renderPage(\'produccion\')">Sugerencias de Producci\u00F3n</button>';
     h += '<button class="tab-btn ' + (self._prodTab === 'making' ? 'active' : '') + '" onclick="Pages._prodTab=\'making\';App.renderPage(\'produccion\')">\u{1F3AE} Making Blends</button>';
+    h += '<button class="tab-btn ' + (self._prodTab === 'calc' ? 'active' : '') + '" onclick="Pages._prodTab=\'calc\';App.renderPage(\'produccion\')">\u{1F9EE} Calculadora</button>';
     h += '</div>';
 
     if (self._prodTab === 'sugerencias') {
@@ -1968,6 +1969,12 @@ const Pages = {
 
     if (self._prodTab === 'making') {
       h += self._renderMakingBlends();
+      container.innerHTML = h;
+      return;
+    }
+
+    if (self._prodTab === 'calc') {
+      h += self._renderCalcMezcla();
       container.innerHTML = h;
       return;
     }
@@ -13444,6 +13451,374 @@ Pages._mbPrintRecipe = function() {
   html += '</tbody><tfoot><tr class="total"><td>Total</td><td>\u2014</td><td>' + mb.targetWeight + 'g</td><td>100%</td></tr></tfoot></table>' +
     '<p style="margin-top:24px;color:#888;font-size:12px">Generado por Making Blends \u00B7 ' + new Date().toLocaleString('es-CO') + '</p>' +
     '</body></html>';
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function() { w.print(); }, 300);
+};
+
+/* ============================================================
+   CALCULADORA DE MEZCLA
+   Herramienta independiente del stock: el admin elige blend,
+   tamano y cantidad, y obtiene los gramos de cada especia
+   necesarios para preparar esa cantidad de blends.
+   NO toca stock, NO registra produccion, solo calcula.
+   ============================================================ */
+
+Pages._calc = {
+  blendId: null,
+  size: 'chico',
+  qty: 10,
+  step: 0,         // 0 = todavia no eligio blend, 1 = resultado
+  currentStepIdx: -1,  // Para el modo "paso a paso"
+  doneSteps: {}    // {especiaId: true} para marcar como ya pesadas
+};
+
+Pages._renderCalcMezcla = function() {
+  var self = Pages;
+  var calc = self._calc;
+  var blends = ArcanoDB.getBlends();
+  var blendsConIng = blends.filter(function(b) {
+    return b.ingredientes && b.ingredientes.length > 0;
+  });
+
+  var h = '<div class="mb-container">';
+  h += '<div class="mb-section" style="padding-bottom:0">';
+  h += '<h3 class="mb-section-title">\u{1F9EE} Calculadora de Mezcla</h3>';
+  h += '<p class="text-muted" style="margin:6px 0 16px;font-size:13px;line-height:1.5">Calcul\u00E1 cu\u00E1ntos gramos de cada especia necesit\u00E1s para preparar una cantidad de blends. <strong>No afecta el stock</strong>: es solo una gu\u00EDa de preparaci\u00F3n.</p>';
+  h += '</div>';
+
+  // Selector de blend
+  h += '<div class="mb-section">';
+  h += '<div class="mb-step-header"><h4 class="mb-section-title" style="font-size:14px">1. Eleg\u00ED el blend</h4></div>';
+  h += '<input type="text" class="input mb-search" id="calc-search" placeholder="\u{1F50D} Buscar blend..." oninput="Pages._calcFilterBlends()" style="max-width:320px">';
+  h += '<div class="mb-blend-grid" id="calc-blend-grid" style="margin-top:12px">';
+  for (var i = 0; i < blendsConIng.length; i++) {
+    var b = blendsConIng[i];
+    var numIng = (b.ingredientes || []).length;
+    var isActive = calc.blendId === b.id;
+    h += '<div class="mb-blend-card' + (isActive ? ' selected' : '') + '" data-blend-name="' + esc((b.nombre || '').toLowerCase()) + '" onclick="Pages._calcSelectBlend(' + b.id + ')" style="' + (isActive ? 'border-color:var(--gold);background:rgba(212,175,55,0.08)' : '') + '">' +
+      '<div class="mb-blend-name">' + esc(b.nombre) + '</div>' +
+      '<div class="mb-blend-cat">' + esc(b.categoria || (b.categorias && b.categorias[0]) || '') + '</div>' +
+      '<div class="mb-blend-meta"><span>' + numIng + ' especias</span></div>' +
+    '</div>';
+  }
+  h += '</div>';
+  if (blendsConIng.length === 0) {
+    h += '<p class="text-muted text-center">No hay blends con ingredientes definidos.</p>';
+  }
+  h += '</div>';
+
+  // Si hay blend seleccionado, mostrar config + resultado
+  if (calc.blendId) {
+    var blend = ArcanoDB.getBlend(calc.blendId);
+    if (blend) {
+      var ingredientes = blend.ingredientes || [];
+      var pesoFrasco = 0;
+      var pesoFrascoAlt = 0;
+      for (var i = 0; i < ingredientes.length; i++) {
+        var ing = ingredientes[i];
+        pesoFrasco += calc.size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+        pesoFrascoAlt += calc.size === 'grande' ? (Number(ing.gramosChico) || 0) : (Number(ing.gramosGrande) || 0);
+      }
+      var pesoTotal = pesoFrasco * calc.qty;
+
+      h += '<div class="mb-section">';
+      h += '<div class="mb-step-header"><h4 class="mb-section-title" style="font-size:14px">2. Configuraci\u00F3n</h4></div>';
+
+      h += '<div class="mb-config-row">';
+      // Tamano
+      h += '<div class="form-group"><label>Tama\u00F1o del frasco</label>';
+      h += '<div class="mb-size-toggle">';
+      h += '<button class="mb-size-btn ' + (calc.size === 'chico' ? 'active' : '') + '" onclick="Pages._calcSetSize(\'chico\')"><span class="mb-size-icon">\u{1FAD9}</span><span class="mb-size-name">Peque\u00F1o</span><span class="mb-size-weight">' + (calc.size === 'chico' ? pesoFrasco : pesoFrascoAlt) + 'g</span></button>';
+      h += '<button class="mb-size-btn ' + (calc.size === 'grande' ? 'active' : '') + '" onclick="Pages._calcSetSize(\'grande\')"><span class="mb-size-icon">\u{1FAD9}</span><span class="mb-size-name">Grande</span><span class="mb-size-weight">' + (calc.size === 'grande' ? pesoFrasco : pesoFrascoAlt) + 'g</span></button>';
+      h += '</div></div>';
+
+      // Cantidad
+      h += '<div class="form-group"><label>Cantidad de frascos</label>';
+      h += '<div class="mb-qty-selector"><button onclick="Pages._calcAdjustQty(-1)">\u2212</button>';
+      h += '<input type="number" id="calc-qty-input" value="' + calc.qty + '" min="1" max="9999" oninput="Pages._calcOnQtyChange()">';
+      h += '<button onclick="Pages._calcAdjustQty(1)">+</button></div>';
+      h += '<div class="mb-qty-presets"><button onclick="Pages._calcSetQty(5)">5</button><button onclick="Pages._calcSetQty(10)">10</button><button onclick="Pages._calcSetQty(25)">25</button><button onclick="Pages._calcSetQty(50)">50</button><button onclick="Pages._calcSetQty(100)">100</button></div>';
+      h += '</div>';
+      h += '</div>'; // mb-config-row
+
+      // Resumen
+      h += '<div class="mb-summary">';
+      h += '<div class="mb-summary-item"><div class="mb-summary-label">Peso por frasco</div><div class="mb-summary-value">' + pesoFrasco + 'g</div></div>';
+      h += '<div class="mb-summary-item"><div class="mb-summary-label">Frascos a preparar</div><div class="mb-summary-value">' + calc.qty + '</div></div>';
+      h += '<div class="mb-summary-item mb-resumen-highlight"><div class="mb-summary-label">Peso TOTAL a mezclar</div><div class="mb-summary-value">' + pesoTotal.toLocaleString() + 'g</div></div>';
+      h += '</div>';
+
+      h += '</div>'; // mb-section
+
+      // Resultado: tabla de especias
+      h += '<div class="mb-section">';
+      h += '<div class="mb-step-header"><h4 class="mb-section-title" style="font-size:14px">3. Cantidades a mezclar</h4>';
+      h += '<div>';
+      h += '<button class="btn btn-sm btn-outline" onclick="Pages._calcPrint()" style="margin-right:6px">\u{1F5A8}\uFE0F Imprimir</button>';
+      h += '<button class="btn btn-sm btn-outline" onclick="Pages._calcReset()">Cambiar blend</button>';
+      h += '</div></div>';
+
+      h += '<div class="mb-recuento-card">';
+      h += '<div class="mb-blend-selected"><div class="mb-blend-selected-name">' + esc(blend.nombre) + '</div><div class="mb-blend-selected-cat">' + calc.qty + ' ' + (calc.size === 'grande' ? 'frascos grandes' : 'frascos peque\u00F1os') + '</div></div>';
+
+      h += '<div class="table-wrap"><table class="table mb-recuento-table"><thead><tr>';
+      h += '<th>#</th><th>Especia</th><th class="text-center">g por frasco</th><th class="text-center">% de la mezcla</th><th class="text-center">g TOTALES a pesar</th>';
+      h += '</tr></thead><tbody>';
+
+      var totalGramos = 0;
+      for (var i = 0; i < ingredientes.length; i++) {
+        var ing = ingredientes[i];
+        var esp = ArcanoDB.getEspecia(ing.especiaId);
+        var nombreEsp = esp ? esp.nombre : (ing.especiaNombre || 'Especia');
+        var gpf = calc.size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+        var gramosTotal = gpf * calc.qty;
+        var pct = pesoFrasco > 0 ? (gpf / pesoFrasco) * 100 : 0;
+        totalGramos += gramosTotal;
+        var isDone = calc.doneSteps[ing.especiaId] === true;
+        h += '<tr class="' + (isDone ? 'calc-row-done' : '') + '" id="calc-row-' + i + '">' +
+          '<td class="text-center text-muted">' + (i + 1) + '</td>' +
+          '<td class="fw7">' + esc(nombreEsp) + '</td>' +
+          '<td class="text-center text-muted">' + gpf + 'g</td>' +
+          '<td class="text-center">' + pct.toFixed(1) + '%</td>' +
+          '<td class="text-center fw7" style="color:var(--gold);font-size:15px">' + gramosTotal.toLocaleString() + 'g</td>' +
+        '</tr>';
+      }
+      h += '</tbody><tfoot><tr class="fw7" style="background:var(--bg3)">' +
+        '<td colspan="4">TOTAL DE MEZCLA</td>' +
+        '<td class="text-center" style="color:var(--gold);font-size:16px">' + totalGramos.toLocaleString() + 'g</td>' +
+      '</tr></tfoot></table></div>';
+
+      h += '</div>'; // mb-recuento-card
+      h += '</div>'; // mb-section
+
+      // Paso a paso interactivo
+      h += '<div class="mb-section">';
+      h += '<div class="mb-step-header"><h4 class="mb-section-title" style="font-size:14px">4. Gu\u00EDa paso a paso</h4>';
+      h += '<button class="btn btn-sm btn-outline" onclick="Pages._calcResetSteps()">Reiniciar</button></div>';
+      h += '<p class="text-muted" style="font-size:12px;margin:0 0 12px">Pes\u00E1 cada especia y marc\u00E1 el checkbox para avanzar.</p>';
+
+      h += '<div class="calc-steps-list">';
+      for (var i = 0; i < ingredientes.length; i++) {
+        var ing = ingredientes[i];
+        var esp = ArcanoDB.getEspecia(ing.especiaId);
+        var nombreEsp = esp ? esp.nombre : (ing.especiaNombre || 'Especia');
+        var gpf = calc.size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+        var gramosTotal = gpf * calc.qty;
+        var isActive = calc.currentStepIdx === i;
+        var isDone = calc.doneSteps[ing.especiaId] === true;
+        var cls = 'calc-step' + (isActive ? ' active' : '') + (isDone ? ' done' : '');
+        h += '<div class="' + cls + '" id="calc-step-' + i + '">';
+        h += '<div class="calc-step-num">' + (isDone ? '\u2713' : (i + 1)) + '</div>';
+        h += '<div class="calc-step-body">';
+        h += '<div class="calc-step-name">' + esc(nombreEsp) + '</div>';
+        h += '<div class="calc-step-detail">Pes\u00E1 <strong style="color:var(--gold)">' + gramosTotal.toLocaleString() + 'g</strong> de esta especia y agregala al recipiente</div>';
+        h += '</div>';
+        if (!isDone) {
+          h += '<button class="btn btn-sm btn-gold" onclick="Pages._calcMarkDone(' + i + ')">Listo</button>';
+        } else {
+          h += '<button class="btn btn-sm btn-ghost" onclick="Pages._calcUnmarkDone(' + i + ')">Deshacer</button>';
+        }
+        h += '</div>';
+      }
+      h += '</div>';
+
+      // Progreso total
+      var doneCount = 0;
+      for (var k in calc.doneSteps) if (calc.doneSteps[k]) doneCount++;
+      var pct = ingredientes.length > 0 ? Math.round((doneCount / ingredientes.length) * 100) : 0;
+      h += '<div class="mb-progress-section" style="margin-top:16px">';
+      h += '<div class="mb-progress-bar"><div class="mb-progress-fill" id="calc-progress-fill" style="width:' + pct + '%"></div></div>';
+      h += '<div class="mb-progress-text" id="calc-progress-text">' + doneCount + ' / ' + ingredientes.length + ' especias pesadas (' + pct + '%)</div>';
+      h += '</div>';
+
+      if (doneCount === ingredientes.length && ingredientes.length > 0) {
+        h += '<div class="mb-ok-box" style="margin-top:16px">\u2713 \u00A1Mezcla completa! Ya ten\u00E9s ' + totalGramos.toLocaleString() + 'g listos para envasar en ' + calc.qty + ' frascos.</div>';
+      }
+
+      h += '</div>'; // mb-section
+    }
+  }
+
+  h += '</div>'; // mb-container
+  return h;
+};
+
+Pages._calcFilterBlends = function() {
+  var q = (document.getElementById('calc-search').value || '').toLowerCase();
+  var cards = document.querySelectorAll('#calc-blend-grid .mb-blend-card');
+  for (var i = 0; i < cards.length; i++) {
+    var name = cards[i].dataset.blendName || '';
+    cards[i].style.display = name.indexOf(q) !== -1 ? '' : 'none';
+  }
+};
+
+Pages._calcSelectBlend = function(blendId) {
+  var blend = ArcanoDB.getBlend(blendId);
+  if (!blend) return;
+  Pages._calc.blendId = blendId;
+  Pages._calc.doneSteps = {};
+  Pages._calc.currentStepIdx = -1;
+  App.renderPage('produccion');
+};
+
+Pages._calcSetSize = function(size) {
+  Pages._calc.size = size;
+  Pages._calc.doneSteps = {};
+  Pages._calc.currentStepIdx = -1;
+  App.renderPage('produccion');
+};
+
+Pages._calcAdjustQty = function(delta) {
+  var input = document.getElementById('calc-qty-input');
+  if (!input) return;
+  var v = parseInt(input.value, 10) || 0;
+  v = Math.max(1, Math.min(9999, v + delta));
+  input.value = v;
+  Pages._calc.qty = v;
+  App.renderPage('produccion');
+};
+
+Pages._calcSetQty = function(v) {
+  Pages._calc.qty = v;
+  App.renderPage('produccion');
+};
+
+Pages._calcOnQtyChange = function() {
+  var input = document.getElementById('calc-qty-input');
+  if (!input) return;
+  var v = parseInt(input.value, 10) || 1;
+  Pages._calc.qty = Math.max(1, Math.min(9999, v));
+  App.renderPage('produccion');
+};
+
+Pages._calcReset = function() {
+  Pages._calc.blendId = null;
+  Pages._calc.doneSteps = {};
+  Pages._calc.currentStepIdx = -1;
+  App.renderPage('produccion');
+};
+
+Pages._calcResetSteps = function() {
+  if (!confirm('\u00BFReiniciar el progreso de pesaje?')) return;
+  Pages._calc.doneSteps = {};
+  Pages._calc.currentStepIdx = -1;
+  App.renderPage('produccion');
+};
+
+Pages._calcMarkDone = function(idx) {
+  var self = Pages;
+  var calc = self._calc;
+  var blend = ArcanoDB.getBlend(calc.blendId);
+  if (!blend || !blend.ingredientes || !blend.ingredientes[idx]) return;
+  var ing = blend.ingredientes[idx];
+  calc.doneSteps[ing.especiaId] = true;
+  // Avanzar al siguiente paso no completado
+  calc.currentStepIdx = -1;
+  for (var i = idx + 1; i < blend.ingredientes.length; i++) {
+    if (!calc.doneSteps[blend.ingredientes[i].especiaId]) {
+      calc.currentStepIdx = i;
+      break;
+    }
+  }
+  // Si no hay siguiente, buscar el primero no completado
+  if (calc.currentStepIdx === -1) {
+    for (var j = 0; j < blend.ingredientes.length; j++) {
+      if (!calc.doneSteps[blend.ingredientes[j].especiaId]) {
+        calc.currentStepIdx = j;
+        break;
+      }
+    }
+  }
+  App.renderPage('produccion');
+};
+
+Pages._calcUnmarkDone = function(idx) {
+  var self = Pages;
+  var calc = self._calc;
+  var blend = ArcanoDB.getBlend(calc.blendId);
+  if (!blend || !blend.ingredientes || !blend.ingredientes[idx]) return;
+  var ing = blend.ingredientes[idx];
+  delete calc.doneSteps[ing.especiaId];
+  calc.currentStepIdx = idx;
+  App.renderPage('produccion');
+};
+
+Pages._calcPrint = function() {
+  var self = Pages;
+  var calc = self._calc;
+  var blend = ArcanoDB.getBlend(calc.blendId);
+  if (!blend) return;
+  var ingredientes = blend.ingredientes || [];
+  var pesoFrasco = 0;
+  for (var i = 0; i < ingredientes.length; i++) {
+    pesoFrasco += calc.size === 'grande' ? (Number(ingredientes[i].gramosGrande) || 0) : (Number(ingredientes[i].gramosChico) || 0);
+  }
+  var pesoTotal = pesoFrasco * calc.qty;
+
+  var w = window.open('', '_blank');
+  var html = '<!DOCTYPE html><html><head><title>Calculadora \u2014 ' + esc(blend.nombre) + '</title>' +
+    '<meta charset="UTF-8">' +
+    '<style>' +
+    'body{font-family:Arial,sans-serif;padding:32px;max-width:680px;margin:auto;color:#222;line-height:1.5}' +
+    'h1{color:#c9a84c;margin-bottom:4px}' +
+    '.meta{color:#666;font-size:14px;margin-bottom:24px}' +
+    'table{width:100%;border-collapse:collapse;margin-top:8px}' +
+    'th,td{padding:10px 12px;border-bottom:1px solid #ddd;text-align:left}' +
+    'th{background:#f5f5f5;font-size:13px;text-transform:uppercase;letter-spacing:0.04em}' +
+    'td.num,th.num{text-align:center}' +
+    '.total{font-weight:bold;background:#fff8e1}' +
+    '.gold{color:#c9a84c;font-weight:700}' +
+    '.checkbox{display:inline-block;width:18px;height:18px;border:2px solid #c9a84c;border-radius:3px;margin-right:8px;vertical-align:middle}' +
+    '.step{margin:14px 0;padding:12px 16px;background:#faf6ef;border-radius:6px;border-left:4px solid #c9a84c}' +
+    '.step-num{display:inline-block;width:24px;height:24px;background:#c9a84c;color:#fff;border-radius:50%;text-align:center;line-height:24px;font-weight:700;margin-right:10px;font-size:13px}' +
+    '@media print{body{padding:0}}' +
+    '</style></head><body>' +
+    '<h1>\u{1F9EE} Calculadora de Mezcla</h1>' +
+    '<div class="meta"><strong>Blend:</strong> ' + esc(blend.nombre) + ' \u00B7 ' +
+    '<strong>Tama\u00F1o:</strong> ' + (calc.size === 'grande' ? 'Grande' : 'Peque\u00F1o') + ' \u00B7 ' +
+    '<strong>Cantidad:</strong> ' + calc.qty + ' frascos \u00B7 ' +
+    '<strong>Peso total:</strong> ' + pesoTotal.toLocaleString() + 'g</div>' +
+
+    '<h3>Cantidades a mezclar</h3>' +
+    '<table><thead><tr>' +
+    '<th>#</th><th>Especia</th><th class="num">g por frasco</th><th class="num">%</th><th class="num">g TOTALES</th><th class="num">\u2713</th>' +
+    '</tr></thead><tbody>';
+  for (var i = 0; i < ingredientes.length; i++) {
+    var ing = ingredientes[i];
+    var esp = ArcanoDB.getEspecia(ing.especiaId);
+    var nombreEsp = esp ? esp.nombre : (ing.especiaNombre || 'Especia');
+    var gpf = calc.size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+    var gramosTotal = gpf * calc.qty;
+    var pct = pesoFrasco > 0 ? (gpf / pesoFrasco) * 100 : 0;
+    html += '<tr>' +
+      '<td class="num">' + (i + 1) + '</td>' +
+      '<td>' + esc(nombreEsp) + '</td>' +
+      '<td class="num">' + gpf + 'g</td>' +
+      '<td class="num">' + pct.toFixed(1) + '%</td>' +
+      '<td class="num gold" style="font-size:15px">' + gramosTotal.toLocaleString() + 'g</td>' +
+      '<td class="num"><span class="checkbox"></span></td>' +
+    '</tr>';
+  }
+  html += '</tbody><tfoot><tr class="total">' +
+    '<td colspan="4">TOTAL DE MEZCLA</td>' +
+    '<td class="num gold" style="font-size:16px">' + pesoTotal.toLocaleString() + 'g</td>' +
+    '<td></td>' +
+  '</tr></tfoot></table>';
+
+  // Paso a paso
+  html += '<h3 style="margin-top:32px">Gu\u00EDa paso a paso</h3>';
+  for (var i = 0; i < ingredientes.length; i++) {
+    var ing = ingredientes[i];
+    var esp = ArcanoDB.getEspecia(ing.especiaId);
+    var nombreEsp = esp ? esp.nombre : (ing.especiaNombre || 'Especia');
+    var gpf = calc.size === 'grande' ? (Number(ing.gramosGrande) || 0) : (Number(ing.gramosChico) || 0);
+    var gramosTotal = gpf * calc.qty;
+    html += '<div class="step"><span class="step-num">' + (i + 1) + '</span><strong>' + esc(nombreEsp) + '</strong>: pes\u00E1 <span class="gold">' + gramosTotal.toLocaleString() + 'g</span> y agreg\u00E1 al recipiente.</div>';
+  }
+
+  html += '<p style="margin-top:24px;color:#888;font-size:12px">Generado por Calculadora de Mezcla \u00B7 ' + new Date().toLocaleString('es-CO') + '</p>';
+  html += '</body></html>';
   w.document.write(html);
   w.document.close();
   setTimeout(function() { w.print(); }, 300);

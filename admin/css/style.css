@@ -1279,3 +1279,81 @@ select.input { cursor: pointer; }
   .mb-recuento-table { font-size: 11px; }
   .mb-recuento-table th, .mb-recuento-table td { padding: 6px 4px; }
 }
+
+/* === CALCULADORA DE MEZCLA === */
+.mb-blend-card.selected {
+  border-color: var(--gold, #c9a84c) !important;
+  background: rgba(212,175,55,0.08) !important;
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.2);
+}
+.calc-steps-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.calc-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface, #1f1610);
+  border: 1px solid var(--border, #2a1c12);
+  border-radius: 8px;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
+}
+.calc-step.active {
+  border-color: var(--gold, #c9a84c);
+  background: rgba(212,175,55,0.08);
+  transform: translateX(4px);
+}
+.calc-step.done {
+  opacity: 0.55;
+  border-color: var(--green, #6b8e4e);
+  background: rgba(107,142,78,0.06);
+}
+.calc-step.done .calc-step-name { text-decoration: line-through; }
+.calc-step-num {
+  flex: 0 0 auto;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg3, #2b1f14);
+  color: var(--text, #f5e6d0);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+  border: 2px solid var(--border, #3d2a1c);
+}
+.calc-step.active .calc-step-num {
+  background: var(--gold, #c9a84c);
+  color: var(--bg, #1b0b07);
+  border-color: var(--gold, #c9a84c);
+  box-shadow: 0 0 0 4px rgba(212,175,55,0.15);
+}
+.calc-step.done .calc-step-num {
+  background: var(--green, #6b8e4e);
+  color: #fff;
+  border-color: var(--green, #6b8e4e);
+}
+.calc-step-body { flex: 1 1 auto; min-width: 0; }
+.calc-step-name {
+  font-weight: 600; font-size: 14px; color: var(--text, #f5e6d0);
+  margin-bottom: 2px;
+}
+.calc-step-detail {
+  font-size: 12px; color: var(--text2, #c9b89a);
+  line-height: 1.4;
+}
+.calc-row-done {
+  opacity: 0.55;
+}
+.calc-row-done td { color: var(--text2, #c9b89a) !important; }
+.mb-ok-box {
+  background: rgba(107,142,78,0.1);
+  border: 1px solid var(--green, #6b8e4e);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text, #f5e6d0);
+  font-weight: 500;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .calc-step { padding: 10px; gap: 8px; }
+  .calc-step-num { width: 28px; height: 28px; font-size: 13px; }
+  .calc-step-name { font-size: 13px; }
+  .calc-step-detail { font-size: 11px; }
+}
