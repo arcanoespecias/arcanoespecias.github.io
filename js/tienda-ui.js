@@ -1416,14 +1416,14 @@ function addCustomBlendToCart() {
   var frascoImg = _blendBuilderState.talla === 'grande' ? 'icons/frasco-grande.png' : 'icons/frasco-chico.png';
   var overlay = document.createElement('div');
   overlay.id = 'bb-prep-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,10,7,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)';
+  overlay.className = 'bb-prep-overlay';
   var colors = ['#c7553f','#e8b84b','#8a5a2c','#6b8e4e','#d4a574','#a0522d'];
   var particles = '';
   for (var i = 0; i < 14; i++) {
     var c = colors[i % colors.length];
     var delay = (i * 0.18).toFixed(2);
     var dur = (2.2 + Math.random() * 0.6).toFixed(2);
-    particles += '<div class="bb-particle" style="--p-color:' + c + ';--p-delay:' + delay + 's;--p-dur:' + dur + 's"></div>';
+    particles += '<div class="bb-particle" style="background-color:' + c + ';box-shadow:0 0 8px ' + c + ';animation-delay:' + delay + 's;animation-duration:' + dur + 's"></div>';
   }
   overlay.innerHTML =
     '<div class="bb-prep-scene">' +

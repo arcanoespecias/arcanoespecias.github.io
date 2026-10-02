@@ -2564,19 +2564,78 @@ html.no-opening #opening-overlay {
   }
 }
 /* === Animación Preparando Blend === */
-.bb-prep-scene { position: relative; width: 180px; height: 180px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
-.bb-prep-frasco-img { width: 130px; height: 130px; object-fit: contain; animation: bb-prep-shake 0.5s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(232,184,75,0.5)); z-index: 2; position: relative; }
+/* === BLEND PREP ANIMATION === */
+.bb-prep-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 10, 7, 0.94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  padding: 24px;
+  -webkit-animation: bb-prep-fade-in 0.3s ease-out;
+  animation: bb-prep-fade-in 0.3s ease-out;
+  /* Asegura que este encima de TODO en mobile incluido el bottom nav */
+  /* Forzar contexto de stacking alto */
+  isolation: isolate;
+}
+@-webkit-keyframes bb-prep-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bb-prep-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.bb-prep-scene { position: relative; width: 180px; height: 180px; margin-bottom: 20px; display: -webkit-box; display: -ms-flexbox; display: flex; -webkit-box-align: center; -ms-flex-align: center; align-items: center; -webkit-box-pack: center; -ms-flex-pack: center; justify-content: center; }
+.bb-prep-frasco-img { width: 130px; height: 130px; object-fit: contain; -webkit-animation: bb-prep-shake 0.5s ease-in-out infinite; animation: bb-prep-shake 0.5s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(232,184,75,0.5)); z-index: 2; position: relative; }
+@-webkit-keyframes bb-prep-shake { 0%,100% { -webkit-transform: rotate(0) translateY(0); transform: rotate(0) translateY(0); } 25% { -webkit-transform: rotate(-6deg) translateY(-2px); transform: rotate(-6deg) translateY(-2px); } 75% { -webkit-transform: rotate(6deg) translateY(-2px); transform: rotate(6deg) translateY(-2px); } }
 @keyframes bb-prep-shake { 0%,100% { transform: rotate(0) translateY(0); } 25% { transform: rotate(-6deg) translateY(-2px); } 75% { transform: rotate(6deg) translateY(-2px); } }
-.bb-prep-glow { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(232,184,75,0.35) 0%, rgba(199,85,63,0.15) 40%, transparent 70%); animation: bb-prep-glow-pulse 1.5s ease-in-out infinite; z-index: 1; }
+.bb-prep-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; background: radial-gradient(circle, rgba(232,184,75,0.35) 0%, rgba(199,85,63,0.15) 40%, transparent 70%); -webkit-animation: bb-prep-glow-pulse 1.5s ease-in-out infinite; animation: bb-prep-glow-pulse 1.5s ease-in-out infinite; z-index: 1; }
+@-webkit-keyframes bb-prep-glow-pulse { 0%,100% { -webkit-transform: scale(1); transform: scale(1); opacity: 0.6; } 50% { -webkit-transform: scale(1.25); transform: scale(1.25); opacity: 1; } }
 @keyframes bb-prep-glow-pulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.25); opacity: 1; } }
-.bb-prep-particles { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-.bb-particle { position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--p-color); box-shadow: 0 0 8px var(--p-color); animation: bb-particle-orbit var(--p-dur) ease-in-out infinite; animation-delay: var(--p-delay); }
-@keyframes bb-particle-orbit { 0% { transform: translate(-50%,-50%) translate(0,0) scale(0); opacity: 0; } 20% { opacity: 1; transform: translate(-50%,-50%) translate(55px,-35px) scale(1); } 50% { transform: translate(-50%,-50%) translate(70px,25px) scale(0.7); opacity: 0.8; } 80% { transform: translate(-50%,-50%) translate(35px,50px) scale(0.5); opacity: 0.5; } 100% { transform: translate(-50%,-50%) translate(0,0) scale(0); opacity: 0; } }
-.bb-prep-title { font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-bottom: 6px; animation: bb-prep-title-fade 0.5s ease-out; }
+.bb-prep-particles { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 3; pointer-events: none; }
+.bb-particle {
+  position: absolute; top: 50%; left: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
+  -webkit-animation: bb-particle-orbit 2.4s ease-in-out infinite;
+  animation: bb-particle-orbit 2.4s ease-in-out infinite;
+}
+@-webkit-keyframes bb-particle-orbit {
+  0% { -webkit-transform: translate(-50%,-50%) translate(0,0) scale(0); transform: translate(-50%,-50%) translate(0,0) scale(0); opacity: 0; }
+  20% { opacity: 1; -webkit-transform: translate(-50%,-50%) translate(55px,-35px) scale(1); transform: translate(-50%,-50%) translate(55px,-35px) scale(1); }
+  50% { -webkit-transform: translate(-50%,-50%) translate(70px,25px) scale(0.7); transform: translate(-50%,-50%) translate(70px,25px) scale(0.7); opacity: 0.8; }
+  80% { -webkit-transform: translate(-50%,-50%) translate(35px,50px) scale(0.5); transform: translate(-50%,-50%) translate(35px,50px) scale(0.5); opacity: 0.5; }
+  100% { -webkit-transform: translate(-50%,-50%) translate(0,0) scale(0); transform: translate(-50%,-50%) translate(0,0) scale(0); opacity: 0; }
+}
+@keyframes bb-particle-orbit {
+  0% { transform: translate(-50%,-50%) translate(0,0) scale(0); opacity: 0; }
+  20% { opacity: 1; transform: translate(-50%,-50%) translate(55px,-35px) scale(1); }
+  50% { transform: translate(-50%,-50%) translate(70px,25px) scale(0.7); opacity: 0.8; }
+  80% { transform: translate(-50%,-50%) translate(35px,50px) scale(0.5); opacity: 0.5; }
+  100% { transform: translate(-50%,-50%) translate(0,0) scale(0); opacity: 0; }
+}
+.bb-prep-title { font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-bottom: 6px; -webkit-animation: bb-prep-title-fade 0.5s ease-out; animation: bb-prep-title-fade 0.5s ease-out; text-align: center; }
+@-webkit-keyframes bb-prep-title-fade { from { opacity: 0; -webkit-transform: translateY(10px); transform: translateY(10px); } to { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); } }
 @keyframes bb-prep-title-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.bb-prep-subtitle { font-size: 0.95rem; color: var(--text-sec); margin-bottom: 16px; max-width: 280px; text-align: center; }
-.bb-prep-dots { display: flex; gap: 4px; color: var(--gold); font-size: 1.3rem; font-weight: 700; }
-.bb-prep-dots span { animation: bb-prep-dot-bounce 1.4s ease-in-out infinite; }
-.bb-prep-dots span:nth-child(2) { animation-delay: 0.2s; }
-.bb-prep-dots span:nth-child(3) { animation-delay: 0.4s; }
+.bb-prep-subtitle { font-size: 0.95rem; color: var(--text-sec); margin-bottom: 16px; max-width: 280px; text-align: center; word-break: break-word; }
+.bb-prep-dots { display: -webkit-box; display: -ms-flexbox; display: flex; gap: 4px; color: var(--gold); font-size: 1.3rem; font-weight: 700; }
+.bb-prep-dots span { -webkit-animation: bb-prep-dot-bounce 1.4s ease-in-out infinite; animation: bb-prep-dot-bounce 1.4s ease-in-out infinite; }
+.bb-prep-dots span:nth-child(2) { -webkit-animation-delay: 0.2s; animation-delay: 0.2s; }
+.bb-prep-dots span:nth-child(3) { -webkit-animation-delay: 0.4s; animation-delay: 0.4s; }
+@-webkit-keyframes bb-prep-dot-bounce { 0%,80%,100% { -webkit-transform: translateY(0); transform: translateY(0); opacity: 0.5; } 40% { -webkit-transform: translateY(-8px); transform: translateY(-8px); opacity: 1; } }
 @keyframes bb-prep-dot-bounce { 0%,80%,100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-8px); opacity: 1; } }
+/* Mobile: ajustar tamano para pantallas chicas */
+@media (max-width: 480px) {
+  .bb-prep-scene { width: 150px; height: 150px; }
+  .bb-prep-frasco-img { width: 110px; height: 110px; }
+  .bb-prep-title { font-size: 1.2rem; }
+  .bb-prep-subtitle { font-size: 0.85rem; max-width: 220px; }
+}
