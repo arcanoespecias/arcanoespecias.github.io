@@ -1968,14 +1968,17 @@ const Pages = {
     }
 
     if (self._prodTab === 'making') {
-      h += self._renderMakingBlends();
+      h += '<div id="mb-content">' + self._renderMakingBlends() + '</div>';
       container.innerHTML = h;
+      // Guardar scroll position para preservarlo al hacer refresh parcial
+      self._mbScrollY = window.scrollY;
       return;
     }
 
     if (self._prodTab === 'calc') {
-      h += self._renderCalcMezcla();
+      h += '<div id="mb-content">' + self._renderCalcMezcla() + '</div>';
       container.innerHTML = h;
+      self._mbScrollY = window.scrollY;
       return;
     }
 
@@ -12831,7 +12834,7 @@ Pages._mbSelectBlend = function(blendId) {
   if (!blend) return;
   self._mb.selectedBlend = blend;
   self._mb.step = 2;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbRenderStep2 = function() {
@@ -12948,7 +12951,7 @@ Pages._mbRenderStep2 = function() {
 
 Pages._mbSetSize = function(size) {
   Pages._mb.size = size;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbAdjustQty = function(delta) {
@@ -12958,12 +12961,12 @@ Pages._mbAdjustQty = function(delta) {
   v = Math.max(1, Math.min(500, v + delta));
   input.value = v;
   Pages._mb.qty = v;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbSetQty = function(v) {
   Pages._mb.qty = v;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbOnQtyChange = function() {
@@ -12971,12 +12974,16 @@ Pages._mbOnQtyChange = function() {
   if (!input) return;
   var v = parseInt(input.value, 10) || 1;
   Pages._mb.qty = Math.max(1, Math.min(500, v));
-  App.renderPage('produccion');
+  // Debounce: si el usuario sigue escribiendo, no re-renderizar en cada tecla
+  clearTimeout(Pages._mbQtyTimer);
+  Pages._mbQtyTimer = setTimeout(function() {
+    Pages._mbRefreshContent();
+  }, 250);
 };
 
 Pages._mbGoStep = function(n) {
   Pages._mb.step = n;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbStartProduction = function() {
@@ -13018,7 +13025,7 @@ Pages._mbStartProduction = function() {
   mb.totalWeight = 0;
   mb.addedSpices = {};
   mb.step = 3;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbRenderStep3 = function() {
@@ -13224,7 +13231,7 @@ Pages._mbGoToRecuento = function() {
     return;
   }
   mb.step = 4;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._mbCompleteProduction = function() {
@@ -13418,7 +13425,7 @@ Pages._mbConfirmProduction = function() {
     var result = ArcanoDB.producirBlend(blend.id, size, qty);
     mb.lastProduccion = result.produccion;
     mb.step = 5;
-    App.renderPage('produccion');
+    Pages._mbRefreshContent();
     toast('\u2713 Producci\u00F3n #' + result.produccion.id + ' guardada. Stock actualizado.');
   } catch (err) {
     alert('Error al guardar la producci\u00F3n: ' + err.message);
@@ -13471,6 +13478,55 @@ Pages._calc = {
   step: 0,         // 0 = todavia no eligio blend, 1 = resultado
   currentStepIdx: -1,  // Para el modo "paso a paso"
   doneSteps: {}    // {especiaId: true} para marcar como ya pesadas
+};
+
+// Refresh parcial: solo actualiza #mb-content, preserva scroll y foco del input.
+// Resuelve el "refresh feo" que tiraba toda la pagina en Making Blends y Calculadora
+// cada vez que se cambiaba size/qty/step.
+Pages._mbRefreshContent = function() {
+  var self = Pages;
+  var contentEl = document.getElementById('mb-content');
+  if (!contentEl) {
+    // Fallback: si no existe el contenedor, hacer render completo
+    App.renderPage('produccion');
+    return;
+  }
+
+  // 1. Preservar scroll Y
+  var scrollY = window.scrollY;
+  // 2. Preservar foco del input activo (para que el usuario pueda seguir escribiendo)
+  var activeEl = document.activeElement;
+  var activeId = activeEl && activeEl.id ? activeEl.id : null;
+  var selStart = null, selEnd = null;
+  if (activeEl && activeEl.setSelectionRange && activeEl.selectionStart != null) {
+    selStart = activeEl.selectionStart;
+    selEnd = activeEl.selectionEnd;
+  }
+  // 3. Detectar el tab activo para saber qu\u00E9 contenido volver a renderizar
+  var tab = self._prodTab;
+  var newHtml;
+  if (tab === 'making') {
+    newHtml = self._renderMakingBlends();
+  } else if (tab === 'calc') {
+    newHtml = self._renderCalcMezcla();
+  } else {
+    App.renderPage('produccion');
+    return;
+  }
+  // 4. Actualizar SOLO el contenido del making/calc (sin tocar tabs ni page actions)
+  contentEl.innerHTML = newHtml;
+  // 5. Restaurar scroll
+  window.scrollTo(0, scrollY);
+  // 6. Restaurar foco del input si a\u00FAn existe
+  if (activeId) {
+    var newActive = document.getElementById(activeId);
+    if (newActive) {
+      newActive.focus();
+      if (selStart != null && newActive.setSelectionRange) {
+        try { newActive.setSelectionRange(selStart, selEnd); } catch (e) {}
+      }
+    }
+  }
 };
 
 Pages._renderCalcMezcla = function() {
@@ -13659,14 +13715,14 @@ Pages._calcSelectBlend = function(blendId) {
   Pages._calc.blendId = blendId;
   Pages._calc.doneSteps = {};
   Pages._calc.currentStepIdx = -1;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcSetSize = function(size) {
   Pages._calc.size = size;
   Pages._calc.doneSteps = {};
   Pages._calc.currentStepIdx = -1;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcAdjustQty = function(delta) {
@@ -13676,12 +13732,12 @@ Pages._calcAdjustQty = function(delta) {
   v = Math.max(1, Math.min(9999, v + delta));
   input.value = v;
   Pages._calc.qty = v;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcSetQty = function(v) {
   Pages._calc.qty = v;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcOnQtyChange = function() {
@@ -13689,21 +13745,25 @@ Pages._calcOnQtyChange = function() {
   if (!input) return;
   var v = parseInt(input.value, 10) || 1;
   Pages._calc.qty = Math.max(1, Math.min(9999, v));
-  App.renderPage('produccion');
+  // Debounce: si el usuario sigue escribiendo, no re-renderizar en cada tecla
+  clearTimeout(Pages._calcQtyTimer);
+  Pages._calcQtyTimer = setTimeout(function() {
+    Pages._mbRefreshContent();
+  }, 250);
 };
 
 Pages._calcReset = function() {
   Pages._calc.blendId = null;
   Pages._calc.doneSteps = {};
   Pages._calc.currentStepIdx = -1;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcResetSteps = function() {
   if (!confirm('\u00BFReiniciar el progreso de pesaje?')) return;
   Pages._calc.doneSteps = {};
   Pages._calc.currentStepIdx = -1;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcMarkDone = function(idx) {
@@ -13730,7 +13790,7 @@ Pages._calcMarkDone = function(idx) {
       }
     }
   }
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcUnmarkDone = function(idx) {
@@ -13741,7 +13801,7 @@ Pages._calcUnmarkDone = function(idx) {
   var ing = blend.ingredientes[idx];
   delete calc.doneSteps[ing.especiaId];
   calc.currentStepIdx = idx;
-  App.renderPage('produccion');
+  Pages._mbRefreshContent();
 };
 
 Pages._calcPrint = function() {
