@@ -1506,6 +1506,103 @@ function deleteAjuste(id) {
   return true;
 }
 
+/* saveAjusteReal: ajuste por stock real (NO por delta).
+ * El admin indica el valor FINAL que conto fisicamente. Esta funcion
+ * calcula el delta = stockReal - stockActual y lo aplica via saveAjuste.
+ * Si el delta es 0, NO crea un ajuste (no hay nada que registrar).
+ * Devuelve el ajuste creado, o null si no habia cambio.
+ */
+function saveAjusteReal(data) {
+  _ensureStructure();
+  var stockReal = Number(data.stockReal);
+  if (isNaN(stockReal) || stockReal < 0) {
+    throw new Error('El stock real debe ser un numero positivo');
+  }
+  var cat = data.categoria;
+  var sub = data.subtipo;
+  var productoId = data.productoId;
+  var productoNombre = data.productoNombre;
+  var stockActual = 0;
+
+  // Calcular stock actual segun categoria/subtipo/productoId
+  if (cat === 'especia') {
+    var esp = _db.especias[productoId];
+    if (!esp) throw new Error('Especia no encontrada');
+    productoNombre = esp.nombre;
+    if (sub === 'pala') stockActual = Number(esp.stockBolsa) || 0;
+    else stockActual = Number(esp[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
+  } else if (cat === 'blend') {
+    var bl = _db.blends[productoId];
+    if (!bl) throw new Error('Blend no encontrado');
+    productoNombre = bl.nombre;
+    stockActual = Number(bl[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
+  } else if (cat === 'envase') {
+    if (!_db.stockEnvases) _db.stockEnvases = { chico: 0, grande: 0 };
+    var t = (sub === 'grande') ? 'grande' : 'chico';
+    stockActual = Number(_db.stockEnvases[t]) || 0;
+    productoNombre = 'Frascos ' + t;
+  } else if (cat === 'bolsa') {
+    if (!_db.stockBolsas) _db.stockBolsas = { chico: 0, grande: 0 };
+    var t2 = (sub === 'grande') ? 'grande' : 'chico';
+    stockActual = Number(_db.stockBolsas[t2]) || 0;
+    productoNombre = 'Bolsas ' + t2;
+  } else if (cat === 'cinta') {
+    stockActual = Number(_db.stockCintas) || 0;
+    productoNombre = 'Cintas';
+  } else if (cat === 'sticker') {
+    var stk = _getOrCreateSticker(productoNombre);
+    stockActual = Number(stk[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
+  }
+
+  var delta = stockReal - stockActual;
+  if (delta === 0) {
+    return null; // No hay cambio que registrar
+  }
+  // Aplicar el ajuste via saveAjuste (que ya valida y guarda en historial)
+  return saveAjuste({
+    categoria: cat,
+    subtipo: sub,
+    productoId: productoId,
+    productoNombre: productoNombre,
+    cantidad: delta,
+    motivo: data.motivo || 'Inventario fisico (stock real = ' + stockReal + ')',
+    fecha: data.fecha || new Date().toISOString().slice(0, 10)
+  });
+}
+
+/* getStockActual: helper que devuelve el stock actual de un item.
+ * Devuelve el valor numérico, o 0 si no existe.
+ */
+function getStockActual(categoria, subtipo, productoId, productoNombre) {
+  var cat = categoria;
+  var sub = subtipo;
+  if (cat === 'especia') {
+    var esp = _db.especias[productoId];
+    if (!esp) return 0;
+    if (sub === 'pala') return Number(esp.stockBolsa) || 0;
+    return Number(esp[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
+  }
+  if (cat === 'blend') {
+    var bl = _db.blends[productoId];
+    if (!bl) return 0;
+    return Number(bl[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
+  }
+  if (cat === 'envase') {
+    return Number(((_db.stockEnvases) || {})[(sub === 'grande') ? 'grande' : 'chico']) || 0;
+  }
+  if (cat === 'bolsa') {
+    return Number(((_db.stockBolsas) || {})[(sub === 'grande') ? 'grande' : 'chico']) || 0;
+  }
+  if (cat === 'cinta') {
+    return Number(_db.stockCintas) || 0;
+  }
+  if (cat === 'sticker') {
+    var stk = _getOrCreateSticker(productoNombre);
+    return Number(stk[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
+  }
+  return 0;
+}
+
 /* ==================== GASTOS ==================== */
 
 function getGastos() {
@@ -3596,7 +3693,7 @@ window.ArcanoDB = {
   getStickers: getStickers, getProductosConStickers: getProductosConStickers,
   getEntradas: getEntradas, saveEntrada: saveEntrada, updateEntrada: updateEntrada, deleteEntrada: deleteEntrada,
   getGastos: getGastos, getGastosCategorias: getGastosCategorias, saveGasto: saveGasto, deleteGasto: deleteGasto, saveGastosCategorias: saveGastosCategorias,
-  getAjustes: getAjustes, saveAjuste: saveAjuste, deleteAjuste: deleteAjuste,
+  getAjustes: getAjustes, saveAjuste: saveAjuste, deleteAjuste: deleteAjuste, saveAjusteReal: saveAjusteReal, getStockActual: getStockActual,
   getPedidos: getPedidos, getPedidosCount: getPedidosCount, updatePedidoEstado: updatePedidoEstado, updatePedidoField: updatePedidoField, deletePedido: deletePedido, onPedidosChange: onPedidosChange, isPedidosReady: function() { return _pedidosReady; },
   producirEspecia: producirEspecia, producirBlend: producirBlend,
   getProducciones: getProducciones, deleteProduccion: deleteProduccion,

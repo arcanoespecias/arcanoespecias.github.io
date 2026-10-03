@@ -10702,10 +10702,10 @@ const Pages = {
     var costos = ArcanoDB.getCostosInsumos();
 
     var h = '<div class="page-actions">' +
-      '<button class="btn btn-gold" id="btn-batch-aj" style="opacity:0.4;pointer-events:none">Guardar Ajustes (0)</button>' +
+      '<button class="btn btn-gold" id="btn-batch-aj" style="opacity:0.4;pointer-events:none">Guardar Cambios (0)</button>' +
       '<button class="btn btn-outline" style="margin-left:8px" onclick="Pages.formAjusteStock()">Ajuste Individual</button>' +
-      '<button class="btn btn-outline" style="margin-left:8px" id="btn-clear-aj" onclick="Pages._clearStockInputs()">Limpiar</button>' +
-      '<span class="text-xs text-muted" style="margin-left:12px">Escribe +/\u2212 en los campos y guarda todo de una vez</span>' +
+      '<button class="btn btn-outline" style="margin-left:8px" id="btn-clear-aj" onclick="Pages._resetStockInputs()">Restablecer</button>' +
+      '<span class="text-xs text-muted" style="margin-left:12px">Edit\u00E1 el stock real contado y guard\u00E1 todo de una vez. Los cambios se calculan autom\u00E1ticamente.</span>' +
       '</div>';
 
     // === SECCI\u00D3N DESTACADA: FRASCOS PRODUCIDOS PARA LA VENTA ===
@@ -10788,17 +10788,22 @@ const Pages = {
     }
     h += '</div></div>';
 
-    // helper: inline adj input
-    function adjInput(cat, sub, prodId, prodNombre, placeholder) {
+    // helper: inline stock-real input (pre-llenado con stock actual)
+    // El admin EDITA el valor directamente. Al guardar, se compara con el stock
+    // que estaba al abrir el panel (data-stock-original) para calcular el delta.
+    function adjInput(cat, sub, prodId, prodNombre, stockActual) {
       var pid = prodId != null ? String(prodId) : '';
-      return '<input type="number" class="input stock-adj-input" ' +
+      var val = Number(stockActual) || 0;
+      return '<input type="number" min="0" step="any" class="input stock-adj-input" ' +
         'data-cat="' + cat + '" data-sub="' + sub + '" data-pid="' + pid + '" data-pname="' + (prodNombre||'').replace(/"/g, '&quot;') + '" ' +
-        'style="width:70px;padding:4px 6px;font-size:0.85rem;text-align:center" placeholder="' + placeholder + '" title="Stock actual: ' + placeholder + '">';
+        'data-stock-original="' + val + '" ' +
+        'value="' + val + '" ' +
+        'style="width:80px;padding:4px 6px;font-size:0.85rem;text-align:center" title="Stock actual: ' + val + '. Ingres\u00E1 el stock real contado.">';
     }
 
     // === SECTION 1: ESPECIAS ===
     h += '<h3 style="color:var(--gold);margin:16px 0 12px;font-size:1.1rem">Especias</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Pala (g)</th><th>Ajuste</th><th>Fr.Peque\u00F1o</th><th>Ajuste</th><th>Fr.Grande</th><th>Ajuste</th><th></th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Pala (g)</th><th>Stock Real (g)</th><th>Fr.Peque\u00F1o</th><th>Stock Real</th><th>Fr.Grande</th><th>Stock Real</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < especias.length; i++) {
       var e = especias[i];
       var palaCls = (e.stockBolsa||0)<=50?'text-red fw7':'';
@@ -10820,7 +10825,7 @@ const Pages = {
 
     // === SECTION 2: BLENDS ===
     h += '<h3 style="color:var(--gold);margin:24px 0 12px;font-size:1.1rem">Blends</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Fr.Peque\u00F1o</th><th>Ajuste</th><th>Fr.Grande</th><th>Ajuste</th><th></th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Nombre</th><th>Cat.</th><th>Fr.Peque\u00F1o</th><th>Stock Real</th><th>Fr.Grande</th><th>Stock Real</th><th></th></tr></thead><tbody>';
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       var chCls = (b.stockChico||0)<=3?'text-red fw7':'text-green';
@@ -10839,7 +10844,7 @@ const Pages = {
 
     // === SECTION 3: PACKAGING ===
     h += '<h3 style="color:var(--gold);margin:24px 0 12px;font-size:1.1rem">Packaging</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Item</th><th>Stock</th><th>Ajuste</th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Item</th><th>Stock</th><th>Stock Real</th></tr></thead><tbody>';
     h += '<tr><td class="fw7">Frascos Peque\u00F1os</td><td>' + (envases.chico||0) + '</td><td>' + adjInput('envase', 'chico', null, 'Frascos chico', envases.chico||0) + '</td></tr>';
     h += '<tr><td class="fw7">Frascos Grandes</td><td>' + (envases.grande||0) + '</td><td>' + adjInput('envase', 'grande', null, 'Frascos grande', envases.grande||0) + '</td></tr>';
     h += '<tr><td class="fw7">Bolsas Chicas</td><td>' + (bolsas.chico||0) + '</td><td>' + adjInput('bolsa', 'chico', null, 'Bolsas chica', bolsas.chico||0) + '</td></tr>';
@@ -10849,7 +10854,7 @@ const Pages = {
 
     // === SECTION 4: STICKERS ===
     h += '<h3 style="color:var(--gold);margin:24px 0 12px;font-size:1.1rem">Stickers</h3>';
-    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Tipo</th><th>Peque\u00F1o</th><th>Ajuste</th><th>Grande</th><th>Ajuste</th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Tipo</th><th>Peque\u00F1o</th><th>Stock Real</th><th>Grande</th><th>Stock Real</th></tr></thead><tbody>';
     for (var i = 0; i < etiqList.length; i++) {
       var et = etiqList[i];
       var chCls = et.stockChico<=5?'text-red fw7':'';
@@ -10982,17 +10987,22 @@ const Pages = {
     var batchBtn = document.getElementById('btn-batch-aj');
     function countPending() {
       var c = 0;
-      for (var i = 0; i < allInputs.length; i++) { if (allInputs[i].value !== '' && Number(allInputs[i].value) !== 0) c++; }
+      for (var i = 0; i < allInputs.length; i++) {
+        var orig = Number(allInputs[i].getAttribute('data-stock-original')) || 0;
+        var val = Number(allInputs[i].value);
+        // Cuenta como pendiente si el valor cambio respecto al original
+        if (!isNaN(val) && val !== orig) c++;
+      }
       return c;
     }
     function refreshBtn() {
       var n = countPending();
       if (n > 0) {
-        batchBtn.textContent = 'Guardar Ajustes (' + n + ')';
+        batchBtn.textContent = 'Guardar Cambios (' + n + ')';
         batchBtn.style.opacity = '1';
         batchBtn.style.pointerEvents = 'auto';
       } else {
-        batchBtn.textContent = 'Guardar Ajustes (0)';
+        batchBtn.textContent = 'Guardar Cambios (0)';
         batchBtn.style.opacity = '0.4';
         batchBtn.style.pointerEvents = 'none';
       }
@@ -11004,53 +11014,69 @@ const Pages = {
       var pending = [];
       for (var i = 0; i < allInputs.length; i++) {
         var inp = allInputs[i];
-        var v = Number(inp.value);
-        if (inp.value === '' || isNaN(v) || v === 0) continue;
+        var orig = Number(inp.getAttribute('data-stock-original')) || 0;
+        var val = Number(inp.value);
+        if (inp.value === '' || isNaN(val) || val < 0) continue;
+        if (val === orig) continue; // No cambio
+        var delta = val - orig;
         pending.push({
           categoria: inp.getAttribute('data-cat'),
           subtipo: inp.getAttribute('data-sub'),
           productoId: inp.getAttribute('data-pid') ? Number(inp.getAttribute('data-pid')) : null,
           productoNombre: inp.getAttribute('data-pname'),
-          cantidad: v
+          stockReal: val,
+          delta: delta
         });
       }
       if (pending.length === 0) return;
-      var summary = pending.map(function(p) { return p.productoNombre + ' ' + p.subtipo + ': ' + (p.cantidad > 0 ? '+' : '') + p.cantidad; }).join('\n');
-      if (!confirm('Aplicar ' + pending.length + ' ajustes?\n\n' + summary)) return;
+      var summary = pending.map(function(p) {
+        var sign = p.delta > 0 ? '+' : '';
+        return p.productoNombre + ' ' + p.subtipo + ': ' + p.stockReal + ' (' + sign + p.delta + ')';
+      }).join('\n');
+      if (!confirm('Aplicar ' + pending.length + ' cambios de stock?\n\n' + summary + '\n\n(stock real \u2192 delta calculado autom\u00E1ticamente)')) return;
       batchBtn.disabled = true;
       batchBtn.textContent = 'Guardando...';
       var errors = [];
       var success = 0;
+      var skipped = 0;
       for (var i = 0; i < pending.length; i++) {
         try {
-          ArcanoDB.saveAjuste({
+          // Usar saveAjusteReal: recibe el stock real, calcula el delta internamente
+          var result = ArcanoDB.saveAjusteReal({
             categoria: pending[i].categoria,
             subtipo: pending[i].subtipo,
             productoId: pending[i].productoId,
             productoNombre: pending[i].productoNombre,
-            cantidad: pending[i].cantidad,
-            motivo: 'Ajuste rapido multiple',
+            stockReal: pending[i].stockReal,
+            motivo: 'Inventario - conteo fisico',
             fecha: new Date().toISOString().slice(0, 10)
           });
-          success++;
+          if (result === null) skipped++; // No habia cambio real
+          else success++;
         } catch(err) { errors.push(pending[i].productoNombre + ' ' + pending[i].subtipo + ': ' + err.message); }
       }
       // Forzar guardado inmediato antes de re-renderizar
       if (ArcanoDB.saveNow) ArcanoDB.saveNow();
       if (errors.length) {
-        alert('Se guardaron ' + success + ' de ' + pending.length + ' ajustes.\n\nErrores:\n' + errors.join('\n'));
+        alert('Se guardaron ' + success + ' de ' + pending.length + ' cambios.\n\nErrores:\n' + errors.join('\n'));
       } else {
-        toast(success + ' ajustes guardados correctamente');
+        var msg = success + ' cambios guardados correctamente';
+        if (skipped > 0) msg += ' (' + skipped + ' sin cambio)';
+        toast(msg);
       }
       App.renderPage('stock');
     });
   },
 
-  _clearStockInputs: function() {
+  _resetStockInputs: function() {
+    // Restablecer todos los inputs a su valor original (stock actual)
     var inputs = document.querySelectorAll('.stock-adj-input');
-    for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+    for (var i = 0; i < inputs.length; i++) {
+      var orig = inputs[i].getAttribute('data-stock-original') || '';
+      inputs[i].value = orig;
+    }
     var btn = document.getElementById('btn-batch-aj');
-    if (btn) { btn.textContent = 'Guardar Ajustes (0)'; btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+    if (btn) { btn.textContent = 'Guardar Cambios (0)'; btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
   },
 
   /* ---------- Ajuste Manual de Stock ---------- */
@@ -11067,7 +11093,7 @@ const Pages = {
     var modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = '<div class="modal modal-lg" style="max-width:560px">' +
-      '<div class="modal-header"><h3>Ajustar Stock Manualmente</h3><button class="btn btn-ghost" onclick="this.closest(\'.modal-overlay\').remove()">X</button></div>' +
+      '<div class="modal-header"><h3>Ajustar Stock</h3><button class="btn btn-ghost" onclick="this.closest(\'.modal-overlay\').remove()">X</button></div>' +
       '<div class="modal-body">' +
         '<div class="form-group"><label>Categoria</label><select class="input" id="f-aj-cat">' +
           '<option value="especia">Especia</option>' +
@@ -11078,12 +11104,19 @@ const Pages = {
         '</select></div>' +
         '<div class="form-group" id="f-aj-prod-wrap"><label>Producto</label><select class="input" id="f-aj-prod"></select></div>' +
         '<div class="form-group"><label>Sub-tipo</label><select class="input" id="f-aj-sub"></select></div>' +
-        '<div class="form-group"><label>Cantidad (<span style="color:var(--red)">negativo = restar</span>, positivo = sumar)</label><input type="number" class="input" id="f-aj-cant" placeholder="Ej: -100 o 50"></div>' +
-        '<div class="form-group"><label>Motivo <span class="text-red">*</span></label><textarea class="input" id="f-aj-motivo" rows="2" placeholder="Ej: Se rompieron, merma, conteo fisico, etc."></textarea></div>' +
+        '<div class="form-group"><label>Modo de ingreso</label>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button type="button" class="btn btn-gold btn-sm" id="f-aj-mode-real" style="flex:1">Stock Real (recomendado)</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" id="f-aj-mode-delta" style="flex:1">+/- Delta</button>' +
+          '</div>' +
+          '<p class="text-xs text-muted mt-4" id="f-aj-mode-help">Ingresá el stock real que contaste. El sistema calcula el cambio automáticamente.</p>' +
+        '</div>' +
+        '<div class="form-group"><label id="f-aj-cant-label">Stock Real</label><input type="number" min="0" class="input" id="f-aj-cant" placeholder="Ej: 450 (stock real contado)"></div>' +
+        '<div class="form-group"><label>Motivo <span class="text-red">*</span></label><textarea class="input" id="f-aj-motivo" rows="2" placeholder="Ej: Conteo fisico, merma, etc."></textarea></div>' +
         '<div id="f-aj-preview" class="card mt-12" style="background:var(--bg);border-color:var(--gold);display:none"><div class="card-body" id="f-aj-preview-body"></div></div>' +
       '</div><div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
-        '<button class="btn btn-gold" id="btn-save-aj">Aplicar Ajuste</button>' +
+        '<button class="btn btn-gold" id="btn-save-aj">Aplicar</button>' +
       '</div></div>';
     document.body.appendChild(modal);
 
@@ -11092,8 +11125,13 @@ const Pages = {
     var prodWrap = document.getElementById('f-aj-prod-wrap');
     var subSel = document.getElementById('f-aj-sub');
     var cantInput = document.getElementById('f-aj-cant');
+    var cantLabel = document.getElementById('f-aj-cant-label');
+    var modeRealBtn = document.getElementById('f-aj-mode-real');
+    var modeDeltaBtn = document.getElementById('f-aj-mode-delta');
+    var modeHelp = document.getElementById('f-aj-mode-help');
     var previewDiv = document.getElementById('f-aj-preview');
     var previewBody = document.getElementById('f-aj-preview-body');
+    var mode = 'real'; // 'real' (default) o 'delta'
 
     function buildEspOpts() {
       var o = '';
@@ -11112,10 +11150,31 @@ const Pages = {
       return o;
     }
 
+    function setMode(newMode) {
+      mode = newMode;
+      if (mode === 'real') {
+        modeRealBtn.className = 'btn btn-gold btn-sm';
+        modeDeltaBtn.className = 'btn btn-outline btn-sm';
+        cantLabel.textContent = 'Stock Real';
+        cantInput.placeholder = 'Ej: 450 (stock real contado)';
+        cantInput.min = '0';
+        modeHelp.textContent = 'Ingresá el stock real que contaste. El sistema calcula el cambio automáticamente.';
+      } else {
+        modeRealBtn.className = 'btn btn-outline btn-sm';
+        modeDeltaBtn.className = 'btn btn-gold btn-sm';
+        cantLabel.textContent = 'Delta (+/-)';
+        cantInput.placeholder = 'Ej: -100 o +50';
+        cantInput.removeAttribute('min');
+        modeHelp.textContent = 'Ingresá el cambio: positivo suma, negativo resta.';
+      }
+      cantInput.value = '';
+      updatePreview();
+    }
+    modeRealBtn.addEventListener('click', function() { setMode('real'); });
+    modeDeltaBtn.addEventListener('click', function() { setMode('delta'); });
+
     function updateForm() {
       var cat = catSel.value;
-      var prodId = prodSel.value;
-
       // Show/hide product selector
       if (cat === 'envase' || cat === 'bolsa') {
         prodWrap.style.display = 'none';
@@ -11125,12 +11184,11 @@ const Pages = {
         else if (cat === 'blend') prodSel.innerHTML = buildBlendOpts();
         else if (cat === 'sticker') prodSel.innerHTML = buildStickerOpts();
       }
-
       // Subtipo options
       if (cat === 'especia') {
-        subSel.innerHTML = '<option value="pala">Pala (gramos)</option><option value="chico">Frasco Peque\u00F1o (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
+        subSel.innerHTML = '<option value="pala">Pala (gramos)</option><option value="chico">Frasco Pequeño (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
       } else if (cat === 'blend') {
-        subSel.innerHTML = '<option value="chico">Frasco Peque\u00F1o (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
+        subSel.innerHTML = '<option value="chico">Frasco Pequeño (unidades)</option><option value="grande">Frasco Grande (unidades)</option>';
       } else if (cat === 'envase') {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       } else if (cat === 'bolsa') {
@@ -11138,58 +11196,80 @@ const Pages = {
       } else if (cat === 'sticker') {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       }
-
       updatePreview();
+    }
+
+    function getStockActualFor(cat, sub, prodId, prodNombre) {
+      if (cat === 'especia' && prodId) {
+        var esp = ArcanoDB.getEspecia(Number(prodId));
+        if (!esp) return 0;
+        if (sub === 'pala') return esp.stockBolsa || 0;
+        return sub === 'grande' ? (esp.stockGrande || 0) : (esp.stockChico || 0);
+      }
+      if (cat === 'blend' && prodId) {
+        var bl = ArcanoDB.getBlend(Number(prodId));
+        if (!bl) return 0;
+        return sub === 'grande' ? (bl.stockGrande || 0) : (bl.stockChico || 0);
+      }
+      if (cat === 'envase') {
+        var env = (ArcanoDB.getDB().stockEnvases) || {};
+        return sub === 'grande' ? (env.grande || 0) : (env.chico || 0);
+      }
+      if (cat === 'bolsa') {
+        var bol = (ArcanoDB.getDB().stockBolsas) || {};
+        return sub === 'grande' ? (bol.grande || 0) : (bol.chico || 0);
+      }
+      if (cat === 'cinta') return ArcanoDB.getDB().stockCintas || 0;
+      if (cat === 'sticker' && prodNombre) {
+        var allStks = ArcanoDB.getProductosConStickers();
+        for (var i = 0; i < allStks.length; i++) {
+          if (allStks[i].nombre === prodNombre) {
+            return sub === 'grande' ? (allStks[i].stockGrande || 0) : (allStks[i].stockChico || 0);
+          }
+        }
+      }
+      return 0;
     }
 
     function updatePreview() {
       var cat = catSel.value;
       var sub = subSel.value;
-      var cant = Number(cantInput.value) || 0;
-      var db = ArcanoDB.getDB();
-      var actual = 0;
-      var nombre = '';
+      var val = Number(cantInput.value);
+      if (isNaN(val)) val = 0;
+      var prodId = prodSel.value;
+      var prodNombre = prodSel.options[prodSel.selectedIndex] ? prodSel.options[prodSel.selectedIndex].textContent : '';
+      var actual = getStockActualFor(cat, sub, prodId, prodNombre);
       var unidad = sub === 'pala' ? 'g' : 'u';
-
-      if (cat === 'especia' && prodSel.value) {
-        var esp = ArcanoDB.getEspecia(Number(prodSel.value));
-        if (esp) {
-          nombre = esp.nombre;
-          if (sub === 'pala') actual = esp.stockBolsa || 0;
-          else if (sub === 'chico') actual = esp.stockChico || 0;
-          else actual = esp.stockGrande || 0;
-        }
-      } else if (cat === 'blend' && prodSel.value) {
-        var bl = ArcanoDB.getBlend(Number(prodSel.value));
-        if (bl) {
-          nombre = bl.nombre;
-          actual = (sub === 'grande') ? (bl.stockGrande || 0) : (bl.stockChico || 0);
-        }
-      } else if (cat === 'envase') {
-        nombre = 'Frascos ' + sub;
-        actual = (db.stockEnvases || {})[sub] || 0;
-      } else if (cat === 'bolsa') {
-        nombre = 'Bolsas ' + sub;
-        actual = (db.stockBolsas || {})[sub] || 0;
-      } else if (cat === 'sticker' && prodSel.value) {
-        nombre = prodSel.value;
-        var allStks = ArcanoDB.getProductosConStickers();
-        for (var i = 0; i < allStks.length; i++) {
-          if (allStks[i].nombre === nombre) {
-            actual = (sub === 'grande') ? (allStks[i].stockGrande || 0) : (allStks[i].stockChico || 0);
-            break;
-          }
-        }
-      }
-
+      var nombre = prodNombre || (cat === 'envase' ? 'Frascos ' + sub : cat === 'bolsa' ? 'Bolsas ' + sub : cat === 'cinta' ? 'Cintas' : '');
       if (!nombre) { previewDiv.style.display = 'none'; return; }
-      var resultante = actual + cant;
+
+      var resultante, delta, valorLabel;
+      if (mode === 'real') {
+        resultante = val;
+        delta = val - actual;
+        valorLabel = 'Stock real ingresado: <b>' + val + ' ' + unidad + '</b>';
+      } else {
+        delta = val;
+        resultante = actual + val;
+        valorLabel = 'Delta: <b>' + (val > 0 ? '+' : '') + val + ' ' + unidad + '</b>';
+      }
+      var deltaColor = delta > 0 ? 'text-green' : (delta < 0 ? 'text-red' : 'text-muted');
+      var deltaSign = delta > 0 ? '+' : '';
       var resColor = resultante < 0 ? 'text-red' : (resultante === 0 ? 'text-yellow' : 'text-green');
+
       previewDiv.style.display = '';
-      previewBody.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><div><span class="text-sm text-muted">Stock actual de <b>' + nombre + '</b> (' + sub + '):</span></div>' +
-        '<div style="text-align:right"><span class="fw7" style="font-size:1.2rem">' + actual + ' ' + unidad + '</span>' +
-        ' <span class="text-muted" style="margin:0 8px">&#8594;</span>' +
-        '<span class="fw7 ' + resColor + '" style="font-size:1.2rem">' + resultante + ' ' + unidad + '</span></div></div>';
+      previewBody.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<div><span class="text-sm text-muted">Stock actual de <b>' + nombre + '</b> (' + sub + '):</span></div>' +
+        '<div style="text-align:right"><span class="fw7" style="font-size:1.2rem">' + actual + ' ' + unidad + '</span></div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<div><span class="text-sm text-muted">' + valorLabel + '</span></div>' +
+        '<div style="text-align:right"><span class="fw7 ' + deltaColor + '" style="font-size:1.1rem">' + deltaSign + delta + ' ' + unidad + '</span></div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:8px">' +
+        '<div><span class="text-sm">Stock resultante:</span></div>' +
+        '<div style="text-align:right"><span class="fw7 ' + resColor + '" style="font-size:1.3rem">' + resultante + ' ' + unidad + '</span></div>' +
+      '</div>';
     }
 
     catSel.addEventListener('change', updateForm);
@@ -11202,14 +11282,17 @@ const Pages = {
     document.getElementById('btn-save-aj').addEventListener('click', function() {
       var motivo = (document.getElementById('f-aj-motivo').value || '').trim();
       if (!motivo) { alert('Debes indicar el motivo del ajuste'); return; }
-      var cant = Number(cantInput.value) || 0;
-      if (cant === 0) { alert('La cantidad no puede ser 0'); return; }
+      var val = Number(cantInput.value);
+      if (isNaN(val) || (mode === 'delta' && val === 0)) {
+        alert(mode === 'real' ? 'Ingresá el stock real' : 'La cantidad no puede ser 0');
+        return;
+      }
+      if (mode === 'real' && val < 0) { alert('El stock real no puede ser negativo'); return; }
       var cat = catSel.value;
       var sub = subSel.value;
       var data = {
         categoria: cat,
         subtipo: sub,
-        cantidad: cant,
         motivo: motivo,
         fecha: new Date().toISOString().slice(0, 10)
       };
@@ -11220,7 +11303,19 @@ const Pages = {
         data.productoNombre = prodSel.value;
       }
       try {
-        ArcanoDB.saveAjuste(data);
+        if (mode === 'real') {
+          // Stock real: usar saveAjusteReal que calcula el delta internamente
+          data.stockReal = val;
+          var result = ArcanoDB.saveAjusteReal(data);
+          if (result === null) {
+            alert('El stock real ingresado es igual al stock actual. No hay cambios que aplicar.');
+            return;
+          }
+        } else {
+          // Delta: usar saveAjuste directamente (comportamiento viejo)
+          data.cantidad = val;
+          ArcanoDB.saveAjuste(data);
+        }
         modal.remove();
         App.renderPage('stock');
       } catch (err) { alert('Error: ' + err.message); }
