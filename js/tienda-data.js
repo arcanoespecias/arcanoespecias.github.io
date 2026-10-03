@@ -719,8 +719,12 @@ function getStoreProducts() {
     if (!e || !e.enTienda) continue;
     var eUpdated = e.imagenUpdatedAt || e.actualizadoEn || e.creado || 0;
     if (typeof eUpdated === 'string') eUpdated = new Date(eUpdated).getTime() || 0;
+    // NORMALIZAR ID a numero (algunos especias vinieron de Excel como string)
+    var eId = Number(e.id);
+    if (isNaN(eId)) eId = e.id;
     products.push({
-      id: e.id, nombre: e.nombre, tipo: 'especia', categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
+      id: eId, tipo: 'especia', _origId: e.id,
+      nombre: e.nombre, categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
       precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
       stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0, stockPala: e.stockBolsa || 0, enBlend: e.enBlend !== false,
@@ -733,8 +737,12 @@ function getStoreProducts() {
     if (!b || !b.enTienda) continue;
     var bUpdated = b.imagenUpdatedAt || b.actualizadoEn || b.creado || 0;
     if (typeof bUpdated === 'string') bUpdated = new Date(bUpdated).getTime() || 0;
+    // NORMALIZAR ID a numero (algunos blends vinieron de Excel como string)
+    var bId = Number(b.id);
+    if (isNaN(bId)) bId = b.id;
     products.push({
-      id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
+      id: bId, tipo: 'blend', _origId: b.id,
+      nombre: b.nombre, categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
       stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,

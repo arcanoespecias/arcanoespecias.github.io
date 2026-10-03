@@ -472,16 +472,26 @@ function addToCart(product, talla) {
   cart.push({ productId: product.id, nombre: product.nombre, tipo: product.tipo, talla: talla, precio: precio, qty: 1 });
   saveCart(); updateCartBadge(); _showToast('Producto agregado');
 }
-function addToCartByIdAndSize(pid, talla) {
+function addToCartByIdAndSize(pid, talla, tipo) {
   var products = getStoreProducts();
+  var pidStr = String(pid);
+  // Si se especifica tipo, buscar por (id, tipo) — evita colisiones entre
+  // especias y blends que comparten el mismo ID (por importar de Excel como string)
+  if (tipo) {
+    for (var i = 0; i < products.length; i++) {
+      if (String(products[i].id) === pidStr && products[i].tipo === tipo) { addToCart(products[i], talla); return; }
+    }
+  }
+  // Fallback: buscar por ID (comparacion debil para compat con datos viejos)
   for (var i = 0; i < products.length; i++) {
-    if (products[i].id == pid) { addToCart(products[i], talla); return; }
+    if (String(products[i].id) === pidStr) { addToCart(products[i], talla); return; }
   }
 }
 function addToCartPack(pid) {
   var products = getStoreProducts();
+  var pidStr = String(pid);
   for (var i = 0; i < products.length; i++) {
-    if (products[i].id == pid) {
+    if (String(products[i].id) === pidStr && products[i].tipo === 'pack') {
       var p = products[i];
       if (!p.precio) return;
       for (var j = 0; j < cart.length; j++) {
@@ -532,7 +542,7 @@ function renderProducts(filter) {
     else if (p.categoria) meta = p.categoria;
     if (p.region) meta += (meta ? ' \u00b7 ' : '') + p.region;
 
-    h += '<div class="product-card" onclick="openDetail(' + p.id + ')">';
+    h += '<div class="product-card" onclick="openDetail(\'' + p.id + '\',\'' + p.tipo + '\')">';
     h += '<div class="card-img-wrap" style="aspect-ratio:1/1;background:var(--bg2,#1b0b07)">';
     if (p.imagen) {
       // Para imágenes base64, no usar loading=lazy (ya están en memoria)
@@ -550,13 +560,13 @@ function renderProducts(filter) {
     h += '<div class="card-meta">' + meta + '</div>';
     h += '<div class="card-prices">';
     if (hasChico) {
-      h += '<button class="price-btn" onclick="event.stopPropagation();addToCartByIdAndSize(' + p.id + ',\'chico\')"><div class="price-label">Peque\u00f1o</div><div class="price-value">$' + p.precioChico.toLocaleString() + '</div></button>';
+      h += '<button class="price-btn" onclick="event.stopPropagation();addToCartByIdAndSize(\'' + p.id + '\',\'chico\',\'' + p.tipo + '\')"><div class="price-label">Peque\u00f1o</div><div class="price-value">$' + p.precioChico.toLocaleString() + '</div></button>';
     }
     if (hasGrande) {
-      h += '<button class="price-btn" onclick="event.stopPropagation();addToCartByIdAndSize(' + p.id + ',\'grande\')"><div class="price-label">Grande</div><div class="price-value">$' + p.precioGrande.toLocaleString() + '</div></button>';
+      h += '<button class="price-btn" onclick="event.stopPropagation();addToCartByIdAndSize(\'' + p.id + '\',\'grande\',\'' + p.tipo + '\')"><div class="price-label">Grande</div><div class="price-value">$' + p.precioGrande.toLocaleString() + '</div></button>';
     }
     if (hasPack) {
-      h += '<button class="price-btn" onclick="event.stopPropagation();addToCartPack(' + p.id + ')"><div class="price-label">Pack</div><div class="price-value">$' + p.precio.toLocaleString() + '</div></button>';
+      h += '<button class="price-btn" onclick="event.stopPropagation();addToCartPack(\'' + p.id + '\')"><div class="price-label">Pack</div><div class="price-value">$' + p.precio.toLocaleString() + '</div></button>';
     }
     if (!hasChico && !hasGrande && !hasPack) {
       h += '<div class="card-coming-soon">Muy Pronto</div>';
@@ -567,14 +577,32 @@ function renderProducts(filter) {
 }
 
 /* === PRODUCT DETAIL === */
-function openDetail(pid) {
+function openDetail(pid, tipo) {
   var products = getStoreProducts();
   var currentIdx = -1;
-  // Primero buscar packs (por si hay colisión de IDs con especias)
-  for (var i = 0; i < products.length; i++) { if (products[i].id == pid && products[i].tipo === 'pack') { currentIdx = i; break; } }
-  // Si no es pack, buscar cualquier producto con ese ID
+  // Normalizar pid a string para comparar de forma consistente
+  // (algunos IDs vinieron de Excel como string, otros como numero)
+  var pidStr = String(pid);
+  // Si se especifica tipo, buscar primero por (id, tipo) — evita colisiones
+  // entre especias y blends que comparten el mismo ID
+  if (tipo) {
+    for (var i = 0; i < products.length; i++) {
+      if (String(products[i].id) === pidStr && products[i].tipo === tipo) {
+        currentIdx = i; break;
+      }
+    }
+  }
+  // Fallback: buscar packs primero (por si hay colision de IDs)
   if (currentIdx === -1) {
-    for (var i = 0; i < products.length; i++) { if (products[i].id == pid) { currentIdx = i; break; } }
+    for (var i = 0; i < products.length; i++) {
+      if (String(products[i].id) === pidStr && products[i].tipo === 'pack') { currentIdx = i; break; }
+    }
+  }
+  // Si aun no se encontro, buscar cualquier producto con ese ID
+  if (currentIdx === -1) {
+    for (var i = 0; i < products.length; i++) {
+      if (String(products[i].id) === pidStr) { currentIdx = i; break; }
+    }
   }
   if (currentIdx === -1) return;
   _renderDetail(products, currentIdx);
@@ -604,8 +632,8 @@ function _renderDetail(products, idx) {
   } else if (p.categoria) { tagsHtml += '<span class="detail-tag">' + p.categoria + '</span>'; }
   if (p.region) tagsHtml += '<span class="detail-tag">' + p.region + '</span>';
   var pricesHtml = '';
-  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;chico&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
-  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;grande&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
+  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(\'' + p.id + '\',&#39;chico&#39;,\'' + p.tipo + '\');document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
+  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(\'' + p.id + '\',&#39;grande&#39;,\'' + p.tipo + '\');document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
   var descHtml = p.descripcion ? '<p class="detail-desc">' + p.descripcion + '</p>' : '';
   var ingsHtml = '';
   if (isBlend && p.ingredientes && p.ingredientes.length > 0) {
@@ -839,8 +867,8 @@ function _updateDetailContent(overlay, products, idx) {
   } else if (p.categoria) { tagsHtml += '<span class="detail-tag">' + p.categoria + '</span>'; }
   if (p.region) tagsHtml += '<span class="detail-tag">' + p.region + '</span>';
   var pricesHtml = '';
-  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;chico&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
-  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(' + p.id + ',&#39;grande&#39;);document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
+  if (hasChico) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(\'' + p.id + '\',&#39;chico&#39;,\'' + p.tipo + '\');document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Peque\u00f1o</div><div class="detail-price-val">$' + p.precioChico.toLocaleString() + '</div></button>';
+  if (hasGrande) pricesHtml += '<button class="detail-price-card" onclick="addToCartByIdAndSize(\'' + p.id + '\',&#39;grande&#39;,\'' + p.tipo + '\');document.getElementById(\'detail-ov\').remove()"><div class="detail-price-label">Grande</div><div class="detail-price-val">$' + p.precioGrande.toLocaleString() + '</div></button>';
   var descHtml = p.descripcion ? '<p class="detail-desc">' + p.descripcion + '</p>' : '';
   var ingsHtml = '';
   if (isBlend && p.ingredientes && p.ingredientes.length > 0) {
