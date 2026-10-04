@@ -5451,7 +5451,13 @@ const Pages = {
     modal.innerHTML = '<div class="modal modal-lg" style="max-width:700px">' +
       '<div class="modal-header"><h3>Importar Datos desde Excel</h3><button class="btn btn-ghost" onclick="this.closest(\'.modal-overlay\').remove()">X</button></div>' +
       '<div class="modal-body">' +
-        '<p class="text-sm text-muted mb-12">Subi el archivo Excel exportado previamente. Se actualizaran precios, ingredientes y costos de los productos existentes. Los stocks no se modifican.</p>' +
+        '<p class="text-sm text-muted mb-12">Subi el archivo Excel exportado previamente. Se actualizaran precios, ingredientes y costos de los productos existentes.</p>' +
+        '<div class="form-group">' +
+          '<label class="cat-check" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;background:rgba(212,175,55,0.08);border:1px solid var(--gold);border-radius:6px">' +
+            '<input type="checkbox" id="f-imp-prod-stocks" style="width:auto">' +
+            '<span><b>Tambi\u00E9n actualizar stocks</b> <span class="text-xs text-muted">(pala en gramos, frascos chico/grande en unidades) — recomendado solo si hiciste inventario f\u00EDsico</span></span>' +
+          '</label>' +
+        '</div>' +
         '<div class="form-group"><label>Archivo Excel (.xlsx)</label>' +
         '<input type="file" class="input" id="f-imp-prod-file" accept=".xlsx,.xls"></div>' +
         '<div id="f-imp-prod-status" class="mt-12"></div>' +
@@ -5504,6 +5510,11 @@ const Pages = {
               var rawId = row[0] ? String(row[0]).trim() : '';
               var enTiendaRaw = row[9];
               var enTiendaStr = enTiendaRaw != null ? String(enTiendaRaw).trim().toLowerCase() : '';
+              // Columnas G/H/I = stockBolsa, stockChico, stockGrande
+              // Se capturan siempre; solo se aplican si el admin marco el checkbox
+              var stockBolsaRaw = row[6];
+              var stockChicoRaw = row[7];
+              var stockGrandeRaw = row[8];
               espUpdates.push({
                 id: rawId,
                 nombre: nombre,
@@ -5511,6 +5522,10 @@ const Pages = {
                 categoria: String(row[3] || '').trim() || 'Especias',
                 precioChico: Number(row[4]) || 0,
                 precioGrande: Number(row[5]) || 0,
+                // Stocks (columnas G/H/I del Excel)
+                stockBolsa: stockBolsaRaw != null && stockBolsaRaw !== '' ? Number(stockBolsaRaw) : null,
+                stockChico: stockChicoRaw != null && stockChicoRaw !== '' ? Number(stockChicoRaw) : null,
+                stockGrande: stockGrandeRaw != null && stockGrandeRaw !== '' ? Number(stockGrandeRaw) : null,
                 enTienda: enTiendaStr === 'si' || enTiendaStr === 'true' || enTiendaStr === '1',
                 uso: String(row[10] || '').trim(),
                 isNew: !rawId || !ArcanoDB.getEspecia(rawId)
@@ -5606,7 +5621,12 @@ const Pages = {
           }
 
           var espNewCount = 0;
-          for (var ci = 0; ci < espUpdates.length; ci++) { if (espUpdates[ci].isNew) espNewCount++; }
+          var espWithStock = 0;
+          for (var ci = 0; ci < espUpdates.length; ci++) {
+            if (espUpdates[ci].isNew) espNewCount++;
+            // Contar especias que tienen stockBolsa definido (columna G del Excel)
+            if (espUpdates[ci].stockBolsa != null && !isNaN(espUpdates[ci].stockBolsa)) espWithStock++;
+          }
           var blNewCount = 0;
           var blKeys = Object.keys(blUpdates);
           for (var bi = 0; bi < blKeys.length; bi++) {
@@ -5623,11 +5643,19 @@ const Pages = {
           // Preview
           var phtml = '<div class="card"><div class="card-header"><h3>Vista Previa</h3></div><div class="card-body">';
           phtml += '<div class="stats-grid mb-12" style="grid-template-columns:repeat(4,1fr)">' +
-            '<div class="stat-card"><div class="stat-value" style="color:var(--green)">' + espUpdates.length + '</div><div class="stat-label">Especias</div><div class="text-xs text-muted">' + espNewCount + ' nuevas, ' + (espUpdates.length - espNewCount) + ' act.</div></div>' +
+            '<div class="stat-card"><div class="stat-value" style="color:var(--green)">' + espUpdates.length + '</div><div class="stat-label">Especias</div><div class="text-xs text-muted">' + espNewCount + ' nuevas, ' + (espUpdates.length - espNewCount) + ' act.</div>' + (espWithStock > 0 ? '<div class="text-xs" style="color:var(--gold)">' + espWithStock + ' con stock (col G)</div>' : '') + '</div>' +
             '<div class="stat-card"><div class="stat-value" style="color:var(--blue)">' + blKeys.length + '</div><div class="stat-label">Blends</div><div class="text-xs text-muted">' + blNewCount + ' nuevos, ' + (blKeys.length - blNewCount) + ' act.</div></div>' +
             '<div class="stat-card"><div class="stat-value" style="color:var(--gold)">' + Object.keys(costoUpdates).length + '</div><div class="stat-label">Costos packaging</div></div>' +
             '<div class="stat-card"><div class="stat-value">' + Object.keys(costoEspUpdates).length + '</div><div class="stat-label">Costos especias</div></div>' +
           '</div>';
+
+          // Aviso sobre stocks
+          if (espWithStock > 0) {
+            phtml += '<div id="f-imp-prod-stock-warn" class="card mt-12" style="background:rgba(212,175,55,0.08);border:1px solid var(--gold);padding:12px"><div style="display:flex;align-items:center;gap:10px">' +
+              '<span style="font-size:1.2rem">\u26A0</span>' +
+              '<div class="text-sm">' + espWithStock + ' especias tienen valores de stock en el Excel (columna G = Stock Bolsa en gramos). ' +
+              'Para actualizar los stocks, marc\u00E1 el checkbox <b>Tambi\u00E9n actualizar stocks</b> arriba antes de importar.</div></div></div>';
+          }
 
           // Show blend details
           if (blKeys.length > 0) {
@@ -5654,14 +5682,25 @@ const Pages = {
 
             try {
               var espOk = 0, blOk = 0;
+              // Leer si el admin quiere actualizar stocks
+              var updateStocks = document.getElementById('f-imp-prod-stocks');
+              updateStocks = updateStocks && updateStocks.checked;
 
               // Update/create especias
               for (var i = 0; i < espUpdates.length; i++) {
                 var u = espUpdates[i];
                 var existing = u.id ? ArcanoDB.getEspecia(u.id) : null;
                 var saved;
+                // Helper: agregar stocks al payload solo si el admin lo pidio y hay valor
+                function addStocksIfRequested(basePayload) {
+                  if (!updateStocks) return basePayload;
+                  if (u.stockBolsa != null && !isNaN(u.stockBolsa)) basePayload.stockBolsa = u.stockBolsa;
+                  if (u.stockChico != null && !isNaN(u.stockChico)) basePayload.stockChico = u.stockChico;
+                  if (u.stockGrande != null && !isNaN(u.stockGrande)) basePayload.stockGrande = u.stockGrande;
+                  return basePayload;
+                }
                 if (existing) {
-                  saved = ArcanoDB.saveEspecia({
+                  saved = ArcanoDB.saveEspecia(addStocksIfRequested({
                     id: u.id,
                     nombre: u.nombre || existing.nombre,
                     descripcion: u.descripcion || existing.descripcion || '',
@@ -5670,11 +5709,11 @@ const Pages = {
                     precioGrande: u.precioGrande,
                     enTienda: u.enTienda,
                     uso: u.uso || existing.uso || ''
-                  });
+                  }));
                 } else {
                   var byName = ArcanoDB.findEspeciaByName(u.nombre);
                   if (byName) {
-                    saved = ArcanoDB.saveEspecia({
+                    saved = ArcanoDB.saveEspecia(addStocksIfRequested({
                       id: byName.id,
                       nombre: u.nombre,
                       descripcion: u.descripcion,
@@ -5683,9 +5722,9 @@ const Pages = {
                       precioGrande: u.precioGrande,
                       enTienda: u.enTienda,
                       uso: u.uso || ''
-                    });
+                    }));
                   } else {
-                    saved = ArcanoDB.saveEspecia({
+                    saved = ArcanoDB.saveEspecia(addStocksIfRequested({
                       nombre: u.nombre,
                       descripcion: u.descripcion,
                       categoria: u.categoria,
@@ -5693,7 +5732,7 @@ const Pages = {
                       precioGrande: u.precioGrande,
                       enTienda: u.enTienda,
                       uso: u.uso || ''
-                    });
+                    }));
                   }
                 }
                 if (saved && saved.id && u.descripcion) {
@@ -5831,15 +5870,24 @@ const Pages = {
               }
               
               if (failedCount === 0 || savedCount > 0) {
+                // Recalcular cuantas especias ten\u00EDan stock actualizado
+                var stockUpdated = 0;
+                if (updateStocks) {
+                  for (var si2 = 0; si2 < espUpdates.length; si2++) {
+                    if (espUpdates[si2].stockBolsa != null && !isNaN(espUpdates[si2].stockBolsa)) stockUpdated++;
+                  }
+                }
                 previewDiv.innerHTML = '<div class="card"><div class="card-body">' +
-                  '<p class="text-green fw7 mb-8">Importacion completada</p>' +
-                  '<div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">' +
+                  '<p class="text-green fw7 mb-8">Importaci\u00F3n completada</p>' +
+                  '<div class="stats-grid" style="grid-template-columns:repeat(' + (updateStocks && stockUpdated > 0 ? '4' : '3') + ',1fr)">' +
                     '<div class="stat-card"><div class="stat-value" style="color:var(--green)">' + espOk + '</div><div class="stat-label">Especias Procesadas</div></div>' +
                     '<div class="stat-card"><div class="stat-value" style="color:var(--blue)">' + blOk + '</div><div class="stat-label">Blends Procesados</div></div>' +
                     '<div class="stat-card"><div class="stat-value" style="color:' + (failedCount > 0 ? 'var(--red)' : 'var(--green)') + '">' + savedCount + '</div><div class="stat-label">Guardados en Firebase</div></div>' +
+                    (updateStocks && stockUpdated > 0 ? '<div class="stat-card"><div class="stat-value" style="color:var(--gold)">' + stockUpdated + '</div><div class="stat-label">Stocks Actualizados</div></div>' : '') +
                   '</div>' +
-                  (failedCount > 0 ? '<p class="text-sm" style="color:var(--red);margin-top:8px">' + failedCount + ' blends no se pudieron guardar. Revisá la consola.</p>' : '') +
-                  '<p class="text-sm text-muted mt-12">Los productos nuevos fueron creados y los existentes actualizados. Los stocks no se modificaron.</p>' +
+                  (failedCount > 0 ? '<p class="text-sm" style="color:var(--red);margin-top:8px">' + failedCount + ' blends no se pudieron guardar. Revis\u00E1 la consola.</p>' : '') +
+                  '<p class="text-sm text-muted mt-12">Los productos nuevos fueron creados y los existentes actualizados. ' +
+                  (updateStocks ? '<b style="color:var(--gold)">Stocks actualizados</b> seg\u00FAn el Excel (columna G).' : 'Los stocks <b>no</b> se modificaron.') + '</p>' +
                 '</div></div>';
               } else {
                 previewDiv.innerHTML = '<div class="card"><div class="card-body">' +
