@@ -521,7 +521,13 @@ function renderProducts(filter) {
     // Filtro "Especias" muestra solo productos de tipo especia
     filtered = products.filter(function(p) { return p.tipo === 'especia'; });
   } else {
-    filtered = products.filter(function(p) { return (p.categorias || []).indexOf(filter) >= 0; });
+    // Filtros por categoria (Comidas, Infusiones, Cocteleria):
+    // muestran blends y packs de esa categoria, PERO NO especias
+    // (las especias se ven unicamente en el filtro "Especias")
+    filtered = products.filter(function(p) {
+      if (p.tipo === 'especia') return false;
+      return (p.categorias || []).indexOf(filter) >= 0;
+    });
   }
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="empty-state"><p>No hay productos en esta categoria.</p></div>';
