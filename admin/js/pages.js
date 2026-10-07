@@ -14194,8 +14194,10 @@ Pages.regenerarSEOCompleto = function() {
       if (Array.isArray(blendsRaw)) blendsArr = blendsRaw.slice();
       else if (blendsRaw && typeof blendsRaw === 'object') blendsArr = Object.keys(blendsRaw).map(function(k) { return blendsRaw[k]; });
 
-      var imgUploadTasks = [];
-      var imgUploaded = 0, imgSkipped = 0, imgErrors = 0;
+      // Construir la lista de tareas (NO ejecutar todavía — las subimos
+      // SECUENCIALMENTE para evitar el error 409 de GitHub por concurrencia)
+      var imgTasks = [];
+      var imgSkipped = 0;
       for (var bi = 0; bi < blendsArr.length; bi++) {
         var blend = blendsArr[bi];
         if (!blend || !blend.nombre) continue;
@@ -14214,40 +14216,52 @@ Pages.regenerarSEOCompleto = function() {
         // Extraer el base64 (sin el prefijo data:image/...;base64,)
         var commaIdx = bImg.indexOf(',');
         var b64Data = commaIdx >= 0 ? bImg.substring(commaIdx + 1) : '';
-        if (!b64Data) { imgErrors++; continue; }
+        if (!b64Data) continue;
 
-        // Subir como archivo binario a GitHub (sin decodificar base64, GitHub espera base64)
-        // Closure para capturar variables
-        (function(path, b64, slug, ext, blendId, updatedAt) {
-          imgUploadTasks.push(
-            // Primero verificar si el archivo ya existe (para obtener el SHA y poder actualizar)
-            ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path)
-              .then(function(file) {
-                // El archivo ya existe - actualizarlo solo si la imagen cambio (imagenUpdatedAt != file.sha)
-                return { sha: file.sha, b64: b64 };
-              })
-              .catch(function() {
-                // No existe - crearlo nuevo
-                return { sha: null, b64: b64 };
-              })
-              .then(function(info) {
-                return ghFetch('PUT', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + path, {
-                  message: 'auto: actualizar imagen ' + slug + ext,
-                  content: b64,
-                  sha: info.sha || undefined,
-                  branch: GH_BRANCH
-                });
-              })
-              .then(function() { imgUploaded++; })
-              .catch(function(err) {
-                imgErrors++;
-                log('  \u26A0 Error subiendo imagen ' + slug + ': ' + err.message, 'warn');
-              })
-          );
-        })(imgPath, b64Data, bSlug, bExt, blend.id, blend.imagenUpdatedAt);
+        imgTasks.push({ path: imgPath, b64: b64Data, slug: bSlug, ext: bExt });
       }
-      log('Im\u00E1genes a subir: ' + imgUploadTasks.length + ' (' + imgSkipped + ' ya p\u00FAblica, ' + (blendsArr.length - imgUploadTasks.length - imgSkipped) + ' sin imagen)');
-      return Promise.all(imgUploadTasks).then(function() {
+      log('Im\u00E1genes a subir: ' + imgTasks.length + ' (' + imgSkipped + ' ya p\u00FAblica, ' + (blendsArr.length - imgTasks.length - imgSkipped) + ' sin imagen)');
+
+      // Subir SECUENCIALMENTE (no en paralelo) para evitar error 409 de GitHub
+      // El error 409 ocurre cuando múltiples PUTs compiten por el HEAD del branch
+      // Cada subida hace 2 requests (GET + PUT) y ~300ms de pausa para que
+      // GitHub procese el commit anterior. Total: 54 imgs × ~1.5s = ~80s.
+      var imgUploaded = 0, imgErrors = 0;
+      var seqPromise = Promise.resolve();
+      function delay(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+      imgTasks.forEach(function(task, idx) {
+        seqPromise = seqPromise.then(function() {
+          // Log de progreso cada 10 imágenes
+          if (idx > 0 && idx % 10 === 0) {
+            log('  Progreso: ' + idx + '/' + imgTasks.length + ' im\u00E1genes procesadas...');
+          }
+          // Primero verificar si el archivo ya existe (para obtener el SHA)
+          return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + task.path)
+            .then(function(file) { return file.sha; })
+            .catch(function() { return null; }) // No existe → crearlo nuevo
+            .then(function(existingSha) {
+              // Subir/actualizar el archivo
+              return ghFetch('PUT', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + task.path, {
+                message: 'auto: actualizar imagen ' + task.slug + task.ext,
+                content: task.b64,
+                sha: existingSha || undefined,
+                branch: GH_BRANCH
+              });
+            })
+            .then(function() {
+              imgUploaded++;
+              // Pausa corta para que GitHub procese el commit antes del siguiente
+              return delay(250);
+            })
+            .catch(function(err) {
+              imgErrors++;
+              log('  \u26A0 Error subiendo imagen ' + task.slug + ': ' + err.message, 'warn');
+              // Pausa más larga si hubo error (probablemente por concurrencia)
+              return delay(500);
+            });
+        });
+      });
+      return seqPromise.then(function() {
         log('Im\u00E1genes: ' + imgUploaded + ' subidas, ' + imgSkipped + ' saltadas (ya URL), ' + imgErrors + ' errores', imgErrors ? 'warn' : 'ok');
       });
     })
