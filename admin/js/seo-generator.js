@@ -143,6 +143,36 @@ var ArcanoSEO = (function() {
     return url;
   }
 
+  /* Si la imagen es base64, devuelve la URL pública donde DEBERÍA estar
+   * subida como archivo físico (/img/blends/slug.jpg o /img/especias/slug.jpg).
+   * El caller (regenerarSEOCompleto) se encarga de subir realmente el archivo
+   * a GitHub via la API. Esto permite que Google Merchant Center indexe la
+   * imagen (las base64 inline NO las indexa).
+   *
+   * El slug del producto se pasa como parámetro porque el HTML/JSON-LD usa
+   * el slug ya computado. Si no se pasa, se intenta inferir del nombre.
+   */
+  function publicImageUrlFor(blend, slug) {
+    if (!blend || !blend.imagen) return BASE_URL + '/icons/logo.png';
+    var img = blend.imagen;
+    // Si ya es URL pública, devolverla tal cual (con fix de dominio)
+    if (img.indexOf('http') === 0 || img.indexOf('/') === 0) {
+      return fixImageUrl(img);
+    }
+    // Si es base64, devolver la URL pública del archivo físico
+    var s = slug || slugify(blend.nombre);
+    // Determinar extensión según el tipo MIME del base64
+    var ext = '.jpg';
+    if (img.indexOf('data:image/png') === 0) ext = '.png';
+    else if (img.indexOf('data:image/webp') === 0) ext = '.webp';
+    // Cache-busting por si la imagen cambió: usar imagenUpdatedAt
+    var cb = '';
+    if (blend.imagenUpdatedAt) {
+      cb = '?v=' + blend.imagenUpdatedAt;
+    }
+    return BASE_URL + '/img/blends/' + s + ext + cb;
+  }
+
   /* Disponibilidad dinámica basada en stock real.
    * Google Merchant Center RECHAZA feeds que marcan productos sin stock como 'in stock'. */
   function isBlendInStock(b) {
@@ -179,7 +209,10 @@ var ArcanoSEO = (function() {
     var region = blend.region || '';
     var precioChico = Number(blend.precioChico) || 0;
     var precioGrande = Number(blend.precioGrande) || 0;
-    var imagen = fixImageUrl(blend.imagen);
+    // IMPORTANTE: usar publicImageUrlFor para que las imágenes base64
+    // se reemplacen por URLs públicas (/img/blends/slug.jpg). Google
+    // Merchant Center NO indexa imágenes base64 inline.
+    var imagen = publicImageUrlFor(blend, slug);
     var ingredientes = blend.ingredientes || [];
     var catsSEO = blend._categoriasSEO || [];
 
@@ -398,7 +431,7 @@ var ArcanoSEO = (function() {
       for (var i = 0; i < relacionados.length; i++) {
         var r = relacionados[i];
         var rSlug = r._slug || slugify(r.nombre);
-        var rImg = fixImageUrl(r.imagen);
+        var rImg = publicImageUrlFor(r, rSlug);
         html.push('<a href="' + BASE_URL + '/blends/' + rSlug + '/" class="rel-card">');
         html.push('<img src="' + esc(rImg) + '" alt="' + esc(r.nombre) + '" loading="lazy">');
         html.push('<div class="name">' + esc(r.nombre) + '</div></a>');
@@ -454,7 +487,7 @@ var ArcanoSEO = (function() {
         '@type': 'Product',
         name: b.nombre,
         url: BASE_URL + '/blends/' + slug + '/',
-        image: fixImageUrl(b.imagen),
+        image: publicImageUrlFor(b, slug),
         brand: {'@type': 'Brand', name: 'Arcano Especias'}
       };
       // Agregar offers con precio si existe
@@ -531,7 +564,7 @@ var ArcanoSEO = (function() {
       var b = products[i];
       var slug = b._slug || slugify(b.nombre);
       var nombre = b.nombre || '';
-      var imagen = fixImageUrl(b.imagen);
+      var imagen = publicImageUrlFor(b, slug);
       var precioChico = Number(b.precioChico) || 0;
       var categoria = b.categoria || '';
 
@@ -622,7 +655,7 @@ var ArcanoSEO = (function() {
       var slug = b._slug || slugify(b.nombre);
       var nombre = esc(b.nombre || '');
       var desc = esc(cleanDesc(b.descripcion));
-      var imagen = esc(fixImageUrl(b.imagen));
+      var imagen = esc(publicImageUrlFor(b, slug));
       var precio = Number(b.precioChico) || 0;
       var cat = esc(b.categoria || '');
       var inStock = isBlendInStock(b);
@@ -677,7 +710,7 @@ var ArcanoSEO = (function() {
       var slug = b._slug || slugify(b.nombre);
       var nombre = (b.nombre || '').replace(/\t/g, ' ').replace(/\n/g, ' ');
       var desc = cleanDesc(b.descripcion).replace(/\t/g, ' ').replace(/\n/g, ' ');
-      var imagen = fixImageUrl(b.imagen);
+      var imagen = publicImageUrlFor(b, slug);
       var precio = Number(b.precioChico) || 0;
       var cat = (b.categoria || '').replace(/\t/g, ' ');
       var avail = isBlendInStock(b) ? 'in stock' : 'out of stock';
@@ -988,6 +1021,7 @@ var ArcanoSEO = (function() {
     slugify: slugify,
     deriveCategoriasSEO: deriveCategoriasSEO,
     generateAll: generateAll,
-    normalizeSlug: normalizeSlug
+    normalizeSlug: normalizeSlug,
+    publicImageUrlFor: publicImageUrlFor
   };
 })();
