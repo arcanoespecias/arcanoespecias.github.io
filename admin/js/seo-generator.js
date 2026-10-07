@@ -382,9 +382,15 @@ var ArcanoSEO = (function() {
     }
     html.push('</div>');
 
-    // CTA
+    // CTA — botón de compra claro, con texto explícito "Agregar al carrito"
+    // Google Merchant Center requiere: botón de compra visible, precios, y URL que lleve a una página donde se pueda comprar.
+    // El link apunta a /?producto=slug, y la SPA abre el modal del producto automáticamente
     var tiendaUrl = BASE_URL + '/?producto=' + slug;
-    html.push('<a href="' + esc(tiendaUrl) + '" class="cta">Comprar ' + esc(nombre) + ' →</a>');
+    html.push('<div class="cta-wrap" style="margin:24px 0 8px;display:flex;gap:10px;flex-wrap:wrap">');
+    html.push('<a href="' + esc(tiendaUrl) + '" class="cta" style="display:inline-block;padding:14px 28px;background:#c9a84c;color:#1b0b07;font-weight:700;text-decoration:none;border-radius:8px;font-size:1rem">Agregar al carrito →</a>');
+    html.push('<a href="' + esc(tiendaUrl) + '" class="cta-secondary" style="display:inline-block;padding:14px 24px;background:transparent;color:#c9a84c;border:1px solid #c9a84c;font-weight:600;text-decoration:none;border-radius:8px;font-size:0.95rem">Ver en la tienda</a>');
+    html.push('</div>');
+    html.push('<p style="margin-top:8px;color:#888;font-size:0.85rem">Envíos a toda Colombia · Pago contra entrega en Medellín · Aceptamos Nequi, Bancolombia y Daviplata</p>');
 
     // Relacionados
     if (relacionados.length) {

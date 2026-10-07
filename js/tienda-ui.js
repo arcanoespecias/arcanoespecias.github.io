@@ -1628,6 +1628,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // usuario caiga directamente en la sección de filtros de categoría
   // (Todos, Comidas, Infusiones, Coctelería, Especias, Packs).
   var _scrollToFiltros = false;
+  var _productoParam = null;
   try {
     var urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('scrollTo') === 'filtros') {
@@ -1635,6 +1636,13 @@ document.addEventListener('DOMContentLoaded', function() {
       // Limpiar el query param de la URL sin recargar
       var cleanUrl = window.location.pathname + window.location.hash;
       history.replaceState(null, '', cleanUrl);
+    }
+    // ?producto=SLUG → viene de las páginas SEO estáticas (/blends/slug/)
+    // El botón "Comprar" enlaza a /?producto=slug para abrir el modal aquí
+    if (urlParams.get('producto')) {
+      _productoParam = urlParams.get('producto');
+      var cleanUrl2 = window.location.pathname + window.location.hash;
+      history.replaceState(null, '', cleanUrl2);
     }
   } catch (e) {}
 
@@ -1673,6 +1681,47 @@ document.addEventListener('DOMContentLoaded', function() {
           window.scrollTo({ top: targetTop, behavior: 'smooth' });
         }, 200);
       }
+    }
+
+    // Si venimos de una página SEO (/blends/slug/) con ?producto=slug,
+    // abrir automáticamente el modal del producto.
+    // Google Merchant Center requiere que el botón "Comprar" lleve a una
+    // página donde el usuario pueda efectivamente comprar el producto.
+    if (_productoParam) {
+      // Normalizar slug: viene como "curry-madras", buscar producto cuyo
+      // nombre coincida con ese slug (después de slugify)
+      setTimeout(function() {
+        var products = getStoreProducts();
+        // Función slugify igual a la del seo-generator
+        function _slugFor(nombre) {
+          return String(nombre || '')
+            .toLowerCase()
+            .replace(/[áàäâ]/g, 'a').replace(/[éèëê]/g, 'e')
+            .replace(/[íìïî]/g, 'i').replace(/[óòöô]/g, 'o')
+            .replace(/[úùüû]/g, 'u').replace(/[ñ]/g, 'n').replace(/[ç]/g, 'c')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        }
+        // Buscar producto cuyo slug coinca con _productoParam
+        var foundIdx = -1;
+        for (var i = 0; i < products.length; i++) {
+          var s = _slugFor(products[i].nombre);
+          if (s === _productoParam) {
+            foundIdx = i;
+            break;
+          }
+        }
+        if (foundIdx >= 0) {
+          // _renderDetail espera products + idx
+          try {
+            _renderDetail(products, foundIdx);
+          } catch (e) {
+            console.warn('[producto] No se pudo abrir el modal:', e);
+          }
+        } else {
+          console.warn('[producto] No se encontro producto con slug:', _productoParam);
+        }
+      }, 600);
     }
   });
   document.getElementById('filters').addEventListener('click', function(e) {
