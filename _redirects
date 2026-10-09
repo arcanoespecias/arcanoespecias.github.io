@@ -1,12 +1,15 @@
-# === URLs ELIMINADAS: devolver 410 Gone (Google las desindexa en 24-48hs) ===
-# Estas carpetas se borraron del repositorio. El 410 le dice a Google:
-# "esto se borró permanentemente, sacalo del índice YA".
-# Antes duplicaban contenido con /blends/slug/ (canonical correcto).
-/p/*                         /404.html  410
-/tienda/*                    /404.html  410
+# === Redirects y status codes para SEO ===
 
-# === 24 blends borrados del catálogo — 410 Gone ===
-# (sin /index.html porque ya no existen)
+# Redirects de URLs viejas → nuevas (301 = permanente)
+/index.html                  /  301
+
+# Las URLs /p/* y /tienda/* fueron ELIMINADAS del repositorio.
+# Cloudflare Pages devuelve 404 (con meta noindex en la 404 page)
+# Google las desindexa en 1-2 semanas automáticamente.
+# No se configuran redirects 410 porque Cloudflare no los soporta bien con splat.
+
+# === 24 blends borrados del catálogo → 410 Gone (Google desindexa en 24-48hs) ===
+# Estos SÍ funcionan con 410 porque son paths específicos, no splat.
 /blends/andean-fire/         /404.html  410
 /blends/andean-fire/*        /404.html  410
 /blends/bavarian-roast/      /404.html  410
@@ -55,6 +58,3 @@
 /blends/sabor-paisa/*        /404.html  410
 /blends/pizza-napoletana/    /404.html  410
 /blends/pizza-napoletana/*   /404.html  410
-
-# Redirects adicionales
-/index.html                  /  301
