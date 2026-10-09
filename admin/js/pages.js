@@ -14167,10 +14167,43 @@ Pages.regenerarSEOCompleto = function() {
       log('No se pudo leer sitemap actual: ' + err.message + ' (continuando sin URLs extra)', 'warn');
     })
     .then(function() {
+      // Listar archivos /blog/ y /recetas/ del repo para agregarlos al sitemap
+      log('Listando archivos /blog/ y /recetas/ del repo...');
+      var blogUrlsPromise = ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/blog')
+        .then(function(files) {
+          var added = 0;
+          for (var i = 0; i < files.length; i++) {
+            if (files[i].name.endsWith('.html') && files[i].name !== 'index.html') {
+              existingUrls.push('https://arcanoespecias.com/blog/' + files[i].name);
+              added++;
+            }
+          }
+          log('Blog: ' + added + ' posts agregados al sitemap', 'ok');
+        })
+        .catch(function(err) {
+          log('No se pudo listar /blog/: ' + err.message, 'warn');
+        });
+      var recetasUrlsPromise = ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/recetas')
+        .then(function(files) {
+          var added = 0;
+          for (var i = 0; i < files.length; i++) {
+            if (files[i].name.endsWith('.html') && files[i].name !== 'index.html') {
+              existingUrls.push('https://arcanoespecias.com/recetas/' + files[i].name);
+              added++;
+            }
+          }
+          log('Recetas: ' + added + ' recetas agregadas al sitemap', 'ok');
+        })
+        .catch(function(err) {
+          log('No se pudo listar /recetas/: ' + err.message, 'warn');
+        });
+      return Promise.all([blogUrlsPromise, recetasUrlsPromise]);
+    })
+    .then(function() {
       // Generar archivos con ArcanoSEO
       log('Generando p\u00E1ginas SEO...');
       var result = ArcanoSEO.generateAll(db, existingUrls, []);
-      log('Generadas: ' + result.blendsPages.length + ' p\u00E1ginas /blends/, ' + result.categoryPages.length + ' categor\u00EDas, sitemap, feeds', 'ok');
+      log('Generadas: ' + result.blendsPages.length + ' p\u00E1ginas /blends/, ' + (result.especiaPages ? result.especiaPages.length : 0) + ' p\u00E1ginas /especias/, ' + result.categoryPages.length + ' categor\u00EDas, sitemap, feeds', 'ok');
 
       // Reportar productos incompletos
       if (result.stats.incompletos && result.stats.incompletos.length) {
@@ -14219,6 +14252,29 @@ Pages.regenerarSEOCompleto = function() {
         if (!b64Data) continue;
 
         imgTasks.push({ path: imgPath, b64: b64Data, slug: bSlug, ext: bExt });
+      }
+      // También subir imágenes de especias a /img/especias/slug.jpg
+      var especiasRaw = db.especias || {};
+      var especiasArrImg = [];
+      if (Array.isArray(especiasRaw)) especiasArrImg = especiasRaw.slice();
+      else if (especiasRaw && typeof especiasRaw === 'object') especiasArrImg = Object.keys(especiasRaw).map(function(k) { return especiasRaw[k]; });
+      for (var ei = 0; ei < especiasArrImg.length; ei++) {
+        var esp = especiasArrImg[ei];
+        if (!esp || !esp.nombre) continue;
+        var eImg = esp.imagen || '';
+        if (!eImg || eImg.indexOf('data:image') !== 0) {
+          imgSkipped++;
+          continue;
+        }
+        var eSlug = ArcanoSEO.slugify(esp.nombre);
+        var eExt = '.jpg';
+        if (eImg.indexOf('data:image/png') === 0) eExt = '.png';
+        else if (eImg.indexOf('data:image/webp') === 0) eExt = '.webp';
+        var eImgPath = 'img/especias/' + eSlug + eExt;
+        var eCommaIdx = eImg.indexOf(',');
+        var eB64Data = eCommaIdx >= 0 ? eImg.substring(eCommaIdx + 1) : '';
+        if (!eB64Data) continue;
+        imgTasks.push({ path: eImgPath, b64: eB64Data, slug: eSlug, ext: eExt });
       }
       log('Im\u00E1genes a subir: ' + imgTasks.length + ' (' + imgSkipped + ' ya p\u00FAblica, ' + (blendsArr.length - imgTasks.length - imgSkipped) + ' sin imagen)');
 
@@ -14322,37 +14378,82 @@ Pages.regenerarSEOCompleto = function() {
       allFiles = allFiles.concat(result.blendsPages);
       allFiles = allFiles.concat(result.categoryPages);
       allFiles.push(result.blendsParaIndex);
+      // Páginas SEO de especias + índice
+      if (result.especiaPages && result.especiaPages.length) {
+        allFiles = allFiles.concat(result.especiaPages);
+      }
+      if (result.especiasIndex) {
+        allFiles.push(result.especiasIndex);
+      }
       allFiles.push(result.sitemap);
       allFiles.push(result.merchantFeedXml);
       allFiles.push(result.merchantFeedTsv);
-      // /p/*.html updates requieren SHA para PUT, no se pueden subir como blobs nuevos
-      // los subimos con PUT /contents/ individualmente al final
 
-      var blobProms = allFiles.map(function(f) {
-        return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/blobs', {
-          content: toBase64(f.content),
-          encoding: 'base64'
-        }).then(function(blob) {
-          return {path: f.path, sha: blob.sha};
+      // === Inyectar bloque SEO en index.html (home SPA) ===
+      // Googlebot no ejecuta JS, así que si la home no tiene productos en HTML,
+      // Google ve una página vacía. Inyectamos un <div id="seo-content" style="display:none">
+      // con todos los productos, links y descripciones. La SPA lo oculta pero Google lo lee.
+      // Reemplazamos el bloque previo si existe (para no acumular).
+      log('Inyectando bloque SEO en index.html (home)...');
+      var homeIndexPromise = ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/index.html')
+        .then(function(file) {
+          var content = decodeURIComponent(escape(atob(file.content)));
+          var seoBlock = result.homeSeoBlock;
+          // Quitar bloque SEO anterior si existe (entre markers)
+          var startMarker = '<!-- SEO-INJECT-START -->';
+          var endMarker = '<!-- SEO-INJECT-END -->';
+          var startIdx = content.indexOf(startMarker);
+          var endIdx = content.indexOf(endMarker);
+          if (startIdx >= 0 && endIdx > startIdx) {
+            // Reemplazar bloque existente
+            content = content.substring(0, startIdx) + startMarker + seoBlock + endMarker + content.substring(endIdx + endMarker.length);
+          } else {
+            // Insertar nuevo bloque antes de </body>
+            var bodyEnd = content.lastIndexOf('</body>');
+            if (bodyEnd >= 0) {
+              content = content.substring(0, bodyEnd) + startMarker + seoBlock + endMarker + '\n' + content.substring(bodyEnd);
+            }
+          }
+          return { path: 'index.html', content: content };
+        })
+        .catch(function(err) {
+          log('  \u26A0 No se pudo inyectar SEO en index.html: ' + err.message, 'warn');
+          return null;
         });
-      });
+      return homeIndexPromise.then(function(homeFile) {
+        if (homeFile) {
+          allFiles.push(homeFile);
+          log('  index.html actualizado con bloque SEO de ' + result.blendsPages.length + ' productos', 'ok');
+        }
+        // /p/*.html updates requieren SHA para PUT, no se pueden subir como blobs nuevos
+        // los subimos con PUT /contents/ individualmente al final
 
-      // Subir en lotes de 5 para no saturar
-      var allBlobs = [];
-      var batches = [];
-      for (var i = 0; i < blobProms.length; i += 5) {
-        batches.push(blobProms.slice(i, i + 5));
-      }
-      var seqProm = Promise.resolve();
-      batches.forEach(function(batch, idx) {
-        seqProm = seqProm.then(function() {
-          return Promise.all(batch).then(function(results) {
-            allBlobs = allBlobs.concat(results);
-            log('  Blobs creados: ' + allBlobs.length + '/' + blobProms.length);
+        var blobProms = allFiles.map(function(f) {
+          return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/blobs', {
+            content: toBase64(f.content),
+            encoding: 'base64'
+          }).then(function(blob) {
+            return {path: f.path, sha: blob.sha};
           });
         });
+
+        // Subir en lotes de 5 para no saturar
+        var allBlobs = [];
+        var batches = [];
+        for (var i = 0; i < blobProms.length; i += 5) {
+          batches.push(blobProms.slice(i, i + 5));
+        }
+        var seqProm = Promise.resolve();
+        batches.forEach(function(batch, idx) {
+          seqProm = seqProm.then(function() {
+            return Promise.all(batch).then(function(results) {
+              allBlobs = allBlobs.concat(results);
+              log('  Blobs creados: ' + allBlobs.length + '/' + blobProms.length);
+            });
+          });
+        });
+        return seqProm.then(function() { return {allBlobs: allBlobs, pUpdates: result.pHtmlUpdates}; });
       });
-      return seqProm.then(function() { return {allBlobs: allBlobs, pUpdates: result.pHtmlUpdates}; });
     })
     .then(function(data) {
       // Paso 4: Crear tree con todos los blobs

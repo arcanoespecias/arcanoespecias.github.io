@@ -170,7 +170,15 @@ var ArcanoSEO = (function() {
     if (blend.imagenUpdatedAt) {
       cb = '?v=' + blend.imagenUpdatedAt;
     }
-    return BASE_URL + '/img/blends/' + s + ext + cb;
+    // Detección de carpeta: blends vs especias. Usamos el campo _tipo que
+    // generateAll setea, o si no, inferimos por presencia de ingredientes.
+    var tipo = blend._tipo;
+    if (!tipo) {
+      // Inferir: si tiene ingredientes → es blend; si no → especia
+      tipo = (blend.ingredientes && blend.ingredientes.length) ? 'blend' : 'especia';
+    }
+    var carpeta = tipo === 'especia' ? 'especias' : 'blends';
+    return BASE_URL + '/img/' + carpeta + '/' + s + ext + cb;
   }
 
   /* Disponibilidad dinámica basada en stock real.
@@ -449,6 +457,262 @@ var ArcanoSEO = (function() {
     html.push('<script type="application/ld+json">' + JSON.stringify(productJsonLd) + '</script>');
     html.push('<script type="application/ld+json">' + JSON.stringify(bcJsonLd) + '</script>');
     html.push('</body></html>');
+
+    return html.join('\n');
+  }
+
+  /* === Generar página de especia /especias/<slug>/index.html ===
+   * Similar a blendPageHtml pero para especias individuales.
+   * Incluye: info de la especia, blends que la contienen, JSON-LD Product
+   * + FAQPage schema (para AI search).
+   */
+  function especiaPageHtml(esp, allBlends) {
+    var slug = slugify(esp.nombre);
+    var nombre = esp.nombre || '';
+    var descripcion = cleanDesc(esp.descripcion) || (nombre + ' — Especia artesanal de Arcano Especias. Ingredientes 100% naturales seleccionados.');
+    var categoria = esp.categoria || 'Comidas';
+    var precioChico = Number(esp.precioChico) || 0;
+    var precioGrande = Number(esp.precioGrande) || 0;
+    var imagen = publicImageUrlFor(esp, slug);
+    var uso = esp.uso || '';
+    var usoList = uso ? uso.split(/[,;]\s*/).filter(function(s) { return s.trim(); }) : [];
+
+    var urlCanonical = BASE_URL + '/especias/' + slug + '/';
+    var urlImagen = imagen;
+
+    // Buscar blends que contienen esta especia (links internos!)
+    var blendsQueContienen = [];
+    for (var i = 0; i < allBlends.length; i++) {
+      var b = allBlends[i];
+      var ings = b.ingredientes || [];
+      for (var j = 0; j < ings.length; j++) {
+        var ing = ings[j];
+        // Match por nombre o por especiaId
+        if (ing.especiaNombre === nombre || (ing.especiaId != null && String(ing.especiaId) === String(esp.id))) {
+          blendsQueContienen.push(b);
+          break;
+        }
+      }
+    }
+
+    // FAQ generado dinámicamente (lo que las IA leen para responder)
+    var faqs = [
+      {
+        q: '\u00BFQu\u00E9 es ' + nombre + '?',
+        a: descripcion.substring(0, 200) + (descripcion.length > 200 ? '...' : '')
+      },
+      {
+        q: '\u00BFC\u00F3mo usar ' + nombre + ' en la cocina?',
+        a: usoList.length > 0
+          ? nombre + ' se usa en: ' + usoList.join(', ') + '. Pod\u00E9s agregarlo a tus preparaciones en peque\u00F1as cantidades e ir ajustando seg\u00FAn tu gusto.'
+          : nombre + ' es una especia vers\u00E1til que se puede usar en diversas preparaciones. Comenz\u00E1 con peque\u00F1as cantidades y ajust\u00E1 seg\u00FAn tu gusto personal.'
+      },
+      {
+        q: '\u00BFC\u00F3mo comprar ' + nombre + ' en Colombia?',
+        a: 'Pod\u00E9s comprar ' + nombre + ' directamente en nuestra tienda online arcanoespecias.com con env\u00EDos a toda Colombia. Aceptamos Nequi, Bancolombia, Daviplata y pago contra entrega en Medell\u00EDn.'
+      }
+    ];
+    if (blendsQueContienen.length > 0) {
+      faqs.push({
+        q: '\u00BFEn qu\u00E9 blends de Arcano entra ' + nombre + '?',
+        a: nombre + ' es ingrediente de ' + blendsQueContienen.length + ' blends artesanales de Arcano Especias, incluyendo ' + blendsQueContienen.slice(0, 3).map(function(b) { return b.nombre; }).join(', ') + (blendsQueContienen.length > 3 ? ' y otros.' : '.')
+      });
+    }
+
+    var html = [];
+    html.push('<!DOCTYPE html>');
+    html.push('<html lang="es">');
+    html.push('<head>');
+    html.push('<meta charset="UTF-8">');
+    html.push('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    html.push('<title>' + esc(nombre) + ' — Especia Artesanal | Arcano Especias</title>');
+    html.push('<meta name="description" content="' + esc(descripcion.substring(0, 155)) + '">');
+    html.push('<link rel="canonical" href="' + urlCanonical + '">');
+    html.push('<meta property="og:type" content="product">');
+    html.push('<meta property="og:title" content="' + esc(nombre) + ' — Especia Artesanal | Arcano Especias">');
+    html.push('<meta property="og:description" content="' + esc(descripcion.substring(0, 200)) + '">');
+    html.push('<meta property="og:url" content="' + urlCanonical + '">');
+    html.push('<meta property="og:image" content="' + esc(urlImagen) + '">');
+    html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
+
+    // JSON-LD: BreadcrumbList
+    html.push('<script type="application/ld+json">');
+    html.push(JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Especias', item: BASE_URL + '/especias/' },
+        { '@type': 'ListItem', position: 3, name: nombre, item: urlCanonical }
+      ]
+    }));
+    html.push('</script>');
+
+    // JSON-LD: Product (con offers si hay precio)
+    var productObj = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: nombre,
+      description: descripcion,
+      image: urlImagen,
+      url: urlCanonical,
+      brand: { '@type': 'Brand', name: 'Arcano Especias' },
+      category: 'Spices & Seasonings'
+    };
+    if (precioChico > 0 || precioGrande > 0) {
+      var offers = [];
+      if (precioChico > 0) {
+        offers.push({ '@type': 'Offer', price: precioChico, priceCurrency: 'COP', availability: 'https://schema.org/InStock', url: urlCanonical, sku: 'ESP-' + slug + '-CH' });
+      }
+      if (precioGrande > 0) {
+        offers.push({ '@type': 'Offer', price: precioGrande, priceCurrency: 'COP', availability: 'https://schema.org/InStock', url: urlCanonical, sku: 'ESP-' + slug + '-GR' });
+      }
+      productObj.offers = { '@type': 'AggregateOffer', offers: offers, lowPrice: precioChico || precioGrande, highPrice: precioGrande || precioChico, priceCurrency: 'COP', offerCount: offers.length };
+    }
+    html.push('<script type="application/ld+json">');
+    html.push(JSON.stringify(productObj));
+    html.push('</script>');
+
+    // JSON-LD: FAQPage (lo que las IA leen)
+    html.push('<script type="application/ld+json">');
+    html.push(JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(function(f) {
+        return { '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } };
+      })
+    }));
+    html.push('</script>');
+
+    // Estilos inline
+    html.push('<style>');
+    html.push('body{font-family:Georgia,"Times New Roman",serif;background:#1b0b07;color:#f0e6d3;line-height:1.7;margin:0;padding:0}');
+    html.push('.wrap{max-width:760px;margin:0 auto;padding:24px 20px}');
+    html.push('h1{color:#c9a84c;font-size:2rem;margin:0 0 8px}');
+    html.push('.cat{color:#a08b6e;font-size:0.9rem;margin-bottom:24px;text-transform:uppercase;letter-spacing:1px}');
+    html.push('.hero{display:flex;gap:24px;margin-bottom:24px;flex-wrap:wrap}');
+    html.push('.hero-img{flex:1;min-width:280px;max-width:360px;border-radius:12px;overflow:hidden;border:1px solid #3d2a1c}');
+    html.push('.hero-img img{width:100%;height:auto;display:block}');
+    html.push('.hero-info{flex:2;min-width:280px}');
+    html.push('.precio{background:linear-gradient(135deg,#2d1a10,#1b0b07);border:1px solid #c9a84c;border-radius:12px;padding:20px;margin:20px 0}');
+    html.push('.precio .lab{color:#a08b6e;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}');
+    html.push('.precio .val{font-size:1.8rem;color:#c9a84c;font-weight:700}');
+    html.push('.precio .row{display:inline-block;margin-right:32px}');
+    html.push('.cta{display:inline-block;padding:14px 28px;background:#c9a84c;color:#1b0b07;font-weight:700;text-decoration:none;border-radius:8px;font-size:1rem;margin:16px 0 8px}');
+    html.push('.cta-secondary{display:inline-block;padding:14px 24px;background:transparent;color:#c9a84c;border:1px solid #c9a84c;font-weight:600;text-decoration:none;border-radius:8px;font-size:0.95rem;margin-left:8px}');
+    html.push('.desc{font-size:1.05rem;margin:16px 0}');
+    html.push('.uso{background:rgba(212,175,55,0.05);border-left:3px solid #c9a84c;padding:12px 16px;margin:16px 0;border-radius:0 8px 8px 0}');
+    html.push('.uso h3{color:#c9a84c;margin:0 0 8px;font-size:0.95rem;text-transform:uppercase;letter-spacing:1px}');
+    html.push('.uso-tags{display:flex;flex-wrap:wrap;gap:6px}');
+    html.push('.uso-tag{background:#2d1a10;border:1px solid #3d2a1c;color:#d4c4a8;padding:4px 10px;border-radius:100px;font-size:0.8rem}');
+    html.push('.blends{margin:32px 0}');
+    html.push('.blends h2{color:#c9a84c;border-bottom:1px solid #3d2a1c;padding-bottom:8px}');
+    html.push('.blends-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px}');
+    html.push('.blend-card{background:#2d1a10;border:1px solid #3d2a1c;border-radius:8px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform 0.2s,border-color 0.2s}');
+    html.push('.blend-card:hover{transform:translateY(-2px);border-color:#c9a84c}');
+    html.push('.blend-card img{width:100%;aspect-ratio:1;object-fit:cover;display:block}');
+    html.push('.blend-card .name{padding:8px 12px;font-weight:600;font-size:0.9rem}');
+    html.push('.faq{margin:32px 0}');
+    html.push('.faq h2{color:#c9a84c;border-bottom:1px solid #3d2a1c;padding-bottom:8px}');
+    html.push('.faq-item{margin:12px 0;padding:12px 16px;background:#2d1a10;border-radius:8px}');
+    html.push('.faq-q{font-weight:700;color:#c9a84c;margin-bottom:6px}');
+    html.push('.faq-a{color:#d4c4a8;font-size:0.95rem}');
+    html.push('.footer{margin-top:48px;padding-top:24px;border-top:1px solid #3d2a1c;text-align:center;color:#6b5a42;font-size:0.85rem}');
+    html.push('.footer a{color:#c9a84c}');
+    html.push('.breadcrumbs{font-size:0.85rem;color:#a08b6e;margin-bottom:16px}');
+    html.push('.breadcrumbs a{color:#c9a84c;text-decoration:none}');
+    html.push('.breadcrumbs a:hover{text-decoration:underline}');
+    html.push('@media(max-width:600px){.hero{flex-direction:column}.hero-img{max-width:100%}}');
+    html.push('</style>');
+    html.push('</head>');
+    html.push('<body>');
+    html.push('<div class="wrap">');
+
+    // Breadcrumbs
+    html.push('<div class="breadcrumbs"><a href="' + BASE_URL + '/">Inicio</a> \u203A <a href="' + BASE_URL + '/especias/">Especias</a> \u203A ' + esc(nombre) + '</div>');
+
+    // Hero
+    html.push('<div class="hero">');
+    html.push('<div class="hero-img"><img src="' + esc(imagen) + '" alt="' + esc(nombre) + '" loading="eager"></div>');
+    html.push('<div class="hero-info">');
+    html.push('<h1>' + esc(nombre) + '</h1>');
+    html.push('<div class="cat">' + esc(categoria) + ' \u00B7 Especia Artesanal \u00B7 100% Natural</div>');
+    html.push('<div class="desc">' + esc(descripcion) + '</div>');
+
+    // Precios
+    if (precioChico > 0 || precioGrande > 0) {
+      html.push('<div class="precio">');
+      if (precioChico > 0) {
+        html.push('<div class="row"><div class="lab">Frasco peque\u00F1o</div><div class="val">$' + precioChico.toLocaleString('es-CO') + '</div></div>');
+      }
+      if (precioGrande > 0) {
+        html.push('<div class="row"><div class="lab">Frasco grande</div><div class="val">$' + precioGrande.toLocaleString('es-CO') + '</div></div>');
+      }
+      html.push('</div>');
+    }
+
+    // CTAs — botón de compra claro (para Google Merchant Center)
+    var tiendaUrl = BASE_URL + '/?producto=' + slug;
+    html.push('<div style="margin:20px 0 8px">');
+    html.push('<a href="' + esc(tiendaUrl) + '" class="cta">Agregar al carrito \u2192</a>');
+    html.push('<a href="' + esc(BASE_URL) + '" class="cta-secondary">Ver tienda completa</a>');
+    html.push('</div>');
+    html.push('<p style="color:#6b5a42;font-size:0.85rem;margin:8px 0 0">Env\u00EDos a toda Colombia \u00B7 Pago contra entrega en Medell\u00EDn \u00B7 Aceptamos Nequi, Bancolombia y Daviplata</p>');
+
+    html.push('</div>'); // hero-info
+    html.push('</div>'); // hero
+
+    // Usos
+    if (usoList.length > 0) {
+      html.push('<div class="uso">');
+      html.push('<h3>Ideal para</h3>');
+      html.push('<div class="uso-tags">');
+      for (var i = 0; i < usoList.length; i++) {
+        html.push('<span class="uso-tag">' + esc(usoList[i]) + '</span>');
+      }
+      html.push('</div>');
+      html.push('</div>');
+    }
+
+    // Blends que contienen esta especia (LINKS INTERNOS!)
+    if (blendsQueContienen.length > 0) {
+      html.push('<div class="blends">');
+      html.push('<h2>Blends que incluyen ' + esc(nombre) + ' (' + blendsQueContienen.length + ')</h2>');
+      html.push('<p style="color:#a08b6e;font-size:0.9rem">' + esc(nombre) + ' es ingrediente de los siguientes blends artesanales de Arcano Especias:</p>');
+      html.push('<div class="blends-grid">');
+      for (var i = 0; i < blendsQueContienen.length; i++) {
+        var b = blendsQueContienen[i];
+        var bSlug = b._slug || slugify(b.nombre);
+        var bImg = publicImageUrlFor(b, bSlug);
+        html.push('<a href="' + BASE_URL + '/blends/' + bSlug + '/" class="blend-card">');
+        html.push('<img src="' + esc(bImg) + '" alt="' + esc(b.nombre) + '" loading="lazy">');
+        html.push('<div class="name">' + esc(b.nombre) + '</div>');
+        html.push('</a>');
+      }
+      html.push('</div>');
+      html.push('</div>');
+    }
+
+    // FAQ (visible en HTML + JSON-LD)
+    html.push('<div class="faq">');
+    html.push('<h2>Preguntas frecuentes sobre ' + esc(nombre) + '</h2>');
+    for (var i = 0; i < faqs.length; i++) {
+      html.push('<div class="faq-item">');
+      html.push('<div class="faq-q">' + esc(faqs[i].q) + '</div>');
+      html.push('<div class="faq-a">' + esc(faqs[i].a) + '</div>');
+      html.push('</div>');
+    }
+    html.push('</div>');
+
+    // Footer
+    html.push('<div class="footer">');
+    html.push('<p><a href="' + BASE_URL + '/">\u2190 Volver a Arcano Especias</a></p>');
+    html.push('<p style="margin-top:8px">Arcano Especias \u2014 Especias y Blends artesanales del mundo \u00B7 Env\u00EDos a toda Colombia</p>');
+    html.push('</div>');
+
+    html.push('</div>'); // wrap
+    html.push('</body>');
+    html.push('</html>');
 
     return html.join('\n');
   }
@@ -735,7 +999,7 @@ var ArcanoSEO = (function() {
     return new Date().toISOString().substring(0, 10);
   }
 
-  function generateSitemap(blends, catsWithCounts, extraUrls) {
+  function generateSitemap(blends, catsWithCounts, extraUrls, especiasList) {
     var today = new Date().toISOString().substring(0, 10);
     var urlsSeen = {};
     // Lista de tuplas [url, prio, freq, lastmod]
@@ -787,13 +1051,32 @@ var ArcanoSEO = (function() {
       add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly', _lastmodForBlend(b));
     }
 
+    // Especias /especias/<slug>/ — páginas SEO de especias individuales
+    add(BASE_URL + '/especias/', '0.9', 'weekly', today);
+    if (especiasList && especiasList.length) {
+      for (var ei = 0; ei < especiasList.length; ei++) {
+        var esp = especiasList[ei];
+        if (!esp || !esp.nombre) continue;
+        var espSlug = slugify(esp.nombre);
+        if (!espSlug) continue;
+        add(BASE_URL + '/especias/' + espSlug + '/', '0.7', 'monthly', today);
+      }
+    }
+
+    // Blog: índice + posts (si existen archivos /blog/slug.html en el repo)
+    add(BASE_URL + '/blog/', '0.8', 'weekly', today);
+    // Recetas: índice + recetas (si existen archivos /recetas/slug.html en el repo)
+    add(BASE_URL + '/recetas/', '0.8', 'weekly', today);
+
     // Extra URLs (recetas, blog, etc.) - lastmod fallback = today
     if (extraUrls) {
       for (var i = 0; i < extraUrls.length; i++) {
         var u = extraUrls[i];
         if (u.indexOf(BASE_URL + '/p/') === 0) continue;
+        if (u.indexOf(BASE_URL + '/tienda/') === 0) continue;
         if (u.indexOf(BASE_URL + '/blends/') === 0) continue;
         if (u.indexOf(BASE_URL + '/blends-para/') === 0) continue;
+        if (u.indexOf(BASE_URL + '/especias/') === 0) continue; // ya agregadas arriba
         if (u.replace(/\/$/, '') === BASE_URL) continue;  // skip homepage (already added)
         add(u, '0.6', 'monthly', today);
       }
@@ -839,6 +1122,61 @@ var ArcanoSEO = (function() {
     s = s.replace(/['"\u2019\u2018]/g, '');
     s = s.replace(/[^a-z0-9]/g, '');
     return s;
+  }
+
+  /* === Bloque SEO para inyectar en index.html (home SPA) ===
+   * Genera HTML con productos visibles para que Googlebot los lea en el
+   * primer fetch, sin esperar a que se ejecute el JS de la SPA.
+   * Se inserta dentro de un <div id="seo-content" style="display:none"> antes
+   * del </body>. La SPA lo oculta (display:none) para no duplicar UI, pero
+   * Google lee el HTML y puede indexar los productos + links.
+   */
+  function homeSeoBlock(allProducts) {
+    var h = '';
+    h += '<div id="seo-content" style="display:none" aria-hidden="true">';
+    h += '<h1>Arcano Especias — Especias y Blends Artesanales</h1>';
+    h += '<p>Catálogo completo de especias y blends artesanales del mundo. Ingredientes 100% naturales, seleccionados de cada rincón. Comidas, infusiones y coctelería. Envíos a toda Colombia.</p>';
+    h += '<h2>Catálogo de productos</h2>';
+    h += '<ul>';
+    for (var i = 0; i < allProducts.length; i++) {
+      var b = allProducts[i];
+      var slug = b._slug || slugify(b.nombre);
+      if (!slug) continue;
+      var nombre = b.nombre || '';
+      var desc = cleanDesc(b.descripcion) || (nombre + ' — Blend artesanal de Arcano Especias');
+      var img = publicImageUrlFor(b, slug);
+      var pc = Number(b.precioChico) || 0;
+      var pg = Number(b.precioGrande) || 0;
+      var url = BASE_URL + '/blends/' + slug + '/';
+      // Recortar descripcion a 150 chars
+      if (desc.length > 150) desc = desc.substring(0, 147) + '...';
+      var precioTxt = pc > 0 ? 'Pequeño $' + pc.toLocaleString('es-CO') : '';
+      if (pg > 0) precioTxt += (precioTxt ? ', ' : '') + 'Grande $' + pg.toLocaleString('es-CO');
+      h += '<li>';
+      h += '<a href="' + url + '"><img src="' + esc(img) + '" alt="' + esc(nombre) + '" loading="lazy"></a>';
+      h += '<h3><a href="' + url + '">' + esc(nombre) + '</a></h3>';
+      h += '<p>' + esc(desc) + '</p>';
+      if (precioTxt) h += '<p>Precios: ' + esc(precioTxt) + '</p>';
+      h += '</li>';
+    }
+    h += '</ul>';
+    h += '<h2>Categorías</h2>';
+    h += '<ul>';
+    h += '<li><a href="' + BASE_URL + '/blends-para/">Ver todas las categorías</a></li>';
+    h += '<li><a href="' + BASE_URL + '/blends-para/carnes/">Blends para Carnes</a></li>';
+    h += '<li><a href="' + BASE_URL + '/blends-para/pollo/">Blends para Pollo</a></li>';
+    h += '<li><a href="' + BASE_URL + '/blends-para/arroces-pastas/">Blends para Arroces y Pastas</a></li>';
+    h += '<li><a href="' + BASE_URL + '/blends-para/cocteleria/">Botánicos para Coctelería</a></li>';
+    h += '<li><a href="' + BASE_URL + '/blends-para/infusiones/">Especias para Infusiones</a></li>';
+    h += '<li><a href="' + BASE_URL + '/blog/">Blog de Especias</a></li>';
+    h += '<li><a href="' + BASE_URL + '/recetas/">Recetas con Especias</a></li>';
+    h += '</ul>';
+    h += '<h2>Sobre Arcano Especias</h2>';
+    h += '<p>Arcano Especias es una tienda online de especias y blends artesanales con sede en Medellín, Colombia. Seleccionamos ingredientes 100% naturales de cada rincón del mundo para crear mezclas únicas que despiertan sabores, aromas y experiencias. Ofrecemos blends para comidas, infusiones y coctelería, además de nuestro servicio insignia: Arma tu Blend, donde el cliente crea su propia mezcla personalizada.</p>';
+    h += '<p><strong>Envíos a toda Colombia</strong> · Pago contra entrega en Medellín · Aceptamos Nequi, Bancolombia y Daviplata</p>';
+    h += '<p>Contacto: <a href="https://api.whatsapp.com/send/?phone=+573178003374">WhatsApp +57 317 800 3374</a> · Instagram: <a href="https://instagram.com/arcanoespecias">@arcanoespecias</a></p>';
+    h += '</div>';
+    return h;
   }
 
   /* === MAIN: genera todos los archivos ===
@@ -966,8 +1304,39 @@ var ArcanoSEO = (function() {
     }
     var blendsParaIndex = {path: 'blends-para/index.html', content: blendsParaIndexHtml(catsWithCounts)};
 
-    // 3. Sitemap
-    var sitemapContent = generateSitemap(allProducts, catsWithCounts, existingSitemapUrls);
+    // 2.5. Generar /especias/<slug>/index.html (páginas SEO de especias)
+    var especiaPages = [];
+    var especiaSlugsSeen = {};
+    var especiasArr = [];
+    if (Array.isArray(especiasRaw)) especiasArr = especiasRaw.slice();
+    else if (especiasRaw && typeof especiasRaw === 'object') especiasArr = Object.keys(especiasRaw).map(function(k) { return especiasRaw[k]; });
+    for (var ei = 0; ei < especiasArr.length; ei++) {
+      var esp = especiasArr[ei];
+      if (!esp || !esp.nombre) continue;
+      // Solo generar páginas para especias con enTienda=true o con descripcion
+      if (!esp.enTienda && !cleanDesc(esp.descripcion)) continue;
+      var espSlug = slugify(esp.nombre);
+      if (!espSlug || especiaSlugsSeen[espSlug]) continue;
+      especiaSlugsSeen[espSlug] = true;
+      var espHtml = especiaPageHtml(esp, allProducts);
+      especiaPages.push({path: 'especias/' + espSlug + '/index.html', content: espHtml});
+    }
+    // Generar índice /especias/index.html
+    var especiasIndexHtml = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Especias Artesanales — Catálogo | Arcano Especias</title><meta name="description" content="Catálogo completo de especias artesanales de Arcano Especias. Especias 100% naturales seleccionadas de cada rincón del mundo. Envíos a toda Colombia."><link rel="canonical" href="' + BASE_URL + '/especias/"><meta name="robots" content="index, follow"><style>body{font-family:Georgia,serif;background:#1b0b07;color:#f0e6d3;line-height:1.7;margin:0;padding:0}.wrap{max-width:960px;margin:0 auto;padding:24px 20px}h1{color:#c9a84c;font-size:2rem}p{color:#d4c4a8}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px}.card{background:#2d1a10;border:1px solid #3d2a1c;border-radius:8px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}.card:hover{transform:translateY(-2px);border-color:#c9a84c}.card img{width:100%;aspect-ratio:1;object-fit:cover}.card .name{padding:8px 12px;font-weight:600;font-size:0.9rem}.footer{margin-top:48px;text-align:center;color:#6b5a42;font-size:0.85rem}.footer a{color:#c9a84c}</style></head><body><div class="wrap"><h1>Especias Artesanales</h1><p>Catálogo completo de especias 100% naturales de Arcano Especias. Seleccionadas de cada rincón del mundo para llevar sabores únicos a tu cocina.</p><div class="grid">';
+    for (var ei2 = 0; ei2 < especiasArr.length; ei2++) {
+      var esp2 = especiasArr[ei2];
+      if (!esp2 || !esp2.nombre) continue;
+      if (!esp2.enTienda && !cleanDesc(esp2.descripcion)) continue;
+      var s2 = slugify(esp2.nombre);
+      var img2 = publicImageUrlFor(esp2, s2);
+      especiasIndexHtml += '<a href="' + BASE_URL + '/especias/' + s2 + '/" class="card"><img src="' + esc(img2) + '" alt="' + esc(esp2.nombre) + '" loading="lazy"><div class="name">' + esc(esp2.nombre) + '</div></a>';
+    }
+    especiasIndexHtml += '</div><div class="footer"><p><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a></p></div></div></body></html>';
+    var especiasIndex = {path: 'especias/index.html', content: especiasIndexHtml};
+
+    // 3. Sitemap — ahora incluye especias + blog + recetas
+    var especiasList = especiasArr.filter(function(e) { return e && e.nombre && (e.enTienda || cleanDesc(e.descripcion)); });
+    var sitemapContent = generateSitemap(allProducts, catsWithCounts, existingSitemapUrls, especiasList);
     var sitemap = {path: 'sitemap.xml', content: sitemapContent};
 
     // 4. Merchant feed
@@ -1004,12 +1373,16 @@ var ArcanoSEO = (function() {
       blendsPages: blendsPages,
       categoryPages: categoryPages,
       blendsParaIndex: blendsParaIndex,
+      especiaPages: especiaPages,
+      especiasIndex: especiasIndex,
       merchantFeedXml: merchantFeedXml,
       merchantFeedTsv: merchantFeedTsv,
       sitemap: sitemap,
       pHtmlUpdates: pUpdates,
+      homeSeoBlock: homeSeoBlock(allProducts),
       stats: {
         blends: allProducts.length,
+        especias: especiaPages.length,
         categorias: catsWithCounts.length,
         pUpdates: pUpdates.length,
         incompletos: incompletos
@@ -1022,6 +1395,8 @@ var ArcanoSEO = (function() {
     deriveCategoriasSEO: deriveCategoriasSEO,
     generateAll: generateAll,
     normalizeSlug: normalizeSlug,
-    publicImageUrlFor: publicImageUrlFor
+    publicImageUrlFor: publicImageUrlFor,
+    homeSeoBlock: homeSeoBlock,
+    especiaPageHtml: especiaPageHtml
   };
 })();
