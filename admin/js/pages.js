@@ -14498,29 +14498,112 @@ Pages.regenerarSEOCompleto = function() {
       });
     })
     .then(function(data) {
-      // Paso 4: Crear tree con todos los blobs
+      // Paso 4: Crear tree con todos los blobs + eliminar páginas obsoletas
       log('Creando tree en GitHub...');
       var treeItems = data.allBlobs.map(function(b) {
         return {path: b.path, mode: '100644', type: 'blob', sha: b.sha};
       });
 
-      // Obtener el SHA del \u00FAltimo commit y su tree base
-      return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/refs/heads/' + GH_BRANCH)
-        .then(function(ref) {
-          var commitSha = ref.object.sha;
-          return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/commits/' + commitSha)
-            .then(function(commit) {
-              var baseTreeSha = commit.tree.sha;
-              return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/trees', {
-                base_tree: baseTreeSha,
-                tree: treeItems
+      // === Limpieza de páginas obsoletas ===
+      // Necesitamos borrar del repo las páginas /blends/slug/ y /especias/slug/
+      // de productos que ya NO están en tienda (enTienda=false).
+      // GitHub Git Data API: para borrar un archivo en el tree, se incluye
+      // con sha: null (eso le dice a GitHub "eliminar este path del tree").
+      log('Identificando páginas obsoletas para borrar...');
+
+      // Construir set de slugs que SÍ deben existir (enTienda=true)
+      var dbClean = ArcanoDB.getDB();
+      var blendsRawClean = dbClean.blends || {};
+      var blendsArrClean = [];
+      if (Array.isArray(blendsRawClean)) blendsArrClean = blendsRawClean.slice();
+      else if (blendsRawClean && typeof blendsRawClean === 'object') blendsArrClean = Object.keys(blendsRawClean).map(function(k) { return blendsRawClean[k]; });
+
+      var validBlendSlugs = {};
+      for (var bi = 0; bi < blendsArrClean.length; bi++) {
+        var b = blendsArrClean[bi];
+        if (!b || !b.nombre) continue;
+        // Deben existir: enTienda=true Y precio > 0
+        if (b.enTienda && ((Number(b.precioChico) || 0) > 0 || (Number(b.precioGrande) || 0) > 0)) {
+          validBlendSlugs[ArcanoSEO.slugify(b.nombre)] = true;
+        }
+      }
+
+      var especiasRawClean = dbClean.especias || {};
+      var especiasArrClean = [];
+      if (Array.isArray(especiasRawClean)) especiasArrClean = especiasRawClean.slice();
+      else if (especiasRawClean && typeof especiasRawClean === 'object') especiasArrClean = Object.keys(especiasRawClean).map(function(k) { return especiasRawClean[k]; });
+
+      var validEspeciaSlugs = {};
+      for (var ei = 0; ei < especiasArrClean.length; ei++) {
+        var e = especiasArrClean[ei];
+        if (!e || !e.nombre) continue;
+        if (e.enTienda) {
+          validEspeciaSlugs[ArcanoSEO.slugify(e.nombre)] = true;
+        }
+      }
+
+      // Listar directorios /blends/ existentes en el repo
+      var blendDirsPromise = ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/blends')
+        .then(function(items) {
+          var toDelete = [];
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].type === 'dir') {
+              var slug = items[i].name;
+              if (!validBlendSlugs[slug]) {
+                // Esta página no debería existir → borrar index.html dentro
+                toDelete.push('blends/' + slug + '/index.html');
+              }
+            }
+          }
+          return toDelete;
+        })
+        .catch(function() { return []; });
+
+      var especiaDirsPromise = ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/especias')
+        .then(function(items) {
+          var toDelete = [];
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].type === 'dir') {
+              var slug = items[i].name;
+              if (!validEspeciaSlugs[slug]) {
+                toDelete.push('especias/' + slug + '/index.html');
+              }
+            }
+          }
+          return toDelete;
+        })
+        .catch(function() { return []; });
+
+      return Promise.all([blendDirsPromise, especiaDirsPromise]).then(function(results) {
+        var allToDelete = results[0].concat(results[1]);
+        if (allToDelete.length > 0) {
+          log('Páginas obsoletas a borrar: ' + allToDelete.length, 'warn');
+          // Agregar entradas de eliminación al tree (sha: null = borrar)
+          for (var i = 0; i < allToDelete.length; i++) {
+            treeItems.push({path: allToDelete[i], mode: '100644', type: 'blob', sha: null});
+          }
+        } else {
+          log('No hay páginas obsoletas para borrar', 'ok');
+        }
+
+        // Obtener el SHA del último commit y su tree base
+        return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/refs/heads/' + GH_BRANCH)
+          .then(function(ref) {
+            var commitSha = ref.object.sha;
+            return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/commits/' + commitSha)
+              .then(function(commit) {
+                var baseTreeSha = commit.tree.sha;
+                return ghFetch('POST', '/repos/' + GH_OWNER + '/' + GH_REPO + '/git/trees', {
+                  base_tree: baseTreeSha,
+                  tree: treeItems
+                });
+              })
+              .then(function(newTree) {
+                log('Tree creado con ' + treeItems.length + ' entradas (incluye borrados)', 'ok');
+                return {commitSha: commitSha, treeSha: newTree.sha, pUpdates: data.pUpdates};
               });
-            })
-            .then(function(newTree) {
-              log('Tree creado con ' + treeItems.length + ' archivos', 'ok');
-              return {commitSha: commitSha, treeSha: newTree.sha, pUpdates: data.pUpdates};
-            });
-        });
+          });
+      });
     })
     .then(function(data) {
       // Paso 5: Crear commit
