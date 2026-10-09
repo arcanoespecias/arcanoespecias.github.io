@@ -43,7 +43,6 @@
 /p/noche-serena.html  /blends/noche-serena/  301
 /p/patagonico-ahumado.html  /blends/patagonico-ahumado/  301
 /p/piri-piri.html  /blends/piri-piri/  301
-/p/pizza-napoletana.html  /blends/pizza-napoletana/  301
 /p/ras-el-hanout.html  /blends/ras-el-hanout/  301
 /p/respirar.html  /blends/respirar/  301
 /p/sabor-paisa.html  /404.html  410
@@ -56,7 +55,7 @@
 /p/tokyo-yakitori.html  /blends/tokyo-yakitori/  301
 /p/vermu-botanico.html  /blends/vermu-botanico/  301
 /p/whisky-oak-spice.html  /blends/whisky-oak-spice/  301
-/p/za-atar.html  /404.html  410
+/p/za-atar.html  /blends/za-atar/  301
 
 # /tienda/slug.html legacy -> /blends/slug/ (301 con equivalente, 410 sin)
 /tienda/adobo-colombiano.html  /blends/adobo-colombiano/  301
@@ -98,7 +97,6 @@
 /tienda/noche-serena.html  /blends/noche-serena/  301
 /tienda/patagonico-ahumado.html  /blends/patagonico-ahumado/  301
 /tienda/piri-piri.html  /blends/piri-piri/  301
-/tienda/pizza-napoletana.html  /blends/pizza-napoletana/  301
 /tienda/ras-el-hanout.html  /blends/ras-el-hanout/  301
 /tienda/respirar.html  /blends/respirar/  301
 /tienda/sabor-paisa.html  /404.html  410
@@ -111,7 +109,7 @@
 /tienda/tokyo-yakitori.html  /blends/tokyo-yakitori/  301
 /tienda/vermu-botanico.html  /blends/vermu-botanico/  301
 /tienda/whisky-oak-spice.html  /blends/whisky-oak-spice/  301
-/tienda/za-atar.html  /404.html  410
+/tienda/za-atar.html  /blends/za-atar/  301
 
 # === Blends eliminados del catalogo -> 410 Gone ===
 /blends/andean-fire/         /404.html  410
@@ -160,5 +158,3 @@
 /blends/fajita-tex-mex/*        /404.html  410
 /blends/sabor-paisa/         /404.html  410
 /blends/sabor-paisa/*        /404.html  410
-/blends/pizza-napoletana/         /404.html  410
-/blends/pizza-napoletana/*        /404.html  410
