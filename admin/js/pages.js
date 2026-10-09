@@ -14322,54 +14322,30 @@ Pages.regenerarSEOCompleto = function() {
       });
     })
     .then(function() {
-      // Paso 2: Listar archivos /p/*.html actuales para actualizar canonicals
-      log('Listando /p/*.html para actualizar canonicals...');
-      return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/p').then(function(files) {
-        var pFiles = [];
-        for (var i = 0; i < files.length; i++) {
-          if (files[i].name.endsWith('.html')) {
-            pFiles.push({path: 'p/' + files[i].name, sha: files[i].sha, url: files[i].download_url});
-          }
-        }
-        log('Encontrados ' + pFiles.length + ' archivos /p/*.html', 'ok');
-        return pFiles;
-      });
-    })
-    .then(function(pFiles) {
-      // Descargar contenido de /p/*.html (en paralelo, lotes de 10)
-      log('Descargando contenido de /p/*.html...');
-      var batches = [];
-      for (var i = 0; i < pFiles.length; i += 10) {
-        batches.push(pFiles.slice(i, i + 10));
-      }
-      var allPFiles = [];
-      var batchProm = Promise.resolve();
-      batches.forEach(function(batch) {
-        batchProm = batchProm.then(function() {
-          var proms = batch.map(function(pf) {
-            return fetch(pf.url).then(function(r) { return r.text(); }).then(function(content) {
-              return {path: pf.path, content: content, sha: pf.sha};
-            });
-          });
-          return Promise.all(proms).then(function(results) {
-            allPFiles = allPFiles.concat(results);
-            log('  Descargados ' + allPFiles.length + '/' + pFiles.length + ' archivos');
-          });
-        });
-      });
-      return batchProm.then(function() { return allPFiles; });
-    })
-    .then(function(pFiles) {
-      // Generar archivos finales con canonicals actualizados
+      // NOTA: El paso de listar/descargar /p/*.html fue ELIMINADO porque esa
+      // carpeta ya no existe en el repo (se borró en la reestructuración SEO).
+      // Las URLs /p/* ahora devuelven 404 con meta noindex, y Google las
+      // desindexa automáticamente. No hace falta actualizar canonicals.
+
+      // Generar archivos finales con los datos de Firebase
       var db2 = ArcanoDB.getDB();
-      var result = ArcanoSEO.generateAll(db2, [], pFiles);
+      // existingUrls contiene las URLs del sitemap actual + blog + recetas
+      // que se recogieron en los pasos anteriores. Pasarlas para que el
+      // sitemap generado las preserve.
+      var result = ArcanoSEO.generateAll(db2, existingUrls, []);
 
       log('Archivos a subir:', 'ok');
       log('  - ' + result.blendsPages.length + ' p\u00E1ginas /blends/<slug>/index.html');
       log('  - ' + result.categoryPages.length + ' p\u00E1ginas /blends-para/<cat>/index.html');
       log('  - 1 \u00EDndice /blends-para/index.html');
-      log('  - ' + result.pHtmlUpdates.length + ' archivos /p/*.html actualizados');
+      if (result.especiaPages && result.especiaPages.length) {
+        log('  - ' + result.especiaPages.length + ' p\u00E1ginas /especias/<slug>/index.html');
+      }
+      if (result.especiasIndex) {
+        log('  - 1 \u00EDndice /especias/index.html');
+      }
       log('  - sitemap.xml, merchant_feed.xml, merchant_feed.tsv');
+      log('  - 1 index.html (home) con bloque SEO inyectado');
 
       // Paso 3: Crear blobs para todos los archivos
       log('Creando blobs en GitHub...');
