@@ -1019,7 +1019,7 @@ var ArcanoSEO = (function() {
     var catToBlends = {};
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
-      if ((Number(b.precioChico) || 0) <= 0 && (Number(b.precioGrande) || 0) <= 0) continue;
+      if (!b.enTienda) continue;
       var cat = b.categoria || '';
       if (cat) {
         if (!catToBlends[cat]) catToBlends[cat] = [];
@@ -1046,7 +1046,7 @@ var ArcanoSEO = (function() {
     // Productos /blends/ — lastmod dinámico desde Firebase
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
-      if ((Number(b.precioChico) || 0) <= 0 && (Number(b.precioGrande) || 0) <= 0) continue;
+      if (!b.enTienda) continue;
       var slug = b._slug || slugify(b.nombre);
       add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly', _lastmodForBlend(b));
     }
@@ -1133,7 +1133,7 @@ var ArcanoSEO = (function() {
    */
   function homeSeoBlock(allProducts) {
     var h = '';
-    h += '<div id="seo-content" style="display:none" aria-hidden="true">';
+    h += '<div id="seo-content" style="position:absolute;left:-9999px;width:990px;overflow:hidden" aria-hidden="true">';
     h += '<h1>Arcano Especias — Especias y Blends Artesanales</h1>';
     h += '<p>Catálogo completo de especias y blends artesanales del mundo. Ingredientes 100% naturales, seleccionados de cada rincón. Comidas, infusiones y coctelería. Envíos a toda Colombia.</p>';
     h += '<h2>Catálogo de productos</h2>';
@@ -1179,6 +1179,48 @@ var ArcanoSEO = (function() {
     return h;
   }
 
+  /* === sitemap-images.xml ===
+   * Genera un sitemap de imágenes con las URLs públicas de imágenes físicas.
+   * Solo incluye productos con enTienda=true y con imagen real (no logo fallback).
+   */
+  function generateSitemapImages(blends, especiasList) {
+    var today = new Date().toISOString().substring(0, 10);
+    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+    xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
+    // Blends
+    for (var i = 0; i < blends.length; i++) {
+      var b = blends[i];
+      if (!b.enTienda) continue;
+      var slug = b._slug || slugify(b.nombre);
+      var imgUrl = publicImageUrlFor(b, slug);
+      // Solo si la imagen no es el logo fallback
+      if (imgUrl.indexOf('logo.png') >= 0) continue;
+      xml += '<url><loc>' + BASE_URL + '/blends/' + slug + '/</loc><lastmod>' + _lastmodForBlend(b) + '</lastmod>';
+      xml += '<image:image><image:loc>' + esc(imgUrl) + '</image:loc>';
+      xml += '<image:title>' + esc(b.nombre || '') + '</image:title>';
+      xml += '<image:caption>Blend de especias ' + esc(b.nombre || '') + ' - Arcano Especias</image:caption>';
+      xml += '</image:image></url>\n';
+    }
+    // Especias
+    if (especiasList && especiasList.length) {
+      for (var ei = 0; ei < especiasList.length; ei++) {
+        var esp = especiasList[ei];
+        if (!esp || !esp.nombre) continue;
+        var espSlug = slugify(esp.nombre);
+        var espImg = publicImageUrlFor(esp, espSlug);
+        if (espImg.indexOf('logo.png') >= 0) continue;
+        xml += '<url><loc>' + BASE_URL + '/especias/' + espSlug + '/</loc><lastmod>' + today + '</lastmod>';
+        xml += '<image:image><image:loc>' + esc(espImg) + '</image:loc>';
+        xml += '<image:title>' + esc(esp.nombre) + '</image:title>';
+        xml += '<image:caption>Especia ' + esc(esp.nombre) + ' - Arcano Especias</image:caption>';
+        xml += '</image:image></url>\n';
+      }
+    }
+    xml += '</urlset>\n';
+    return xml;
+  }
+
   /* === MAIN: genera todos los archivos ===
      Retorna: {
        blendsPages: [{path: 'blends/slug/index.html', content: '...'}],
@@ -1214,6 +1256,7 @@ var ArcanoSEO = (function() {
       var pc = Number(b.precioChico) || 0;
       var pg = Number(b.precioGrande) || 0;
       if (pc <= 0 && pg <= 0) continue;
+      if (!b.enTienda) continue; // Solo blends en tienda
       b._slug = slugify(b.nombre);
       b._categoriasSEO = deriveCategoriasSEO(b);
       b._tipo = 'blend';
@@ -1348,6 +1391,10 @@ var ArcanoSEO = (function() {
     var merchantFeedXml = {path: 'merchant_feed.xml', content: generateMerchantFeedXml(allProducts)};
     var merchantFeedTsv = {path: 'merchant_feed.tsv', content: generateMerchantFeedTsv(allProducts)};
 
+    // 4.5. sitemap-images.xml — con rutas /img/blends/slug.jpg y /img/especias/slug.jpg
+    var sitemapImagesContent = generateSitemapImages(allProducts, especiasList);
+    var sitemapImages = {path: 'sitemap-images.xml', content: sitemapImagesContent};
+
     // 5. /p/*.html updates
     // pHtmlFiles = [{path, content, sha}] — viene pre-cargado del caller
     var pUpdates = [];
@@ -1383,6 +1430,7 @@ var ArcanoSEO = (function() {
       merchantFeedXml: merchantFeedXml,
       merchantFeedTsv: merchantFeedTsv,
       sitemap: sitemap,
+      sitemapImages: sitemapImages,
       pHtmlUpdates: pUpdates,
       homeSeoBlock: homeSeoBlock(allProducts),
       stats: {

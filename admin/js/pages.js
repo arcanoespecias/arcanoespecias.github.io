@@ -14168,17 +14168,24 @@ Pages.regenerarSEOCompleto = function() {
     })
     .then(function() {
       // Listar archivos /blog/ y /recetas/ del repo para agregarlos al sitemap
+      // CONVENCIÓN: URLs SIN .html (Cloudflare Pages sirve /blog/slug → /blog/slug.html automáticamente)
+      // El sitemap debe listar la versión sin .html, que es la canónica
       log('Listando archivos /blog/ y /recetas/ del repo...');
+      var blogFilesToUpdate = []; // Para actualizar canonicals después
+      var recetasFilesToUpdate = [];
       var blogUrlsPromise = ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/blog')
         .then(function(files) {
           var added = 0;
           for (var i = 0; i < files.length; i++) {
             if (files[i].name.endsWith('.html') && files[i].name !== 'index.html') {
-              existingUrls.push('https://arcanoespecias.com/blog/' + files[i].name);
+              // URL canónica SIN .html (lo que Cloudflare sirve)
+              var slug = files[i].name.replace(/\.html$/, '');
+              existingUrls.push('https://arcanoespecias.com/blog/' + slug);
+              blogFilesToUpdate.push({name: files[i].name, sha: files[i].sha, path: 'blog/' + files[i].name});
               added++;
             }
           }
-          log('Blog: ' + added + ' posts agregados al sitemap', 'ok');
+          log('Blog: ' + added + ' posts agregados al sitemap (URLs sin .html)', 'ok');
         })
         .catch(function(err) {
           log('No se pudo listar /blog/: ' + err.message, 'warn');
@@ -14188,16 +14195,72 @@ Pages.regenerarSEOCompleto = function() {
           var added = 0;
           for (var i = 0; i < files.length; i++) {
             if (files[i].name.endsWith('.html') && files[i].name !== 'index.html') {
-              existingUrls.push('https://arcanoespecias.com/recetas/' + files[i].name);
+              var slug = files[i].name.replace(/\.html$/, '');
+              existingUrls.push('https://arcanoespecias.com/recetas/' + slug);
+              recetasFilesToUpdate.push({name: files[i].name, sha: files[i].sha, path: 'recetas/' + files[i].name});
               added++;
             }
           }
-          log('Recetas: ' + added + ' recetas agregadas al sitemap', 'ok');
+          log('Recetas: ' + added + ' recetas agregadas al sitemap (URLs sin .html)', 'ok');
         })
         .catch(function(err) {
           log('No se pudo listar /recetas/: ' + err.message, 'warn');
         });
-      return Promise.all([blogUrlsPromise, recetasUrlsPromise]);
+      return Promise.all([blogUrlsPromise, recetasUrlsPromise]).then(function() {
+        return { blog: blogFilesToUpdate, recetas: recetasFilesToUpdate };
+      });
+    })
+    .then(function(blogRecetasFiles) {
+      // Actualizar canonicals y og:url de blog y recetas: quitar .html
+      log('Actualizando canonicals de blog y recetas (quitar .html)...');
+      var allToUpdate = blogRecetasFiles.blog.concat(blogRecetasFiles.recetas);
+      var canonicalUpdateTasks = [];
+      var canonicalUpdated = 0;
+      for (var i = 0; i < allToUpdate.length; i++) {
+        (function(file) {
+          canonicalUpdateTasks.push(
+            ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + file.path)
+              .then(function(repoFile) {
+                var content = decodeURIComponent(escape(atob(repoFile.content)));
+                var slug = file.name.replace(/\.html$/, '');
+                var folder = file.path.split('/')[0]; // 'blog' o 'recetas'
+                var canonicalUrl = 'https://arcanoespecias.com/' + folder + '/' + slug;
+                // Reemplazar canonical: de .../slug.html a .../slug (sin .html)
+                content = content.replace(
+                  /(<link[^>]*rel="canonical"[^>]*href=")([^"]*\.html)("[^>]*>)/g,
+                  '$1' + canonicalUrl + '$3'
+                );
+                // Reemplazar og:url: de .../slug.html a .../slug
+                content = content.replace(
+                  /(<meta[^>]*property="og:url"[^>]*content=")([^"]*\.html)("[^>]*>)/g,
+                  '$1' + canonicalUrl + '$3'
+                );
+                // Solo actualizar si hubo cambios
+                if (content.indexOf(canonicalUrl) >= 0 && content.indexOf(canonicalUrl + '.html') < 0) {
+                  return ghFetch('PUT', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + file.path, {
+                    message: 'SEO: canonical sin .html para ' + file.path,
+                    content: btoa(unescape(encodeURIComponent(content))),
+                    sha: repoFile.sha,
+                    branch: GH_BRANCH
+                  }).then(function() {
+                    canonicalUpdated++;
+                  });
+                }
+              })
+              .catch(function(err) {
+                // No fatal si no se puede actualizar
+              })
+          );
+        })(allToUpdate[i]);
+      }
+      // Subir secuencialmente para evitar 409
+      var seqCanonical = Promise.resolve();
+      canonicalUpdateTasks.forEach(function(task) {
+        seqCanonical = seqCanonical.then(function() { return task; });
+      });
+      return seqCanonical.then(function() {
+        log('Canonicals actualizados: ' + canonicalUpdated + '/' + allToUpdate.length, 'ok');
+      });
     })
     .then(function() {
       // Generar archivos con ArcanoSEO
@@ -14362,6 +14425,9 @@ Pages.regenerarSEOCompleto = function() {
         allFiles.push(result.especiasIndex);
       }
       allFiles.push(result.sitemap);
+      if (result.sitemapImages) {
+        allFiles.push(result.sitemapImages);
+      }
       allFiles.push(result.merchantFeedXml);
       allFiles.push(result.merchantFeedTsv);
 

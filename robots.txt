@@ -5,14 +5,11 @@ Allow: /especias/
 Allow: /blends-para/
 Allow: /blog/
 Allow: /recetas/
+Allow: /img/
 Disallow: /admin/
 Disallow: /admin-exclude.html
 Disallow: /clear.html
-Disallow: /p/
-Disallow: /tienda/
 Disallow: /productos/
-Disallow: /*.json$
-Disallow: /merchant_feed*
 
 User-agent: Googlebot-Image
 Allow: /img/
@@ -20,10 +17,13 @@ Allow: /icons/
 Allow: /img/blends/
 Allow: /img/especias/
 Disallow: /admin/
-Disallow: /admin-exclude.html
-Disallow: /clear.html
-Disallow: /p/
-Disallow: /tienda/
+
+User-agent: Storebot-Google
+Allow: /
+Allow: /blends/
+Allow: /especias/
+Allow: /img/
+Disallow: /admin/
 
 Sitemap: https://arcanoespecias.com/sitemap.xml
 Sitemap: https://arcanoespecias.com/sitemap-images.xml

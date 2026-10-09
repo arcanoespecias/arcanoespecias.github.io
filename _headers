@@ -39,6 +39,11 @@
 /merchant_feed.xml
   Cache-Control: public, max-age=3600
   Content-Type: application/xml; charset=utf-8
+  X-Robots-Tag: noindex
+/merchant_feed.tsv
+  Cache-Control: public, max-age=3600
+  Content-Type: text/tab-separated-values; charset=utf-8
+  X-Robots-Tag: noindex
 /robots.txt
   Cache-Control: public, max-age=3600
   Content-Type: text/plain; charset=utf-8
