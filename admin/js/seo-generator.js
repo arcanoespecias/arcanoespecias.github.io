@@ -1305,6 +1305,9 @@ var ArcanoSEO = (function() {
     var blendsParaIndex = {path: 'blends-para/index.html', content: blendsParaIndexHtml(catsWithCounts)};
 
     // 2.5. Generar /especias/<slug>/index.html (páginas SEO de especias)
+    // IMPORTANTE: solo generar páginas para especias con enTienda=true
+    // (igual que la tienda online que respeta el flag del admin).
+    // Las especias con enTienda=false NO deben aparecer en /especias/.
     var especiaPages = [];
     var especiaSlugsSeen = {};
     var especiasArr = [];
@@ -1313,20 +1316,21 @@ var ArcanoSEO = (function() {
     for (var ei = 0; ei < especiasArr.length; ei++) {
       var esp = especiasArr[ei];
       if (!esp || !esp.nombre) continue;
-      // Solo generar páginas para especias con enTienda=true o con descripcion
-      if (!esp.enTienda && !cleanDesc(esp.descripcion)) continue;
+      // SOLO especias con enTienda=true (igual que la tienda online)
+      if (!esp.enTienda) continue;
       var espSlug = slugify(esp.nombre);
       if (!espSlug || especiaSlugsSeen[espSlug]) continue;
       especiaSlugsSeen[espSlug] = true;
       var espHtml = especiaPageHtml(esp, allProducts);
       especiaPages.push({path: 'especias/' + espSlug + '/index.html', content: espHtml});
     }
-    // Generar índice /especias/index.html
+    // Generar índice /especias/index.html — solo especias con enTienda=true
     var especiasIndexHtml = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Especias Artesanales — Catálogo | Arcano Especias</title><meta name="description" content="Catálogo completo de especias artesanales de Arcano Especias. Especias 100% naturales seleccionadas de cada rincón del mundo. Envíos a toda Colombia."><link rel="canonical" href="' + BASE_URL + '/especias/"><meta name="robots" content="index, follow"><style>body{font-family:Georgia,serif;background:#1b0b07;color:#f0e6d3;line-height:1.7;margin:0;padding:0}.wrap{max-width:960px;margin:0 auto;padding:24px 20px}h1{color:#c9a84c;font-size:2rem}p{color:#d4c4a8}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px}.card{background:#2d1a10;border:1px solid #3d2a1c;border-radius:8px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}.card:hover{transform:translateY(-2px);border-color:#c9a84c}.card img{width:100%;aspect-ratio:1;object-fit:cover}.card .name{padding:8px 12px;font-weight:600;font-size:0.9rem}.footer{margin-top:48px;text-align:center;color:#6b5a42;font-size:0.85rem}.footer a{color:#c9a84c}</style></head><body><div class="wrap"><h1>Especias Artesanales</h1><p>Catálogo completo de especias 100% naturales de Arcano Especias. Seleccionadas de cada rincón del mundo para llevar sabores únicos a tu cocina.</p><div class="grid">';
     for (var ei2 = 0; ei2 < especiasArr.length; ei2++) {
       var esp2 = especiasArr[ei2];
       if (!esp2 || !esp2.nombre) continue;
-      if (!esp2.enTienda && !cleanDesc(esp2.descripcion)) continue;
+      // SOLO especias con enTienda=true en el índice también
+      if (!esp2.enTienda) continue;
       var s2 = slugify(esp2.nombre);
       var img2 = publicImageUrlFor(esp2, s2);
       especiasIndexHtml += '<a href="' + BASE_URL + '/especias/' + s2 + '/" class="card"><img src="' + esc(img2) + '" alt="' + esc(esp2.nombre) + '" loading="lazy"><div class="name">' + esc(esp2.nombre) + '</div></a>';
@@ -1335,7 +1339,8 @@ var ArcanoSEO = (function() {
     var especiasIndex = {path: 'especias/index.html', content: especiasIndexHtml};
 
     // 3. Sitemap — ahora incluye especias + blog + recetas
-    var especiasList = especiasArr.filter(function(e) { return e && e.nombre && (e.enTienda || cleanDesc(e.descripcion)); });
+    // Solo especias con enTienda=true aparecen en el sitemap
+    var especiasList = especiasArr.filter(function(e) { return e && e.nombre && e.enTienda; });
     var sitemapContent = generateSitemap(allProducts, catsWithCounts, existingSitemapUrls, especiasList);
     var sitemap = {path: 'sitemap.xml', content: sitemapContent};
 
