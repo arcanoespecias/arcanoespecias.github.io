@@ -14522,10 +14522,8 @@ Pages.regenerarSEOCompleto = function() {
       for (var bi = 0; bi < blendsArrClean.length; bi++) {
         var b = blendsArrClean[bi];
         if (!b || !b.nombre) continue;
-        // Deben existir: enTienda=true Y precio > 0
-        if (b.enTienda && ((Number(b.precioChico) || 0) > 0 || (Number(b.precioGrande) || 0) > 0)) {
-          validBlendSlugs[ArcanoSEO.slugify(b.nombre)] = true;
-        }
+        // TODOS los blends en Firebase se mantienen (enTienda true y false)
+        validBlendSlugs[ArcanoSEO.slugify(b.nombre)] = true;
       }
 
       var especiasRawClean = dbClean.especias || {};
@@ -14537,9 +14535,8 @@ Pages.regenerarSEOCompleto = function() {
       for (var ei = 0; ei < especiasArrClean.length; ei++) {
         var e = especiasArrClean[ei];
         if (!e || !e.nombre) continue;
-        if (e.enTienda) {
-          validEspeciaSlugs[ArcanoSEO.slugify(e.nombre)] = true;
-        }
+        // TODAS las especias en Firebase se mantienen (enTienda true y false)
+        validEspeciaSlugs[ArcanoSEO.slugify(e.nombre)] = true;
       }
 
       // Listar directorios /blends/ existentes en el repo

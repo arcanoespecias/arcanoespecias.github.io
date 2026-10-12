@@ -187,10 +187,10 @@ var ArcanoSEO = (function() {
     return (Number(b.stockChico) || 0) > 0 || (Number(b.stockGrande) || 0) > 0;
   }
   function availabilitySchema(b) {
-    return isBlendInStock(b) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+    return 'https://schema.org/InStock';
   }
   function availabilityGmc(b) {
-    return isBlendInStock(b) ? 'in stock' : 'out of stock';
+    return 'in stock';
   }
 
   /* Verifica si el producto tiene imagen real (no logo.png, no vacío).
@@ -256,33 +256,36 @@ var ArcanoSEO = (function() {
       [nombre, urlCanonical]
     ];
 
-    // JSON-LD Product
-    var productJsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: nombre,
-      description: descripcion || metaDesc,
-      image: urlImagen,
-      sku: String(blend.id),
-      mpn: String(blend.id),
-      brand: {'@type':'Brand', name:'Arcano Especias'},
-      category: categoria,
-      offers: {
-        '@type': 'Offer',
-        url: urlCanonical,
-        priceCurrency: 'COP',
-        price: String(precioChico),
-        availability: availabilitySchema(blend),
-        itemCondition: 'https://schema.org/NewCondition'
+    // JSON-LD Product (solo si enTienda=true; si es false, no hay Product schema)
+    var productJsonLd = null;
+    if (blend.enTienda) {
+      productJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: nombre,
+        description: descripcion || metaDesc,
+        image: urlImagen,
+        sku: String(blend.id),
+        mpn: String(blend.id),
+        brand: {'@type':'Brand', name:'Arcano Especias'},
+        category: categoria,
+        offers: {
+          '@type': 'Offer',
+          url: urlCanonical,
+          priceCurrency: 'COP',
+          price: String(precioChico),
+          availability: 'https://schema.org/InStock',
+          itemCondition: 'https://schema.org/NewCondition'
+        }
+      };
+      if (precioGrande > 0) {
+        productJsonLd.offers.priceSpecification = [
+          {'@type':'UnitPriceSpecification', price:String(precioChico), name:'Frasco pequeño'},
+          {'@type':'UnitPriceSpecification', price:String(precioGrande), name:'Frasco grande'}
+        ];
       }
-    };
-    if (precioGrande > 0) {
-      productJsonLd.offers.priceSpecification = [
-        {'@type':'UnitPriceSpecification', price:String(precioChico), name:'Frasco pequeño'},
-        {'@type':'UnitPriceSpecification', price:String(precioGrande), name:'Frasco grande'}
-      ];
+      if (region) productJsonLd.brand.description = 'Origen: ' + region;
     }
-    if (region) productJsonLd.brand.description = 'Origen: ' + region;
 
     // JSON-LD BreadcrumbList
     var bcJsonLd = {'@context':'https://schema.org','@type':'BreadcrumbList', itemListElement: []};
@@ -292,11 +295,12 @@ var ArcanoSEO = (function() {
       });
     }
 
-    // Productos relacionados
+    // Productos relacionados (solo enTienda=true)
     var relacionados = [];
     for (var j = 0; j < allProducts.length && relacionados.length < 4; j++) {
       var b = allProducts[j];
       if (b.id === blend.id) continue;
+      if (!b.enTienda) continue;
       if ((b.categoria || '') === (blend.categoria || '')) relacionados.push(b);
     }
 
@@ -318,7 +322,8 @@ var ArcanoSEO = (function() {
     html.push('<meta name="twitter:title" content="' + esc(nombre) + ' | Arcano Especias">');
     html.push('<meta name="twitter:description" content="' + esc(metaDesc) + '">');
     html.push('<meta name="twitter:image" content="' + esc(urlImagen) + '">');
-    html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
+    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    html.push('<meta name="robots" content="' + robotsContent + '">');
     html.push('<link rel="preconnect" href="https://fonts.googleapis.com">');
     html.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
     html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
@@ -413,25 +418,37 @@ var ArcanoSEO = (function() {
       }
     }
 
-    // Precio
-    html.push('<div class="precio">');
-    if (precioChico > 0) {
-      html.push('<div class="row"><div class="lab">Frasco pequeño</div><div class="val">' + formatCOP(precioChico) + '</div></div>');
+    // Precio y CTA (solo si enTienda=true)
+    if (blend.enTienda) {
+      html.push('<div class="precio">');
+      if (precioChico > 0) {
+        html.push('<div class="row"><div class="lab">Frasco pequeño</div><div class="val">' + formatCOP(precioChico) + '</div></div>');
+      }
+      if (precioGrande > 0) {
+        html.push('<div class="row"><div class="lab">Frasco grande</div><div class="val">' + formatCOP(precioGrande) + '</div></div>');
+      }
+      html.push('</div>');
+      // CTA
+      var tiendaUrl = BASE_URL + '/?producto=' + slug;
+      html.push('<div class="cta-wrap" style="margin:24px 0 8px;display:flex;gap:10px;flex-wrap:wrap">');
+      html.push('<a href="' + esc(tiendaUrl) + '" class="cta" style="display:inline-block;padding:14px 28px;background:#c9a84c;color:#1b0b07;font-weight:700;text-decoration:none;border-radius:8px;font-size:1rem">Agregar al carrito →</a>');
+      html.push('<a href="' + esc(tiendaUrl) + '" class="cta-secondary" style="display:inline-block;padding:14px 24px;background:transparent;color:#c9a84c;border:1px solid #c9a84c;font-weight:600;text-decoration:none;border-radius:8px;font-size:0.95rem">Ver en la tienda</a>');
+      html.push('</div>');
+      html.push('<p style="margin-top:8px;color:#888;font-size:0.85rem">Lo preparamos al momento. Despacho en 1 día hábil.</p>');
+      html.push('<p style="margin-top:4px;color:#6b5a42;font-size:0.8rem">Envíos a toda Colombia · Pago contra entrega en Medellín · Aceptamos Nequi, Bancolombia y Daviplata</p>');
+    } else {
+      // Producto oculto: sin precios, sin botón de compra
+      html.push('<div style="margin:24px 0;padding:16px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:8px;text-align:center">');
+      html.push('<p style="color:#c9a84c;font-weight:700;font-size:1.1rem;margin:0 0 8px">Este producto no está disponible por ahora</p>');
+      html.push('<p style="color:#a08b6e;font-size:0.9rem;margin:0 0 12px">Explorá otras opciones en nuestra tienda.</p>');
+      // Enlace a categoría si tiene
+      if (catsSEO.length) {
+        html.push('<a href="' + BASE_URL + '/blends-para/' + catsSEO[0] + '/" style="display:inline-block;padding:10px 20px;background:transparent;color:#c9a84c;border:1px solid #c9a84c;font-weight:600;text-decoration:none;border-radius:8px;font-size:0.9rem">Ver categorías</a>');
+      } else {
+        html.push('<a href="' + BASE_URL + '/blends-para/" style="display:inline-block;padding:10px 20px;background:transparent;color:#c9a84c;border:1px solid #c9a84c;font-weight:600;text-decoration:none;border-radius:8px;font-size:0.9rem">Ver categorías</a>');
+      }
+      html.push('</div>');
     }
-    if (precioGrande > 0) {
-      html.push('<div class="row"><div class="lab">Frasco grande</div><div class="val">' + formatCOP(precioGrande) + '</div></div>');
-    }
-    html.push('</div>');
-
-    // CTA — botón de compra claro, con texto explícito "Agregar al carrito"
-    // Google Merchant Center requiere: botón de compra visible, precios, y URL que lleve a una página donde se pueda comprar.
-    // El link apunta a /?producto=slug, y la SPA abre el modal del producto automáticamente
-    var tiendaUrl = BASE_URL + '/?producto=' + slug;
-    html.push('<div class="cta-wrap" style="margin:24px 0 8px;display:flex;gap:10px;flex-wrap:wrap">');
-    html.push('<a href="' + esc(tiendaUrl) + '" class="cta" style="display:inline-block;padding:14px 28px;background:#c9a84c;color:#1b0b07;font-weight:700;text-decoration:none;border-radius:8px;font-size:1rem">Agregar al carrito →</a>');
-    html.push('<a href="' + esc(tiendaUrl) + '" class="cta-secondary" style="display:inline-block;padding:14px 24px;background:transparent;color:#c9a84c;border:1px solid #c9a84c;font-weight:600;text-decoration:none;border-radius:8px;font-size:0.95rem">Ver en la tienda</a>');
-    html.push('</div>');
-    html.push('<p style="margin-top:8px;color:#888;font-size:0.85rem">Envíos a toda Colombia · Pago contra entrega en Medellín · Aceptamos Nequi, Bancolombia y Daviplata</p>');
 
     // Relacionados
     if (relacionados.length) {
@@ -454,7 +471,9 @@ var ArcanoSEO = (function() {
     html.push('</div>');
 
     html.push('</div>');
-    html.push('<script type="application/ld+json">' + JSON.stringify(productJsonLd) + '</script>');
+    if (productJsonLd) {
+      html.push('<script type="application/ld+json">' + JSON.stringify(productJsonLd) + '</script>');
+    }
     html.push('<script type="application/ld+json">' + JSON.stringify(bcJsonLd) + '</script>');
     html.push('</body></html>');
 
@@ -533,7 +552,8 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:description" content="' + esc(descripcion.substring(0, 200)) + '">');
     html.push('<meta property="og:url" content="' + urlCanonical + '">');
     html.push('<meta property="og:image" content="' + esc(urlImagen) + '">');
-    html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
+    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    html.push('<meta name="robots" content="' + robotsContent + '">');
 
     // JSON-LD: BreadcrumbList
     html.push('<script type="application/ld+json">');
@@ -548,30 +568,35 @@ var ArcanoSEO = (function() {
     }));
     html.push('</script>');
 
-    // JSON-LD: Product (con offers si hay precio)
-    var productObj = {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: nombre,
-      description: descripcion,
-      image: urlImagen,
-      url: urlCanonical,
-      brand: { '@type': 'Brand', name: 'Arcano Especias' },
-      category: 'Spices & Seasonings'
-    };
-    if (precioChico > 0 || precioGrande > 0) {
-      var offers = [];
-      if (precioChico > 0) {
-        offers.push({ '@type': 'Offer', price: precioChico, priceCurrency: 'COP', availability: 'https://schema.org/InStock', url: urlCanonical, sku: 'ESP-' + slug + '-CH' });
+    // JSON-LD: Product (solo si enTienda=true)
+    var productObj = null;
+    if (esp.enTienda) {
+      productObj = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: nombre,
+        description: descripcion,
+        image: urlImagen,
+        url: urlCanonical,
+        brand: { '@type': 'Brand', name: 'Arcano Especias' },
+        category: 'Spices & Seasonings'
+      };
+      if (precioChico > 0 || precioGrande > 0) {
+        var offers = [];
+        if (precioChico > 0) {
+          offers.push({ '@type': 'Offer', price: precioChico, priceCurrency: 'COP', availability: 'https://schema.org/InStock', url: urlCanonical, sku: 'ESP-' + slug + '-CH' });
+        }
+        if (precioGrande > 0) {
+          offers.push({ '@type': 'Offer', price: precioGrande, priceCurrency: 'COP', availability: 'https://schema.org/InStock', url: urlCanonical, sku: 'ESP-' + slug + '-GR' });
+        }
+        productObj.offers = { '@type': 'AggregateOffer', offers: offers, lowPrice: precioChico || precioGrande, highPrice: precioGrande || precioChico, priceCurrency: 'COP', offerCount: offers.length };
       }
-      if (precioGrande > 0) {
-        offers.push({ '@type': 'Offer', price: precioGrande, priceCurrency: 'COP', availability: 'https://schema.org/InStock', url: urlCanonical, sku: 'ESP-' + slug + '-GR' });
-      }
-      productObj.offers = { '@type': 'AggregateOffer', offers: offers, lowPrice: precioChico || precioGrande, highPrice: precioGrande || precioChico, priceCurrency: 'COP', offerCount: offers.length };
     }
-    html.push('<script type="application/ld+json">');
-    html.push(JSON.stringify(productObj));
-    html.push('</script>');
+    if (productObj) {
+      html.push('<script type="application/ld+json">');
+      html.push(JSON.stringify(productObj));
+      html.push('</script>');
+    }
 
     // JSON-LD: FAQPage (lo que las IA leen)
     html.push('<script type="application/ld+json">');
@@ -789,7 +814,8 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:image" content="' + BASE_URL + '/icons/arcano-logo.webp">');
     html.push('<meta property="og:locale" content="es_CO">');
     html.push('<meta property="og:site_name" content="Arcano Especias">');
-    html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
+    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    html.push('<meta name="robots" content="' + robotsContent + '">');
     html.push('<link rel="preconnect" href="https://fonts.googleapis.com">');
     html.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
     html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
@@ -873,7 +899,8 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:title" content="' + esc(title) + '">');
     html.push('<meta property="og:description" content="' + esc(metaDesc) + '">');
     html.push('<meta property="og:url" content="' + esc(urlCanonical) + '">');
-    html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
+    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    html.push('<meta name="robots" content="' + robotsContent + '">');
     html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
     html.push('<link rel="icon" type="image/png" href="' + BASE_URL + '/icons/favicon-32.png">');
     html.push('<style>');
@@ -965,6 +992,7 @@ var ArcanoSEO = (function() {
 
   /* === Merchant feed TSV === */
   function generateMerchantFeedTsv(blends) {
+    blends = blends.filter(function(b) { return b.enTienda && hasRealImage(b); });
     // TSV no soporta campos anidados como shipping o return_policy; mantenemos formato simple
     // con los campos básicos + availability dinámico + excluded_destination.
     var tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\texcluded_destination\n';
@@ -1007,13 +1035,18 @@ var ArcanoSEO = (function() {
     function add(url, prio, freq, lastmod) {
       if (urlsSeen[url]) return;
       urlsSeen[url] = true;
-      urls.push([url, prio, freq, lastmod || today]);
+      urls.push([url, lastmod || today]);
+    }
+    function addSitemapUrl(url, lastmod) {
+      if (urlsSeen[url]) return;
+      urlsSeen[url] = true;
+      urls.push([url, lastmod || today]);
     }
 
     // Homepage: fecha de hoy
-    add(BASE_URL + '/', '1.0', 'weekly', today);
+    addSitemapUrl(BASE_URL + '/', today);
     // Índice /blends-para/: fecha de hoy
-    add(BASE_URL + '/blends-para/', '0.9', 'weekly', today);
+    addSitemapUrl(BASE_URL + '/blends-para/', today);
 
     // Mapeo: cat_label → lista de blends (con sus lastmod)
     var catToBlends = {};
@@ -1040,7 +1073,7 @@ var ArcanoSEO = (function() {
           break;
         }
       }
-      add(BASE_URL + '/blends-para/' + catSlug + '/', '0.8', 'weekly', catLastmod);
+      addSitemapUrl(BASE_URL + '/blends-para/' + catSlug + '/', catLastmod);
     }
 
     // Productos /blends/ — lastmod dinámico desde Firebase
@@ -1052,21 +1085,21 @@ var ArcanoSEO = (function() {
     }
 
     // Especias /especias/<slug>/ — páginas SEO de especias individuales
-    add(BASE_URL + '/especias/', '0.9', 'weekly', today);
+    addSitemapUrl(BASE_URL + '/especias/', today);
     if (especiasList && especiasList.length) {
       for (var ei = 0; ei < especiasList.length; ei++) {
         var esp = especiasList[ei];
         if (!esp || !esp.nombre) continue;
         var espSlug = slugify(esp.nombre);
         if (!espSlug) continue;
-        add(BASE_URL + '/especias/' + espSlug + '/', '0.7', 'monthly', today);
+        addSitemapUrl(BASE_URL + '/especias/' + espSlug + '/', today);
       }
     }
 
     // Blog: índice + posts (si existen archivos /blog/slug.html en el repo)
-    add(BASE_URL + '/blog/', '0.8', 'weekly', today);
+    addSitemapUrl(BASE_URL + '/blog/', today);
     // Recetas: índice + recetas (si existen archivos /recetas/slug.html en el repo)
-    add(BASE_URL + '/recetas/', '0.8', 'weekly', today);
+    addSitemapUrl(BASE_URL + '/recetas/', today);
 
     // Extra URLs (recetas, blog, etc.) - lastmod fallback = today
     if (extraUrls) {
@@ -1076,15 +1109,17 @@ var ArcanoSEO = (function() {
         if (u.indexOf(BASE_URL + '/tienda/') === 0) continue;
         if (u.indexOf(BASE_URL + '/blends/') === 0) continue;
         if (u.indexOf(BASE_URL + '/blends-para/') === 0) continue;
-        if (u.indexOf(BASE_URL + '/especias/') === 0) continue; // ya agregadas arriba
-        if (u.replace(/\/$/, '') === BASE_URL) continue;  // skip homepage (already added)
-        add(u, '0.6', 'monthly', today);
+        if (u.indexOf(BASE_URL + '/especias/') === 0) continue;
+        if (u.replace(/\/$/, '') === BASE_URL) continue;
+        // Quitar .html si lo tiene (convención: sin .html)
+        var cleanUrl = u.replace(/\.html$/, '');
+        addSitemapUrl(cleanUrl, today);
       }
     }
 
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     for (var i = 0; i < urls.length; i++) {
-      xml += '<url><loc>' + esc(urls[i][0]) + '</loc><lastmod>' + urls[i][3] + '</lastmod><priority>' + urls[i][1] + '</priority><changefreq>' + urls[i][2] + '</changefreq></url>\n';
+      xml += '<url><loc>' + esc(urls[i][0]) + '</loc><lastmod>' + urls[i][1] + '</lastmod></url>\n';
     }
     xml += '</urlset>\n';
     return xml;
@@ -1140,6 +1175,7 @@ var ArcanoSEO = (function() {
     h += '<ul>';
     for (var i = 0; i < allProducts.length; i++) {
       var b = allProducts[i];
+      if (!b.enTienda) continue;
       var slug = b._slug || slugify(b.nombre);
       if (!slug) continue;
       var nombre = b.nombre || '';
@@ -1192,9 +1228,9 @@ var ArcanoSEO = (function() {
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       if (!b.enTienda) continue;
+      if (!hasRealImage(b)) continue;
       var slug = b._slug || slugify(b.nombre);
       var imgUrl = publicImageUrlFor(b, slug);
-      // Solo si la imagen no es el logo fallback
       if (imgUrl.indexOf('logo.png') >= 0) continue;
       xml += '<url><loc>' + BASE_URL + '/blends/' + slug + '/</loc><lastmod>' + _lastmodForBlend(b) + '</lastmod>';
       xml += '<image:image><image:loc>' + esc(imgUrl) + '</image:loc>';
@@ -1247,16 +1283,14 @@ var ArcanoSEO = (function() {
       blendsArr = Object.keys(blendsRaw).map(function(k) { return blendsRaw[k]; });
     }
 
-    // Filtrar blends con precio > 0
+    // Procesar TODOS los blends (enTienda=true y false).
+    // enTienda=true: página indexable con precios y CTA.
+    // enTienda=false: página con noindex, sin precios ni CTA.
     var blends = [];
     for (var i = 0; i < blendsArr.length; i++) {
       var b = blendsArr[i];
       if (!b || typeof b !== 'object') continue;
       if (!b.nombre) continue;
-      var pc = Number(b.precioChico) || 0;
-      var pg = Number(b.precioGrande) || 0;
-      if (pc <= 0 && pg <= 0) continue;
-      if (!b.enTienda) continue; // Solo blends en tienda
       b._slug = slugify(b.nombre);
       b._categoriasSEO = deriveCategoriasSEO(b);
       b._tipo = 'blend';
@@ -1308,6 +1342,7 @@ var ArcanoSEO = (function() {
     var incompletos = [];
     for (var i = 0; i < allProducts.length; i++) {
       var b = allProducts[i];
+      if (!b.enTienda) continue;
       var slug = b._slug || slugify(b.nombre);
       if (!slug) continue;
       if (slugsSeen[slug]) continue;
@@ -1359,8 +1394,8 @@ var ArcanoSEO = (function() {
     for (var ei = 0; ei < especiasArr.length; ei++) {
       var esp = especiasArr[ei];
       if (!esp || !esp.nombre) continue;
-      // SOLO especias con enTienda=true (igual que la tienda online)
-      if (!esp.enTienda) continue;
+      // Generar página para TODAS las especias (enTienda=true y false)
+      // enTienda=false → noindex, sin precios ni CTA
       var espSlug = slugify(esp.nombre);
       if (!espSlug || especiaSlugsSeen[espSlug]) continue;
       especiaSlugsSeen[espSlug] = true;
