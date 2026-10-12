@@ -1450,30 +1450,8 @@ var ArcanoSEO = (function() {
     var sitemapImages = {path: 'sitemap-images.xml', content: sitemapImagesContent};
 
     // 5. /p/*.html updates
-    // pHtmlFiles = [{path, content, sha}] — viene pre-cargado del caller
+    // pHtmlFiles ya no existe (carpeta /p/ eliminada). Esta sección queda como no-op.
     var pUpdates = [];
-    if (pHtmlFiles && pHtmlFiles.length) {
-      // Map slug normalizado → blend
-      var slugToBlend = {};
-      for (var i = 0; i < allProducts.length; i++) {
-        var b = allProducts[i];
-        var slug = b._slug || slugify(b.nombre);
-        slugToBlend[normalizeSlug(slug)] = b;
-      }
-      for (var i = 0; i < pHtmlFiles.length; i++) {
-        var pf = pHtmlFiles[i];
-        var oldSlug = pf.path.replace(/^p\//, '').replace(/\.html$/, '');
-        var oldSlugNorm = normalizeSlug(oldSlug);
-        var blend = slugToBlend[oldSlugNorm];
-        if (!blend) continue;
-        var newSlug = blend._slug || slugify(blend.nombre);
-        var targetUrl = BASE_URL + '/blends/' + newSlug + '/';
-        var newContent = modifyPHtml(pf.content, targetUrl);
-        if (newContent !== pf.content) {
-          pUpdates.push({path: pf.path, content: newContent, sha: pf.sha});
-        }
-      }
-    }
 
     return {
       blendsPages: blendsPages,
