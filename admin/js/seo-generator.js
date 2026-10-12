@@ -1168,34 +1168,43 @@ var ArcanoSEO = (function() {
    */
   function homeSeoBlock(allProducts) {
     var h = '';
-    h += '<div id="seo-content" style="position:absolute;left:-9999px;width:990px;overflow:hidden" aria-hidden="true">';
-    h += '<h1>Arcano Especias — Especias y Blends Artesanales</h1>';
+    h += '<div id="seo-content" style="display:block">';
+    h += '<h2 style="font-size:0;height:0;margin:0;padding:0;overflow:hidden;visibility:hidden">Arcano Especias — Especias y Blends Artesanales</h2>';
     h += '<p>Catálogo completo de especias y blends artesanales del mundo. Ingredientes 100% naturales, seleccionados de cada rincón. Comidas, infusiones y coctelería. Envíos a toda Colombia.</p>';
-    h += '<h2>Catálogo de productos</h2>';
-    h += '<ul>';
-    for (var i = 0; i < allProducts.length; i++) {
-      var b = allProducts[i];
-      if (!b.enTienda) continue;
-      var slug = b._slug || slugify(b.nombre);
-      if (!slug) continue;
-      var nombre = b.nombre || '';
-      var desc = cleanDesc(b.descripcion) || (nombre + ' — Blend artesanal de Arcano Especias');
-      var img = publicImageUrlFor(b, slug);
-      var pc = Number(b.precioChico) || 0;
-      var pg = Number(b.precioGrande) || 0;
-      var url = BASE_URL + '/blends/' + slug + '/';
-      // Recortar descripcion a 150 chars
-      if (desc.length > 150) desc = desc.substring(0, 147) + '...';
-      var precioTxt = pc > 0 ? 'Pequeño $' + pc.toLocaleString('es-CO') : '';
-      if (pg > 0) precioTxt += (precioTxt ? ', ' : '') + 'Grande $' + pg.toLocaleString('es-CO');
-      h += '<li>';
-      h += '<a href="' + url + '"><img src="' + esc(img) + '" alt="' + esc(nombre) + '" loading="lazy"></a>';
-      h += '<h3><a href="' + url + '">' + esc(nombre) + '</a></h3>';
-      h += '<p>' + esc(desc) + '</p>';
-      if (precioTxt) h += '<p>Precios: ' + esc(precioTxt) + '</p>';
-      h += '</li>';
+    // Sección "Explora" — visible, con enlaces reales a categorías, especias, blog y recetas
+    h += '<nav id="seo-explore" style="max-width:960px;margin:48px auto 0;padding:24px 20px;border-top:1px solid #3d2a1c">';
+    h += '<h2 style="font-size:1.3rem;color:#c9a84c;margin:0 0 16px;font-family:inherit;font-weight:700">Explora</h2>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">';
+    // 9 categorías
+    var catSlugs = ['carnes', 'pollo', 'guisos', 'arroces-pastas', 'pescados-mariscos', 'cocteleria', 'infusiones', 'adobos-marinadas'];
+    var catNames = {
+      'carnes': 'Blends para Carnes', 'pollo': 'Blends para Pollo', 'guisos': 'Blends para Guisos',
+      'arroces-pastas': 'Blends para Arroces y Pastas', 'pescados-mariscos': 'Blends para Pescados',
+      'cocteleria': 'Botánicos para Coctelería', 'infusiones': 'Especias para Infusiones',
+      'adobos-marinadas': 'Adobos y Marinadas'
+    };
+    h += '<div><h3 style="font-size:0.9rem;color:#a08b6e;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em">Categorías</h3><ul style="list-style:none;padding:0;margin:0">';
+    h += '<li style="margin:4px 0"><a href="' + BASE_URL + '/blends-para/" style="color:#c9a84c;text-decoration:none;font-size:0.9rem">Ver todas</a></li>';
+    for (var ci = 0; ci < catSlugs.length; ci++) {
+      var cs = catSlugs[ci];
+      h += '<li style="margin:4px 0"><a href="' + BASE_URL + '/blends-para/' + cs + '/" style="color:#c9a84c;text-decoration:none;font-size:0.9rem">' + (catNames[cs] || cs) + '</a></li>';
     }
-    h += '</ul>';
+    h += '</ul></div>';
+    // Especias
+    h += '<div><h3 style="font-size:0.9rem;color:#a08b6e;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em">Especias</h3><ul style="list-style:none;padding:0;margin:0">';
+    h += '<li style="margin:4px 0"><a href="' + BASE_URL + '/especias/" style="color:#c9a84c;text-decoration:none;font-size:0.9rem">Catálogo de especias</a></li>';
+    h += '</ul></div>';
+    // Blog
+    h += '<div><h3 style="font-size:0.9rem;color:#a08b6e;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em">Blog</h3><ul style="list-style:none;padding:0;margin:0">';
+    h += '<li style="margin:4px 0"><a href="' + BASE_URL + '/blog/" style="color:#c9a84c;text-decoration:none;font-size:0.9rem">Blog de especias</a></li>';
+    h += '</ul></div>';
+    // Recetas
+    h += '<div><h3 style="font-size:0.9rem;color:#a08b6e;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em">Recetas</h3><ul style="list-style:none;padding:0;margin:0">';
+    h += '<li style="margin:4px 0"><a href="' + BASE_URL + '/recetas/" style="color:#c9a84c;text-decoration:none;font-size:0.9rem">Recetas con especias</a></li>';
+    h += '</ul></div>';
+    h += '</div>';
+    h += '<p style="margin-top:16px;color:#6b5a42;font-size:0.8rem">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · WhatsApp: +57 317 800 3374</p>';
+    h += '</nav>';
     h += '<h2>Categorías</h2>';
     h += '<ul>';
     h += '<li><a href="' + BASE_URL + '/blends-para/">Ver todas las categorías</a></li>';
