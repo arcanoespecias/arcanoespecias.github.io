@@ -322,7 +322,7 @@ var ArcanoSEO = (function() {
     html.push('<meta name="twitter:title" content="' + esc(nombre) + ' | Arcano Especias">');
     html.push('<meta name="twitter:description" content="' + esc(metaDesc) + '">');
     html.push('<meta name="twitter:image" content="' + esc(urlImagen) + '">');
-    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    var robotsContent = esp.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
     html.push('<meta name="robots" content="' + robotsContent + '">');
     html.push('<link rel="preconnect" href="https://fonts.googleapis.com">');
     html.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
@@ -552,7 +552,7 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:description" content="' + esc(descripcion.substring(0, 200)) + '">');
     html.push('<meta property="og:url" content="' + urlCanonical + '">');
     html.push('<meta property="og:image" content="' + esc(urlImagen) + '">');
-    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    var robotsContent = esp.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
     html.push('<meta name="robots" content="' + robotsContent + '">');
 
     // JSON-LD: BreadcrumbList
@@ -814,7 +814,7 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:image" content="' + BASE_URL + '/icons/arcano-logo.webp">');
     html.push('<meta property="og:locale" content="es_CO">');
     html.push('<meta property="og:site_name" content="Arcano Especias">');
-    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    var robotsContent = esp.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
     html.push('<meta name="robots" content="' + robotsContent + '">');
     html.push('<link rel="preconnect" href="https://fonts.googleapis.com">');
     html.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
@@ -899,7 +899,7 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:title" content="' + esc(title) + '">');
     html.push('<meta property="og:description" content="' + esc(metaDesc) + '">');
     html.push('<meta property="og:url" content="' + esc(urlCanonical) + '">');
-    var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
+    var robotsContent = esp.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
     html.push('<meta name="robots" content="' + robotsContent + '">');
     html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
     html.push('<link rel="icon" type="image/png" href="' + BASE_URL + '/icons/favicon-32.png">');
