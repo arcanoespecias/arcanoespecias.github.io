@@ -14251,8 +14251,9 @@ Pages.regenerarSEOCompleto = function() {
                   /(<meta[^>]*property="og:url"[^>]*content=")([^"]*\.html)("[^>]*>)/g,
                   '$1' + canonicalUrl + '$3'
                 );
-                // Solo actualizar si hubo cambios
-                if (content.indexOf(canonicalUrl) >= 0 && content.indexOf(canonicalUrl + '.html') < 0) {
+                // Actualizar si el contenido cambió (el replace modificó algo)
+                var originalContent = decodeURIComponent(escape(atob(repoFile.content)));
+                if (content !== originalContent) {
                   return ghFetch('PUT', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + file.path, {
                     message: 'SEO: canonical sin .html para ' + file.path,
                     content: btoa(unescape(encodeURIComponent(content))),
