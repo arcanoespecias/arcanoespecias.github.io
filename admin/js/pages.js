@@ -14104,20 +14104,29 @@ Pages.regenerarSEOCompleto = function() {
   log('Iniciando regeneraci\u00F3n SEO completa...');
 
   // === VERIFICACIÓN DE VERSIÓN DEL GENERADOR ===
-  var seoVersion = 'v26';
+  var seoVersion = 'v27';
   var hasFilterTipo = typeof ArcanoSEO === 'object' && typeof ArcanoSEO.generateAll === 'function';
   // Verificar que el generador tiene el filtro _tipo='blend'
   var testSrc = ArcanoSEO.generateAll.toString();
+  var homeSrc = ArcanoSEO.homeSeoBlock.toString();
   var hasTipoFilter = testSrc.indexOf("_tipo !== 'blend'") >= 0;
   var hasNoPHtml = testSrc.indexOf("pHtmlFiles ya no existe") >= 0;
-  if (!hasTipoFilter || !hasNoPHtml) {
+  // v27 fixes:
+  // - Canonicals: deferir GETs (function en vez de promise directo) + delay 300ms
+  // - homeSeoBlock: remover legacy <h2>Categorías</h2> duplicado con solo 5 cats
+  var hasCanonicalDefer = /canonicalUpdateTasks\.push\(function\(\)/.test(
+    Pages.regenerarSEOCompleto.toString()
+  );
+  var noLegacyCategorias = homeSrc.indexOf('Ver todas las categorías') < 0;
+  if (!hasTipoFilter || !hasNoPHtml || !hasCanonicalDefer || !noLegacyCategorias) {
     log('\u2717 ERROR: El generador cargado no es v' + seoVersion + '.', 'error');
-    log('  Tiene _tipo filter: ' + hasTipoFilter + ' | Tiene pHtmlFiles fix: ' + hasNoPHtml, 'error');
+    log('  _tipo filter: ' + hasTipoFilter + ' | pHtmlFiles fix: ' + hasNoPHtml, 'error');
+    log('  canonical defer: ' + hasCanonicalDefer + ' | no legacy Categorías: ' + noLegacyCategorias, 'error');
     log('  Hac\u00E9 Ctrl+Shift+R en el admin para forzar recarga del JS.', 'error');
     if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
     return;
   }
-  log('Generador: seo-generator.js ' + seoVersion + ' (verificado: _tipo filter + pHtmlFiles fix)', 'ok');
+  log('Generador: seo-generator.js ' + seoVersion + ' (verificado: _tipo filter + pHtmlFiles fix + canonical defer + no legacy Categorías)', 'ok');
 
   // Token y config: prioriza el token de localStorage (arcano_gh_token) que el admin
   // configuró via URL hash #tk=<token> (flujo estándar de github-sync.js).
@@ -14230,12 +14239,17 @@ Pages.regenerarSEOCompleto = function() {
       // Actualizar canonicals y og:url de blog y recetas: quitar .html
       log('Actualizando canonicals de blog y recetas (quitar .html)...');
       var allToUpdate = blogRecetasFiles.blog.concat(blogRecetasFiles.recetas);
+      // FIX: deferir GETs y ejecutar SECUENCIALMENTE con delay de 300ms
+      // Antes los 52 GETs se disparaban en paralelo y GitHub rate-limitaba (~30/min),
+      // causando que solo 0-1 de 52 se actualizaran.
       var canonicalUpdateTasks = [];
       var canonicalUpdated = 0;
+      var canonicalSkipped = 0;
+      var canonicalFailed = 0;
       for (var i = 0; i < allToUpdate.length; i++) {
         (function(file) {
-          canonicalUpdateTasks.push(
-            ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + file.path)
+          canonicalUpdateTasks.push(function() {
+            return ghFetch('GET', '/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + file.path)
               .then(function(repoFile) {
                 var content = decodeURIComponent(escape(atob(repoFile.content)));
                 var slug = file.name.replace(/\.html$/, '');
@@ -14261,22 +14275,29 @@ Pages.regenerarSEOCompleto = function() {
                     branch: GH_BRANCH
                   }).then(function() {
                     canonicalUpdated++;
+                    log('  ✓ ' + file.path, 'ok');
+                    // Delay 300ms entre commits para evitar rate-limit secundario de GitHub
+                    return new Promise(function(resolve) { setTimeout(resolve, 300); });
                   });
+                } else {
+                  canonicalSkipped++;
+                  return new Promise(function(resolve) { setTimeout(resolve, 50); });
                 }
               })
               .catch(function(err) {
-                // No fatal si no se puede actualizar
-              })
-          );
+                canonicalFailed++;
+                log('  ✗ ' + file.path + ': ' + err.message, 'warn');
+              });
+          });
         })(allToUpdate[i]);
       }
-      // Subir secuencialmente para evitar 409
+      // Ejecutar secuencialmente: cada task es una función que retorna una promesa
       var seqCanonical = Promise.resolve();
-      canonicalUpdateTasks.forEach(function(task) {
-        seqCanonical = seqCanonical.then(function() { return task; });
+      canonicalUpdateTasks.forEach(function(taskFn) {
+        seqCanonical = seqCanonical.then(function() { return taskFn(); });
       });
       return seqCanonical.then(function() {
-        log('Canonicals actualizados: ' + canonicalUpdated + '/' + allToUpdate.length, 'ok');
+        log('Canonicals: ' + canonicalUpdated + ' actualizados, ' + canonicalSkipped + ' sin cambios, ' + canonicalFailed + ' fallidos / ' + allToUpdate.length + ' totales', 'ok');
       });
     })
     .then(function() {

@@ -1161,8 +1161,9 @@ var ArcanoSEO = (function() {
   /* === Bloque SEO para inyectar en index.html (home SPA) ===
    * Genera HTML con productos visibles para que Googlebot los lea en el
    * primer fetch, sin esperar a que se ejecute el JS de la SPA.
-   * Se inserta dentro de un <div id="seo-content" style="display:none"> antes
-   * del </body>. La SPA lo oculta (display:none) para no duplicar UI, pero
+   * Se inserta dentro de un <div id="seo-content" style="display:block"> antes
+   * del </body>. La sección "Explora" (.seo-explore-nav) es visible para el
+   * usuario y contiene enlaces reales a categorías, especias, blog y recetas.
    * Google lee el HTML y puede indexar los productos + links.
    */
   function homeSeoBlock(allProducts) {
@@ -1214,17 +1215,6 @@ var ArcanoSEO = (function() {
     h += '</div>';
     h += '<p class="contact">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · WhatsApp: +57 317 800 3374</p>';
     h += '</nav>';
-    h += '<h2>Categorías</h2>';
-    h += '<ul>';
-    h += '<li><a href="' + BASE_URL + '/blends-para/">Ver todas las categorías</a></li>';
-    h += '<li><a href="' + BASE_URL + '/blends-para/carnes/">Blends para Carnes</a></li>';
-    h += '<li><a href="' + BASE_URL + '/blends-para/pollo/">Blends para Pollo</a></li>';
-    h += '<li><a href="' + BASE_URL + '/blends-para/arroces-pastas/">Blends para Arroces y Pastas</a></li>';
-    h += '<li><a href="' + BASE_URL + '/blends-para/cocteleria/">Botánicos para Coctelería</a></li>';
-    h += '<li><a href="' + BASE_URL + '/blends-para/infusiones/">Especias para Infusiones</a></li>';
-    h += '<li><a href="' + BASE_URL + '/blog/">Blog de Especias</a></li>';
-    h += '<li><a href="' + BASE_URL + '/recetas/">Recetas con Especias</a></li>';
-    h += '</ul>';
     h += '<h2>Sobre Arcano Especias</h2>';
     h += '<p>Arcano Especias es una tienda online de especias y blends artesanales con sede en Medellín, Colombia. Seleccionamos ingredientes 100% naturales de cada rincón del mundo para crear mezclas únicas que despiertan sabores, aromas y experiencias. Ofrecemos blends para comidas, infusiones y coctelería, además de nuestro servicio insignia: Arma tu Blend, donde el cliente crea su propia mezcla personalizada.</p>';
     h += '<p><strong>Envíos a toda Colombia</strong> · Pago contra entrega en Medellín · Aceptamos Nequi, Bancolombia y Daviplata</p>';
