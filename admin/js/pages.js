@@ -14103,6 +14103,22 @@ Pages.regenerarSEOCompleto = function() {
 
   log('Iniciando regeneraci\u00F3n SEO completa...');
 
+  // === VERIFICACIÓN DE VERSIÓN DEL GENERADOR ===
+  var seoVersion = 'v26';
+  var hasFilterTipo = typeof ArcanoSEO === 'object' && typeof ArcanoSEO.generateAll === 'function';
+  // Verificar que el generador tiene el filtro _tipo='blend'
+  var testSrc = ArcanoSEO.generateAll.toString();
+  var hasTipoFilter = testSrc.indexOf("_tipo !== 'blend'") >= 0;
+  var hasAddSitemapUrl = testSrc.indexOf('addSitemapUrl') >= 0;
+  if (!hasTipoFilter || !hasAddSitemapUrl) {
+    log('\u2717 ERROR: El generador cargado no es v' + seoVersion + '.', 'error');
+    log('  Tiene _tipo filter: ' + hasTipoFilter + ' | Tiene addSitemapUrl: ' + hasAddSitemapUrl, 'error');
+    log('  Hac\u00E9 Ctrl+Shift+R en el admin para forzar recarga del JS.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
+    return;
+  }
+  log('Generador: seo-generator.js ' + seoVersion + ' (verificado)', 'ok');
+
   // Token y config: prioriza el token de localStorage (arcano_gh_token) que el admin
   // configuró via URL hash #tk=<token> (flujo estándar de github-sync.js).
   // Fallback al token hardcoded solo si no hay token en localStorage.
