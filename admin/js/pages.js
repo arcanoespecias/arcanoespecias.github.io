@@ -14109,15 +14109,15 @@ Pages.regenerarSEOCompleto = function() {
   // Verificar que el generador tiene el filtro _tipo='blend'
   var testSrc = ArcanoSEO.generateAll.toString();
   var hasTipoFilter = testSrc.indexOf("_tipo !== 'blend'") >= 0;
-  var hasNoindexFollow = testSrc.indexOf("noindex, follow") >= 0;
-  if (!hasTipoFilter || !hasNoindexFollow) {
+  var hasNoPHtml = testSrc.indexOf("pHtmlFiles ya no existe") >= 0;
+  if (!hasTipoFilter || !hasNoPHtml) {
     log('\u2717 ERROR: El generador cargado no es v' + seoVersion + '.', 'error');
-    log('  Tiene _tipo filter: ' + hasTipoFilter + ' | Tiene noindex/follow: ' + hasNoindexFollow, 'error');
+    log('  Tiene _tipo filter: ' + hasTipoFilter + ' | Tiene pHtmlFiles fix: ' + hasNoPHtml, 'error');
     log('  Hac\u00E9 Ctrl+Shift+R en el admin para forzar recarga del JS.', 'error');
     if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
     return;
   }
-  log('Generador: seo-generator.js ' + seoVersion + ' (verificado: _tipo filter + noindex/follow)', 'ok');
+  log('Generador: seo-generator.js ' + seoVersion + ' (verificado: _tipo filter + pHtmlFiles fix)', 'ok');
 
   // Token y config: prioriza el token de localStorage (arcano_gh_token) que el admin
   // configuró via URL hash #tk=<token> (flujo estándar de github-sync.js).
