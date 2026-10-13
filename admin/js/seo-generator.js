@@ -1074,12 +1074,13 @@ var ArcanoSEO = (function() {
       addSitemapUrl(BASE_URL + '/blends-para/' + catSlug + '/', catLastmod);
     }
 
-    // Productos /blends/ — lastmod dinámico desde Firebase
+    // Productos /blends/ — solo blends (no especias), solo enTienda=true
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       if (!b.enTienda) continue;
+      if (b._tipo && b._tipo !== 'blend') continue;
       var slug = b._slug || slugify(b.nombre);
-      add(BASE_URL + '/blends/' + slug + '/', '0.8', 'monthly', _lastmodForBlend(b));
+      addSitemapUrl(BASE_URL + '/blends/' + slug + '/', _lastmodForBlend(b));
     }
 
     // Especias /especias/<slug>/ — páginas SEO de especias individuales
@@ -1360,6 +1361,7 @@ var ArcanoSEO = (function() {
     for (var i = 0; i < allProducts.length; i++) {
       var b = allProducts[i];
       if (!b.enTienda) continue;
+      if (b._tipo && b._tipo !== 'blend') continue;
       var slug = b._slug || slugify(b.nombre);
       if (!slug) continue;
       if (slugsSeen[slug]) continue;
@@ -1373,6 +1375,8 @@ var ArcanoSEO = (function() {
       if (!b.uso) issues.push('uso');
       if (issues.length) incompletos.push({id: b.id, nombre: b.nombre, tipo: b._tipo, issues: issues});
 
+      // Solo generar /blends/ si es un blend (no especia colada)
+      if (b._tipo && b._tipo !== 'blend') continue;
       var html = blendPageHtml(b, especiasById, allProducts);
       blendsPages.push({path: 'blends/' + slug + '/index.html', content: html});
     }
