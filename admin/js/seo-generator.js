@@ -1360,7 +1360,7 @@ var ArcanoSEO = (function() {
     var incompletos = [];
     for (var i = 0; i < allProducts.length; i++) {
       var b = allProducts[i];
-      if (!b.enTienda) continue;
+      // NO saltar enTienda=false: generar página con noindex
       if (b._tipo && b._tipo !== 'blend') continue;
       var slug = b._slug || slugify(b.nombre);
       if (!slug) continue;
