@@ -940,6 +940,11 @@ var ArcanoSEO = (function() {
     xml += '<description>Feed de productos de Arcano Especias para Google Merchant Center</description>\n';
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
+      // FIX 1: filtro consistente con TSV — solo enTienda=true + imagen real.
+      // Antes solo filtraba por precioChico > 0, lo que dejaba pasar los 10 ocultos
+      // y especias sin imagen real.
+      if (!b.enTienda) continue;
+      if (!hasRealImage(b)) continue;
       if ((Number(b.precioChico) || 0) <= 0) continue;
       var slug = b._slug || slugify(b.nombre);
       var nombre = esc(b.nombre || '');
@@ -947,15 +952,20 @@ var ArcanoSEO = (function() {
       var imagen = esc(publicImageUrlFor(b, slug));
       var precio = Number(b.precioChico) || 0;
       var cat = esc(b.categoria || '');
-      var inStock = isBlendInStock(b);
-      var realImg = hasRealImage(b);
+      // FIX 2: usar availabilityGmc() que siempre devuelve 'in stock' para productos publicados.
+      // Antes se usaba isBlendInStock() que consulta stockChico/stockGrande reales,
+      // produciendo 'out of stock' cuando el stock físico estaba en 0.
+      var avail = availabilityGmc(b);
+      // FIX 3: g:link distingue blends de especias según _tipo.
+      // Antes siempre usaba /blends/ y las especias quedaban con URL incorrecta.
+      var linkPath = b._tipo === 'especia' ? '/especias/' : '/blends/';
       xml += '<item>\n';
       xml += '<g:id>' + slug + '</g:id>\n';
       xml += '<g:title>' + nombre + '</g:title>\n';
       xml += '<g:description>' + desc + '</g:description>\n';
-      xml += '<g:link>' + BASE_URL + '/blends/' + slug + '/</g:link>\n';
+      xml += '<g:link>' + BASE_URL + linkPath + slug + '/</g:link>\n';
       xml += '<g:image_link>' + imagen + '</g:image_link>\n';
-      xml += '<g:availability>' + (inStock ? 'in stock' : 'out of stock') + '</g:availability>\n';
+      xml += '<g:availability>' + avail + '</g:availability>\n';
       xml += '<g:price>' + precio + ' COP</g:price>\n';
       xml += '<g:brand>Arcano Especias</g:brand>\n';
       xml += '<g:condition>new</g:condition>\n';
@@ -966,22 +976,14 @@ var ArcanoSEO = (function() {
       xml += '<g:target_country>CO</g:target_country>\n';
       // Content language: idioma del feed (español de Colombia)
       xml += '<g:content_language>es</g:content_language>\n';
-      // IVA 19% incluido en el precio (Colombia)
-      xml += '<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>\n';
-      // Peso estimado (frasco pequeño ~80g)
+      // Peso estimado (frasco pequeño ~80g) — necesario para la tabla de envío
+      // por precio y peso configurada en Merchant Center.
       xml += '<g:shipping_weight>80 g</g:shipping_weight>\n';
-      // Política de devoluciones: 7 días solo por daño/error
-      xml += '<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>\n';
-      // Envío variable por zona (Colombia)
-      xml += '<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>\n';
-      xml += '<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n';
-      xml += '<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>\n';
-      xml += '<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>\n';
-      // Si el producto no tiene imagen real (usa logo.png), excluirlo de Google Shopping
-      // para evitar rechazo del feed por 'image is brand logo'.
-      if (!realImg) {
-        xml += '<g:excluded_destination>Shopping</g:excluded_destination>\n';
-      }
+      // Tiempo máximo de preparación a nivel de ítem (1 día hábil).
+      // El envío (g:shipping), la política de devoluciones (g:return_policy)
+      // y los impuestos (g:tax) se configuran en Merchant Center, no en el feed.
+      // g:tax solo aplica en EE. UU. e India; g:shipping con g:region solo en AU/EE.UU./JP.
+      xml += '<g:max_handling_time>1</g:max_handling_time>\n';
       xml += '</item>\n';
     }
     xml += '</channel>\n</rss>\n';
@@ -991,9 +993,9 @@ var ArcanoSEO = (function() {
   /* === Merchant feed TSV === */
   function generateMerchantFeedTsv(blends) {
     blends = blends.filter(function(b) { return b.enTienda && hasRealImage(b); });
-    // TSV no soporta campos anidados como shipping o return_policy; mantenemos formato simple
-    // con los campos básicos + availability dinámico + excluded_destination.
-    var tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\texcluded_destination\n';
+    // TSV formato simple, sin shipping/return_policy/tax (se configuran en Merchant Center).
+    // Incluye shipping_weight (necesario para tabla de envío por peso) y max_handling_time.
+    var tsv = 'id\ttitle\tdescription\tlink\timage_link\tavailability\tprice\tbrand\tcondition\tgoogle_product_category\tproduct_type\tidentifier_exists\tshipping_weight\tmax_handling_time\n';
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       if ((Number(b.precioChico) || 0) <= 0) continue;
@@ -1003,9 +1005,9 @@ var ArcanoSEO = (function() {
       var imagen = publicImageUrlFor(b, slug);
       var precio = Number(b.precioChico) || 0;
       var cat = (b.categoria || '').replace(/\t/g, ' ');
-      var avail = isBlendInStock(b) ? 'in stock' : 'out of stock';
-      var excluded = hasRealImage(b) ? '' : 'Shopping';
-      tsv += slug + '\t' + nombre + '\t' + desc + '\t' + BASE_URL + '/blends/' + slug + '/\t' + imagen + '\t' + avail + '\t' + precio + ' COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t' + cat + '\tFALSE\t' + excluded + '\n';
+      var avail = availabilityGmc(b);
+      var linkPath = b._tipo === 'especia' ? '/especias/' : '/blends/';
+      tsv += slug + '\t' + nombre + '\t' + desc + '\t' + BASE_URL + linkPath + slug + '/\t' + imagen + '\t' + avail + '\t' + precio + ' COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t' + cat + '\tFALSE\t80 g\t1\n';
     }
     return tsv;
   }
@@ -1474,6 +1476,8 @@ var ArcanoSEO = (function() {
     normalizeSlug: normalizeSlug,
     publicImageUrlFor: publicImageUrlFor,
     homeSeoBlock: homeSeoBlock,
-    especiaPageHtml: especiaPageHtml
+    especiaPageHtml: especiaPageHtml,
+    generateMerchantFeedXml: generateMerchantFeedXml,
+    generateMerchantFeedTsv: generateMerchantFeedTsv
   };
 })();
