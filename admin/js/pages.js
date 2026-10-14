@@ -6261,7 +6261,8 @@ const Pages = {
       '<div class="card-header" style="display:flex;align-items:center;justify-content:space-between">' +
         '<h3 style="margin:0">Recetas Existentes (<span id="ra-count">0</span>)</h3>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerarImagenesFaltantes()" title="Genera imagen con IA para recetas sin imagen_url">Regenerar imágenes faltantes</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerarImagenesFaltantes(1)" title="Genera imagen para 1 sola receta (prueba para ver qué modelo funciona con tu API key)">Probar 1 imagen</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerarImagenesFaltantes()" title="Genera imagen con IA para TODAS las recetas sin imagen_url">Regenerar todas las imágenes</button>' +
           '<button class="btn btn-sm btn-outline" onclick="Pages._migrateRecetasProductosUsados()" title="Rellena productos_usados en recetas antiguas buscando coincidencias en ingredientes">Migrar productos_usados</button>' +
           '<button class="btn btn-sm btn-outline" onclick="Pages._regenerateAllRecetasSEO()" title="Regenera paginas HTML estaticas para SEO en 1 commit">Regenerar SEO</button>' +
         '</div>' +
@@ -6584,7 +6585,8 @@ const Pages = {
         .then(function(img) {
           var dataUrl = 'data:' + img.mime + ';base64,' + img.data;
           if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Imagen generada. Subiendo a GitHub...</span>';
-          var slug = Pages._titleToSlug(r.titulo) || ('receta-img-' + Date.now());
+          // Usar slug_publicado si existe (consistencia con el nombre del HTML)
+          var slug = r.slug_publicado || Pages._titleToSlug(r.titulo) || ('receta-img-' + Date.now());
           return Pages._uploadRecetaImageToGitHub(dataUrl, slug).then(function(url) {
             return firebase.database().ref('arcano/db/recetas/' + key).update({
               imagen_url: url,
@@ -6643,14 +6645,17 @@ const Pages = {
   // Recorre Firebase, identifica recetas sin imagen_url (o con imagen_error),
   // y llama a _generarImagenReceta secuencialmente (1 a la vez para no saturar API).
   // Para las 17 recetas antiguas sin imagen_prompt, genera el prompt dinámicamente.
-  _regenerarImagenesFaltantes: function() {
-    if (!confirm('Regenerar imagenes faltantes?\n\n' +
+  // Si se pasa un número N como argumento, solo procesa las primeras N (modo prueba).
+  _regenerarImagenesFaltantes: function(maxRecetas) {
+    var limitLabel = maxRecetas ? (' (solo ' + maxRecetas + ' primeras — MODO PRUEBA)') : ' (todas)';
+    if (!confirm('Regenerar imagenes faltantes' + limitLabel + '?\n\n' +
         'Para cada receta con imagen_url null:\n' +
         '1. Genera imagen con IA (Imagen 3 → Imagen 3 Fast → Gemini 2.0 Flash)\n' +
         '2. Sube a img/recetas/<slug>.jpg\n' +
         '3. Guarda imagen_url en Firebase\n' +
         '4. Regenera el HTML de la receta (hero + image en JSON-LD)\n\n' +
-        'Si una receta no tiene imagen_prompt, se genera a partir de titulo + descripcion.')) return;
+        'Si una receta no tiene imagen_prompt, se genera a partir de titulo + descripcion.\n' +
+        (maxRecetas ? 'MODO PRUEBA: solo procesará las primeras ' + maxRecetas + ' recetas sin imagen.' : ''))) return;
     var apiKey = (localStorage.getItem('arcano_gemini_key') || '').trim();
     if (!apiKey) {
       alert('Falta la API Key de Gemini. Cargala en el campo arriba.');
@@ -6675,6 +6680,10 @@ const Pages = {
       if (sinImagen.length === 0) {
         if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Todas las recetas ya tienen imagen. ✓</span>';
         return;
+      }
+      // Si se especificó maxRecetas (modo prueba), limitar
+      if (maxRecetas && maxRecetas > 0) {
+        sinImagen = sinImagen.slice(0, maxRecetas);
       }
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">' + sinImagen.length + ' recetas sin imagen. Generando (1 a la vez)...</span>';
       console.log('[Recetas] Regenerando imágenes para ' + sinImagen.length + ' recetas');
@@ -6878,6 +6887,9 @@ const Pages = {
           receta.productos_usados = productosValidos;
           
           receta.fecha = new Date().toISOString().slice(0, 10);
+          // Guardar slug_publicado para preservar el nombre de archivo aunque
+          // el título se edite después (evita que la regeneración cree un archivo nuevo)
+          receta.slug_publicado = Pages._titleToSlug(receta.titulo);
           if (!receta.categoria) receta.categoria = categoria;
           try {
             firebase.database().ref('arcano/db/recetas').push(receta, function(err) {
@@ -7521,11 +7533,12 @@ const Pages = {
     };
 
     if (Pages._blogEditKey) {
-      // Editando existente
+      // Editando existente — preservar slug_publicado si ya existe
       firebase.database().ref('arcano/db/blog/' + Pages._blogEditKey).update(articulo, onSave);
     } else {
-      // Nuevo articulo
+      // Nuevo articulo — guardar slug_publicado para preservar nombre de archivo
       articulo.fecha = new Date().toISOString().slice(0, 10);  // compatibilidad con frontend actual
+      articulo.slug_publicado = Pages._titleToSlug(articulo.titulo);
       firebase.database().ref('arcano/db/blog').push(articulo, onSave);
     }
   },
@@ -8828,7 +8841,10 @@ const Pages = {
   },
 
   _publishBlogSEO: function(post) {
-    var slug = Pages._titleToSlug(post.titulo);
+    // Prioridad para el slug: campo slug_publicado guardado en Firebase (preserva
+    // el nombre de archivo ya publicado aunque el título haya cambiado después),
+    // fallback a _titleToSlug(titulo) para posts nuevos.
+    var slug = post.slug_publicado || Pages._titleToSlug(post.titulo);
     if (!slug) return;
     var BASE = 'https://arcanoespecias.com';
     var descripcion = post.subtitulo || post.titulo || '';
@@ -9005,7 +9021,10 @@ const Pages = {
   /* === AUTO SEO: Recipe Pages === */
   _publishRecipeSEO: function(recipe) {
     if (!recipe || !recipe.titulo) return;
-    var slug = Pages._titleToSlug(recipe.titulo);
+    // Prioridad para el slug: campo slug_publicado guardado en Firebase (preserva
+    // el nombre de archivo ya publicado aunque el título haya cambiado después),
+    // fallback a _titleToSlug(titulo) para recetas nuevas.
+    var slug = recipe.slug_publicado || Pages._titleToSlug(recipe.titulo);
     if (!slug) return;
     var BASE = 'https://arcanoespecias.com';
     // URL canónica SIN .html (Cloudflare Pages sirve /recetas/slug → /recetas/slug.html)
@@ -9225,7 +9244,8 @@ const Pages = {
       for (var i = 0; i < posts.length; i++) {
         try {
           var html = Pages._generateBlogHTML(posts[i]);
-          var slug = Pages._titleToSlug(posts[i].titulo);
+          // Usar slug_publicado si existe (preserva archivos ya publicados)
+          var slug = posts[i].slug_publicado || Pages._titleToSlug(posts[i].titulo);
           files.push({
             path: 'blog/' + slug + '.html',
             content: btoa(unescape(encodeURIComponent(html))),
@@ -9525,7 +9545,8 @@ const Pages = {
       for (var i = 0; i < recetas.length; i++) {
         try {
           var html = Pages._generateRecipeHTML(recetas[i]);
-          var slug = Pages._titleToSlug(recetas[i].titulo);
+          // Usar slug_publicado si existe (preserva archivos ya publicados)
+          var slug = recetas[i].slug_publicado || Pages._titleToSlug(recetas[i].titulo);
           files.push({
             path: 'recetas/' + slug + '.html',
             content: btoa(unescape(encodeURIComponent(html))),
