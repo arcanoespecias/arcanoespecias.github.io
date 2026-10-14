@@ -19,13 +19,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>asado-pampeano</g:id>
@@ -42,13 +37,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>patagonico-ahumado</g:id>
@@ -65,13 +55,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>gaucho-picante</g:id>
@@ -88,13 +73,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>adobo-colombiano</g:id>
@@ -111,13 +91,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>caribe-costeno</g:id>
@@ -134,13 +109,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>aji-andino</g:id>
@@ -157,13 +127,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>inca-grill</g:id>
@@ -180,13 +145,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>cajun-lousiana</g:id>
@@ -203,13 +163,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>bbq-kansas</g:id>
@@ -226,13 +181,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>herbes-de-provence</g:id>
@@ -249,13 +199,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>garam-masala-clasico</g:id>
@@ -272,13 +217,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>tandoori-premium</g:id>
@@ -286,7 +226,7 @@
 <g:description>Una mezcla de especias de intenso color y aroma, donde la paprika y la cúrcuma aportan carácter, profundidad y un tono cálido. El comino, el ajo y el jengibre completan un perfil especiado, aromático y ligeramente terroso, con gran presencia de sabor.</g:description>
 <g:link>https://arcanoespecias.com/blends/tandoori-premium/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/tandoori-premium.jpg?v=1791250753387</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -295,13 +235,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>ras-el-hanout</g:id>
@@ -318,13 +253,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>shawarma</g:id>
@@ -332,7 +262,7 @@
 <g:description>Una mezcla de especias aromática y envolvente, donde el pimentón ahumado aporta cuerpo y un delicado toque tostado. La pimienta blanca, la canela y el cardamomo crean un fondo cálido y especiado, con el carácter de las cocinas del Mediterráneo oriental.</g:description>
 <g:link>https://arcanoespecias.com/blends/shawarma/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/shawarma.jpg?v=1791250598430</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -341,13 +271,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>zaatar</g:id>
@@ -364,13 +289,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>baharat</g:id>
@@ -387,13 +307,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>italiano-clasico</g:id>
@@ -410,13 +325,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>pizza-napoletana</g:id>
@@ -433,13 +343,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>chinese-five</g:id>
@@ -447,29 +352,6 @@
 <g:description>Una mezcla de especias de aroma profundo y envolvente, donde el anís y la canela aportan un carácter cálido y ligeramente dulce. El hinojo, el clavo y la pimienta de Sichuan completan un perfil complejo, especiado y exótico, con matices que evolucionan en cada bocado.</g:description>
 <g:link>https://arcanoespecias.com/blends/chinese-five/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/chinese-five.jpg?v=1791247571026</g:image_link>
-<g:availability>out of stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>tokyo-yakitori</g:id>
-<g:title>Tokyo Yakitori</g:title>
-<g:description>Una mezcla de perfil tostado, aromático y ligeramente especiado, donde el sésamo aporta profundidad y textura. El jengibre y el ajo suman intensidad, mientras la pimienta blanca y el alga nori introducen notas limpias, marinas y umami.</g:description>
-<g:link>https://arcanoespecias.com/blends/tokyo-yakitori/</g:link>
-<g:image_link>https://arcanoespecias.com/img/tokyo-yakitori.jpg</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
@@ -479,36 +361,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>korean-bbq</g:id>
-<g:title>Korean BBQ</g:title>
-<g:description>Una mezcla de especias de perfil intenso y umami, donde el ajo y el pimentón ahumado se encuentran con el jengibre y el ají. La pimienta negra y el sésamo aportan profundidad y textura aromática, creando un sazonador potente, tostado y ligeramente picante.</g:description>
-<g:link>https://arcanoespecias.com/blends/korean-bbq/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/korean-bbq.jpg?v=1791250080904</g:image_link>
-<g:availability>out of stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>bangkok-curry</g:id>
@@ -525,13 +379,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>balkan-grill</g:id>
@@ -548,13 +397,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>nordic-fish</g:id>
@@ -571,13 +415,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>smokehouse-classic</g:id>
@@ -594,13 +433,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>bourbon-bbq</g:id>
@@ -617,13 +451,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>caribbean-citrus</g:id>
@@ -640,13 +469,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>amazonia-verde</g:id>
@@ -663,59 +487,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>noche-serena</g:id>
-<g:title>Noche Serena</g:title>
-<g:description>Una infusión de perfil floral y cálido, donde la manzanilla y la lavanda crean un aroma delicado y envolvente. La melisa aporta frescura y la canela junto al anís dejan un fondo dulce y especiado, dando forma a una mezcla suave, equilibrada y nocturna.</g:description>
-<g:link>https://arcanoespecias.com/blends/noche-serena/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/noche-serena.jpg?v=1791250262761</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Comidas</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>dulces-suenos</g:id>
-<g:title>Dulces Sueños</g:title>
-<g:description>Una infusión herbal y floral de perfil suave, donde la manzanilla se encuentra con la lavanda y la melisa para crear un aroma delicado y envolvente. El anís aporta un matiz sutilmente dulce y especiado, dando como resultado una mezcla serena, equilibrada y agradable.</g:description>
-<g:link>https://arcanoespecias.com/blends/dulces-suenos/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/dulces-suenos.jpg?v=1791247789739</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>sobremesa-arcano</g:id>
@@ -732,13 +505,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>energia-andina</g:id>
@@ -755,13 +523,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>chai-imperial</g:id>
@@ -778,36 +541,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>respirar</g:id>
-<g:title>Respirar</g:title>
-<g:description>Una mezcla herbal y balsámica de perfil fresco, donde el eucalipto y la menta aportan una sensación limpia y refrescante. El jengibre y el limón suman vivacidad, mientras el anís deja un fondo aromático y ligeramente dulce. Una combinación intensa, fresca y envolvente.</g:description>
-<g:link>https://arcanoespecias.com/blends/respirar/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/respirar.jpg?v=1791250507020</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>golden-wellness</g:id>
@@ -824,13 +559,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>gin-botanicals-classic</g:id>
@@ -847,13 +577,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>citrus-gin</g:id>
@@ -870,13 +595,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>caribbean-rum</g:id>
@@ -893,13 +613,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>spiced-mojito</g:id>
@@ -916,13 +631,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>moscow-mule</g:id>
@@ -939,13 +649,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>whisky-oak-spice</g:id>
@@ -962,13 +667,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>vermu-botanico</g:id>
@@ -985,36 +685,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>arcano-signature</g:id>
-<g:title>Arcano Signature</g:title>
-<g:description>La expresión más botánica de ARCANO: una mezcla elegante donde el enebro y la pimienta blanca se encuentran con notas de naranja, cardamomo y canela. Su aroma es fresco, cítrico y especiado, con una profundidad sofisticada que transforma cada preparación o bebida en una experiencia distintiva.</g:description>
-<g:link>https://arcanoespecias.com/blends/arcano-signature/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/arcano-signature.jpg?v=1791247217188</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>curry-madras</g:id>
@@ -1031,13 +703,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>piri-piri</g:id>
@@ -1054,13 +721,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>berbere</g:id>
@@ -1077,13 +739,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>costela-brasileira</g:id>
@@ -1100,13 +757,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>sal-de-ajo</g:id>
@@ -1114,7 +766,7 @@
 <g:description>Una mezcla de sal de Himalaya y ajo que reúne un sabor sabroso, limpio y profundamente aromático. El ajo aporta intensidad y carácter, mientras la sal equilibra el conjunto. Un condimento esencial para quienes buscan realzar el sabor con una combinación sencilla y versátil.</g:description>
 <g:link>https://arcanoespecias.com/blends/sal-de-ajo/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/sal-de-ajo.jpg?v=1791250551991</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1123,13 +775,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>naranja-hit</g:id>
@@ -1137,7 +784,7 @@
 <g:description>Una mezcla de perfil cítrico y especiado, donde la naranja aporta un aroma dulce, fresco y expresivo. La pimienta negra introduce profundidad y la sal de Himalaya equilibra el conjunto, creando un acabado vibrante, aromático y ligeramente picante.</g:description>
 <g:link>https://arcanoespecias.com/blends/naranja-hit/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/naranja-hit.jpg?v=1791250186373</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1146,13 +793,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>sal-ahumada</g:id>
@@ -1160,7 +802,7 @@
 <g:description>Una combinación sencilla y poderosa: sal de Himalaya y pimentón ahumado se unen para aportar un sabor mineral, profundo y ligeramente tostado. Un condimento de gran carácter que transforma el perfil de cualquier preparación con un toque ahumado elegante.</g:description>
 <g:link>https://arcanoespecias.com/blends/sal-ahumada/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/sal-ahumada.jpg?v=1791250532577</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1169,13 +811,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>limon-hit</g:id>
@@ -1183,7 +820,7 @@
 <g:description>Una mezcla fresca y luminosa donde el limón es protagonista, acompañado por la suavidad de la menta y el carácter mineral de la sal de Himalaya. Su perfil cítrico, limpio y refrescante aporta un toque inmediato de sabor y aroma.</g:description>
 <g:link>https://arcanoespecias.com/blends/limon-hit/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/limon-hit.jpg?v=1791251681175</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1192,36 +829,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>frescura-silvestre</g:id>
-<g:title>Frescura Silvestre</g:title>
-<g:description>Es una infusión natural de aroma fresco y delicado, donde la manzanilla aporta una nota floral y suave, acompañada por la frescura de la menta y matices cálidos de jengibre y canela. Una mezcla equilibrada, aromática y reconfortante, pensada para disfrutar una taza ligera y con personalidad.</g:description>
-<g:link>https://arcanoespecias.com/blends/frescura-silvestre/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/frescura-silvestre.jpg?v=1791248889095</g:image_link>
-<g:availability>out of stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>jamaica-hit</g:id>
@@ -1229,7 +838,7 @@
 <g:description></g:description>
 <g:link>https://arcanoespecias.com/blends/jamaica-hit/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/jamaica-hit.jpg?v=1791250048106</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1238,90 +847,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>citrus-balance</g:id>
-<g:title>Citrus Balance</g:title>
-<g:description>Una mezcla frutal y especiada de perfil fresco, donde la manzana y el limón aportan luminosidad y el jengibre introduce un toque cálido y vibrante. El cardamomo y la canela completan un aroma elegante, equilibrado y lleno de matices cítricos y dulces.</g:description>
-<g:link>https://arcanoespecias.com/blends/citrus-balance/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/citrus-balance.jpg?v=1791247596279</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>invierno-nordico</g:id>
-<g:title>Invierno Nórdico</g:title>
-<g:description>Una infusión de perfil cálido y frutal, donde la canela se encuentra con la dulzura natural de la manzana y la intensidad aromática del jengibre. La clitoreana aporta un matiz floral y un color distintivo, creando una mezcla envolvente, elegante y reconfortante.</g:description>
-<g:link>https://arcanoespecias.com/blends/invierno-nordico/</g:link>
-<g:image_link>https://arcanoespecias.com/img/invierno-nordico.jpg</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
-</item>
-<item>
-<g:id>manzana-ginger</g:id>
-<g:title>Manzana Ginger</g:title>
-<g:description>Una infusión frutal y especiada, donde la manzana aporta dulzura y suavidad mientras el jengibre introduce un toque cálido y fresco. La canela y el clavo completan el aroma con notas profundas y envolventes, creando una mezcla equilibrada y reconfortante.</g:description>
-<g:link>https://arcanoespecias.com/blends/manzana-ginger/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/manzana-ginger.jpg?v=1791250139205</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Infusiones</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
-<g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>ajo</g:id>
 <g:title>Ajo</g:title>
 <g:description>Bulbo deshidratado de perfil intenso y rico en umami; base aromática indispensable para carnes, adobos y salsas gourmet.</g:description>
-<g:link>https://arcanoespecias.com/blends/ajo/</g:link>
+<g:link>https://arcanoespecias.com/especias/ajo/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/ajo.jpg?v=1791302846534</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1330,21 +865,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>canela</g:id>
 <g:title>Canela</g:title>
 <g:description>Corteza natural de aroma cálido y envolvente; ideal para perfilado de bebidas, postres, curries y blends chai artesanales.</g:description>
-<g:link>https://arcanoespecias.com/blends/canela/</g:link>
+<g:link>https://arcanoespecias.com/especias/canela/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/canela.jpg?v=1791302873465</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1353,21 +883,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>cardamomo</g:id>
 <g:title>Cardamomo</g:title>
 <g:description>Semilla de nota alta resinosa y cítrica fresca; aporta elegancia y un toque exótico a coctelería, chai y gastronomía oriental.</g:description>
-<g:link>https://arcanoespecias.com/blends/cardamomo/</g:link>
+<g:link>https://arcanoespecias.com/especias/cardamomo/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/cardamomo.jpg?v=1791302903150</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1376,21 +901,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>achiote</g:id>
 <g:title>Achiote</g:title>
 <g:description>Semilla ancestral de tono rojizo vibrante que aporta un sabor terroso sutil y color dorado a arroces, tamales y guisos tradicionales.</g:description>
-<g:link>https://arcanoespecias.com/blends/achiote/</g:link>
+<g:link>https://arcanoespecias.com/especias/achiote/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/achiote.jpg?v=1791303560704</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1399,19 +919,14 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>curcuma</g:id>
 <g:title>Cúrcuma</g:title>
 <g:description>Raíz dorada terrosa y amarga; superalimento reconfortante por sus potentes propiedades antiinflamatorias, antioxidantes y color natural.</g:description>
-<g:link>https://arcanoespecias.com/blends/curcuma/</g:link>
+<g:link>https://arcanoespecias.com/especias/curcuma/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/curcuma.jpg?v=1791302976854</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
@@ -1422,21 +937,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>hinojo</g:id>
 <g:title>Hinojo</g:title>
 <g:description>Semilla anisada y mentolada que refresca el paladar; excelente digestivo para incorporar en embutidos, panes e infusiones.</g:description>
-<g:link>https://arcanoespecias.com/blends/hinojo/</g:link>
+<g:link>https://arcanoespecias.com/especias/hinojo/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/hinojo.jpg?v=1791303158748</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1445,21 +955,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>jengibre</g:id>
 <g:title>Jengibre</g:title>
 <g:description>Raíz estimulante de sabor picante y cítrico; aporta vitalidad a salteados, tés digestivos, repostería y mixología. Seleccionamos el jengibre por su dulzor y picor intenso, para lograr la dósis perfecta de jengibre en cada blend.</g:description>
-<g:link>https://arcanoespecias.com/blends/jengibre/</g:link>
+<g:link>https://arcanoespecias.com/especias/jengibre/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/jengibre.jpg?v=1791303191328</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1468,21 +973,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>mostaza</g:id>
 <g:title>Mostaza</g:title>
 <g:description>Semilla acre de perfil picante y punzante al molerse; otorga textura y fuerza a rubs de BBQ, aderezos y encurtidos.</g:description>
-<g:link>https://arcanoespecias.com/blends/mostaza/</g:link>
+<g:link>https://arcanoespecias.com/especias/mostaza/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/mostaza.jpg?v=1791303224598</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1491,21 +991,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>pimienta-blanca</g:id>
 <g:title>Pimienta Blanca</g:title>
 <g:description>Grano desgranado de picor fino y penetrante sin alterar el color; ideal para salsas blancas, aves y pescados.</g:description>
-<g:link>https://arcanoespecias.com/blends/pimienta-blanca/</g:link>
+<g:link>https://arcanoespecias.com/especias/pimienta-blanca/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/pimienta-blanca.jpg?v=1791303341803</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1514,21 +1009,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>paprika-ahumada</g:id>
 <g:title>Páprika ahumada</g:title>
 <g:description>Pimentón secado al humo de encina; imparte un color rojo profundo y un carácter ahumado irresistible a carnes y guisos.</g:description>
-<g:link>https://arcanoespecias.com/blends/paprika-ahumada/</g:link>
+<g:link>https://arcanoespecias.com/especias/paprika-ahumada/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/paprika-ahumada.jpg?v=1791303300965</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1537,21 +1027,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>paprika</g:id>
 <g:title>Paprika</g:title>
 <g:description>Pimiento rojo dulce pulverizado que otorga color rojo vivo y sabor suave; base de rubs, embutidos y paellas.</g:description>
-<g:link>https://arcanoespecias.com/blends/paprika/</g:link>
+<g:link>https://arcanoespecias.com/especias/paprika/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/paprika.jpg?v=1791303258484</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1560,21 +1045,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>pimienta-negra-en-bayas</g:id>
 <g:title>Pimienta Negra en Bayas</g:title>
 <g:description>La reina de las especias; picor intenso y amaderado que potencia el sabor de cualquier preparación culinaria.</g:description>
-<g:link>https://arcanoespecias.com/blends/pimienta-negra-en-bayas/</g:link>
+<g:link>https://arcanoespecias.com/especias/pimienta-negra-en-bayas/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/pimienta-negra-en-bayas.jpg?v=1791303404814</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1583,21 +1063,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>fenogreco</g:id>
 <g:title>Fenogreco</g:title>
 <g:description>Semilla de perfil amargo que recuerda al jarabe de arce al tostarse; clave en curries indios, pickles y chutney.</g:description>
-<g:link>https://arcanoespecias.com/blends/fenogreco/</g:link>
+<g:link>https://arcanoespecias.com/especias/fenogreco/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/fenogreco.jpg?v=1791303125496</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1606,21 +1081,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>coreandro</g:id>
 <g:title>Coreandro</g:title>
 <g:description>Semilla de cilantro tostada con matices cítricos y de madera; aporta notas frescas e intrigantes a embutidos, frotados y gin.</g:description>
-<g:link>https://arcanoespecias.com/blends/coreandro/</g:link>
+<g:link>https://arcanoespecias.com/especias/coreandro/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/coreandro.jpg?v=1791302934756</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1629,19 +1099,14 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>sal-de-himalaya</g:id>
 <g:title>Sal de Himalaya</g:title>
 <g:description>Sal de Himalaya pura, ideal para micheladas y cocina gourmet.</g:description>
-<g:link>https://arcanoespecias.com/blends/sal-de-himalaya/</g:link>
+<g:link>https://arcanoespecias.com/especias/sal-de-himalaya/</g:link>
 <g:image_link>https://arcanoespecias.com/img/sal-de-himalaya.jpg</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
@@ -1652,21 +1117,16 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
 <g:id>pimienta-negra-molida</g:id>
 <g:title>Pimienta Negra molida</g:title>
 <g:description>La reina de las especias; picor intenso y amaderado que potencia el sabor de cualquier preparación culinaria.</g:description>
-<g:link>https://arcanoespecias.com/blends/pimienta-negra-molida/</g:link>
+<g:link>https://arcanoespecias.com/especias/pimienta-negra-molida/</g:link>
 <g:image_link>https://arcanoespecias.com/img/especias/pimienta-negra-molida.jpg?v=1791303488975</g:image_link>
-<g:availability>out of stock</g:availability>
+<g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
@@ -1675,13 +1135,8 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:tax><g:country>CO</g:country><g:rate>19</g:rate><g:tax_ship>1</g:tax_ship></g:tax>
 <g:shipping_weight>80 g</g:shipping_weight>
-<g:return_policy><g:return_policy_label>damaged_or_incorrect_7_days</g:return_policy_label><g:return_policy_url>https://arcanoespecias.com/politica-devoluciones/</g:return_policy_url></g:return_policy>
-<g:shipping><g:country>CO</g:country><g:region>Bogotá D.C.</g:region><g:service>Standard</g:service><g:price>7000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>2</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Antioquia</g:region><g:service>Standard</g:service><g:price>8000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>Valle del Cauca</g:region><g:service>Standard</g:service><g:price>9000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>3</g:max_transit_time></g:shipping>
-<g:shipping><g:country>CO</g:country><g:region>CO-OTRAS</g:region><g:service>Standard</g:service><g:price>12000 COP</g:price><g:max_handling_time>1</g:max_handling_time><g:max_transit_time>5</g:max_transit_time></g:shipping>
+<g:max_handling_time>1</g:max_handling_time>
 </item>
 </channel>
 </rss>
