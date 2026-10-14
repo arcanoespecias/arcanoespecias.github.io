@@ -229,10 +229,11 @@ var ArcanoSEO = (function() {
     var gramosEspecias = 0;
     if (b._tipo === 'especia' || (!b._tipo && !b.ingredientes)) {
       // Especia individual: usar gramosChico directo (campo del objeto).
-      // Fallback a gramosGrande (aunque sea mayor, al menos no queda en 86).
-      var gc = Number(b.gramosChico);
-      if (!gc || gc <= 0) gc = Number(b.gramosGrande) || 0;
-      gramosEspecias = gc;
+      // NO usar fallback a gramosGrande porque el ítem del feed es la
+      // presentación chica (precio chico); usar gramosGrande sobreestima.
+      // Si gramosChico=0, el peso es 86 g (solo frasco) y el dueño cargará
+      // los datos en el admin.
+      gramosEspecias = Number(b.gramosChico) || 0;
     } else if (b.ingredientes && b.ingredientes.length) {
       // Blend: sumar gramosChico de cada ingrediente.
       for (var i = 0; i < b.ingredientes.length; i++) {
@@ -1266,16 +1267,21 @@ var ArcanoSEO = (function() {
   /* === sitemap-images.xml ===
    * Genera un sitemap de imágenes con las URLs públicas de imágenes físicas.
    * Solo incluye productos con enTienda=true y con imagen real (no logo fallback).
+   * Debe dar 63 imágenes: 47 blends + 16 especias (igual que merchant_feed.xml).
    */
   function generateSitemapImages(blends, especiasList) {
     var today = new Date().toISOString().substring(0, 10);
     var xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
     xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
-    // Blends
+    // Blends — solo _tipo=blend, enTienda=true, imagen real
+    // FIX: antes no filtraba _tipo, así que las 16 especias (que se agregan a allProducts
+    // con _tipo='especia' en generateAll) colaban como /blends/achiote/, /blends/ajo/, etc.
+    // Ahora se excluyen explícitamente y se procesan en el bloque de especias abajo.
     for (var i = 0; i < blends.length; i++) {
       var b = blends[i];
       if (!b.enTienda) continue;
+      if (b._tipo && b._tipo !== 'blend') continue;  // FIX: excluir especias coladas
       if (!hasRealImage(b)) continue;
       var slug = b._slug || slugify(b.nombre);
       var imgUrl = publicImageUrlFor(b, slug);
@@ -1286,11 +1292,13 @@ var ArcanoSEO = (function() {
       xml += '<image:caption>Blend de especias ' + esc(b.nombre || '') + ' - Arcano Especias</image:caption>';
       xml += '</image:image></url>\n';
     }
-    // Especias
+    // Especias — solo enTienda=true e imagen real
     if (especiasList && especiasList.length) {
       for (var ei = 0; ei < especiasList.length; ei++) {
         var esp = especiasList[ei];
         if (!esp || !esp.nombre) continue;
+        if (!esp.enTienda) continue;  // FIX: filtrar enTienda
+        if (!hasRealImage(esp)) continue;  // FIX: filtrar imagen real
         var espSlug = slugify(esp.nombre);
         var espImg = publicImageUrlFor(esp, espSlug);
         if (espImg.indexOf('logo.png') >= 0) continue;
@@ -1516,6 +1524,7 @@ var ArcanoSEO = (function() {
     homeSeoBlock: homeSeoBlock,
     especiaPageHtml: especiaPageHtml,
     generateMerchantFeedXml: generateMerchantFeedXml,
-    generateMerchantFeedTsv: generateMerchantFeedTsv
+    generateMerchantFeedTsv: generateMerchantFeedTsv,
+    generateSitemapImages: generateSitemapImages
   };
 })();
