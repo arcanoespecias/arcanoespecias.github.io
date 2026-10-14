@@ -155,21 +155,7 @@ var ArcanoSEO = (function() {
   function publicImageUrlFor(blend, slug) {
     if (!blend || !blend.imagen) return BASE_URL + '/icons/logo.png';
     var img = blend.imagen;
-    // Si ya es URL pública, devolverla tal cual (con fix de dominio)
-    if (img.indexOf('http') === 0 || img.indexOf('/') === 0) {
-      return fixImageUrl(img);
-    }
-    // Si es base64, devolver la URL pública del archivo físico
     var s = slug || slugify(blend.nombre);
-    // Determinar extensión según el tipo MIME del base64
-    var ext = '.jpg';
-    if (img.indexOf('data:image/png') === 0) ext = '.png';
-    else if (img.indexOf('data:image/webp') === 0) ext = '.webp';
-    // Cache-busting por si la imagen cambió: usar imagenUpdatedAt
-    var cb = '';
-    if (blend.imagenUpdatedAt) {
-      cb = '?v=' + blend.imagenUpdatedAt;
-    }
     // Detección de carpeta: blends vs especias. Usamos el campo _tipo que
     // generateAll setea, o si no, inferimos por presencia de ingredientes.
     var tipo = blend._tipo;
@@ -178,6 +164,29 @@ var ArcanoSEO = (function() {
       tipo = (blend.ingredientes && blend.ingredientes.length) ? 'blend' : 'especia';
     }
     var carpeta = tipo === 'especia' ? 'especias' : 'blends';
+
+    // Determinar extensión desde la imagen original
+    var ext = '.jpg';
+    if (img.indexOf('data:image/png') === 0) ext = '.png';
+    else if (img.indexOf('data:image/webp') === 0) ext = '.webp';
+    else if (img.indexOf('http') === 0 || img.indexOf('/') === 0) {
+      // Imagen ya es URL pública — inferir extensión desde la URL
+      if (img.indexOf('.webp') >= 0) ext = '.webp';
+      else if (img.indexOf('.png') >= 0) ext = '.png';
+      else ext = '.jpg';
+    }
+
+    // Cache-busting por si la imagen cambió: usar imagenUpdatedAt
+    var cb = '';
+    if (blend.imagenUpdatedAt) {
+      cb = '?v=' + blend.imagenUpdatedAt;
+    }
+
+    // NORMALIZACIÓN: siempre devolver /img/{blends|especias}/slug.ext
+    // Antes: si la imagen venía como URL pública desde Firebase (ej:
+    // /img/inca-grill.jpg), se devolvía tal cual, lo que producía URLs
+    // inconsistentes (algunas en /img/blends/, otras en /img/ directo).
+    // Ahora: ignora la URL original y construye la ruta canónica.
     return BASE_URL + '/img/' + carpeta + '/' + s + ext + cb;
   }
 
