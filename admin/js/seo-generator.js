@@ -227,12 +227,17 @@ var ArcanoSEO = (function() {
   var PESO_FRASCO_CHICO = 86;
   function shippingWeightGrams(b) {
     var gramosEspecias = 0;
-    if (b.ingredientes && b.ingredientes.length) {
+    if (b._tipo === 'especia' || (!b._tipo && !b.ingredientes)) {
+      // Especia individual: usar gramosChico directo (campo del objeto).
+      // Fallback a gramosGrande (aunque sea mayor, al menos no queda en 86).
+      var gc = Number(b.gramosChico);
+      if (!gc || gc <= 0) gc = Number(b.gramosGrande) || 0;
+      gramosEspecias = gc;
+    } else if (b.ingredientes && b.ingredientes.length) {
+      // Blend: sumar gramosChico de cada ingrediente.
       for (var i = 0; i < b.ingredientes.length; i++) {
         gramosEspecias += Number(b.ingredientes[i].gramosChico) || 0;
       }
-    } else if (b.gramosChico) {
-      gramosEspecias = Number(b.gramosChico) || 0;
     }
     var total = PESO_FRASCO_CHICO + gramosEspecias;
     return total > 0 ? total : 80;
