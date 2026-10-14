@@ -6260,7 +6260,8 @@ const Pages = {
     h += '<div class="card">' +
       '<div class="card-header" style="display:flex;align-items:center;justify-content:space-between">' +
         '<h3 style="margin:0">Recetas Existentes (<span id="ra-count">0</span>)</h3>' +
-        '<div style="display:flex;gap:6px">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerarImagenesFaltantes()" title="Genera imagen con IA para recetas sin imagen_url">Regenerar imágenes faltantes</button>' +
           '<button class="btn btn-sm btn-outline" onclick="Pages._migrateRecetasProductosUsados()" title="Rellena productos_usados en recetas antiguas buscando coincidencias en ingredientes">Migrar productos_usados</button>' +
           '<button class="btn btn-sm btn-outline" onclick="Pages._regenerateAllRecetasSEO()" title="Regenera paginas HTML estaticas para SEO en 1 commit">Regenerar SEO</button>' +
         '</div>' +
@@ -6439,17 +6440,20 @@ const Pages = {
 
   _generarImagenReceta: function(key, recetaOpt, apiKeyOpt, statusElOpt) {
     // Genera una imagen con Google AI y la sube a GitHub.
-    // Fallback chain: Imagen 3 \u2192 Imagen 3 Fast \u2192 Gemini 2.0 Flash (image generation)
+    // Fallback chain: Imagen 3 → Imagen 3 Fast → Gemini 2.0 Flash (image generation)
+    // Si todos fallan: guarda imagen_error en Firebase y muestra banner persistente
+    // con botón "Reintentar".
     var apiKey = apiKeyOpt || (localStorage.getItem('arcano_gemini_key') || '').trim();
     var statusEl = statusElOpt || document.getElementById('ra-gen-status');
     if (!apiKey) {
-      alert('Falta la API Key de Gemini para generar la imagen.');
+      // Mostrar banner persistente con botón reintentar
+      Pages._showImagenErrorBanner(key, recetaOpt, 'Falta la API Key de Gemini. Cargala en el campo arriba y reintentá.');
       return;
     }
     firebase.database().ref('arcano/db/recetas/' + key).once('value', function(snap) {
       var r = recetaOpt || snap.val();
       if (!r) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Receta no encontrada</span>'; return; }
-      // Si la receta no trae prompt, lo construimos a partir de titulo + descripcion + ingredientes
+      // Si la receta no trae prompt, lo construimos a partir del título + descripción + ingredientes
       var prompt = r.imagen_prompt;
       if (!prompt) {
         var ingredientes = (r.ingredientes || []).slice(0, 5).join(', ');
@@ -6461,7 +6465,12 @@ const Pages = {
       }
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Generando imagen con IA...</span>';
 
-      // Cat\u00E1logo de modelos con su endpoint y formato de request/response
+      // Guardar imagen_prompt generado dinámicamente en Firebase (para futuras reutilizaciones)
+      if (!r.imagen_prompt) {
+        firebase.database().ref('arcano/db/recetas/' + key + '/imagen_prompt').set(prompt);
+      }
+
+      // Catálogo de modelos con su endpoint y formato de request/response
       var models = [
         {
           name: 'imagen-3.0-generate-002',
@@ -6521,7 +6530,17 @@ const Pages = {
 
       function intentarCon(idx) {
         if (idx >= models.length) {
-          throw new Error('Todos los modelos fallaron. Tu API Key quizas no tiene acceso a Imagen 3. Subi la imagen manualmente o activa Imagen 3 en aistudio.google.com.');
+          var errMsg = 'Todos los modelos fallaron. Tu API Key quizas no tiene acceso a Imagen 3. ' +
+            'Activá Imagen 3 en aistudio.google.com o subí la imagen manualmente.';
+          // Guardar imagen_error en Firebase
+          firebase.database().ref('arcano/db/recetas/' + key + '/imagen_error').set({
+            mensaje: errMsg,
+            fecha: new Date().toISOString(),
+            intentos: models.length
+          });
+          // Mostrar banner persistente con botón reintentar
+          Pages._showImagenErrorBanner(key, r, errMsg);
+          throw new Error(errMsg);
         }
         var m = models[idx];
         if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Generando con ' + m.name + '...</span>';
@@ -6536,6 +6555,7 @@ const Pages = {
               var msg = (e.error && e.error.message) || ('HTTP ' + res.status);
               var err = new Error(msg);
               err._providerError = true;
+              err._modelName = m.name;
               throw err;
             });
           }
@@ -6546,6 +6566,7 @@ const Pages = {
           if (!img || !img.data) {
             var err = new Error('Sin imagen en respuesta de ' + m.name);
             err._providerError = true;
+            err._modelName = m.name;
             throw err;
           }
           return img;
@@ -6565,7 +6586,10 @@ const Pages = {
           if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Imagen generada. Subiendo a GitHub...</span>';
           var slug = Pages._titleToSlug(r.titulo) || ('receta-img-' + Date.now());
           return Pages._uploadRecetaImageToGitHub(dataUrl, slug).then(function(url) {
-            return firebase.database().ref('arcano/db/recetas/' + key).update({ imagen_url: url }).then(function() {
+            return firebase.database().ref('arcano/db/recetas/' + key).update({
+              imagen_url: url,
+              imagen_error: null  // limpiar error previo si ahora funciona
+            }).then(function() {
               return url;
             });
           }).then(function(url) {
@@ -6577,8 +6601,96 @@ const Pages = {
         })
         .catch(function(err) {
           console.error('[Recetas] Error generando imagen:', err);
-          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error imagen: ' + (err.message || err) + '</span>';
+          // El banner ya se mostró dentro de intentarCon cuando se agotaron los modelos.
+          // Si el error es otro (ej. Firebase update falló), mostrarlo también.
+          if (statusEl && err.message.indexOf('Todos los modelos fallaron') < 0) {
+            statusEl.innerHTML = '<span style="color:var(--red)">Error imagen: ' + (err.message || err) + '</span>';
+          }
         });
+    });
+  },
+
+  // Muestra un banner persistente en el panel de recetas con el error de generación
+  // de imagen y un botón "Reintentar". No se borra solo — el admin debe cerrarlo
+  // manualmente o reintentar.
+  _showImagenErrorBanner: function(key, receta, errorMsg) {
+    var banner = document.getElementById('ra-imagen-error-banner');
+    if (!banner) {
+      // Crear el banner si no existe, justo arriba del panel de recetas existentes
+      var list = document.getElementById('ra-list');
+      if (!list) return; // no hay panel de recetas, no se puede mostrar
+      banner = document.createElement('div');
+      banner.id = 'ra-imagen-error-banner';
+      banner.style.cssText = 'background:#3a1a1a;border:1px solid #f44336;border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#f0e6d3';
+      list.parentNode.insertBefore(banner, list);
+    }
+    var titulo = (receta && receta.titulo) ? receta.titulo : 'Receta ' + key;
+    banner.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">' +
+        '<div style="flex:1">' +
+          '<div style="color:#e87c7c;font-weight:700;margin-bottom:4px">⚠ Error generando imagen</div>' +
+          '<div style="color:#d4c4a8;font-size:0.85rem"><strong>' + titulo + '</strong></div>' +
+          '<div style="color:#a08b6e;font-size:0.8rem;margin-top:4px">' + errorMsg + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0">' +
+          '<button class="btn btn-sm btn-gold" onclick="Pages._generarImagenReceta(\'' + key + '\', null, null, null)">Reintentar</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="this.parentElement.parentElement.parentElement.remove()" style="color:#a08b6e">×</button>' +
+        '</div>' +
+      '</div>';
+  },
+
+  // === Regenera imágenes para todas las recetas con imagen_url null ===
+  // Recorre Firebase, identifica recetas sin imagen_url (o con imagen_error),
+  // y llama a _generarImagenReceta secuencialmente (1 a la vez para no saturar API).
+  // Para las 17 recetas antiguas sin imagen_prompt, genera el prompt dinámicamente.
+  _regenerarImagenesFaltantes: function() {
+    if (!confirm('Regenerar imagenes faltantes?\n\n' +
+        'Para cada receta con imagen_url null:\n' +
+        '1. Genera imagen con IA (Imagen 3 → Imagen 3 Fast → Gemini 2.0 Flash)\n' +
+        '2. Sube a img/recetas/<slug>.jpg\n' +
+        '3. Guarda imagen_url en Firebase\n' +
+        '4. Regenera el HTML de la receta (hero + image en JSON-LD)\n\n' +
+        'Si una receta no tiene imagen_prompt, se genera a partir de titulo + descripcion.')) return;
+    var apiKey = (localStorage.getItem('arcano_gemini_key') || '').trim();
+    if (!apiKey) {
+      alert('Falta la API Key de Gemini. Cargala en el campo arriba.');
+      return;
+    }
+    var statusEl = document.getElementById('ra-gen-status');
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Buscando recetas sin imagen...</span>';
+    firebase.database().ref('arcano/db/recetas').once('value', function(snap) {
+      var data = snap.val();
+      if (!data) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">No hay recetas.</span>';
+        return;
+      }
+      var sinImagen = [];
+      Object.keys(data).forEach(function(key) {
+        var r = data[key];
+        if (!r || !r.titulo) return;
+        if (!r.imagen_url || r.imagen_url === '' || r.imagen_url.indexOf('logo.png') >= 0) {
+          sinImagen.push({ key: key, receta: r });
+        }
+      });
+      if (sinImagen.length === 0) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Todas las recetas ya tienen imagen. ✓</span>';
+        return;
+      }
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">' + sinImagen.length + ' recetas sin imagen. Generando (1 a la vez)...</span>';
+      console.log('[Recetas] Regenerando imágenes para ' + sinImagen.length + ' recetas');
+      function next(idx) {
+        if (idx >= sinImagen.length) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Proceso completado. ' + sinImagen.length + ' recetas procesadas.</span>';
+          return;
+        }
+        var item = sinImagen[idx];
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">(' + (idx + 1) + '/' + sinImagen.length + ') ' + item.receta.titulo + '</span>';
+        // Llamar a _generarImagenReceta; la función actualiza Firebase + regenera HTML sola
+        Pages._generarImagenReceta(item.key, item.receta, apiKey, statusEl);
+        // Esperar 5s entre cada una para no saturar
+        setTimeout(function() { next(idx + 1); }, 5000);
+      }
+      next(0);
     });
   },
 
@@ -6608,6 +6720,11 @@ const Pages = {
 
     if (!apiKey) { alert('Ingresa tu API Key de Gemini. Obtenla gratis en aistudio.google.com/apikey'); keyInput.focus(); return; }
     localStorage.setItem('arcano_gemini_key', apiKey);
+    // FIX: validar también que la API key tenga acceso a generación de imágenes (Imagen 3)
+    // antes de guardar la receta. Si no, la receta se guarda pero la imagen queda en null.
+    // Hacemos un test rápido: un HEAD al endpoint de imagen sería costoso (crea imagen),
+    // así que dejamos la validación para después del guardado y mostramos banner persistente
+    // con botón "Reintentar" si falla.
 
     btn.disabled = true;
     btn.textContent = 'Generando...';

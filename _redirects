@@ -167,3 +167,9 @@
 
 # === Slug duplicado: za-atar (con guion) → zaatar (sin guion, el canónico) ===
 /blends/za-atar/  /blends/zaatar/  301
+
+# === Receta duplicada: pollo-al-curry-con-aji-andino-2 → pollo-al-curry-con-aji-andino ===
+# La versión "-2" era un duplicado de la versión original (mismos ingredientes con ligeras variaciones).
+# Se elimina el archivo del repo y se redirige 301 a la versión canónica.
+/recetas/pollo-al-curry-con-aji-andino-2  /recetas/pollo-al-curry-con-aji-andino  301
+/recetas/pollo-al-curry-con-aji-andino-2.html  /recetas/pollo-al-curry-con-aji-andino  301
