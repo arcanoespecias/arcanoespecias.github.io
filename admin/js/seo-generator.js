@@ -245,7 +245,7 @@ var ArcanoSEO = (function() {
   }
 
   /* === Generar página de producto /blends/<slug>/index.html === */
-  function blendPageHtml(blend, especiasById, allProducts) {
+  function blendPageHtml(blend, especiasById, allProducts, allRecetas) {
     var slug = blend._slug || slugify(blend.nombre);
     var nombre = blend.nombre || '';
     var descripcion = cleanDesc(blend.descripcion);
@@ -392,6 +392,14 @@ var ArcanoSEO = (function() {
     html.push('.rel-card{display:block;background:#2d1a10;border-radius:8px;overflow:hidden;color:#f0e6d3;text-decoration:none;transition:transform .15s}');
     html.push('.rel-card:hover{transform:translateY(-3px);text-decoration:none}');
     html.push('.rel-card img{width:100%;height:90px;object-fit:cover}.rel-card .name{padding:8px 10px;font-size:.85rem;font-weight:600}');
+    html.push('.recetas-blend{margin-top:32px;padding-top:24px;border-top:1px solid #2d1a10}');
+    html.push('.recetas-blend h2{color:#c9a84c;font-size:1.2rem;margin-bottom:16px}');
+    html.push('.recetas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}');
+    html.push('.receta-card{display:block;background:#2d1a10;border-radius:8px;overflow:hidden;color:#f0e6d3;text-decoration:none;transition:transform .15s}');
+    html.push('.receta-card:hover{transform:translateY(-3px);text-decoration:none}');
+    html.push('.receta-card img{width:100%;height:100px;object-fit:cover}');
+    html.push('.receta-card .receta-name{padding:10px;font-size:.85rem;font-weight:600;line-height:1.3}');
+    html.push('.receta-card .receta-meta{padding:0 10px 10px;font-size:.75rem;color:#a08b6e}');
     html.push('.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}');
     html.push('</style></head><body><div class="c">');
 
@@ -498,6 +506,65 @@ var ArcanoSEO = (function() {
         html.push('<div class="name">' + esc(r.nombre) + '</div></a>');
       }
       html.push('</div></div>');
+    }
+
+    // === Recetas con este blend ===
+    // Solo si allRecetas está definido y hay recetas que mencionan el blend
+    // (por nombre normalizado en productos_usados o ingredientes).
+    if (allRecetas && allRecetas.length) {
+      function normForMatch(s) {
+        return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+      }
+      var blendNameNorm = normForMatch(nombre);
+      var recetasDelBlend = [];
+      for (var ri = 0; ri < allRecetas.length; ri++) {
+        var rec = allRecetas[ri];
+        if (!rec || !rec.titulo) continue;
+        // Verificar productos_usados
+        var pu = rec.productos_usados || [];
+        var matchFound = false;
+        for (var pi = 0; pi < pu.length; pi++) {
+          if (normForMatch(pu[pi]) === blendNameNorm) { matchFound = true; break; }
+        }
+        // Si no match por productos_usados, buscar en ingredientes (substring)
+        if (!matchFound && rec.ingredientes && rec.ingredientes.length) {
+          for (var ii = 0; ii < rec.ingredientes.length; ii++) {
+            var ingNorm = normForMatch(rec.ingredientes[ii]);
+            if (ingNorm.indexOf(blendNameNorm) >= 0 && blendNameNorm.length > 4) {
+              matchFound = true;
+              break;
+            }
+          }
+        }
+        if (matchFound) recetasDelBlend.push(rec);
+      }
+      if (recetasDelBlend.length) {
+        // Limitar a 6 recetas para no saturar
+        recetasDelBlend = recetasDelBlend.slice(0, 6);
+        html.push('<div class="recetas-blend">');
+        html.push('<h2>Recetas con este blend</h2>');
+        html.push('<div class="recetas-grid">');
+        for (var ri2 = 0; ri2 < recetasDelBlend.length; ri2++) {
+          var rec2 = recetasDelBlend[ri2];
+          var rSlug2 = slugify(rec2.titulo);
+          var rImg2 = rec2.imagen_url || '';
+          if (rImg2.indexOf('data:') === 0) rImg2 = '';
+          if (rImg2.indexOf('logo.png') >= 0) rImg2 = '';
+          html.push('<a href="' + BASE_URL + '/recetas/' + rSlug2 + '" class="receta-card">');
+          if (rImg2) {
+            html.push('<img src="' + esc(rImg2) + '" alt="' + esc(rec2.titulo) + '" loading="lazy">');
+          }
+          html.push('<div class="receta-name">' + esc(rec2.titulo) + '</div>');
+          if (rec2.tiempo || rec2.dificultad) {
+            var meta2 = '';
+            if (rec2.dificultad) meta2 += rec2.dificultad;
+            if (rec2.tiempo) meta2 += (meta2 ? ' · ' : '') + rec2.tiempo;
+            html.push('<div class="receta-meta">' + esc(meta2) + '</div>');
+          }
+          html.push('</a>');
+        }
+        html.push('</div></div>');
+      }
     }
 
     // Footer
@@ -1324,7 +1391,7 @@ var ArcanoSEO = (function() {
        pHtmlUpdates: [{path: 'p/slug.html', content: '...', originalSha: '...'}],
        stats: {blends, categorias, pUpdates, incompletos}
      } */
-  function generateAll(db, existingSitemapUrls, pHtmlFiles) {
+  function generateAll(db, existingSitemapUrls, pHtmlFiles, recetas) {
     // db = ArcanoDB.getDB() — tiene blends, especias, packs como objetos keyed-by-id
     // (después del fix _normalizeToMap en db.js). Soportamos también arrays legacy.
     var blendsRaw = db.blends || {};
@@ -1415,7 +1482,7 @@ var ArcanoSEO = (function() {
 
       // Solo generar /blends/ si es un blend (no especia colada)
       if (b._tipo && b._tipo !== 'blend') continue;
-      var html = blendPageHtml(b, especiasById, allProducts);
+      var html = blendPageHtml(b, especiasById, allProducts, recetas);
       blendsPages.push({path: 'blends/' + slug + '/index.html', content: html});
     }
 
