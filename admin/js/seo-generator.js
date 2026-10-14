@@ -511,26 +511,50 @@ var ArcanoSEO = (function() {
     // === Recetas con este blend ===
     // Solo si allRecetas está definido y hay recetas que mencionan el blend
     // (por nombre normalizado en productos_usados o ingredientes).
+    // Match por FRASE COMPLETA (no substring): "Adobo Colombiano" NO debe
+    // coincidir con "adobos colombianos" ni "adobo colombianito".
     if (allRecetas && allRecetas.length) {
       function normForMatch(s) {
         return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+      }
+      function phraseComplete(haystack, needle) {
+        // Verifica que needle aparezca como frase delimitada en haystack.
+        // Ambos ya deben estar normalizados.
+        if (!needle || needle.length < 3) return false;
+        var idx = 0;
+        while (true) {
+          var pos = haystack.indexOf(needle, idx);
+          if (pos < 0) return false;
+          // Verificar char anterior
+          if (pos > 0) {
+            var prev = haystack.charAt(pos - 1);
+            if (prev.match(/[a-z0-9]/)) { idx = pos + 1; continue; }
+          }
+          // Verificar char siguiente
+          var endPos = pos + needle.length;
+          if (endPos < haystack.length) {
+            var nxt = haystack.charAt(endPos);
+            if (nxt.match(/[a-z0-9]/)) { idx = pos + 1; continue; }
+          }
+          return true;
+        }
       }
       var blendNameNorm = normForMatch(nombre);
       var recetasDelBlend = [];
       for (var ri = 0; ri < allRecetas.length; ri++) {
         var rec = allRecetas[ri];
         if (!rec || !rec.titulo) continue;
-        // Verificar productos_usados
+        // 1. Buscar match exacto en productos_usados (normalizado)
         var pu = rec.productos_usados || [];
         var matchFound = false;
         for (var pi = 0; pi < pu.length; pi++) {
           if (normForMatch(pu[pi]) === blendNameNorm) { matchFound = true; break; }
         }
-        // Si no match por productos_usados, buscar en ingredientes (substring)
+        // 2. Si no match por productos_usados, buscar como FRASE COMPLETA en ingredientes
         if (!matchFound && rec.ingredientes && rec.ingredientes.length) {
           for (var ii = 0; ii < rec.ingredientes.length; ii++) {
             var ingNorm = normForMatch(rec.ingredientes[ii]);
-            if (ingNorm.indexOf(blendNameNorm) >= 0 && blendNameNorm.length > 4) {
+            if (phraseComplete(ingNorm, blendNameNorm)) {
               matchFound = true;
               break;
             }

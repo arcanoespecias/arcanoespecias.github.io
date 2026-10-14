@@ -6261,7 +6261,8 @@ const Pages = {
       '<div class="card-header" style="display:flex;align-items:center;justify-content:space-between">' +
         '<h3 style="margin:0">Recetas Existentes (<span id="ra-count">0</span>)</h3>' +
         '<div style="display:flex;gap:6px">' +
-          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerateAllRecetasSEO()" title="Regenera paginas HTML estaticas para SEO">Regenerar SEO</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._migrateRecetasProductosUsados()" title="Rellena productos_usados en recetas antiguas buscando coincidencias en ingredientes">Migrar productos_usados</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="Pages._regenerateAllRecetasSEO()" title="Regenera paginas HTML estaticas para SEO en 1 commit">Regenerar SEO</button>' +
         '</div>' +
       '</div>' +
       '<div class="card-body" id="ra-list"><div class="text-center text-muted">Cargando...</div></div>' +
@@ -6660,14 +6661,16 @@ const Pages = {
 
         var prompt =
           'Eres un chef creativo experto en especias de la marca Arcano Especias.\n\n' +
-          'CATALOGO DE PRODUCTOS:\n' + productContext + '\n\n' +
+          'CATALOGO DE PRODUCTOS PUBLICADOS (usa SOLO nombres exactos de esta lista):\n' + productContext + '\n\n' +
           'REGLAS:\n' +
-          '1. Usa al menos UN producto del catalogo (nombre exacto).\n' +
+          '1. Usa al menos UN producto del catalogo (nombre exacto, copia literal).\n' +
           '2. Si el producto tiene "uso sugerido", respeta esa orientacion.\n' +
           '3. ' + langInstr + '\n' +
           '4. 5 a 12 ingredientes con cantidades precisas.\n' +
           '5. 5 a 8 pasos claros y en orden.\n' +
-          '6.productos_usados debe listar SOLO nombres exactos del catalogo.\n' +
+          '6. productos_usados DEBE ser un array con al menos 1 nombre EXACTO del catalogo arriba.\n' +
+          '   Si mencionas un producto en ingredientes, su nombre EXACTO debe estar en productos_usados.\n' +
+          '   NO inventes nombres. Si un ingrediente no es del catalogo, no lo pongas en productos_usados.\n' +
           '7. La receta debe ser ORIGINAL, diferente a las existentes.' +
           existingBlock + '\n\n' +
           'Crea una receta de ' + categoria + '. ' + temaInstr + '\n\n' +
@@ -6675,10 +6678,12 @@ const Pages = {
           '{"titulo": "...", "descripcion": "... (2-3 oraciones)", "categoria": "' + categoria + '", ' +
           '"dificultad": "Facil" o "Media" o "Dificil", ' +
           '"tiempo": "... (ej: 30 min)", "porciones": "... (ej: 4 porciones)", ' +
-          '"productos_usados": ["Nombre Exacto del Producto"], ' +
+          '"productos_usados": ["Nombre Exacto del Producto del Catalogo"], ' +
           '"ingredientes": ["1 cucharadita de Nombre Exacto del Producto", "200g de proteina", ...], ' +
           '"pasos": ["Paso 1: ...", "Paso 2: ...", ...], ' +
-          '"imagen_prompt": "descripcion visual del plato (en ingles, 1 oracion)"}';
+          '"imagen_prompt": "descripcion visual del plato (en ingles, 1 oracion)"}\n\n' +
+          'RECORDATORIO FINAL: productos_usados[] debe contener al menos 1 nombre exacto del catalogo. ' +
+          'Si no hay coincidencia exacta, NO lo pongas.';
 
         status.textContent = 'Consultando Gemini 3.6 Flash...';
 
@@ -6713,6 +6718,48 @@ const Pages = {
           if (!receta.titulo) throw new Error('La receta no tiene titulo');
           if (!Array.isArray(receta.ingredientes)) throw new Error('ingredientes debe ser un array');
           if (!Array.isArray(receta.pasos)) throw new Error('pasos debe ser un array');
+          
+          // === Validación estricta de productos_usados ===
+          // productos_usados debe ser array con al menos 1 nombre exacto de producto enTienda=true.
+          // Si viene vacío o con nombres que no existen en el catálogo, NO se guarda y se avisa.
+          if (!Array.isArray(receta.productos_usados) || receta.productos_usados.length === 0) {
+            throw new Error('La receta no incluye productos_usados o el campo está vacío. ' +
+              'La IA debe devolver al menos 1 nombre exacto del catálogo. ' +
+              'Volvé a generar la receta.');
+          }
+          // Validar coincidencia exacta (normalizada) con productos enTienda=true
+          function _normForMatch(s) {
+            return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+          }
+          var allTiendaProds = ArcanoDB.getTiendaProductos();
+          var tiendaNormSet = {};
+          for (var ti = 0; ti < allTiendaProds.length; ti++) {
+            tiendaNormSet[_normForMatch(allTiendaProds[ti].nombre)] = allTiendaProds[ti].nombre;
+          }
+          var productosValidos = [];
+          var productosInvalidos = [];
+          for (var pi = 0; pi < receta.productos_usados.length; pi++) {
+            var pn = _normForMatch(receta.productos_usados[pi]);
+            if (tiendaNormSet[pn]) {
+              // Reemplazar por el nombre exacto del catálogo (preserva mayúsculas/tildes)
+              if (productosValidos.indexOf(tiendaNormSet[pn]) < 0) productosValidos.push(tiendaNormSet[pn]);
+            } else {
+              productosInvalidos.push(receta.productos_usados[pi]);
+            }
+          }
+          if (productosValidos.length === 0) {
+            throw new Error('productos_usados no contiene ningún nombre exacto del catálogo. ' +
+              'Nombres recibidos: ' + receta.productos_usados.join(', ') + '. ' +
+              'Volvé a generar la receta.');
+          }
+          if (productosInvalidos.length > 0) {
+            // Avisar pero permitir guardar (filtrando los inválidos)
+            console.warn('[Recetas] productos_usados con nombres no reconocidos (serán filtrados):', productosInvalidos);
+            status.innerHTML = '<span style="color:var(--gold)">Aviso: ' + productosInvalidos.length + ' producto(s) no reconocido(s) fueron filtrados de productos_usados. Guardando...</span>';
+          }
+          // Sobrescribir productos_usados con solo los válidos (nombres exactos del catálogo)
+          receta.productos_usados = productosValidos;
+          
           receta.fecha = new Date().toISOString().slice(0, 10);
           if (!receta.categoria) receta.categoria = categoria;
           try {
@@ -9046,28 +9093,297 @@ const Pages = {
   },
 
   _regenerateAllBlogSEO: function() {
-    if (!confirm('Regenerar todas las paginas SEO del blog y el sitemap?')) return;
+    if (!confirm('Regenerar todas las paginas SEO del blog en un solo commit?')) return;
     var statusEl = document.getElementById('ba-gen-status');
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Regenerando paginas SEO...</span>';
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Cargando blog desde Firebase...</span>';
     firebase.database().ref('arcano/db/blog').once('value', function(snap) {
       var data = snap.val();
       if (!data) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">No hay articulos.</span>'; return; }
       var keys = Object.keys(data);
       var posts = [];
-      for (var i = 0; i < keys.length; i++) {
-        posts.push(data[keys[i]]);
+      for (var i = 0; i < keys.length; i++) posts.push(data[keys[i]]);
+      // Generar todos los HTML en memoria
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Generando ' + posts.length + ' paginas HTML...</span>';
+      var files = [];
+      for (var i = 0; i < posts.length; i++) {
+        try {
+          var html = Pages._generateBlogHTML(posts[i]);
+          var slug = Pages._titleToSlug(posts[i].titulo);
+          files.push({
+            path: 'blog/' + slug + '.html',
+            content: btoa(unescape(encodeURIComponent(html))),
+            msg: 'blog SEO: ' + (posts[i].titulo || slug)
+          });
+        } catch(e) {
+          console.error('Error generando HTML de blog', posts[i] && posts[i].titulo, e);
+        }
       }
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Publicando ' + posts.length + ' paginas...</span>';
-      function next(idx) {
-        if (idx >= posts.length) {
-          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">' + posts.length + ' paginas SEO regeneradas.</span>';
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Subiendo ' + files.length + ' archivos en 1 commit...</span>';
+      Pages._uploadTreeToGitHub(files, 'Regenerar SEO blog (' + files.length + ' paginas)').then(function() {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">' + files.length + ' paginas SEO regeneradas en 1 commit.</span>';
+        Pages._updateSitemap();
+      }).catch(function(err) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error: ' + (err.message || err) + '</span>';
+      });
+    });
+  },
+
+  // Genera el HTML del blog SIN subirlo (para usar en _regenerateAllBlogSEO y future bulk ops)
+  _generateBlogHTML: function(post) {
+    // Llama a _publishBlogSEO pero intercepta _uploadToGitHub para capturar el HTML
+    var captured = null;
+    var origUpload = Pages._uploadToGitHub;
+    Pages._uploadToGitHub = function(path, b64, msg) {
+      captured = { path: path, content: b64 };
+      return Promise.resolve({});
+    };
+    try {
+      Pages._publishBlogSEO(post);
+    } finally {
+      Pages._uploadToGitHub = origUpload;
+    }
+    if (!captured) throw new Error('No se pudo generar HTML de blog');
+    return decodeURIComponent(escape(atob(captured.content)));
+  },
+
+  // === Migración única: rellenar productos_usados en recetas antiguas ===
+  // Para cada receta con productos_usados=null o vacío:
+  //   1. Buscar coincidencia de FRASE COMPLETA (normalizada) entre los ingredientes
+  //      y los nombres de productos enTienda=true.
+  //   2. Si encuentra al menos 1 coincidencia, actualizar Firebase con el array.
+  //   3. Si no encuentra ninguna, dejar sin tocar.
+  // Tabla propuesta (15 recetas a migrar):
+  //   pollo-al-curry-de-bangkok-con-verduras → Bangkok Curry
+  //   mojito-de-bangkok → Bangkok Curry
+  //   te-de-especias-andinas → Ají Andino
+  //   gin-fizz-andino → Ají Andino
+  //   pollo-al-adobo-colombiano → Adobo Colombiano
+  //   infusion-de-te-con-especias-de-arcano → Golden Wellness, Gin Botanicals Classic
+  //   mojito-de-spiced-mojito-con-toque-de-vermu → Spiced Mojito, Vermú Botánico
+  //   pollo-al-curry-madras-con-verduras → Curry Madrás
+  //   infusion-de-moscu → Moscow Mule
+  //   mojito-de-arcano-con-spiced-mojito → Spiced Mojito
+  //   pollo-al-curry-con-aji-andino → Curry Madrás, Ají Andino
+  //   pollo-al-curry-con-especias-arcano → Curry Madrás
+  //   mojito-de-spiced-mojito-con-toque-de-verano → Spiced Mojito
+  //   tacos-de-pescado-koreano-con-sabor-a-inca-grill → Inca Grill
+  //   sunset-en-el-caribe → Whisky Oak Spice
+  // Recetas SIN tocar (2):
+  //   ceviche-de-camarones-con-costeno-caribe (sin coincidencia — "Costeño Caribe" no existe)
+  //   infusion-de-bosque-encantado-con-frutas-rojas (sin coincidencia — "Bosque Encantado" no existe)
+  _migrateRecetasProductosUsados: function() {
+    if (!confirm('Migrar productos_usados en recetas antiguas?\n\n' +
+        'Se buscarán coincidencias de frase completa entre los ingredientes y los productos enTienda=true.\n' +
+        'Recetas con coincidencia: se actualiza productos_usados en Firebase.\n' +
+        'Recetas sin coincidencia: se dejan sin tocar.\n\n' +
+        'Revisá la consola del navegador para ver el preview antes de confirmar (Pages._previewMigrateRecetasProductosUsados()).')) return;
+    var statusEl = document.getElementById('ra-gen-status');
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Migrando productos_usados...</span>';
+    firebase.database().ref('arcano/db/recetas').once('value', function(snap) {
+      var data = snap.val();
+      if (!data) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">No hay recetas.</span>'; return; }
+      var allTiendaProds = ArcanoDB.getTiendaProductos();
+      function _normForMatch(s) {
+        return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+      }
+      function _phraseComplete(haystack, needle) {
+        if (!needle || needle.length < 3) return false;
+        var idx = 0;
+        while (true) {
+          var pos = haystack.indexOf(needle, idx);
+          if (pos < 0) return false;
+          if (pos > 0 && /[a-z0-9]/.test(haystack.charAt(pos - 1))) { idx = pos + 1; continue; }
+          var endPos = pos + needle.length;
+          if (endPos < haystack.length && /[a-z0-9]/.test(haystack.charAt(endPos))) { idx = pos + 1; continue; }
+          return true;
+        }
+      }
+      var tiendaNormMap = {};
+      for (var ti = 0; ti < allTiendaProds.length; ti++) {
+        tiendaNormMap[_normForMatch(allTiendaProds[ti].nombre)] = allTiendaProds[ti].nombre;
+      }
+      var updates = {};
+      var migradas = 0;
+      var sinCoincidencia = 0;
+      var yaTenia = 0;
+      Object.keys(data).forEach(function(key) {
+        var r = data[key];
+        if (!r) return;
+        // Solo migrar recetas sin productos_usados (null o vacío)
+        if (Array.isArray(r.productos_usados) && r.productos_usados.length > 0) {
+          yaTenia++;
           return;
         }
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">(' + (idx + 1) + '/' + posts.length + ') ' + (posts[idx].titulo || '') + '</span>';
-        Pages._publishBlogSEO(posts[idx]);
-        setTimeout(function() { next(idx + 1); }, 1500);
+        var ings = r.ingredientes || [];
+        var matches = [];
+        for (var i = 0; i < ings.length; i++) {
+          var ingNorm = _normForMatch(ings[i]);
+          for (var prodNorm in tiendaNormMap) {
+            if (!tiendaNormMap.hasOwnProperty(prodNorm)) continue;
+            if (_phraseComplete(ingNorm, prodNorm)) {
+              var exactName = tiendaNormMap[prodNorm];
+              if (matches.indexOf(exactName) < 0) matches.push(exactName);
+            }
+          }
+        }
+        if (matches.length > 0) {
+          updates['arcano/db/recetas/' + key + '/productos_usados'] = matches;
+          migradas++;
+        } else {
+          sinCoincidencia++;
+        }
+      });
+      console.log('[Migración] Migrar:', migradas, '| Sin coincidencia:', sinCoincidencia, '| Ya tenían:', yaTenia);
+      if (migradas === 0) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">No hay recetas para migrar.</span>';
+        return;
       }
-      next(0);
+      firebase.database().ref().update(updates, function(err) {
+        if (err) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error: ' + (err.message || err) + '</span>';
+        } else {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">' + migradas + ' recetas migradas. ' + sinCoincidencia + ' sin coincidencia (sin tocar).</span>';
+          Pages._loadRecetasAdmin();
+        }
+      });
+    });
+  },
+
+  // Preview de la migración: muestra en consola qué receta quedaría con qué productos
+  // sin tocar Firebase. Llamar antes de _migrateRecetasProductosUsados para revisión.
+  _previewMigrateRecetasProductosUsados: function() {
+    firebase.database().ref('arcano/db/recetas').once('value', function(snap) {
+      var data = snap.val();
+      if (!data) { console.log('No hay recetas.'); return; }
+      var allTiendaProds = ArcanoDB.getTiendaProductos();
+      function _normForMatch(s) {
+        return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+      }
+      function _phraseComplete(haystack, needle) {
+        if (!needle || needle.length < 3) return false;
+        var idx = 0;
+        while (true) {
+          var pos = haystack.indexOf(needle, idx);
+          if (pos < 0) return false;
+          if (pos > 0 && /[a-z0-9]/.test(haystack.charAt(pos - 1))) { idx = pos + 1; continue; }
+          var endPos = pos + needle.length;
+          if (endPos < haystack.length && /[a-z0-9]/.test(haystack.charAt(endPos))) { idx = pos + 1; continue; }
+          return true;
+        }
+      }
+      var tiendaNormMap = {};
+      for (var ti = 0; ti < allTiendaProds.length; ti++) {
+        tiendaNormMap[_normForMatch(allTiendaProds[ti].nombre)] = allTiendaProds[ti].nombre;
+      }
+      console.log('=== PREVIEW MIGRACIÓN productos_usados ===');
+      var migradas = 0, sinCoincidencia = 0, yaTenia = 0;
+      Object.keys(data).forEach(function(key) {
+        var r = data[key];
+        if (!r || !r.titulo) return;
+        if (Array.isArray(r.productos_usados) && r.productos_usados.length > 0) {
+          yaTenia++;
+          return;
+        }
+        var ings = r.ingredientes || [];
+        var matches = [];
+        for (var i = 0; i < ings.length; i++) {
+          var ingNorm = _normForMatch(ings[i]);
+          for (var prodNorm in tiendaNormMap) {
+            if (!tiendaNormMap.hasOwnProperty(prodNorm)) continue;
+            if (_phraseComplete(ingNorm, prodNorm)) {
+              var exactName = tiendaNormMap[prodNorm];
+              if (matches.indexOf(exactName) < 0) matches.push(exactName);
+            }
+          }
+        }
+        if (matches.length > 0) {
+          console.log('  ✓', r.titulo, '→', matches.join(', '));
+          migradas++;
+        } else {
+          console.log('  ✗', r.titulo, '(sin coincidencia)');
+          sinCoincidencia++;
+        }
+      });
+      console.log('=== Resumen ===');
+      console.log('  Migrar:', migradas);
+      console.log('  Sin coincidencia (no se tocan):', sinCoincidencia);
+      console.log('  Ya tenían productos_usados (no se tocan):', yaTenia);
+    });
+  },
+
+  // === Sube múltiples archivos en 1 solo commit usando Git Trees API ===
+  // files: [{path, content (base64), msg}]
+  // commitMsg: mensaje del commit
+  _uploadTreeToGitHub: function(files, commitMsg) {
+    var token = Pages._getGHToken();
+    var repo = 'arcanoespecias/arcanoespecias.github.io';
+    var apiBase = 'https://api.github.com/repos/' + repo;
+    var headers = {
+      'Authorization': 'token ' + token,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+
+    // 1. Crear blobs para cada archivo
+    var blobPromises = files.map(function(f) {
+      return fetch(apiBase + '/git/blobs', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ content: f.content, encoding: 'base64' })
+      }).then(function(res) {
+        if (!res.ok) throw new Error('Blob create error ' + res.status);
+        return res.json();
+      }).then(function(blob) {
+        return { path: f.path, sha: blob.sha, mode: '100644', type: 'blob' };
+      });
+    });
+
+    return Promise.all(blobPromises).then(function(treeEntries) {
+      // 2. Obtener el SHA del commit más reciente de main
+      return fetch(apiBase + '/branches/main', { headers: headers })
+        .then(function(res) { if (!res.ok) throw new Error('Branch error ' + res.status); return res.json(); })
+        .then(function(branch) {
+          var baseTreeSha = branch.commit.commit.tree.sha;
+          var baseCommitSha = branch.commit.sha;
+          // 3. Crear el tree con todas las entradas
+          return fetch(apiBase + '/git/trees', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+              base_tree: baseTreeSha,
+              tree: treeEntries.map(function(e) {
+                return { path: e.path, mode: '100644', type: 'blob', sha: e.sha };
+              })
+            })
+          }).then(function(res) {
+            if (!res.ok) throw new Error('Tree create error ' + res.status);
+            return res.json();
+          }).then(function(tree) {
+            // 4. Crear el commit con el tree nuevo, apuntando al padre
+            return fetch(apiBase + '/git/commits', {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify({
+                message: commitMsg,
+                tree: tree.sha,
+                parents: [baseCommitSha]
+              })
+            }).then(function(res) {
+              if (!res.ok) throw new Error('Commit create error ' + res.status);
+              return res.json();
+            }).then(function(newCommit) {
+              // 5. Actualizar la rama main al nuevo commit
+              return fetch(apiBase + '/git/refs/heads/main', {
+                method: 'PATCH',
+                headers: headers,
+                body: JSON.stringify({ sha: newCommit.sha })
+              }).then(function(res) {
+                if (!res.ok) throw new Error('Ref update error ' + res.status);
+                return res.json();
+              });
+            });
+          });
+        });
     });
   },
 
@@ -9075,30 +9391,57 @@ const Pages = {
   // Las URLs no cambian (siguen siendo /recetas/<slug>).
   // datePublished se conserva (recipe.fecha), dateModified solo se actualiza
   // si la receta fue editada (el admin lo setea explícitamente al editar).
+  // Usa _uploadTreeToGitHub para subir todos los HTML en 1 solo commit.
   _regenerateAllRecetasSEO: function() {
-    if (!confirm('Regenerar todas las paginas SEO de recetas?')) return;
+    if (!confirm('Regenerar todas las paginas SEO de recetas en un solo commit?')) return;
     var statusEl = document.getElementById('ra-gen-status');
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Regenerando paginas SEO...</span>';
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Cargando recetas desde Firebase...</span>';
     firebase.database().ref('arcano/db/recetas').once('value', function(snap) {
       var data = snap.val();
       if (!data) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">No hay recetas.</span>'; return; }
       var keys = Object.keys(data);
       var recetas = [];
-      for (var i = 0; i < keys.length; i++) {
-        recetas.push(data[keys[i]]);
-      }
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Publicando ' + recetas.length + ' paginas...</span>';
-      function next(idx) {
-        if (idx >= recetas.length) {
-          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">' + recetas.length + ' paginas SEO regeneradas.</span>';
-          return;
+      for (var i = 0; i < keys.length; i++) recetas.push(data[keys[i]]);
+      // Generar todos los HTML en memoria
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Generando ' + recetas.length + ' paginas HTML...</span>';
+      var files = [];
+      for (var i = 0; i < recetas.length; i++) {
+        try {
+          var html = Pages._generateRecipeHTML(recetas[i]);
+          var slug = Pages._titleToSlug(recetas[i].titulo);
+          files.push({
+            path: 'recetas/' + slug + '.html',
+            content: btoa(unescape(encodeURIComponent(html))),
+            msg: 'receta SEO: ' + (recetas[i].titulo || slug)
+          });
+        } catch(e) {
+          console.error('Error generando HTML de receta', recetas[i] && recetas[i].titulo, e);
         }
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">(' + (idx + 1) + '/' + recetas.length + ') ' + (recetas[idx].titulo || '') + '</span>';
-        Pages._publishRecipeSEO(recetas[idx]);
-        setTimeout(function() { next(idx + 1); }, 1500);
       }
-      next(0);
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Subiendo ' + files.length + ' archivos en 1 commit...</span>';
+      Pages._uploadTreeToGitHub(files, 'Regenerar SEO recetas (' + files.length + ' paginas)').then(function() {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">' + files.length + ' paginas SEO regeneradas en 1 commit.</span>';
+      }).catch(function(err) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error: ' + (err.message || err) + '</span>';
+      });
     });
+  },
+
+  // Genera el HTML de la receta SIN subirlo
+  _generateRecipeHTML: function(recipe) {
+    var captured = null;
+    var origUpload = Pages._uploadToGitHub;
+    Pages._uploadToGitHub = function(path, b64, msg) {
+      captured = { path: path, content: b64 };
+      return Promise.resolve({});
+    };
+    try {
+      Pages._publishRecipeSEO(recipe);
+    } finally {
+      Pages._uploadToGitHub = origUpload;
+    }
+    if (!captured) throw new Error('No se pudo generar HTML de receta');
+    return decodeURIComponent(escape(atob(captured.content)));
   },
 
       _blogDraft: null,
