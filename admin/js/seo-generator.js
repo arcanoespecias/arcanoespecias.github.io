@@ -208,6 +208,27 @@ var ArcanoSEO = (function() {
     return '$' + n.toLocaleString('es-CO');
   }
 
+  /* Peso real del frasco pequeño para g:shipping_weight (Merchant feed).
+   * Suma el peso del frasco vacío (86 g) + gramos de especias:
+   *  - blends: Σ ingredientes[i].gramosChico
+   *  - especias: gramosChico directo en el objeto
+   * Fallback: 80 g si el cálculo da 0 o el producto no tiene ingredientes.
+   * Constantes del frasco: PESO_FRASCO_CHICO=86, PESO_FRASCO_GRANDE=126
+   * (definidas en admin/js/pages.js como Pages.PESO_FRASCO_CHICO/GRANDE). */
+  var PESO_FRASCO_CHICO = 86;
+  function shippingWeightGrams(b) {
+    var gramosEspecias = 0;
+    if (b.ingredientes && b.ingredientes.length) {
+      for (var i = 0; i < b.ingredientes.length; i++) {
+        gramosEspecias += Number(b.ingredientes[i].gramosChico) || 0;
+      }
+    } else if (b.gramosChico) {
+      gramosEspecias = Number(b.gramosChico) || 0;
+    }
+    var total = PESO_FRASCO_CHICO + gramosEspecias;
+    return total > 0 ? total : 80;
+  }
+
   /* === Generar página de producto /blends/<slug>/index.html === */
   function blendPageHtml(blend, especiasById, allProducts) {
     var slug = blend._slug || slugify(blend.nombre);
@@ -959,6 +980,8 @@ var ArcanoSEO = (function() {
       // FIX 3: g:link distingue blends de especias según _tipo.
       // Antes siempre usaba /blends/ y las especias quedaban con URL incorrecta.
       var linkPath = b._tipo === 'especia' ? '/especias/' : '/blends/';
+      // Peso real: frasco (86g) + gramos de especias del frasco chico.
+      var shippingWeight = shippingWeightGrams(b);
       xml += '<item>\n';
       xml += '<g:id>' + slug + '</g:id>\n';
       xml += '<g:title>' + nombre + '</g:title>\n';
@@ -978,7 +1001,7 @@ var ArcanoSEO = (function() {
       xml += '<g:content_language>es</g:content_language>\n';
       // Peso estimado (frasco pequeño ~80g) — necesario para la tabla de envío
       // por precio y peso configurada en Merchant Center.
-      xml += '<g:shipping_weight>80 g</g:shipping_weight>\n';
+      xml += '<g:shipping_weight>' + shippingWeight + ' g</g:shipping_weight>\n';
       // Tiempo máximo de preparación a nivel de ítem (1 día hábil).
       // El envío (g:shipping), la política de devoluciones (g:return_policy)
       // y los impuestos (g:tax) se configuran en Merchant Center, no en el feed.
@@ -1007,7 +1030,8 @@ var ArcanoSEO = (function() {
       var cat = (b.categoria || '').replace(/\t/g, ' ');
       var avail = availabilityGmc(b);
       var linkPath = b._tipo === 'especia' ? '/especias/' : '/blends/';
-      tsv += slug + '\t' + nombre + '\t' + desc + '\t' + BASE_URL + linkPath + slug + '/\t' + imagen + '\t' + avail + '\t' + precio + ' COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t' + cat + '\tFALSE\t80 g\t1\n';
+      var shippingWeight = shippingWeightGrams(b);
+      tsv += slug + '\t' + nombre + '\t' + desc + '\t' + BASE_URL + linkPath + slug + '/\t' + imagen + '\t' + avail + '\t' + precio + ' COP\tArcano Especias\tnew\tFood, Beverages & Tobacco > Food Items > Cooking & Baking Ingredients > Seasonings & Spices\t' + cat + '\tFALSE\t' + shippingWeight + ' g\t1\n';
     }
     return tsv;
   }
