@@ -6472,45 +6472,64 @@ const Pages = {
       }
 
       // Catálogo de modelos con su endpoint y formato de request/response
+      // ACTUALIZADO 2026-10: los modelos antiguos (imagen-3.0-generate-002,
+      // imagen-3.0-fast-generate-001, gemini-2.0-flash-preview-image-generation)
+      // están DEPRECADOS. Google ahora usa la familia "gemini-X-flash-image"
+      // con el endpoint generateContent estándar + responseModalities: ["TEXT","IMAGE"].
+      // Modelo principal: gemini-2.5-flash-image (plan gratuito disponible).
+      // Fallbacks: gemini-3.1-flash-image y gemini-3.1-flash-lite-image (más nuevos).
+      // Imagen 4 fue SHUT DOWN el 2026-08-17.
       var models = [
         {
-          name: 'imagen-3.0-generate-002',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=' + apiKey,
+          name: 'gemini-2.5-flash-image',
+          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=' + apiKey,
           buildBody: function(p) {
             return {
-              instances: [{ prompt: p }],
-              parameters: { sampleCount: 1, aspectRatio: '1:1' }
+              contents: [{ role: 'user', parts: [{ text: p }] }],
+              generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
             };
           },
           extractImage: function(data) {
-            if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-              return { data: data.predictions[0].bytesBase64Encoded, mime: data.predictions[0].mimeType || 'image/png' };
+            var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+            for (var i = 0; i < parts.length; i++) {
+              if (parts[i].inlineData && parts[i].inlineData.data) {
+                return { data: parts[i].inlineData.data, mime: parts[i].inlineData.mimeType || 'image/png' };
+              }
+              if (parts[i].inline_data && parts[i].inline_data.data) {
+                return { data: parts[i].inline_data.data, mime: parts[i].inline_data.mime_type || 'image/png' };
+              }
             }
             return null;
           }
         },
         {
-          name: 'imagen-3.0-fast-generate-001',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-fast-generate-001:predict?key=' + apiKey,
+          name: 'gemini-3.1-flash-image',
+          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=' + apiKey,
           buildBody: function(p) {
             return {
-              instances: [{ prompt: p }],
-              parameters: { sampleCount: 1, aspectRatio: '1:1' }
+              contents: [{ role: 'user', parts: [{ text: p }] }],
+              generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
             };
           },
           extractImage: function(data) {
-            if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-              return { data: data.predictions[0].bytesBase64Encoded, mime: data.predictions[0].mimeType || 'image/png' };
+            var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+            for (var i = 0; i < parts.length; i++) {
+              if (parts[i].inlineData && parts[i].inlineData.data) {
+                return { data: parts[i].inlineData.data, mime: parts[i].inlineData.mimeType || 'image/png' };
+              }
+              if (parts[i].inline_data && parts[i].inline_data.data) {
+                return { data: parts[i].inline_data.data, mime: parts[i].inline_data.mime_type || 'image/png' };
+              }
             }
             return null;
           }
         },
         {
-          name: 'gemini-2.0-flash-preview-image-generation',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=' + apiKey,
+          name: 'gemini-3.1-flash-lite-image',
+          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=' + apiKey,
           buildBody: function(p) {
             return {
-              contents: [{ parts: [{ text: p }] }],
+              contents: [{ role: 'user', parts: [{ text: p }] }],
               generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
             };
           },
@@ -6531,13 +6550,23 @@ const Pages = {
 
       function intentarCon(idx) {
         if (idx >= models.length) {
-          var errMsg = 'Todos los modelos fallaron. Tu API Key quizas no tiene acceso a Imagen 3. ' +
-            'Activá Imagen 3 en aistudio.google.com o subí la imagen manualmente.';
-          // Guardar imagen_error en Firebase
+          // Construir mensaje de error DETALLADO con el error real de cada modelo
+          var errorDetails = Pages._lastImagenErrors || [];
+          var detailMsg = errorDetails.map(function(e) {
+            return '  • ' + e.model + ': HTTP ' + e.status + ' — ' + e.message;
+          }).join('\n');
+          var errMsg = 'Todos los modelos de imagen fallaron. Errores reales:\n' + detailMsg +
+            '\n\nPosibles causas:\n' +
+            '  - API key sin acceso a generación de imágenes (activar en aistudio.google.com)\n' +
+            '  - API key de pago requerida para estos modelos\n' +
+            '  - Cuota agotada (esperar 1 min)\n\n' +
+            'Ejecutá Pages._listarModelosGemini() en la consola para ver qué modelos admite tu API key.';
+          // Guardar imagen_error en Firebase con detalle
           firebase.database().ref('arcano/db/recetas/' + key + '/imagen_error').set({
             mensaje: errMsg,
             fecha: new Date().toISOString(),
-            intentos: models.length
+            intentos: models.length,
+            errores: errorDetails
           });
           // Mostrar banner persistente con botón reintentar
           Pages._showImagenErrorBanner(key, r, errMsg);
@@ -6553,10 +6582,20 @@ const Pages = {
         .then(function(res) {
           if (!res.ok) {
             return res.json().then(function(e) {
-              var msg = (e.error && e.error.message) || ('HTTP ' + res.status);
-              var err = new Error(msg);
+              var apiMsg = (e.error && e.error.message) || ('HTTP ' + res.status);
+              var err = new Error(apiMsg);
               err._providerError = true;
               err._modelName = m.name;
+              err._httpStatus = res.status;
+              err._apiMessage = apiMsg;
+              throw err;
+            }).catch(function(parseErr) {
+              // Si no se puede parsear el body del error, usar el status HTTP
+              var err = new Error('HTTP ' + res.status + ' (sin body parseable)');
+              err._providerError = true;
+              err._modelName = m.name;
+              err._httpStatus = res.status;
+              err._apiMessage = 'HTTP ' + res.status;
               throw err;
             });
           }
@@ -6565,21 +6604,37 @@ const Pages = {
         .then(function(data) {
           var img = m.extractImage(data);
           if (!img || !img.data) {
-            var err = new Error('Sin imagen en respuesta de ' + m.name);
+            // Extraer mensaje de finishReason si está disponible
+            var finishReason = (data.candidates && data.candidates[0] && data.candidates[0].finishReason) || 'UNKNOWN';
+            var promptFeedback = data.promptFeedback && data.promptFeedback.blockReason;
+            var detail = promptFeedback ? ('Bloqueado por: ' + promptFeedback) : ('finishReason: ' + finishReason + ', sin imagen en respuesta');
+            var err = new Error(detail);
             err._providerError = true;
             err._modelName = m.name;
+            err._httpStatus = 200;
+            err._apiMessage = detail;
             throw err;
           }
           return img;
         })
         .catch(function(err) {
           if (err._providerError) {
-            console.warn('[Recetas] Modelo ' + m.name + ' fallo:', err.message, '\u2192 probando siguiente...');
+            // Guardar el error real para mostrarlo en el banner final
+            if (!Pages._lastImagenErrors) Pages._lastImagenErrors = [];
+            Pages._lastImagenErrors.push({
+              model: m.name,
+              status: err._httpStatus || '?',
+              message: err._apiMessage || err.message
+            });
+            console.warn('[Recetas] Modelo ' + m.name + ' fallo:', 'HTTP ' + err._httpStatus, err._apiMessage, '\u2192 probando siguiente...');
             return intentarCon(idx + 1);
           }
           throw err;
         });
       }
+
+      // Reset errores acumulados antes de empezar
+      Pages._lastImagenErrors = [];
 
       intentarCon(0)
         .then(function(img) {
@@ -6701,6 +6756,85 @@ const Pages = {
       }
       next(0);
     });
+  },
+
+  // === Diagnóstico: lista los modelos disponibles con la API key del dueño ===
+  // Llama GET /v1beta/models y muestra qué modelos admiten generación de imagen.
+  // Útil para diagnosticar por qué fallan los modelos de la cadena.
+  // Ejecutar desde la consola del navegador: Pages._listarModelosGemini()
+  _listarModelosGemini: function() {
+    var apiKey = (localStorage.getItem('arcano_gemini_key') || '').trim();
+    if (!apiKey) {
+      console.error('[Diagnóstico] Falta la API Key. Cargala en el campo del panel Recetas y guardala.');
+      alert('Falta la API Key. Cargala en el campo del panel Recetas.');
+      return;
+    }
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' + apiKey;
+    console.log('[Diagnóstico] Consultando modelos disponibles en:', url);
+    fetch(url)
+      .then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(e) {
+            throw new Error('HTTP ' + res.status + ': ' + ((e.error && e.error.message) || 'Error desconocido'));
+          });
+        }
+        return res.json();
+      })
+      .then(function(data) {
+        var models = data.models || [];
+        console.log('[Diagnóstico] Total modelos disponibles:', models.length);
+        console.log('');
+        // Filtrar modelos que podrían generar imágenes
+        var imageModels = [];
+        var allModels = [];
+        for (var i = 0; i < models.length; i++) {
+          var m = models[i];
+          var name = m.name || '';
+          var methods = m.supportedGenerationMethods || [];
+          allModels.push({ name: name, methods: methods });
+          // Buscar modelos con "image" o "imagen" en el nombre
+          if (name.indexOf('image') >= 0 || name.indexOf('imagen') >= 0) {
+            imageModels.push({ name: name, methods: methods, desc: m.description || '' });
+          }
+        }
+        console.log('=== MODELOS CON "image" O "imagen" EN EL NOMBRE ===');
+        if (imageModels.length === 0) {
+          console.log('  (NINGUNO — tu API key NO tiene acceso a modelos de imagen)');
+          console.log('  Posibles causas:');
+          console.log('    - API key sin acceso a generación de imágenes');
+          console.log('    - Activar en https://aistudio.google.com');
+        } else {
+          for (var j = 0; j < imageModels.length; j++) {
+            var im = imageModels[j];
+            console.log('  ✓ ' + im.name);
+            console.log('    methods:', im.methods.join(', '));
+            console.log('    desc:', im.desc.substring(0, 100));
+            console.log('');
+          }
+        }
+        console.log('');
+        console.log('=== TODOS LOS MODELOS DISPONIBLES ===');
+        for (var k = 0; k < allModels.length; k++) {
+          console.log('  ' + allModels[k].name + ' — methods: ' + allModels[k].methods.join(', '));
+        }
+        // Mostrar resumen en alerta
+        var summary = 'Modelos disponibles: ' + models.length + '\n' +
+          'Modelos de imagen: ' + imageModels.length + '\n\n';
+        if (imageModels.length > 0) {
+          summary += 'Modelos de imagen encontrados:\n';
+          for (var l = 0; l < imageModels.length; l++) {
+            summary += '  • ' + imageModels[l].name + '\n';
+          }
+        } else {
+          summary += '⚠ Tu API key NO tiene acceso a modelos de imagen.\n' +
+            'Activá la generación de imágenes en https://aistudio.google.com';
+        }
+        alert(summary);
+      })
+      .catch(function(err) {
+        console.error('[Diagnóstico] Error consultando modelos:', err.message);
+        alert('Error consultando modelos: ' + err.message);
+      });
   },
 
   _uploadRecetaImageToGitHub: function(dataUrl, slug) {
