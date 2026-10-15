@@ -4736,10 +4736,9 @@ const Pages = {
     if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
     if (statusEl) statusEl.innerHTML = '<span class="text-muted">Leyendo productos...</span>';
 
-    var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var _GH_HARDCODED=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
-    var GH_TOKEN = localStorage.getItem('arcano_gh_token') || _GH_HARDCODED;
+    var GH_TOKEN = localStorage.getItem('arcano_gh_token');
     if (!GH_TOKEN) {
-      if (statusEl) statusEl.innerHTML = '<span class="text-red">✗ No hay token de GitHub. Abrí el admin con #tk=<tu_token> en la URL.</span>';
+      if (statusEl) statusEl.innerHTML = '<span class="text-red">✗ Falta el token de GitHub: abre el admin con #tk=TOKEN en la URL.</span>';
       if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Tienda'; }
       return;
     }
@@ -9007,17 +9006,17 @@ const Pages = {
   },
 
   _getGHToken: function() {
-    // FIX: priorizar token de localStorage (arcano_gh_token) que el admin configuró
-    // via URL hash #tk=<token>. El token hardcoded de fallback está caducado (401).
+    // Lee el token de localStorage (configurado por el admin via #tk=TOKEN en la URL).
+    // No hay token hardcoded de fallback: si no hay token, devuelve null y el caller
+    // debe mostrar un aviso claro y no intentar subir nada.
     var lsToken = localStorage.getItem('arcano_gh_token');
     if (lsToken && lsToken.trim()) return lsToken.trim();
-    // Fallback al token hardcoded (puede estar caducado)
-    var _gt = 'jksbZrZsYRI8E5<phRNgs]7wPot<M{yd;W63t6ZP';
-    return _gt.split('').map(function(c) { return String.fromCharCode(c.charCodeAt(0) - 3); }).join('');
+    return null;
   },
 
   _uploadToGitHub: function(path, base64Jpg, commitMsg) {
     var token = Pages._getGHToken();
+    if (!token) return Promise.reject(new Error('Falta el token de GitHub: abre el admin con #tk=TOKEN en la URL.'));
     var repo = 'arcanoespecias/arcanoespecias.github.io';
     var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
     return fetch(apiBase + '?ref=main', {
@@ -9729,6 +9728,7 @@ const Pages = {
   // commitMsg: mensaje del commit
   _uploadTreeToGitHub: function(files, commitMsg) {
     var token = Pages._getGHToken();
+    if (!token) return Promise.reject(new Error('Falta el token de GitHub: abre el admin con #tk=TOKEN en la URL.'));
     var repo = 'arcanoespecias/arcanoespecias.github.io';
     var apiBase = 'https://api.github.com/repos/' + repo;
     var headers = {
@@ -15101,17 +15101,16 @@ Pages.regenerarSEOCompleto = function() {
   }
   log('Generador: seo-generator.js ' + seoVersion + ' (verificado: _tipo filter + pHtmlFiles fix + canonical defer + no legacy Categorías)', 'ok');
 
-  // Token y config: prioriza el token de localStorage (arcano_gh_token) que el admin
+  // Token y config: lee el token de localStorage (arcano_gh_token) que el admin
   // configuró via URL hash #tk=<token> (flujo estándar de github-sync.js).
-  // Fallback al token hardcoded solo si no hay token en localStorage.
-  var _gt='jlwkxebsdwb44FJX6IKL3fz6F9WOZFDr;btkF\nxxGd65YzG|QzymMw4Ro[QI7HU{4Lr]uwr|Mg6vM7U[F6E7]htvJ6\\E';var _GH_HARDCODED=_gt.split('').map(function(c){return String.fromCharCode(c.charCodeAt(0)-3)}).join('');
-  var GH_TOKEN = localStorage.getItem('arcano_gh_token') || _GH_HARDCODED;
+  // No hay token hardcoded de fallback.
+  var GH_TOKEN = localStorage.getItem('arcano_gh_token');
   if (!GH_TOKEN) {
-    setStatus('✗ Error: No hay token de GitHub configurado. Abrí el admin con #tk=<tu_token> en la URL para configurarlo.', 'err');
+    setStatus('✗ Falta el token de GitHub: abre el admin con #tk=TOKEN en la URL.', 'err');
     if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Completo'; }
     return;
   }
-  log(GH_TOKEN === _GH_HARDCODED ? 'Usando token hardcoded (fallback).' : 'Usando token de localStorage (arcano_gh_token).', 'ok');
+  log('Usando token de localStorage (arcano_gh_token).', 'ok');
   var GH_OWNER = 'arcanoespecias';
   var GH_REPO = 'arcanoespecias.github.io';
   var GH_BRANCH = 'main';
