@@ -15275,29 +15275,24 @@ Pages.regenerarSEOCompleto = function() {
     .then(function() {
       // Generar archivos con ArcanoSEO
       log('Generando p\u00E1ginas SEO...');
-      // Cargar recetas desde Firebase (en memoria) para inyectar en blendPageHtml
-      // como bloque "Recetas con este blend". Síncrono vía snapshot del db ya cargado.
-      var recetasForSEO = [];
-      try {
-        var recetasSnap = ArcanoDB.getDB().recetas;
-        if (recetasSnap) {
-          if (Array.isArray(recetasSnap)) {
-            recetasForSEO = recetasSnap.filter(function(r) { return r && r.titulo; });
-          } else {
-            var rKeys = Object.keys(recetasSnap);
-            for (var ri = 0; ri < rKeys.length; ri++) {
-              if (recetasSnap[rKeys[ri]] && recetasSnap[rKeys[ri]].titulo) {
-                recetasForSEO.push(recetasSnap[rKeys[ri]]);
-              }
+      // Cargar recetas desde Firebase directamente (no desde caché de ArcanoDB,
+      // porque el panel de Tienda no carga recetas en memoria al abrirse).
+      return firebase.database().ref('arcano/db/recetas').once('value').then(function(snap) {
+        var recetasForSEO = [];
+        var recetasData = snap.val();
+        if (recetasData) {
+          var rKeys = Object.keys(recetasData);
+          for (var ri = 0; ri < rKeys.length; ri++) {
+            if (recetasData[rKeys[ri]] && recetasData[rKeys[ri]].titulo) {
+              recetasForSEO.push(recetasData[rKeys[ri]]);
             }
           }
         }
-      } catch(e) {
-        console.warn('No se pudieron cargar recetas para SEO:', e);
-      }
-      log('Recetas para bloque "Recetas con este blend": ' + recetasForSEO.length);
-      var result = ArcanoSEO.generateAll(db, existingUrls, [], recetasForSEO);
-      log('Generadas: ' + result.blendsPages.length + ' p\u00E1ginas /blends/, ' + (result.especiaPages ? result.especiaPages.length : 0) + ' p\u00E1ginas /especias/, ' + result.categoryPages.length + ' categor\u00EDas, sitemap, feeds', 'ok');
+        log('Recetas para bloque "Recetas con este blend": ' + recetasForSEO.length);
+        // Guardar recetas en scope para usar en el segundo generateAll
+        Pages._recetasForSEO = recetasForSEO;
+        var result = ArcanoSEO.generateAll(db, existingUrls, [], recetasForSEO);
+        log('Generadas: ' + result.blendsPages.length + ' p\u00E1ginas /blends/, ' + (result.especiaPages ? result.especiaPages.length : 0) + ' p\u00E1ginas /especias/, ' + result.categoryPages.length + ' categor\u00EDas, sitemap, feeds', 'ok');
 
       // Reportar productos incompletos
       if (result.stats.incompletos && result.stats.incompletos.length) {
@@ -15310,6 +15305,7 @@ Pages.regenerarSEOCompleto = function() {
           log('  ... y ' + (result.stats.incompletos.length - 5) + ' m\u00E1s', 'warn');
         }
       }
+      }); // cierre de firebase.database().ref('arcano/db/recetas').once('value').then(function(snap) {
 
       // === Paso 1.5: Subir imágenes base64 como archivos físicos a GitHub ===
       // Esto es CRÍTICO para Google Merchant Center: las imágenes base64 inline
@@ -15426,7 +15422,9 @@ Pages.regenerarSEOCompleto = function() {
       // existingUrls contiene las URLs del sitemap actual + blog + recetas
       // que se recogieron en los pasos anteriores. Pasarlas para que el
       // sitemap generado las preserve.
-      var result = ArcanoSEO.generateAll(db2, existingUrls, []);
+      // Recetas cargadas desde Firebase en el paso anterior (Pages._recetasForSEO)
+      var recetasForFinalSEO = Pages._recetasForSEO || [];
+      var result = ArcanoSEO.generateAll(db2, existingUrls, [], recetasForFinalSEO);
 
       log('Archivos a subir:', 'ok');
       log('  - ' + result.blendsPages.length + ' p\u00E1ginas /blends/<slug>/index.html');
