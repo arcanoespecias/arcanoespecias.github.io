@@ -6588,6 +6588,7 @@ const Pages = {
               err._modelName = m.name;
               err._httpStatus = res.status;
               err._apiMessage = apiMsg;
+              err._fullErrorBody = e;  // Guardar cuerpo completo para 429
               throw err;
             }).catch(function(parseErr) {
               // Si no se puede parsear el body del error, usar el status HTTP
@@ -6619,7 +6620,123 @@ const Pages = {
         })
         .catch(function(err) {
           if (err._providerError) {
-            // Guardar el error real para mostrarlo en el banner final
+            // === MANEJO ESPECIAL DE 429 (cuota agotada) ===
+            if (err._httpStatus === 429) {
+              // Extraer información de cuota del cuerpo completo del error
+              var fullBody = err._fullErrorBody || {};
+              var errorInfo = fullBody.error || {};
+              var quotaInfo = '';
+              var retryDelay = 60; // default 60s
+              var isDailyQuota = false;
+
+              // Buscar QuotaFailure en error.details
+              if (errorInfo.details && Array.isArray(errorInfo.details)) {
+                for (var di = 0; di < errorInfo.details.length; di++) {
+                  var detail = errorInfo.details[di];
+                  // '@type' puede venir con URL completa
+                  var dtype = detail['@type'] || '';
+                  if (dtype.indexOf('QuotaFailure') >= 0 || dtype.indexOf('quotaFailure') >= 0) {
+                    var violations = detail.violations || detail.quotaViolations || [];
+                    for (var vi = 0; vi < violations.length; vi++) {
+                      var v = violations[vi];
+                      quotaInfo += '  Cuota: ' + (v.quotaId || v.quota_id || '?') +
+                        ' = ' + (v.quotaValue !== undefined ? v.quotaValue : '?') +
+                        ' (límite: ' + (v.quotaLimit !== undefined ? v.quotaLimit : '?') + ')\n';
+                      // Si el límite es 0, es plan gratuito sin acceso
+                      if (v.quotaLimit === 0 || v.quotaLimit === '0') {
+                        isDailyQuota = true;
+                      }
+                    }
+                  }
+                  if (dtype.indexOf('RetryInfo') >= 0 || dtype.indexOf('retryInfo') >= 0) {
+                    var rd = detail.retryDelay || detail.retry_delay || '';
+                    if (rd) {
+                      quotaInfo += '  Retry delay: ' + rd + '\n';
+                      // Parsear "60s" o "60" → número
+                      var rdMatch = rd.match(/(\d+)/);
+                      if (rdMatch) retryDelay = parseInt(rdMatch[1], 10);
+                    }
+                  }
+                }
+              }
+
+              // Determinar tipo de cuota
+              var quotaType;
+              if (isDailyQuota || (errorInfo.status === 'RESOURCE_EXHAUSTED' && quotaInfo.indexOf('límite: 0') >= 0)) {
+                quotaType = 'CUOTA_DIARIA_AGOTADA';
+              } else if (errorInfo.status === 'RESOURCE_EXHAUSTED') {
+                quotaType = 'LIMITE_POR_MINUTO';
+              } else {
+                quotaType = 'CUOTA_DESCONOCIDA';
+              }
+
+              // Construir mensaje detallado
+              var msg429 = 'HTTP 429 — Cuota agotada (' + quotaType + ')\n' +
+                'Modelo: ' + m.name + '\n' +
+                'Status: ' + (errorInfo.status || 'RESOURCE_EXHAUSTED') + '\n' +
+                'Mensaje: ' + (errorInfo.message || err._apiMessage) + '\n';
+              if (quotaInfo) {
+                msg429 += 'Detalles de cuota:\n' + quotaInfo;
+              }
+              if (quotaType === 'CUOTA_DIARIA_AGOTADA') {
+                msg429 += '\n⚠ TU PLAN GRATUITO NO ADMITE MÁS GENERACIONES HOY.\n' +
+                  'Opciones: esperar a mañana, cambiar a plan de pago, o subir imágenes manualmente.';
+                Pages._dailyQuotaExceeded = true;  // Flag para detener proceso batch
+              } else if (quotaType === 'LIMITE_POR_MINUTO') {
+                msg429 += '\n⏳ Límite por minuto alcanzado. Esperar ' + retryDelay + 's y reintentar.';
+              } else {
+                msg429 += '\n⏳ Esperar ' + retryDelay + 's y reintentar.';
+              }
+
+              console.error('[Recetas] 429 Cuota agotada:');
+              console.error('  Modelo:', m.name);
+              console.error('  Status:', errorInfo.status);
+              console.error('  Message:', errorInfo.message);
+              console.error('  Details:', JSON.stringify(errorInfo.details, null, 2));
+              console.error('  Tipo:', quotaType);
+              console.error('  Retry delay:', retryDelay + 's');
+
+              // NO probar otros modelos (es cuota del proyecto, no del modelo)
+              if (!Pages._lastImagenErrors) Pages._lastImagenErrors = [];
+              Pages._lastImagenErrors.push({
+                model: m.name,
+                status: 429,
+                message: msg429,
+                quotaType: quotaType,
+                retryDelay: retryDelay,
+                fullError: errorInfo
+              });
+
+              // Si es límite por minuto, esperar y reintentar este mismo modelo 1 vez
+              if (quotaType === 'LIMITE_POR_MINUTO' && !Pages._retrying429) {
+                Pages._retrying429 = true;
+                if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">⏳ Cuota por minuto. Esperando ' + retryDelay + 's...</span>';
+                return new Promise(function(resolve) { setTimeout(resolve, (retryDelay + 5) * 1000); })
+                  .then(function() {
+                    Pages._retrying429 = false;
+                    if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Reintentando ' + m.name + '...</span>';
+                    // Reintentar este mismo modelo
+                    return fetch(m.endpoint, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(m.buildBody(prompt))
+                    })
+                    .then(function(res) {
+                      if (!res.ok) throw new Error('Reintento fallido: HTTP ' + res.status);
+                      return res.json();
+                    })
+                    .then(function(data) {
+                      var img = m.extractImage(data);
+                      if (!img || !img.data) throw new Error('Reintento: sin imagen');
+                      return img;
+                    });
+                  });
+              }
+              // Si es cuota diaria o reintento falló, propagar error
+              throw new Error(msg429);
+            }
+
+            // Error no-429: guardar el error real y probar siguiente modelo
             if (!Pages._lastImagenErrors) Pages._lastImagenErrors = [];
             Pages._lastImagenErrors.push({
               model: m.name,
@@ -6635,6 +6752,7 @@ const Pages = {
 
       // Reset errores acumulados antes de empezar
       Pages._lastImagenErrors = [];
+      Pages._retrying429 = false;
 
       intentarCon(0)
         .then(function(img) {
@@ -6740,19 +6858,26 @@ const Pages = {
       if (maxRecetas && maxRecetas > 0) {
         sinImagen = sinImagen.slice(0, maxRecetas);
       }
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">' + sinImagen.length + ' recetas sin imagen. Generando (1 a la vez)...</span>';
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">' + sinImagen.length + ' recetas sin imagen. Generando (1 a la vez, 15s pausa)...</span>';
       console.log('[Recetas] Regenerando imágenes para ' + sinImagen.length + ' recetas');
+      Pages._dailyQuotaExceeded = false;  // Reset flag
       function next(idx) {
         if (idx >= sinImagen.length) {
-          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Proceso completado. ' + sinImagen.length + ' recetas procesadas.</span>';
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Proceso completado. ' + idx + ' recetas procesadas.</span>';
+          return;
+        }
+        // Detener si se agotó la cuota diaria
+        if (Pages._dailyQuotaExceeded) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">⏹ Detenido: cuota diaria agotada. Procesadas ' + idx + '/' + sinImagen.length + '. Reintentar mañana.</span>';
+          console.warn('[Recetas] Proceso detenido por cuota diaria agotada en la receta ' + idx);
           return;
         }
         var item = sinImagen[idx];
         if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">(' + (idx + 1) + '/' + sinImagen.length + ') ' + item.receta.titulo + '</span>';
         // Llamar a _generarImagenReceta; la función actualiza Firebase + regenera HTML sola
         Pages._generarImagenReceta(item.key, item.receta, apiKey, statusEl);
-        // Esperar 5s entre cada una para no saturar
-        setTimeout(function() { next(idx + 1); }, 5000);
+        // Esperar 15s entre cada una para no saturar API (era 5s, ahora 15s)
+        setTimeout(function() { next(idx + 1); }, 15000);
       }
       next(0);
     });
@@ -8882,6 +9007,11 @@ const Pages = {
   },
 
   _getGHToken: function() {
+    // FIX: priorizar token de localStorage (arcano_gh_token) que el admin configuró
+    // via URL hash #tk=<token>. El token hardcoded de fallback está caducado (401).
+    var lsToken = localStorage.getItem('arcano_gh_token');
+    if (lsToken && lsToken.trim()) return lsToken.trim();
+    // Fallback al token hardcoded (puede estar caducado)
     var _gt = 'jksbZrZsYRI8E5<phRNgs]7wPot<M{yd;W63t6ZP';
     return _gt.split('').map(function(c) { return String.fromCharCode(c.charCodeAt(0) - 3); }).join('');
   },
@@ -8895,7 +9025,14 @@ const Pages = {
     })
     .then(function(res) {
       if (res.status === 404) return { sha: null };
-      if (!res.ok) throw new Error('GitHub GET error ' + res.status);
+      if (!res.ok) {
+        return res.json().then(function(errBody) {
+          var msg = 'GitHub GET error ' + res.status;
+          if (errBody.message) msg += ': ' + errBody.message;
+          if (errBody.documentation_url) msg += ' (docs: ' + errBody.documentation_url + ')';
+          throw new Error(msg);
+        });
+      }
       return res.json();
     })
     .then(function(existing) {
@@ -8915,7 +9052,12 @@ const Pages = {
       });
     })
     .then(function(res) {
-      if (!res.ok) return res.json().then(function(e) { throw new Error((e.message || 'GitHub PUT error ' + res.status)); });
+      if (!res.ok) return res.json().then(function(e) {
+        var msg = 'GitHub PUT error ' + res.status;
+        if (e.message) msg += ': ' + e.message;
+        if (e.documentation_url) msg += ' (docs: ' + e.documentation_url + ')';
+        throw new Error(msg);
+      });
       return res.json();
     });
   },
@@ -9602,7 +9744,23 @@ const Pages = {
         headers: headers,
         body: JSON.stringify({ content: f.content, encoding: 'base64' })
       }).then(function(res) {
-        if (!res.ok) throw new Error('Blob create error ' + res.status);
+        if (!res.ok) {
+          // Mostrar cuerpo completo del error de GitHub
+          return res.json().then(function(errBody) {
+            var msg = 'Blob create error ' + res.status;
+            if (errBody.message) msg += ': ' + errBody.message;
+            if (errBody.documentation_url) msg += ' (docs: ' + errBody.documentation_url + ')';
+            var err = new Error(msg);
+            err._githubStatus = res.status;
+            err._githubBody = errBody;
+            throw err;
+          }).catch(function(parseErr) {
+            // Si no se puede parsear, mostrar texto plano
+            return res.text().then(function(text) {
+              throw new Error('Blob create error ' + res.status + ': ' + text.substring(0, 200));
+            });
+          });
+        }
         return res.json();
       }).then(function(blob) {
         return { path: f.path, sha: blob.sha, mode: '100644', type: 'blob' };
