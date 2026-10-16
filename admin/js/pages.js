@@ -4295,6 +4295,7 @@ const Pages = {
     }
 
     h += '</div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'pedido-modal\').remove()">Cerrar</button>';
+    h += '<button class="btn btn-outline" style="border-color:var(--gold);color:var(--gold)" onclick="Pages.editarPedido(\'' + pedidoKey + '\')">Editar</button>';
     h += '<a class="btn btn-gold" href="tel:' + (cl.telefono || '') + '" target="_blank">Llamar Cliente</a>';
     h += '<button class="btn btn-sm btn-red" style="margin-left:auto" onclick="Pages.eliminarPedido(\'' + pedidoKey + '\')">Eliminar Pedido</button>';
     h += '</div></div>';
@@ -4332,6 +4333,336 @@ const Pages = {
         WhatsAppNotifications.showNotificacionModal(pedido, estadoNotif);
       }
     }
+  },
+
+  // === EDITAR PEDIDO ===
+  // Permite al admin modificar items (qty, precio, agregar, quitar),
+  // datos del cliente, envío, notas y descuentos antes de entregar.
+  editarPedido(pedidoKey) {
+    var pedidos = ArcanoDB.getPedidos();
+    var p = null;
+    for (var i = 0; i < pedidos.length; i++) { if (pedidos[i]._key === pedidoKey) { p = pedidos[i]; break; } }
+    if (!p) { alert('Pedido no encontrado'); return; }
+    var cl = p.cliente || {};
+
+    // Cerrar modal de ver pedido
+    var verModal = document.getElementById('pedido-modal');
+    if (verModal) verModal.remove();
+
+    var h = '<div class="card"><div class="card-header"><h3>Editar Pedido</h3><span class="text-xs text-muted">' + (p.creado || '').replace('T', ' ').substring(0, 16) + '</span></div><div class="card-body">';
+
+    // === DATOS DEL CLIENTE ===
+    h += '<h4>Datos del Cliente</h4>';
+    h += '<div class="g2 mt-8">';
+    h += '<div class="form-group"><label>Nombre</label><input class="input" id="ep-nombre" value="' + (cl.nombre || '') + '"></div>';
+    h += '<div class="form-group"><label>Teléfono</label><input class="input" id="ep-telefono" value="' + (cl.telefono || '') + '"></div>';
+    h += '<div class="form-group"><label>Email</label><input class="input" id="ep-email" value="' + (cl.email || '') + '"></div>';
+    h += '<div class="form-group"><label>Ciudad</label><input class="input" id="ep-ciudad" value="' + (cl.ciudad || '') + '"></div>';
+    h += '</div>';
+    h += '<div class="form-group"><label>Dirección</label><input class="input" id="ep-direccion" value="' + (cl.direccion || '') + '"></div>';
+
+    // === ITEMS ===
+    h += '<h4 class="mt-16">Productos</h4>';
+    h += '<div id="ep-items" class="mt-8">';
+    var items = p.items || [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var tallaLabel = it.talla === 'grande' ? 'Grande' : 'Pequeño';
+      h += '<div class="ep-item-row" data-item-index="' + i + '" style="display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg);border-radius:6px;margin-bottom:6px;flex-wrap:wrap">';
+      h += '<div style="flex:1;min-width:120px"><span class="fw7">' + (it.nombre || '?') + '</span><br><span class="text-xs text-muted">' + tallaLabel + '</span></div>';
+      h += '<div style="width:70px"><label class="text-xs text-muted">Cant.</label><input class="input input-sm" type="number" min="0" id="ep-qty-' + i + '" value="' + (it.qty || 1) + '" style="width:60px;padding:4px 8px" onchange="Pages._recalcularEditarPedido()"></div>';
+      h += '<div style="width:100px"><label class="text-xs text-muted">Precio</label><input class="input input-sm" type="number" min="0" id="ep-precio-' + i + '" value="' + (it.precio || 0) + '" style="width:90px;padding:4px 8px" onchange="Pages._recalcularEditarPedido()"></div>';
+      h += '<div style="width:90px;text-align:right"><label class="text-xs text-muted">Subtotal</label><div id="ep-subtotal-' + i + '" class="fw7">$' + ((it.subtotal || 0)).toLocaleString() + '</div></div>';
+      h += '<button class="btn btn-sm btn-red" onclick="Pages._quitarItemEditar(' + i + ')" style="padding:4px 8px">×</button>';
+      h += '</div>';
+    }
+    h += '</div>';
+
+    // Agregar producto
+    h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+    h += '<select class="input" id="ep-add-producto" style="flex:1;min-width:200px">';
+    h += '<option value="">+ Agregar producto...</option>';
+    var allProds = ArcanoDB.getProductosPublicados();
+    for (var pi = 0; pi < allProds.length; pi++) {
+      var prod = allProds[pi];
+      var precio = prod.precioChico || 0;
+      h += '<option value="' + prod.id + '" data-nombre="' + (prod.nombre || '') + '" data-tipo="' + (prod._tipo || 'blend') + '" data-precio="' + precio + '">' + (prod.nombre || '?') + ' ($' + precio.toLocaleString() + ')</option>';
+    }
+    h += '</select>';
+    h += '<select class="input" id="ep-add-talla" style="width:100px"><option value="chico">Pequeño</option><option value="grande">Grande</option></select>';
+    h += '<input class="input" type="number" min="1" id="ep-add-qty" value="1" style="width:60px;padding:4px 8px">';
+    h += '<button class="btn btn-sm btn-gold" onclick="Pages._agregarItemEditar()">Agregar</button>';
+    h += '</div>';
+
+    // === ENVÍO ===
+    var envio = p.envio || {};
+    h += '<h4 class="mt-16">Envío</h4>';
+    h += '<div class="g2 mt-8">';
+    h += '<div class="form-group"><label>Costo de envío</label><input class="input" type="number" min="0" id="ep-envio-costo" value="' + (envio.costo || 0) + '" onchange="Pages._recalcularEditarPedido()"></div>';
+    h += '<div class="form-group"><label>Categoría</label><select class="input" id="ep-envio-categoria"><option value="urbano"' + (envio.categoria === 'urbano' ? ' selected' : '') + '>Urbano</option><option value="zonal"' + (envio.categoria === 'zonal' ? ' selected' : '') + '>Zonal</option><option value="capital"' + (envio.categoria === 'capital' ? ' selected' : '') + '>Capital</option><option value="especial"' + (envio.categoria === 'especial' ? ' selected' : '') + '>Especial</option></select></div>';
+    h += '</div>';
+    h += '<div class="form-group"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="ep-envio-gratis" ' + (envio.gratis ? 'checked' : '') + ' onchange="Pages._toggleEnvioGratisEditar()"> Envío gratis</label></div>';
+
+    // === DESCUENTO ===
+    h += '<h4 class="mt-16">Descuento</h4>';
+    h += '<div class="mt-8" style="display:flex;gap:8px;align-items:center">';
+    h += '<input class="input" type="number" min="0" id="ep-descuento" value="' + (p.descuento || 0) + '" style="width:120px" onchange="Pages._recalcularEditarPedido()">';
+    h += '<span class="text-xs text-muted">Descuento manual en COP (se resta del total)</span>';
+    h += '</div>';
+
+    // === NOTAS ===
+    h += '<h4 class="mt-16">Notas</h4>';
+    h += '<textarea class="input" id="ep-notas" rows="3" style="width:100%">' + (p.notas || '') + '</textarea>';
+
+    // === TOTALES ===
+    h += '<div id="ep-totales" style="text-align:right;margin-top:16px;font-size:1rem">';
+    h += '<div style="color:var(--text-sec)">Subtotal productos: <strong id="ep-total-subtotal">$' + ((p.subtotal || 0)).toLocaleString() + '</strong></div>';
+    h += '<div style="color:var(--text-sec)">Envío: <strong id="ep-total-envio">$' + (envio.costo || 0).toLocaleString() + '</strong></div>';
+    h += '<div style="color:var(--text-sec)">Descuento: <strong id="ep-total-descuento">$' + (p.descuento || 0).toLocaleString() + '</strong></div>';
+    h += '<div style="font-size:1.2rem;margin-top:4px" class="fw7 text-gold">Total: <span id="ep-total-final">$' + (p.total || 0).toLocaleString() + '</span></div>';
+    h += '</div>';
+
+    h += '</div><div class="modal-footer">';
+    h += '<button class="btn btn-outline" onclick="Pages.verPedido(\'' + pedidoKey + '\')">Cancelar</button>';
+    h += '<button class="btn btn-gold" onclick="Pages._guardarEditarPedido(\'' + pedidoKey + '\')">Guardar cambios</button>';
+    h += '</div></div>';
+
+    var modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'editar-pedido-modal';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = '<div class="modal modal-lg" style="max-width:680px">' + h + '</div>';
+    document.body.appendChild(modal);
+
+    // Guardar items originales para referencia
+    Pages._editarPedidoItems = JSON.parse(JSON.stringify(items));
+  },
+
+  _toggleEnvioGratisEditar() {
+    var checkbox = document.getElementById('ep-envio-gratis');
+    var costoInput = document.getElementById('ep-envio-costo');
+    if (checkbox.checked) {
+      costoInput.value = 0;
+      costoInput.disabled = true;
+    } else {
+      costoInput.disabled = false;
+    }
+    Pages._recalcularEditarPedido();
+  },
+
+  _quitarItemEditar(index) {
+    var rows = document.querySelectorAll('.ep-item-row');
+    if (rows[index]) {
+      rows[index].remove();
+      // Reindexar
+      var remaining = document.querySelectorAll('.ep-item-row');
+      for (var i = 0; i < remaining.length; i++) {
+        remaining[i].setAttribute('data-item-index', i);
+        var inputs = remaining[i].querySelectorAll('input');
+        if (inputs[0]) inputs[0].id = 'ep-qty-' + i;
+        if (inputs[1]) inputs[1].id = 'ep-precio-' + i;
+        var subtotalDiv = remaining[i].querySelector('[id^="ep-subtotal-"]');
+        if (subtotalDiv) subtotalDiv.id = 'ep-subtotal-' + i;
+        var btn = remaining[i].querySelector('button');
+        if (btn) btn.setAttribute('onclick', 'Pages._quitarItemEditar(' + i + ')');
+      }
+      Pages._recalcularEditarPedido();
+    }
+  },
+
+  _agregarItemEditar() {
+    var select = document.getElementById('ep-add-producto');
+    var tallaSelect = document.getElementById('ep-add-talla');
+    var qtyInput = document.getElementById('ep-add-qty');
+    if (!select.value) return;
+
+    var nombre = select.options[select.selectedIndex].dataset.nombre;
+    var tipo = select.options[select.selectedIndex].dataset.tipo;
+    var precio = parseInt(select.options[select.selectedIndex].dataset.precio) || 0;
+    var talla = tallaSelect.value;
+    var qty = parseInt(qtyInput.value) || 1;
+
+    // Si es talla grande, buscar precio grande
+    if (talla === 'grande') {
+      var allProds = ArcanoDB.getProductosPublicados();
+      for (var i = 0; i < allProds.length; i++) {
+        if (allProds[i].id == select.value) {
+          precio = allProds[i].precioGrande || precio;
+          break;
+        }
+      }
+    }
+
+    var container = document.getElementById('ep-items');
+    var newIndex = container.children.length;
+    var tallaLabel = talla === 'grande' ? 'Grande' : 'Pequeño';
+    var subtotal = precio * qty;
+
+    var row = document.createElement('div');
+    row.className = 'ep-item-row';
+    row.setAttribute('data-item-index', newIndex);
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg);border-radius:6px;margin-bottom:6px;flex-wrap:wrap';
+    row.innerHTML =
+      '<div style="flex:1;min-width:120px"><span class="fw7">' + nombre + '</span><br><span class="text-xs text-muted">' + tallaLabel + ' (nuevo)</span></div>' +
+      '<div style="width:70px"><label class="text-xs text-muted">Cant.</label><input class="input input-sm" type="number" min="0" id="ep-qty-' + newIndex + '" value="' + qty + '" style="width:60px;padding:4px 8px" onchange="Pages._recalcularEditarPedido()"></div>' +
+      '<div style="width:100px"><label class="text-xs text-muted">Precio</label><input class="input input-sm" type="number" min="0" id="ep-precio-' + newIndex + '" value="' + precio + '" style="width:90px;padding:4px 8px" onchange="Pages._recalcularEditarPedido()"></div>' +
+      '<div style="width:90px;text-align:right"><label class="text-xs text-muted">Subtotal</label><div id="ep-subtotal-' + newIndex + '" class="fw7">$' + subtotal.toLocaleString() + '</div></div>' +
+      '<button class="btn btn-sm btn-red" onclick="Pages._quitarItemEditar(' + newIndex + ')" style="padding:4px 8px">×</button>';
+    container.appendChild(row);
+
+    // Guardar metadata del item nuevo para usar al guardar
+    if (!Pages._editarPedidoItemsNuevos) Pages._editarPedidoItemsNuevos = [];
+    Pages._editarPedidoItemsNuevos.push({ nombre: nombre, tipo: tipo, talla: talla, productId: select.value });
+
+    // Resetear selector
+    select.value = '';
+    qtyInput.value = 1;
+
+    Pages._recalcularEditarPedido();
+  },
+
+  _recalcularEditarPedido() {
+    var rows = document.querySelectorAll('.ep-item-row');
+    var subtotal = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var qtyInput = document.getElementById('ep-qty-' + i);
+      var precioInput = document.getElementById('ep-precio-' + i);
+      var subtotalDiv = document.getElementById('ep-subtotal-' + i);
+      if (qtyInput && precioInput && subtotalDiv) {
+        var qty = parseInt(qtyInput.value) || 0;
+        var precio = parseInt(precioInput.value) || 0;
+        var st = qty * precio;
+        subtotalDiv.textContent = '$' + st.toLocaleString();
+        subtotal += st;
+      }
+    }
+
+    var envioCosto = 0;
+    var envioGratis = document.getElementById('ep-envio-gratis');
+    var envioCostoInput = document.getElementById('ep-envio-costo');
+    if (envioGratis && envioGratis.checked) {
+      envioCosto = 0;
+    } else if (envioCostoInput) {
+      envioCosto = parseInt(envioCostoInput.value) || 0;
+    }
+
+    var descuento = parseInt(document.getElementById('ep-descuento').value) || 0;
+    var total = subtotal + envioCosto - descuento;
+    if (total < 0) total = 0;
+
+    document.getElementById('ep-total-subtotal').textContent = '$' + subtotal.toLocaleString();
+    document.getElementById('ep-total-envio').textContent = envioCosto > 0 ? '$' + envioCosto.toLocaleString() : 'GRATIS';
+    document.getElementById('ep-total-descuento').textContent = '$' + descuento.toLocaleString();
+    document.getElementById('ep-total-final').textContent = '$' + total.toLocaleString();
+  },
+
+  _guardarEditarPedido(pedidoKey) {
+    // Recoger datos del cliente
+    var cliente = {
+      nombre: document.getElementById('ep-nombre').value.trim(),
+      telefono: document.getElementById('ep-telefono').value.trim(),
+      email: document.getElementById('ep-email').value.trim(),
+      ciudad: document.getElementById('ep-ciudad').value.trim(),
+      direccion: document.getElementById('ep-direccion').value.trim()
+    };
+
+    // Recoger items
+    var rows = document.querySelectorAll('.ep-item-row');
+    var items = [];
+    var itemsOriginales = Pages._editarPedidoItems || [];
+    var itemsNuevos = Pages._editarPedidoItemsNuevos || [];
+    var nuevoIndex = 0;
+
+    for (var i = 0; i < rows.length; i++) {
+      var rowIndex = parseInt(rows[i].getAttribute('data-item-index'));
+      var qty = parseInt(document.getElementById('ep-qty-' + i).value) || 0;
+      var precio = parseInt(document.getElementById('ep-precio-' + i).value) || 0;
+
+      if (qty <= 0) continue; // skip items con qty 0
+
+      var item;
+      // Verificar si es un item original o nuevo
+      if (rowIndex < itemsOriginales.length) {
+        item = JSON.parse(JSON.stringify(itemsOriginales[rowIndex]));
+      } else {
+        // Item nuevo
+        var nuevoItem = itemsNuevos[nuevoIndex] || {};
+        nuevoIndex++;
+        item = {
+          productId: nuevoItem.productId || '',
+          nombre: nuevoItem.nombre || 'Producto',
+          tipo: nuevoItem.tipo || 'blend',
+          talla: nuevoItem.talla || 'chico'
+        };
+      }
+      item.qty = qty;
+      item.precio = precio;
+      item.subtotal = qty * precio;
+      items.push(item);
+    }
+
+    // Recoger envío
+    var envioCheckbox = document.getElementById('ep-envio-gratis');
+    var envioGratis = envioCheckbox ? envioCheckbox.checked : false;
+    var envioCosto = envioGratis ? 0 : (parseInt(document.getElementById('ep-envio-costo').value) || 0);
+    var envioCategoria = document.getElementById('ep-envio-categoria').value;
+    var envioOriginal = (Pages._editarPedidoItems && Pages._editarPedidoItems.length >= 0) ? null : null; // placeholder
+
+    // Conservar envío original si existe
+    var pedidos = ArcanoDB.getPedidos();
+    var pedidoOriginal = null;
+    for (var pi = 0; pi < pedidos.length; pi++) {
+      if (pedidos[pi]._key === pedidoKey) { pedidoOriginal = pedidos[pi]; break; }
+    }
+    var envioViejo = (pedidoOriginal && pedidoOriginal.envio) || {};
+    var envio = {
+      costo: envioCosto,
+      gratis: envioGratis,
+      categoria: envioCategoria,
+      pesoGramos: envioViejo.pesoGramos || 0,
+      pesoKg: envioViejo.pesoKg || 0,
+      carrier: envioViejo.carrier || 'Servientrega',
+      modalidad: envioViejo.modalidad || 'Contado - Normal - Terrestre'
+    };
+
+    // Recoger descuento y notas
+    var descuento = parseInt(document.getElementById('ep-descuento').value) || 0;
+    var notas = document.getElementById('ep-notas').value.trim();
+
+    // Calcular totales
+    var subtotal = 0;
+    for (var si = 0; si < items.length; si++) {
+      subtotal += items[si].subtotal || 0;
+    }
+    var total = subtotal + envioCosto - descuento;
+    if (total < 0) total = 0;
+
+    // Construir updates
+    var updates = {
+      cliente: cliente,
+      items: items,
+      subtotal: subtotal,
+      envio: envio,
+      envioCosto: envioCosto,
+      envioGratis: envioGratis,
+      descuento: descuento,
+      total: total,
+      notas: notas
+    };
+
+    // Guardar
+    ArcanoDB.updatePedidoFields(pedidoKey, updates);
+
+    // Cerrar modal
+    var modal = document.getElementById('editar-pedido-modal');
+    if (modal) modal.remove();
+
+    // Limpiar variables temporales
+    Pages._editarPedidoItems = null;
+    Pages._editarPedidoItemsNuevos = null;
+
+    // Reabrir verPedido con los datos actualizados
+    Pages.verPedido(pedidoKey);
   },
 
   _showPagoModal(pedidoKey, nuevoEstado) {

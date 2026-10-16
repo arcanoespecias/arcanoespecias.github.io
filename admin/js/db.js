@@ -969,6 +969,16 @@ function updatePedidoField(pedidoKey, field, value) {
   _pedidosRef.child(pedidoKey + '/' + field).set(value);
 }
 
+/**
+ * Actualiza múltiples campos de un pedido de forma atómica.
+ * @param {string} pedidoKey - Key del pedido en Firebase
+ * @param {object} updates - Objeto con los campos a actualizar { field: value }
+ */
+function updatePedidoFields(pedidoKey, updates) {
+  if (!_pedidosRef) return;
+  _pedidosRef.child(pedidoKey).update(updates);
+}
+
 function deletePedido(pedidoKey) {
   if (!_pedidosRef) return;
   _pedidosRef.child(pedidoKey).remove();
@@ -3732,7 +3742,7 @@ window.ArcanoDB = {
   getEntradas: getEntradas, saveEntrada: saveEntrada, updateEntrada: updateEntrada, deleteEntrada: deleteEntrada,
   getGastos: getGastos, getGastosCategorias: getGastosCategorias, saveGasto: saveGasto, deleteGasto: deleteGasto, saveGastosCategorias: saveGastosCategorias,
   getAjustes: getAjustes, saveAjuste: saveAjuste, deleteAjuste: deleteAjuste, saveAjusteReal: saveAjusteReal, getStockActual: getStockActual,
-  getPedidos: getPedidos, getPedidosCount: getPedidosCount, updatePedidoEstado: updatePedidoEstado, updatePedidoField: updatePedidoField, deletePedido: deletePedido, onPedidosChange: onPedidosChange, isPedidosReady: function() { return _pedidosReady; },
+  getPedidos: getPedidos, getPedidosCount: getPedidosCount, updatePedidoEstado: updatePedidoEstado, updatePedidoField: updatePedidoField, updatePedidoFields: updatePedidoFields, deletePedido: deletePedido, onPedidosChange: onPedidosChange, isPedidosReady: function() { return _pedidosReady; },
   producirEspecia: producirEspecia, producirBlend: producirBlend,
   getProducciones: getProducciones, deleteProduccion: deleteProduccion,
   getFrascosParaVender: getFrascosParaVender,
