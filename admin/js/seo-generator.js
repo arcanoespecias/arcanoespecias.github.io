@@ -595,7 +595,7 @@ var ArcanoSEO = (function() {
     // Footer
     html.push('<div class="footer">');
     html.push('<p><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a></p>');
-    html.push('<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia</p>');
+    html.push('<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · <a href="' + BASE_URL + '/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="' + BASE_URL + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>');
     html.push('</div>');
 
     html.push('</div>');
@@ -999,7 +999,7 @@ var ArcanoSEO = (function() {
 
     html.push('<div class="footer">');
     html.push('<p><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a> · <a href="' + BASE_URL + '/blends-para/">Ver todas las categorías</a></p>');
-    html.push('<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia</p>');
+    html.push('<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · <a href="' + BASE_URL + '/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="' + BASE_URL + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>');
     html.push('</div>');
 
     html.push('</div>');
@@ -1233,6 +1233,13 @@ var ArcanoSEO = (function() {
     // Recetas: índice + recetas (si existen archivos /recetas/slug.html en el repo)
     addSitemapUrl(BASE_URL + '/recetas/', today);
 
+    // Páginas de políticas e información (estáticas, siempre presentes)
+    addSitemapUrl(BASE_URL + '/politica-envios/', '2026-10-16');
+    addSitemapUrl(BASE_URL + '/politica-devoluciones/', '2026-10-16');
+    addSitemapUrl(BASE_URL + '/terminos-condiciones/', '2026-10-16');
+    addSitemapUrl(BASE_URL + '/sobre-nosotros/', '2026-10-16');
+    addSitemapUrl(BASE_URL + '/contacto/', '2026-10-16');
+
     // Extra URLs (recetas, blog, etc.) - lastmod fallback = today
     if (extraUrls) {
       for (var i = 0; i < extraUrls.length; i++) {
@@ -1346,7 +1353,7 @@ var ArcanoSEO = (function() {
     h += '<li><a href="' + BASE_URL + '/recetas/">Recetas con especias</a></li>';
     h += '</ul></div>';
     h += '</div>';
-    h += '<p class="contact">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · WhatsApp: +57 317 800 3374</p>';
+    h += '<p class="contact">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · WhatsApp: +57 317 800 3374 · <a href="' + BASE_URL + '/politica-envios/" style="color:#6b5a42">Política de Envíos</a> · <a href="' + BASE_URL + '/politica-devoluciones/" style="color:#6b5a42">Política de Devoluciones</a></p>';
     h += '</nav>';
     h += '<h2>Sobre Arcano Especias</h2>';
     h += '<p>Arcano Especias es una tienda online de especias y blends artesanales con sede en Medellín, Colombia. Seleccionamos ingredientes 100% naturales de cada rincón del mundo para crear mezclas únicas que despiertan sabores, aromas y experiencias. Ofrecemos blends para comidas, infusiones y coctelería, además de nuestro servicio insignia: Arma tu Blend, donde el cliente crea su propia mezcla personalizada.</p>';
@@ -1596,7 +1603,7 @@ var ArcanoSEO = (function() {
       sitemap: sitemap,
       sitemapImages: sitemapImages,
       pHtmlUpdates: pUpdates,
-      homeSeoBlock: homeSeoBlock(allProducts),
+      homeSeoBlock: '',  // Eliminado: el menú hamburguesa ya tiene los enlaces rastreables
       stats: {
         blends: allProducts.length,
         especias: especiaPages.length,

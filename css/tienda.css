@@ -285,6 +285,11 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 }
 .mm-nav-item:hover { background: var(--surface); }
 .mm-nav-item.active { background: var(--gold-light); color: var(--gold); font-weight: 600; }
+.mm-section-label { padding: 16px 20px 6px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; border-top: 1px solid var(--surface); }
+.mm-section-label:first-of-type { border-top: none; }
+.mm-nav-item[href] { text-decoration: none; color: var(--text); }
+.mm-nav-item[href]:hover { background: var(--surface); color: var(--gold); }
+
 .mm-nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
 
 /* Mobile Menu Footer */
