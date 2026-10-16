@@ -2259,12 +2259,17 @@ function getTiendaProductos() {
   for (var i = 0; i < espKeys.length; i++) {
     var e = _db.especias[espKeys[i]];
     if (!e || !e.enTienda) continue;
-    if ((e.stockChico || 0) <= 0 && (e.stockGrande || 0) <= 0) continue;
+    // Disponibilidad ampliada: stock > 0 OR puede producirse
+    var dispChicoE = puedeProducirse('especia', e.id, 'chico');
+    var dispGrandeE = puedeProducirse('especia', e.id, 'grande');
+    if (!dispChicoE.disponible && !dispGrandeE.disponible) continue;
     products.push({
       id: e.id, nombre: e.nombre, tipo: 'especia', categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
       precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
       stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0,
+      _disponibleChico: dispChicoE.disponible, _disponibleGrande: dispGrandeE.disponible,
+      _producibleChico: dispChicoE.producible, _producibleGrande: dispGrandeE.producible,
       region: '', uso: e.uso || ''
     });
   }
@@ -2272,12 +2277,16 @@ function getTiendaProductos() {
   for (var i = 0; i < blKeys.length; i++) {
     var b = _db.blends[blKeys[i]];
     if (!b || !b.enTienda) continue;
-    if ((b.stockChico || 0) <= 0 && (b.stockGrande || 0) <= 0) continue;
+    var dispChicoB = puedeProducirse('blend', b.id, 'chico');
+    var dispGrandeB = puedeProducirse('blend', b.id, 'grande');
+    if (!dispChicoB.disponible && !dispGrandeB.disponible) continue;
     products.push({
       id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
       stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
+      _disponibleChico: dispChicoB.disponible, _disponibleGrande: dispGrandeB.disponible,
+      _producibleChico: dispChicoB.producible, _producibleGrande: dispGrandeB.producible,
       region: b.region || '', uso: b.uso || ''
     });
   }
@@ -3034,6 +3043,133 @@ function _startCostosListener() {
   });
 }
 
+/* ==================== DISPONIBILIDAD POR PRODUCCIÓN ==================== */
+
+/**
+ * puedeProducirse — devuelve true si hay insumos suficientes para producir
+ * al menos 1 frasco (chico o grande) del producto.
+ *
+ * Reglas:
+ *   - Especias: stockBolsa >= gramosChico/gramosGrande (especia pura) o
+ *               stockBolsa de cada ingrediente >= gramos del blend (receta)
+ *   - Frascos (envases): stockEnvases[chico|grande] > 0
+ *   - Bolsas: stockBolsas[chico|grande] > 0
+ *   - Cintas: stockCintas > 0
+ *   - Sticker del producto (match por nombre exacto): stockChico|stockGrande > 0
+ *
+ * Retorna: { disponible, producible, faltantes: [string] }
+ *   disponible = stockActual > 0 OR producible = true
+ *   producible = todos los insumos están disponibles
+ */
+function puedeProducirse(tipo, productoId, talla) {
+  var result = { disponible: false, producible: false, faltantes: [] };
+
+  var producto = null;
+  if (tipo === 'especia') producto = _db.especias ? _db.especias[productoId] : null;
+  else if (tipo === 'blend') producto = _db.blends ? _db.blends[productoId] : null;
+  if (!producto) return result;
+
+  // 1. Stock ya producido
+  var stockActual = (talla === 'grande')
+    ? (Number(producto.stockGrande) || 0)
+    : (Number(producto.stockChico) || 0);
+  if (stockActual > 0) {
+    result.disponible = true;
+    return result;
+  }
+
+  // 2a. Especias necesarias
+  if (tipo === 'especia') {
+    var gramosNecesarios = (talla === 'grande')
+      ? (Number(producto.gramosGrande) || 0)
+      : (Number(producto.gramosChico) || 0);
+    if (gramosNecesarios <= 0) {
+      result.faltantes.push('gramos ' + talla + ' no definidos');
+      return result;
+    }
+    var stockBolsa = Number(producto.stockBolsa) || 0;
+    if (stockBolsa < gramosNecesarios) {
+      result.faltantes.push('especia (quedan ' + stockBolsa + 'g, faltan ' + gramosNecesarios + 'g)');
+      return result;
+    }
+  } else if (tipo === 'blend') {
+    var ings = producto.ingredientes || [];
+    if (!ings.length) {
+      result.faltantes.push('receta sin ingredientes');
+      return result;
+    }
+    for (var i = 0; i < ings.length; i++) {
+      var ing = ings[i];
+      var g = (talla === 'grande')
+        ? (Number(ing.gramosGrande) || 0)
+        : (Number(ing.gramosChico) || 0);
+      if (g <= 0) continue;
+      var esp = _db.especias ? _db.especias[ing.especiaId] : null;
+      if (!esp) {
+        result.faltantes.push('especia ' + (ing.especiaNombre || ing.especiaId) + ' no encontrada');
+        return result;
+      }
+      var sb = Number(esp.stockBolsa) || 0;
+      if (sb < g) {
+        result.faltantes.push((ing.especiaNombre || ing.especiaId) + ' (quedan ' + sb + 'g, faltan ' + g + 'g)');
+        return result;
+      }
+    }
+  } else {
+    return result;  // packs no validan insumos
+  }
+
+  // 2b. Frascos (envases)
+  var envases = _db.stockEnvases || { chico: 0, grande: 0 };
+  var envDisp = (talla === 'grande')
+    ? (Number(envases.grande) || 0)
+    : (Number(envases.chico) || 0);
+  if (envDisp <= 0) {
+    result.faltantes.push('frascos ' + talla);
+    return result;
+  }
+
+  // 2c. Bolsas
+  var bolsas = _db.stockBolsas || { chico: 0, grande: 0 };
+  var bolDisp = (talla === 'grande')
+    ? (Number(bolsas.grande) || 0)
+    : (Number(bolsas.chico) || 0);
+  if (bolDisp <= 0) {
+    result.faltantes.push('bolsas ' + talla);
+    return result;
+  }
+
+  // 2d. Cintas
+  var cintas = Number(_db.stockCintas) || 0;
+  if (cintas <= 0) {
+    result.faltantes.push('cintas');
+    return result;
+  }
+
+  // 2e. Sticker del producto (match por nombre exacto)
+  var stkStock = 0;
+  if (_db.stickers) {
+    var stkKeys = Object.keys(_db.stickers);
+    for (var j = 0; j < stkKeys.length; j++) {
+      var st = _db.stickers[stkKeys[j]];
+      if (st && st.nombre === producto.nombre) {
+        stkStock = (talla === 'grande')
+          ? (Number(st.stockGrande) || 0)
+          : (Number(st.stockChico) || 0);
+        break;
+      }
+    }
+  }
+  if (stkStock <= 0) {
+    result.faltantes.push('sticker ' + talla);
+    return result;
+  }
+
+  result.producible = true;
+  result.disponible = true;
+  return result;
+}
+
 /* ==================== COSTOS DE PRODUCCION POR PRODUCTO ==================== */
 
 /** Returns the production cost of a single unit (frasco) of a product */
@@ -3771,6 +3907,7 @@ window.ArcanoDB = {
   armarCostalDesdeBodega: armarCostalDesdeBodega, desarmarCostalABodega: desarmarCostalABodega,
   getCostosInsumos: getCostosInsumos, saveCostosInsumos: saveCostosInsumos, onCostosChange: onCostosChange,
   getCostoProducto: getCostoProducto, getCostosPorCanal: getCostosPorCanal,
+  puedeProducirse: puedeProducirse,
   getTiendaConfig: getTiendaConfig, saveTiendaConfig: saveTiendaConfig, saveTiendaConfigField: saveTiendaConfigField,
   saveNow: saveNow,
   writeField: writeField,
