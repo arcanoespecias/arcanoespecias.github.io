@@ -1400,9 +1400,12 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   letter-spacing: 0.02em;
 }
 .store-footer .footer-line { display: block; margin-top: 4px; }
-.footer-links { text-align: center; padding: 8px 16px; font-size: 0.8rem; }
+.footer-links { text-align: center; padding: 8px 16px; font-size: 0.8rem; line-height: 1.9; word-break: break-word; }
 .footer-links a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
 .footer-links a:hover { color: var(--gold); }
+@media (max-width: 600px) {
+  .footer-links { font-size: 0.72rem; line-height: 2.1; padding: 8px 12px; }
+}
 
 
 /* === SOCIAL (in footer) === */

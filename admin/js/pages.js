@@ -5188,56 +5188,20 @@ const Pages = {
         '}\n' +
         '</script>';
 
-      // Noscript HTML
-      var ns = '<noscript>\n<div class="seo-products" style="padding:20px;max-width:1200px;margin:0 auto;font-family:sans-serif">\n';
-      ns += '<h2>Catalogo de Especias y Blends Artesanales - Arcano Especias</h2>\n';
-      ns += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y cocteleria, especias selectas y packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo. Envios a toda Colombia.</p>\n<ul style="list-style:none;padding:0">\n';
-      for (var i = 0; i < products.length; i++) {
-        var p = products[i];
-        var precio = p.precioChico > 0 ? p.precioChico : (p.precioGrande > 0 ? p.precioGrande : (p.precio || 0));
-        var tipoLabel = p.tipo === 'pack' ? 'Pack' : (p.tipo === 'blend' ? 'Blend' : 'Especia');
-        var inStock = p.stockChico > 0 || p.stockGrande > 0 || (p.stock || 0) > 0;
-        ns += '<li itemscope itemtype="https://schema.org/Product" style="margin-bottom:16px;padding:12px;border-bottom:1px solid #eee">\n';
-        ns += '  <strong itemprop="name">' + escH(p.nombre) + '</strong>\n';
-        ns += '  <span style="color:#888;font-size:0.9em">(' + tipoLabel + ')</span>\n';
-        if (p.descripcion) ns += '  <meta itemprop="description" content="' + escH(p.descripcion) + '">\n  <p style="margin:4px 0;color:#555">' + escH(p.descripcion) + '</p>\n';
-        ns += '  <span itemprop="brand" itemtype="https://schema.org/Brand" itemscope><meta itemprop="name" content="Arcano Especias"></span>\n';
-        ns += '  <div style="margin-top:4px">\n    <span itemprop="category" style="color:#666">' + escH(p.categoria) + '</span>\n';
-        if (p.region) ns += '    <span style="margin-left:12px;color:#666">Origen: ' + escH(p.region) + '</span>\n';
-        if (p.tags && p.tags.length) ns += '    <span style="margin-left:12px;color:#666">Usos: ' + escH(p.tags.join(', ')) + '</span>\n';
-        ns += '  </div>\n';
-        if (precio > 0) {
-          ns += '  <div itemprop="offers" itemscope itemtype="https://schema.org/Offer" style="margin-top:6px">\n';
-          ns += '    <meta itemprop="priceCurrency" content="COP">\n    <meta itemprop="price" content="' + precio + '">\n';
-          ns += '    <meta itemprop="availability" content="' + (inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock') + '">\n';
-          ns += '    <strong style="color:#1b0b07">$' + precio.toLocaleString('es-CO') + ' COP</strong>\n  </div>\n';
-        }
-        if (p.ingredientes && p.ingredientes.length > 0) ns += '  <div style="margin-top:4px;font-size:0.9em;color:#888">Ingredientes: ' + escH(p.ingredientes.join(', ')) + '</div>\n';
-        ns += '</li>\n';
-      }
-      ns += '</ul>\n</div>\n</noscript>';
+      // Noscript HTML — DESHABILITADO (mantenemos ns='' para no romper la firma del return)
+      // El bloque <noscript><div class="seo-products">...</div></noscript> fue eliminado de index.html
+      // porque estaba desactualizado (74 enlaces, incluía 9 blends ocultos: tokyo-yakitori, korean-bbq,
+      // noche-serena, dulces-suenos, invierno-nordico, citrus-balance, respirar, manzana-ginger,
+      // arcano-signature). El menú hamburguesa ya contiene los enlaces rastreables a /blends-para/,
+      // /especias/, /blog/ y /recetas/, y la home tiene .footer-links con 9 enlaces.
+      // Si se necesita volver a generar el catálogo SEO en la home, usar un esquema nuevo.
+      var ns = '';
 
       // SEO div content — extractos cortos + enlace correcto (/blends/ o /especias/)
-      var sd = '<h2>Catalogo de Especias y Blends Artesanales</h2>';
-      sd += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y cocteleria, especias selectas y packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo. Envios a toda Colombia.</p>';
-      sd += '<ul>';
-      for (var i = 0; i < products.length; i++) {
-        var p = products[i];
-        var slug = Pages._productSlug(p.nombre);
-        // FIX: usar /especias/slug/ para especias, /blends/slug/ para blends
-        var linkPath = (p._tipo === 'especia' || p.tipo === 'especia') ? '/especias/' : '/blends/';
-        var link = slug ? '<a href="https://arcanoespecias.com' + linkPath + slug + '/">' + escH(p.nombre) + '</a>' : escH(p.nombre);
-        // Extracto corto: m\u00E1ximo 80 chars
-        var extracto = '';
-        if (p.descripcion) {
-          extracto = p.descripcion.substring(0, 80);
-          if (p.descripcion.length > 80) extracto = extracto.replace(/\s+\S*$/, '') + '...';
-        }
-        sd += '<li>' + link;
-        if (extracto) sd += ' \u2014 ' + escH(extracto);
-        sd += '</li>';
-      }
-      sd += '</ul>';
+      // DESHABILITADO: este div ya no se inyecta en index.html (la home no tiene <div id="seo-content">
+      // ni <div class="seo-products"> donde incrustarlo). Se conserva por compatibilidad con la firma
+      // de generateSeoContent pero no se usa.
+      var sd = '';
 
       // BreadcrumbList JSON-LD
       var bcJsonLd = '<!-- SEO: BreadcrumbList estatico -->\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "BreadcrumbList",\n  "itemListElement": [\n    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://arcanoespecias.com/" },\n    { "@type": "ListItem", "position": 2, "name": "Catalogo de Especias y Blends", "item": "https://arcanoespecias.com/" }\n  ]\n}\n</script>'
@@ -5338,51 +5302,55 @@ const Pages = {
         }
 
         // Inyectar noscript antes del div seo-content (si existe)
+        // DESHABILITADO: el bloque <noscript><div class="seo-products"> fue removido de index.html.
+        //seo.noscript es ahora '' (ver generateSeoContent). No se inyecta nada.
         // Soporta tanto <div id="seo-content"> como <div class="seo-products">
-        var dm = '<div id="seo-content"';
-        var di = content.indexOf(dm);
-        if (di === -1) {
-          dm = '<div class="seo-products"';
-          di = content.indexOf(dm);
-        }
-        if (di !== -1) {
-          content = content.substring(0, di) + marker2 + '\n' + seo.noscript + '\n\n' + content.substring(di);
-        }
+        // var dm = '<div id="seo-content"';
+        // var di = content.indexOf(dm);
+        // if (di === -1) {
+        //   dm = '<div class="seo-products"';
+        //   di = content.indexOf(dm);
+        // }
+        // if (di !== -1) {
+        //   content = content.substring(0, di) + marker2 + '\n' + seo.noscript + '\n\n' + content.substring(di);
+        // }
         // Si no encuentra ninguno, no inyecta noscript (no rompe nada)
 
         // Actualizar contenido del div seo-content o seo-products (si existe)
+        // DESHABILITADO: la home ya no tiene <div id="seo-content"> ni <div class="seo-products">.
+        //seo.seoDiv es ahora '' (ver generateSeoContent). No se actualiza ningún div SEO.
         // Soporta divs anidados: cuenta apertura/cierre para encontrar el cierre correcto
-        var divSelectors = ['<div id="seo-content"', '<div class="seo-products"'];
-        var updated = false;
-        for (var si = 0; si < divSelectors.length && !updated; si++) {
-          var sel = divSelectors[si];
-          var startIdx = content.indexOf(sel);
-          if (startIdx === -1) continue;
-          var openTagEnd = content.indexOf('>', startIdx);
-          if (openTagEnd === -1) continue;
-          // Contar divs anidados para encontrar el cierre correcto
-          var depth = 1;
-          var pos = openTagEnd + 1;
-          while (pos < content.length && depth > 0) {
-            var nextOpen = content.indexOf('<div', pos);
-            var nextClose = content.indexOf('</div>', pos);
-            if (nextClose === -1) { pos = -1; break; }
-            if (nextOpen !== -1 && nextOpen < nextClose) {
-              depth++;
-              pos = nextOpen + 4;
-            } else {
-              depth--;
-              pos = nextClose + 6;
-            }
-          }
-          if (pos > 0) {
-            // pos ahora apunta justo despu\u00E9s del </div> que cierra el seo-content/products
-            var closeIdx = pos - 6; // inicio del </div>
-            content = content.substring(0, openTagEnd + 1) + '\n' + seo.seoDiv + '\n' + content.substring(closeIdx);
-            updated = true;
-          }
-        }
-        // Si no encontr\u00F3 ninguno de los dos selectores, no toca el contenido (no rompe)
+        // var divSelectors = ['<div id="seo-content"', '<div class="seo-products"'];
+        // var updated = false;
+        // for (var si = 0; si < divSelectors.length && !updated; si++) {
+        //   var sel = divSelectors[si];
+        //   var startIdx = content.indexOf(sel);
+        //   if (startIdx === -1) continue;
+        //   var openTagEnd = content.indexOf('>', startIdx);
+        //   if (openTagEnd === -1) continue;
+        //   // Contar divs anidados para encontrar el cierre correcto
+        //   var depth = 1;
+        //   var pos = openTagEnd + 1;
+        //   while (pos < content.length && depth > 0) {
+        //     var nextOpen = content.indexOf('<div', pos);
+        //     var nextClose = content.indexOf('</div>', pos);
+        //     if (nextClose === -1) { pos = -1; break; }
+        //     if (nextOpen !== -1 && nextOpen < nextClose) {
+        //       depth++;
+        //       pos = nextOpen + 4;
+        //     } else {
+        //       depth--;
+        //       pos = nextClose + 6;
+        //     }
+        //   }
+        //   if (pos > 0) {
+        //     // pos ahora apunta justo despu\u00E9s del </div> que cierra el seo-content/products
+        //     var closeIdx = pos - 6; // inicio del </div>
+        //     content = content.substring(0, openTagEnd + 1) + '\n' + seo.seoDiv + '\n' + content.substring(closeIdx);
+        //     updated = true;
+        //   }
+        // }
+        // Si no encontró ninguno de los dos selectores, no toca el contenido (no rompe)
 
         if (statusEl) statusEl.innerHTML = '<span class="text-muted">Subiendo a GitHub...</span>';
 
@@ -9543,16 +9511,27 @@ const Pages = {
       ]
     });
     
-    // FAQPage schema (preservar si ya viene en post.faqs o generar desde el contenido)
+    // FAQPage JSON-LD + sección visible: SOLO se emite cuando existe el array post.faqs
+    // (mismo campo alimenta el JSON-LD y la sección visible, mismo texto).
+    // Google exige que las preguntas del FAQPage estén también en el HTML visible.
     var faqSchema = '';
+    var faqVisibleHtml = '';
     if (post.faqs && post.faqs.length) {
+      // Sección visible: <section><h2>Preguntas frecuentes</h2><h3>{q}</h3><p>{a}</p>...</section>
+      faqVisibleHtml = '<section class="faq-section"><h2>Preguntas frecuentes</h2>';
+      for (var fi = 0; fi < post.faqs.length; fi++) {
+        faqVisibleHtml += '<h3>' + esc(post.faqs[fi].q) + '</h3>';
+        faqVisibleHtml += '<p>' + esc(post.faqs[fi].a) + '</p>';
+      }
+      faqVisibleHtml += '</section>';
+      // JSON-LD FAQPage con el mismo q/a que la sección visible
       var faqs = post.faqs.map(function(f) {
         return '{"@type":"Question","name":' + JSON.stringify(f.q) + ',"acceptedAnswer":{"@type":"Answer","text":' + JSON.stringify(f.a) + '}}';
       });
       faqSchema = '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[' + faqs.join(',') + ']}';
     }
     
-    var html = '<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + esc(titulo) + ' \u2014 Arcano Especias</title>\n<meta name="description" content="' + esc(descripcion) + '">\n<link rel="canonical" href="' + url + '">\n<meta property="og:type" content="article">\n<meta property="og:title" content="' + esc(titulo) + '">\n<meta property="og:description" content="' + esc(descripcion) + '">\n<meta property="og:url" content="' + url + '">\n<meta property="og:image" content="' + esc(imagen) + '">\n<meta property="og:locale" content="es_CO">\n<meta property="og:site_name" content="Arcano Especias">\n<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:title" content="' + esc(titulo) + '">\n<meta name="twitter:description" content="' + esc(descripcion) + '">\n<meta name="twitter:image" content="' + esc(imagen) + '">\n<script type="application/ld+json">' + schema + '<\/script>\n<script type="application/ld+json">' + breadcrumb + '<\/script>' + (faqSchema ? '\n<script type="application/ld+json">' + faqSchema + '<\/script>' : '') + '\n<style>body{margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}.container{max-width:720px;margin:0 auto;padding:20px 16px}a{color:#c9a84c;text-decoration:none}a:hover{text-decoration:underline}h1{font-size:1.8rem;color:#c9a84c;margin-bottom:8px;line-height:1.3}.meta{color:#a08b6e;font-size:.85rem;margin-bottom:24px}.back{display:inline-block;margin-bottom:24px;padding:8px 16px;border:1px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:.85rem}.back:hover{background:#c9a84c;color:#1b0b07;text-decoration:none}img.hero{width:100%;border-radius:8px;margin-bottom:24px;max-height:400px;object-fit:cover}.content p{margin-bottom:16px}.content h2{color:#c9a84c;margin-top:32px;margin-bottom:12px}.content h3{color:#d4b86a;margin-top:24px;margin-bottom:8px}.content ul,.content ol{margin-bottom:16px;padding-left:24px}.content blockquote{border-left:3px solid #c9a84c;padding-left:16px;color:#a08b6e;margin:16px 0}.content a{color:#e8c95a}.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}</style>\n</head>\n<body>\n<div class="container">\n<a href="' + BASE + '/" class="back">&larr; Volver a la tienda</a>\n<h1>' + esc(titulo) + '</h1>\n<div class="meta">' + esc(post.categoria || '') + ' &middot; ' + fecha + '</div>\n' + (hasRealImage ? '<img class="hero" src="' + esc(imagen) + '" alt="' + esc(titulo) + '" loading="lazy">' : '') + '\n<div class="content">' + contenido + '</div>\n<div class="footer">Arcano Especias &mdash; Especias y Blends artesanales del mundo &middot; <a href="' + BASE + '/politica-envios/" style="color:#6b5a42">Envíos</a> &middot; <a href="' + BASE + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></div>\n</div>\n</body>\n</html>';
+    var html = '<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>' + esc(titulo) + ' \u2014 Arcano Especias</title>\n<meta name="description" content="' + esc(descripcion) + '">\n<link rel="canonical" href="' + url + '">\n<meta property="og:type" content="article">\n<meta property="og:title" content="' + esc(titulo) + '">\n<meta property="og:description" content="' + esc(descripcion) + '">\n<meta property="og:url" content="' + url + '">\n<meta property="og:image" content="' + esc(imagen) + '">\n<meta property="og:locale" content="es_CO">\n<meta property="og:site_name" content="Arcano Especias">\n<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:title" content="' + esc(titulo) + '">\n<meta name="twitter:description" content="' + esc(descripcion) + '">\n<meta name="twitter:image" content="' + esc(imagen) + '">\n<script type="application/ld+json">' + schema + '<\/script>\n<script type="application/ld+json">' + breadcrumb + '<\/script>' + (faqSchema ? '\n<script type="application/ld+json">' + faqSchema + '<\/script>' : '') + '\n<style>body{margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}.container{max-width:720px;margin:0 auto;padding:20px 16px}a{color:#c9a84c;text-decoration:none}a:hover{text-decoration:underline}h1{font-size:1.8rem;color:#c9a84c;margin-bottom:8px;line-height:1.3}.meta{color:#a08b6e;font-size:.85rem;margin-bottom:24px}.back{display:inline-block;margin-bottom:24px;padding:8px 16px;border:1px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:.85rem}.back:hover{background:#c9a84c;color:#1b0b07;text-decoration:none}img.hero{width:100%;border-radius:8px;margin-bottom:24px;max-height:400px;object-fit:cover}.content p{margin-bottom:16px}.content h2{color:#c9a84c;margin-top:32px;margin-bottom:12px}.content h3{color:#d4b86a;margin-top:24px;margin-bottom:8px}.content ul,.content ol{margin-bottom:16px;padding-left:24px}.content blockquote{border-left:3px solid #c9a84c;padding-left:16px;color:#a08b6e;margin:16px 0}.content a{color:#e8c95a}.faq-section{margin-top:40px;padding-top:24px;border-top:1px solid #2d1a10}.faq-section h2{color:#c9a84c;margin-bottom:16px}.faq-section h3{color:#d4b86a;margin-top:24px;margin-bottom:8px}.faq-section p{margin-bottom:16px}.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}</style>\n</head>\n<body>\n<div class="container">\n<a href="' + BASE + '/" class="back">&larr; Volver a la tienda</a>\n<h1>' + esc(titulo) + '</h1>\n<div class="meta">' + esc(post.categoria || '') + ' &middot; ' + fecha + '</div>\n' + (hasRealImage ? '<img class="hero" src="' + esc(imagen) + '" alt="' + esc(titulo) + '" loading="lazy">' : '') + '\n<div class="content">' + contenido + '</div>\n' + faqVisibleHtml + '\n<div class="footer">Arcano Especias &mdash; Especias y Blends artesanales del mundo &middot; <a href="' + BASE + '/politica-envios/" style="color:#6b5a42">Envíos</a> &middot; <a href="' + BASE + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></div>\n</div>\n</body>\n</html>';
     var path = 'blog/' + slug + '.html';
     var base64 = btoa(unescape(encodeURIComponent(html)));
     Pages._uploadToGitHub(path, base64, 'blog SEO: ' + post.titulo).then(function() {

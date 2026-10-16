@@ -860,7 +860,7 @@ var ArcanoSEO = (function() {
     // Footer
     html.push('<div class="footer">');
     html.push('<p><a href="' + BASE_URL + '/">\u2190 Volver a Arcano Especias</a></p>');
-    html.push('<p style="margin-top:8px">Arcano Especias \u2014 Especias y Blends artesanales del mundo \u00B7 Env\u00EDos a toda Colombia</p>');
+    html.push('<p style="margin-top:8px">Arcano Especias \u2014 Especias y Blends artesanales del mundo \u00B7 Env\u00EDos a toda Colombia \u00B7 <a href="' + BASE_URL + '/politica-envios/" style="color:#6b5a42">Env\u00EDos</a> \u00B7 <a href="' + BASE_URL + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>');
     html.push('</div>');
 
     html.push('</div>'); // wrap
@@ -1039,6 +1039,7 @@ var ArcanoSEO = (function() {
     html.push('.card:hover{transform:translateY(-3px);text-decoration:none;border:1px solid #c9a84c}');
     html.push('.card h2{color:#c9a84c;font-size:1.2rem;margin:0 0 8px}.card p{color:#a08b6e;font-size:.9rem;margin:0}');
     html.push('.card .count{color:#c9a84c;font-weight:700;margin-top:8px;display:inline-block}');
+    html.push('.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}.footer a{color:#c9a84c}');
     html.push('</style></head><body><div class="c">');
     html.push('<nav class="bc"><a href="' + BASE_URL + '/">Inicio</a> › <span>Blends para</span></nav>');
     html.push('<h1>Blends para cada uso</h1>');
@@ -1054,7 +1055,10 @@ var ArcanoSEO = (function() {
       html.push('<span class="count">' + cat[1] + ' blends →</span></a>');
     }
     html.push('</div>');
-    html.push('<p style="margin-top:32px"><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a></p>');
+    html.push('<div class="footer">');
+    html.push('<p><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a></p>');
+    html.push('<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · <a href="' + BASE_URL + '/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="' + BASE_URL + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>');
+    html.push('</div>');
     html.push('</div></body></html>');
     return html.join('\n');
   }
@@ -1571,7 +1575,7 @@ var ArcanoSEO = (function() {
       var img2 = publicImageUrlFor(esp2, s2);
       especiasIndexHtml += '<a href="' + BASE_URL + '/especias/' + s2 + '/" class="card"><img src="' + esc(img2) + '" alt="' + esc(esp2.nombre) + '" loading="lazy"><div class="name">' + esc(esp2.nombre) + '</div></a>';
     }
-    especiasIndexHtml += '</div><div class="footer"><p><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a></p></div></div></body></html>';
+    especiasIndexHtml += '</div><div class="footer"><p><a href="' + BASE_URL + '/">← Volver a Arcano Especias</a></p><p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · <a href="' + BASE_URL + '/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="' + BASE_URL + '/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p></div></div></body></html>';
     var especiasIndex = {path: 'especias/index.html', content: especiasIndexHtml};
 
     // 3. Sitemap — ahora incluye especias + blog + recetas
