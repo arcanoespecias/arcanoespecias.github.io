@@ -2252,17 +2252,20 @@ function getPalasVendidas() {
 
 /* ==================== TIENDA (STORE) ==================== */
 
-/** Products visible in the public store (enTienda=true, stock>0) */
+/** Products visible in the public store (enTienda=true)
+ *  Un producto con enTienda=true SIEMPRE aparece en la tienda, aunque no tenga
+ *  stock ni insumos para producirlo. En ese caso la tienda lo muestra como
+ *  "Muy Pronto" (badge card-coming-soon). La visibilidad la controla
+ *  exclusivamente el admin con el flag enTienda, NO la disponibilidad de stock.
+ */
 function getTiendaProductos() {
   var products = [];
   var espKeys = Object.keys(_db.especias || {});
   for (var i = 0; i < espKeys.length; i++) {
     var e = _db.especias[espKeys[i]];
     if (!e || !e.enTienda) continue;
-    // Disponibilidad ampliada: stock > 0 OR puede producirse
     var dispChicoE = puedeProducirse('especia', e.id, 'chico');
     var dispGrandeE = puedeProducirse('especia', e.id, 'grande');
-    if (!dispChicoE.disponible && !dispGrandeE.disponible) continue;
     products.push({
       id: e.id, nombre: e.nombre, tipo: 'especia', categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
@@ -2279,7 +2282,6 @@ function getTiendaProductos() {
     if (!b || !b.enTienda) continue;
     var dispChicoB = puedeProducirse('blend', b.id, 'chico');
     var dispGrandeB = puedeProducirse('blend', b.id, 'grande');
-    if (!dispChicoB.disponible && !dispGrandeB.disponible) continue;
     products.push({
       id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
