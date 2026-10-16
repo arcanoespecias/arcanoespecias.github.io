@@ -21,7 +21,19 @@
   Cache-Control: public, max-age=0, must-revalidate
   Content-Type: application/javascript; charset=utf-8
 
-# Imágenes: cache corto (1h) para que cambios se reflejen rápido
+# Imágenes de blends y especias: cache largo (30 días)
+# Las URLs llevan ?v=timestamp como cache-buster cuando se reemplazan
+/img/blends/*
+  Cache-Control: public, max-age=2592000, must-revalidate
+/img/especias/*
+  Cache-Control: public, max-age=2592000, must-revalidate
+# Imágenes de recetas y blog: cache corto (1 día)
+# Se reemplazan con el mismo nombre de archivo (sin ?v=)
+/img/recetas/*
+  Cache-Control: public, max-age=86400, must-revalidate
+/img/blog/*
+  Cache-Control: public, max-age=86400, must-revalidate
+# Otras imágenes: cache corto (1h)
 /img/*
   Cache-Control: public, max-age=3600, must-revalidate
 /icons/*
