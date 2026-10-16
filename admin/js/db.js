@@ -2296,6 +2296,44 @@ function getTiendaProductos() {
   return products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
 }
 
+/**
+ * getProductosPublicados — devuelve blends y especias con enTienda=true,
+ * SIN filtrar por stock. Incluye _tipo para saber si el enlace es
+ * /blends/slug/ o /especias/slug/. Para usar en templates SEO, migraciones,
+ * y prompts de IA donde se necesitan TODOS los productos publicados
+ * (aunque tengan stock 0).
+ */
+function getProductosPublicados() {
+  var products = [];
+  var blKeys = Object.keys(_db.blends || {});
+  for (var i = 0; i < blKeys.length; i++) {
+    var b = _db.blends[blKeys[i]];
+    if (!b || !b.enTienda) continue;
+    products.push({
+      id: b.id, nombre: b.nombre, _tipo: 'blend',
+      categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
+      precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
+      precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
+      stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
+      region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || ''
+    });
+  }
+  var espKeys = Object.keys(_db.especias || {});
+  for (var i = 0; i < espKeys.length; i++) {
+    var e = _db.especias[espKeys[i]];
+    if (!e || !e.enTienda) continue;
+    products.push({
+      id: e.id, nombre: e.nombre, _tipo: 'especia',
+      categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
+      precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
+      precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
+      stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0,
+      region: '', uso: e.uso || '', descripcion: e.descripcion || ''
+    });
+  }
+  return products.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+}
+
 /** Toggle enTienda for a product */
 function toggleTienda(tipo, id) {
   if (tipo === 'especia' && _db.especias[id]) {
@@ -3706,6 +3744,7 @@ window.ArcanoDB = {
   findEspeciaByName: findEspeciaByName,
   importFromExcelData: importFromExcelData,
   getTiendaProductos: getTiendaProductos,
+  getProductosPublicados: getProductosPublicados,
   toggleTienda: toggleTienda,
   toggleEnBlend: toggleEnBlend,
   getProductTags: getProductTags, getTagsForCategoria: getTagsForCategoria,

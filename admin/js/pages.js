@@ -4429,7 +4429,7 @@ const Pages = {
      TIENDA ADMIN
      ================================================================ */
   renderTiendaAdmin(container) {
-    var productos = ArcanoDB.getTiendaProductos();
+    var productos = ArcanoDB.getProductosPublicados();
     var allEsp = ArcanoDB.getEspecias();
     var allBl = ArcanoDB.getBlends();
     var allPk = ArcanoDB.getPacks ? ArcanoDB.getPacks() : [];
@@ -6997,7 +6997,7 @@ const Pages = {
     btn.textContent = 'Generando...';
     status.textContent = 'Cargando productos y recetas existentes...';
 
-    var allProductos = ArcanoDB.getTiendaProductos();
+    var allProductos = ArcanoDB.getProductosPublicados();
     var productLines = [];
     var catMap = { 'Comida': ['Comidas'], 'Infusiones': ['Infusiones'], 'Cocteleria': ['Cocteleria'] };
     var catsOk = catMap[categoria] || ['Comidas'];
@@ -7115,7 +7115,7 @@ const Pages = {
           function _normForMatch(s) {
             return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
           }
-          var allTiendaProds = ArcanoDB.getTiendaProductos();
+          var allTiendaProds = ArcanoDB.getProductosPublicados();
           var tiendaNormSet = {};
           for (var ti = 0; ti < allTiendaProds.length; ti++) {
             tiendaNormSet[_normForMatch(allTiendaProds[ti].nombre)] = allTiendaProds[ti].nombre;
@@ -8447,9 +8447,9 @@ const Pages = {
     btn.textContent = 'Generando...';
     status.textContent = 'Cargando productos y articulos existentes...';
 
-    // FIX: usar getTiendaProductos() en vez de getBlends() para que la IA
-    // solo vea productos enTienda=true y no recomiende ocultos.
-    var allBlends = ArcanoDB.getTiendaProductos();
+    // FIX: usar getProductosPublicados() para que la IA solo vea productos
+    // enTienda=true (sin filtrar por stock) y no recomiende ocultos.
+    var allBlends = ArcanoDB.getProductosPublicados();
     var blendLines = [];
     for (var i = 0; i < allBlends.length; i++) {
       var b = allBlends[i];
@@ -9137,7 +9137,9 @@ const Pages = {
     // === Procesar enlaces a productos en el contenido ===
     // 1. Enlaces con onclick="openDetail(ID);return false" → href rastreable a /blends/slug/
     // 2. Si el producto tiene enTienda=false, dejar SOLO el texto (sin <a>)
-    var allProds = ArcanoDB.getTiendaProductos(); // solo enTienda=true
+    // FIX: usar getProductosPublicados() en vez de getTiendaProductos() para que
+    // los productos con stock 0 pero enTienda=true también generen enlaces.
+    var allProds = ArcanoDB.getProductosPublicados();
     var allBlends = ArcanoDB.getBlends(); // TODOS, para resolver IDs de ocultos
     
     function normName(s) {
@@ -9388,7 +9390,8 @@ const Pages = {
     
     // === Productos usados: resolver slug con enTienda=true, enlace rastreable + botón carrito unificado ===
     var puHtml = '';
-    var allProds = ArcanoDB.getTiendaProductos();
+    // FIX: usar getProductosPublicados() para incluir productos con stock 0
+    var allProds = ArcanoDB.getProductosPublicados();
     // Función normalizada: sin tildes, minúsculas, sin signos
     function normName(s) {
       return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
@@ -9453,7 +9456,7 @@ const Pages = {
     var BASE = 'https://arcanoespecias.com';
     var today = new Date().toISOString().slice(0, 10);
     var urls = ['<url><loc>' + BASE + '/</loc><lastmod>' + today + '</lastmod><priority>1.0</priority><changefreq>weekly</changefreq></url>'];
-    var productos = ArcanoDB.getTiendaProductos();
+    var productos = ArcanoDB.getProductosPublicados();
     for (var i = 0; i < productos.length; i++) {
       var p = productos[i];
       var slug = Pages._productSlug(p.nombre);
@@ -9594,7 +9597,7 @@ const Pages = {
     firebase.database().ref('arcano/db/recetas').once('value', function(snap) {
       var data = snap.val();
       if (!data) { if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">No hay recetas.</span>'; return; }
-      var allTiendaProds = ArcanoDB.getTiendaProductos();
+      var allTiendaProds = ArcanoDB.getProductosPublicados();
       function _normForMatch(s) {
         return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
       }
@@ -9667,7 +9670,7 @@ const Pages = {
     firebase.database().ref('arcano/db/recetas').once('value', function(snap) {
       var data = snap.val();
       if (!data) { console.log('No hay recetas.'); return; }
-      var allTiendaProds = ArcanoDB.getTiendaProductos();
+      var allTiendaProds = ArcanoDB.getProductosPublicados();
       function _normForMatch(s) {
         return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
       }
