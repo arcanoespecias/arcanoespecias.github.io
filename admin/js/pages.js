@@ -5217,15 +5217,16 @@ const Pages = {
       }
       ns += '</ul>\n</div>\n</noscript>';
 
-      // SEO div content \u2014 extractos cortos + enlace a /blends/ (sin duplicar contenido completo)
+      // SEO div content — extractos cortos + enlace correcto (/blends/ o /especias/)
       var sd = '<h2>Catalogo de Especias y Blends Artesanales</h2>';
       sd += '<p>Arcano Especias ofrece ' + products.length + ' productos artesanales: blends para comidas, infusiones y cocteleria, especias selectas y packs exclusivos. Todos los productos son mezclas artesanales con ingredientes seleccionados de cada rincon del mundo. Envios a toda Colombia.</p>';
       sd += '<ul>';
       for (var i = 0; i < products.length; i++) {
         var p = products[i];
         var slug = Pages._productSlug(p.nombre);
-        // Solo generar enlace si tenemos slug
-        var link = slug ? '<a href="https://arcanoespecias.com/blends/' + slug + '/">' + escH(p.nombre) + '</a>' : escH(p.nombre);
+        // FIX: usar /especias/slug/ para especias, /blends/slug/ para blends
+        var linkPath = (p._tipo === 'especia' || p.tipo === 'especia') ? '/especias/' : '/blends/';
+        var link = slug ? '<a href="https://arcanoespecias.com' + linkPath + slug + '/">' + escH(p.nombre) + '</a>' : escH(p.nombre);
         // Extracto corto: m\u00E1ximo 80 chars
         var extracto = '';
         if (p.descripcion) {
@@ -5259,8 +5260,8 @@ const Pages = {
       return { jsonLd: jsonLd, noscript: ns, seoDiv: sd, breadcrumbJsonLd: bcJsonLd, faqJsonLd: faqJsonLd };
     }
 
-    // Flujo principal
-    var products = getTiendaProducts();
+    // Flujo principal — usar getProductosPublicados() (sin filtro de stock)
+    var products = ArcanoDB.getProductosPublicados();
     if (!products.length) {
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">No hay productos en tienda.</span>';
       if (btn) { btn.disabled = false; btn.textContent = 'Regenerar SEO Tienda'; }
