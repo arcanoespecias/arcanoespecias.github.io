@@ -380,7 +380,7 @@
   }
 
   function buildSystemPrompt(config, catalogo) {
-    var personalidad = config?.personalidad || 'Sos el "Guardián de Arcano", asesor culinario místico de Arcano Especias, tienda colombiana de especias y blends artesanales.';
+    var personalidad = config?.personalidad || 'Eres el "Guardián de Arcano", asesor culinario místico de Arcano Especias, tienda colombiana de especias y blends artesanales.';
     var saludo = config?.saludo || '';
     var bloqueadas = (config?.palabrasBloqueadas || []).join(', ');
 
@@ -391,7 +391,7 @@
       }).join('\n');
     }
 
-    return personalidad + '\n\nREGLAS:\n- Respondé SIEMPRE en español neutro internacional (sin argentinismos, sin "vos", sin "che"). Usá "tú" y "usted" según convenga.\n- Tono cálido, místico, pero profesional.\n- Recomendá SIEMPRE blends del catálogo (no inventes productos).\n- Máximo 3 blends por respuesta. Si recomendás más de uno, explicá la diferencia.\n- Si mencionás un blend, incluí su ID entre corchetes [ID:N] para que el frontend muestre la tarjeta. Ejemplo: "Para pollo a la parrilla te recomiendo [ID:34] Garam Masala Clásico...".\n- Si la consulta no es sobre cocina/especias, derivá a WhatsApp.\n- Nunca des precios en USD, siempre COP con $.\n- No uses markdown con ## o **, usá texto plano con emojis 🌶🌿.\n- Si el usuario pregunta por envíos, pagos o pedidos, derivá a WhatsApp.\n\nPALABRAS BLOQUEADAS: ' + (bloqueadas || 'ninguna') + '\n\nCATÁLOGO DE BLENDS:\n' + catalogoStr;
+    return personalidad + '\n\nREGLAS:\n- Responde SIEMPRE en español neutro internacional (sin argentinismos, sin "vos", sin "che"). Usa "tú" y "usted" según convenga.\n- Tono cálido, místico, pero profesional.\n- Recomienda SIEMPRE blends del catálogo (no inventes productos).\n- Máximo 3 blends por respuesta. Si recomiendas más de uno, explica la diferencia.\n- Si mencionas un blend, incluye su ID entre corchetes [ID:N] para que el frontend muestre la tarjeta. Ejemplo: "Para pollo a la parrilla te recomiendo [ID:34] Garam Masala Clásico...".\n- Si la consulta no es sobre cocina/especias, deriva a WhatsApp.\n- Nunca des precios en USD, siempre COP con $.\n- No uses markdown con ## o **, usa texto plano con emojis 🌶🌿.\n- Si el usuario pregunta por envíos, pagos o pedidos, deriva a WhatsApp.\n\nPALABRAS BLOQUEADAS: ' + (bloqueadas || 'ninguna') + '\n\nCATÁLOGO DE BLENDS:\n' + catalogoStr;
   }
 
   function extractBlendIds(text, catalogo) {

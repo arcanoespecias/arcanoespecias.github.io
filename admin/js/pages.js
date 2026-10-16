@@ -7355,7 +7355,8 @@ const Pages = {
           '6. productos_usados DEBE ser un array con al menos 1 nombre EXACTO del catalogo arriba.\n' +
           '   Si mencionas un producto en ingredientes, su nombre EXACTO debe estar en productos_usados.\n' +
           '   NO inventes nombres. Si un ingrediente no es del catalogo, no lo pongas en productos_usados.\n' +
-          '7. La receta debe ser ORIGINAL, diferente a las existentes.' +
+          '7. La receta debe ser ORIGINAL, diferente a las existentes.\n' +
+          '8. EXPRESION: ESPAÑOL NEUTRO. Sin voseo, sin argentismos, sin "vos", sin "che", sin "pibe". Usar "tú" y "tienes" (ej: "agrega", "mezcla", "deja reposar", NO "agregá", "mezclá", "dejá").\n' +
           existingBlock + '\n\n' +
           'Crea una receta de ' + categoria + '. ' + temaInstr + '\n\n' +
           'Responde SOLO con JSON valido (sin markdown, sin backticks, sin texto antes o despues) con esta estructura:\n' +

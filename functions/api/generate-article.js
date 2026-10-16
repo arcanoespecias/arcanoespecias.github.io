@@ -157,7 +157,7 @@ export async function onRequestPost({ request, env }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: 'Eres un redactor creativo experto en especias y gastronomía. Respondes SIEMPRE con JSON válido, sin markdown code blocks, sin texto adicional.' }] },
+          systemInstruction: { parts: [{ text: 'Eres un redactor creativo experto en especias y gastronomía. Escribes en ESPAÑOL NEUTRO INTERNACIONAL (no argentino, no voseo, no "vos", no "che", no "pibe"). Usas "tú" y "tienes". Respondes SIEMPRE con JSON válido, sin markdown code blocks, sin texto adicional.' }] },
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: isNaN(temperatura) ? 0.8 : temperatura,
