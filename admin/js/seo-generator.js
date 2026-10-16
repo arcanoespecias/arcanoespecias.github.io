@@ -360,22 +360,23 @@ var ArcanoSEO = (function() {
     html.push('<meta name="twitter:image" content="' + esc(urlImagen) + '">');
     var robotsContent = blend.enTienda ? 'index, follow, max-image-preview:large' : 'noindex, follow';
     html.push('<meta name="robots" content="' + robotsContent + '">');
+    html.push('<link rel="preload" as="image" href="' + esc(urlImagen) + '" fetchpriority="high">');
     html.push('<link rel="preconnect" href="https://fonts.googleapis.com">');
     html.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
-    html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
+    html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media=\'all\'">');
     html.push('<link rel="icon" type="image/png" href="' + BASE_URL + '/icons/favicon-32.png">');
     html.push('<style>');
-    html.push('body{margin:0;padding:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}');
+    html.push('body{margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}');
     html.push('.c{max-width:760px;margin:0 auto;padding:24px 16px 48px}');
     html.push('a{color:#c9a84c;text-decoration:none}a:hover{text-decoration:underline}');
     html.push('.bc{font-size:.85rem;color:#a08b6e;margin-bottom:24px;padding:8px 0}');
     html.push('.bc a{color:#a08b6e}.bc a:hover{color:#c9a84c}.bc .sep{margin:0 8px;opacity:.5}');
     html.push('h1{font-size:2.2rem;color:#c9a84c;margin:0 0 8px;line-height:1.2}');
     html.push('.meta{color:#a08b6e;font-size:.9rem;margin-bottom:24px}.meta span{display:inline-block;margin-right:16px}');
-    html.push('.hero{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}');
+    html.push('.hero{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;min-height:420px}');
     html.push('@media(max-width:600px){.hero{grid-template-columns:1fr}}');
-    html.push('img.h{width:100%;border-radius:12px;max-height:420px;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,.4)}');
-    html.push('.info{padding:8px 0}.desc{font-size:1.05rem;color:#e8dcc4;margin-bottom:24px}');
+    html.push('img.h{width:100%;border-radius:12px;max-height:420px;aspect-ratio:4/5;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,.4)}');
+    html.push('.info{padding:8px 0;min-height:420px}.desc{font-size:1.05rem;color:#e8dcc4;margin-bottom:24px}');
     html.push('.section{margin:32px 0;padding:20px;background:#2d1a10;border-radius:12px}');
     html.push('.section h2{color:#c9a84c;font-size:1.1rem;margin:0 0 12px;text-transform:uppercase;letter-spacing:.05em}');
     html.push('.section ul{margin:0;padding-left:20px;color:#e8dcc4}.section li{margin:4px 0}');
@@ -391,13 +392,13 @@ var ArcanoSEO = (function() {
     html.push('.rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}');
     html.push('.rel-card{display:block;background:#2d1a10;border-radius:8px;overflow:hidden;color:#f0e6d3;text-decoration:none;transition:transform .15s}');
     html.push('.rel-card:hover{transform:translateY(-3px);text-decoration:none}');
-    html.push('.rel-card img{width:100%;height:90px;object-fit:cover}.rel-card .name{padding:8px 10px;font-size:.85rem;font-weight:600}');
+    html.push('.rel-card img{width:100%;height:90px;aspect-ratio:4/5;object-fit:cover}.rel-card .name{padding:8px 10px;font-size:.85rem;font-weight:600}');
     html.push('.recetas-blend{margin-top:32px;padding-top:24px;border-top:1px solid #2d1a10}');
     html.push('.recetas-blend h2{color:#c9a84c;font-size:1.2rem;margin-bottom:16px}');
     html.push('.recetas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}');
     html.push('.receta-card{display:block;background:#2d1a10;border-radius:8px;overflow:hidden;color:#f0e6d3;text-decoration:none;transition:transform .15s}');
     html.push('.receta-card:hover{transform:translateY(-3px);text-decoration:none}');
-    html.push('.receta-card img{width:100%;height:100px;object-fit:cover}');
+    html.push('.receta-card img{width:100%;height:100px;aspect-ratio:8/5;object-fit:cover}');
     html.push('.receta-card .receta-name{padding:10px;font-size:.85rem;font-weight:600;line-height:1.3}');
     html.push('.receta-card .receta-meta{padding:0 10px 10px;font-size:.75rem;color:#a08b6e}');
     html.push('.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}');
@@ -417,7 +418,7 @@ var ArcanoSEO = (function() {
 
     // Hero
     html.push('<div class="hero">');
-    html.push('<img src="' + esc(urlImagen) + '" alt="Blend de especias ' + esc(nombre) + ' Arcano Especias" class="h" loading="eager" fetchpriority="high">');
+    html.push('<img src="' + esc(urlImagen) + '" alt="Blend de especias ' + esc(nombre) + ' Arcano Especias" class="h" width="400" height="500" loading="eager" fetchpriority="high">');
     html.push('<div class="info">');
     html.push('<h1>' + esc(h1) + '</h1>');
     html.push('<div class="meta">');
@@ -502,7 +503,7 @@ var ArcanoSEO = (function() {
         var rSlug = r._slug || slugify(r.nombre);
         var rImg = publicImageUrlFor(r, rSlug);
         html.push('<a href="' + BASE_URL + '/blends/' + rSlug + '/" class="rel-card">');
-        html.push('<img src="' + esc(rImg) + '" alt="' + esc(r.nombre) + '" loading="lazy">');
+        html.push('<img src="' + esc(rImg) + '" alt="' + esc(r.nombre) + '" width="140" height="90" loading="lazy">');
         html.push('<div class="name">' + esc(r.nombre) + '</div></a>');
       }
       html.push('</div></div>');
@@ -576,7 +577,7 @@ var ArcanoSEO = (function() {
           if (rImg2.indexOf('logo.png') >= 0) rImg2 = '';
           html.push('<a href="' + BASE_URL + '/recetas/' + rSlug2 + '" class="receta-card">');
           if (rImg2) {
-            html.push('<img src="' + esc(rImg2) + '" alt="' + esc(rec2.titulo) + '" loading="lazy">');
+            html.push('<img src="' + esc(rImg2) + '" alt="' + esc(rec2.titulo) + '" width="160" height="100" loading="lazy">');
           }
           html.push('<div class="receta-name">' + esc(rec2.titulo) + '</div>');
           if (rec2.tiempo || rec2.dificultad) {
@@ -944,10 +945,10 @@ var ArcanoSEO = (function() {
     html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
     html.push('<link rel="preconnect" href="https://fonts.googleapis.com">');
     html.push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
-    html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
+    html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media=\'all\'">');
     html.push('<link rel="icon" type="image/png" href="' + BASE_URL + '/icons/favicon-32.png">');
     html.push('<style>');
-    html.push('body{margin:0;padding:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}');
+    html.push('body{margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}');
     html.push('.c{max-width:1100px;margin:0 auto;padding:24px 16px 48px}a{color:#c9a84c;text-decoration:none}a:hover{text-decoration:underline}');
     html.push('.bc{font-size:.85rem;color:#a08b6e;margin-bottom:24px}.bc a{color:#a08b6e}.bc a:hover{color:#c9a84c}.bc .sep{margin:0 8px;opacity:.5}');
     html.push('h1{font-size:2.2rem;color:#c9a84c;margin:0 0 12px;line-height:1.2}');
@@ -1026,10 +1027,10 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:description" content="' + esc(metaDesc) + '">');
     html.push('<meta property="og:url" content="' + esc(urlCanonical) + '">');
     html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
-    html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">');
+    html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media=\'all\'">');
     html.push('<link rel="icon" type="image/png" href="' + BASE_URL + '/icons/favicon-32.png">');
     html.push('<style>');
-    html.push('body{margin:0;padding:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}');
+    html.push('body{margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}');
     html.push('.c{max-width:1100px;margin:0 auto;padding:24px 16px 48px}a{color:#c9a84c;text-decoration:none}');
     html.push('.bc{font-size:.85rem;color:#a08b6e;margin-bottom:24px}h1{font-size:2.2rem;color:#c9a84c;margin:0 0 16px}');
     html.push('.intro{color:#e8dcc4;margin-bottom:32px;font-size:1.05rem;max-width:680px}');
