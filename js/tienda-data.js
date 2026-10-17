@@ -17,8 +17,8 @@ function initTienda() {
   return new Promise(function(resolve) {
     firebase.initializeApp(FIREBASE_CONFIG);
     // Only load what the store needs: especias, blends, packs, tiendaConfig, colecciones
-    // + insumos para cálculo de disponibilidad por producción (especias + frascos + bolsas + cintas + stickers)
-    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'colecciones', 'stockEnvases', 'stockBolsas', 'stockCintas', 'stickers'];
+    // + insumos para cálculo de disponibilidad por producción (especias + frascos + bolsas + cintas + stickers + cajas)
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'colecciones', 'stockEnvases', 'stockBolsas', 'stockCintas', 'stockCajas', 'stickers'];
     var loaded = 0;
     _sDb = {};
 
@@ -775,16 +775,38 @@ function getStoreProducts() {
     if (packStock === null || packStock === undefined || packStock === 0) {
       packStock = 999;  // stock "ilimitado" si no se maneja stock de packs
     }
+    // Disponibilidad ampliada para packs: necesita stock de blends que lo componen
+    // Y al menos 1 caja de madera + 1 bolsa + 1 cinta para armarlo
+    var packTalla = (pk.configTalla === 'grande') ? 'grande' : 'chico';
+    var packDisponible = packStock > 0;
+    var packProducible = false;
+    // Validar insumos de packaging del pack (caja + bolsa + cinta)
+    if (packDisponible) {
+      var cajasDisp = Number(_sDb.stockCajas) || 0;
+      var bolsasDisp = (_sDb.stockBolsas && Number(_sDb.stockBolsas[packTalla])) || 0;
+      var cintasDisp = Number(_sDb.stockCintas) || 0;
+      // Validar también stock de cada blend que compone el pack
+      var blendItems = pk.blendItems || [];
+      var blendsOk = blendItems.length > 0;
+      for (var bi2 = 0; bi2 < blendItems.length; bi2++) {
+        var bi3 = blendItems[bi2];
+        var bl3 = _sDb.blends ? _sDb.blends[bi3.blendId] : null;
+        if (!bl3) { blendsOk = false; break; }
+        var st = bi3.talla === 'grande' ? (bl3.stockGrande || 0) : (bl3.stockChico || 0);
+        if (st < 1) { blendsOk = false; break; }
+      }
+      packProducible = (cajasDisp > 0 && bolsasDisp > 0 && cintasDisp > 0 && blendsOk);
+    }
     var pkUpdated = pk.imagenUpdatedAt || pk.actualizadoEn || pk.creado || 0;
     if (typeof pkUpdated === 'string') pkUpdated = new Date(pkUpdated).getTime() || 0;
     products.push({
       id: pk.id, nombre: pk.nombre, tipo: 'pack', categoria: 'Packs', categorias: ['Packs'],
       precioChico: 0, precioGrande: 0, precio: Number(pk.precio) || 0,
       stockChico: 0, stockGrande: 0, stock: packStock,
-      _disponibleChico: packStock > 0,
-      _disponibleGrande: packStock > 0,
-      _producibleChico: false,
-      _producibleGrande: false,
+      _disponibleChico: packDisponible,
+      _disponibleGrande: packDisponible,
+      _producibleChico: packProducible,
+      _producibleGrande: packProducible,
       region: '', uso: '', descripcion: pk.descripcion || '', imagen: _fixImageUrl(pk.imagen, pkUpdated), tags: pk.tags || [],
       blendItems: pk.blendItems || [],
       configurable: pk.configurable || false,

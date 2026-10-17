@@ -3977,6 +3977,8 @@ const Pages = {
           '<option value="blend">Blend</option>' +
           '<option value="envase">Frascos</option>' +
           '<option value="bolsa">Bolsas</option>' +
+          '<option value="cinta">Cintas</option>' +
+          '<option value="caja">Cajas de madera</option>' +
           '<option value="sticker">Stickers</option>' +
         '</select></div>' +
         '<div class="form-group" id="f-aj-prod-wrap"><label>Producto</label><select class="input" id="f-aj-prod"></select></div>' +
@@ -4020,7 +4022,7 @@ const Pages = {
       var prodId = prodSel.value;
 
       // Show/hide product selector
-      if (cat === 'envase' || cat === 'bolsa') {
+      if (cat === 'envase' || cat === 'bolsa' || cat === 'cinta' || cat === 'caja') {
         prodWrap.style.display = 'none';
       } else {
         prodWrap.style.display = '';
@@ -4038,6 +4040,10 @@ const Pages = {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       } else if (cat === 'bolsa') {
         subSel.innerHTML = '<option value="chico">Chica (unidades)</option><option value="grande">Grande (unidades)</option>';
+      } else if (cat === 'cinta') {
+        subSel.innerHTML = '<option value="cinta">Unidades</option>';
+      } else if (cat === 'caja') {
+        subSel.innerHTML = '<option value="caja">Unidades</option>';
       } else if (cat === 'sticker') {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       }
@@ -4074,6 +4080,12 @@ const Pages = {
       } else if (cat === 'bolsa') {
         nombre = 'Bolsas ' + sub;
         actual = (db.stockBolsas || {})[sub] || 0;
+      } else if (cat === 'cinta') {
+        nombre = 'Cintas';
+        actual = db.stockCintas || 0;
+      } else if (cat === 'caja') {
+        nombre = 'Cajas de madera';
+        actual = db.stockCajas || 0;
       } else if (cat === 'sticker' && prodSel.value) {
         nombre = prodSel.value;
         var allStks = ArcanoDB.getProductosConStickers();
@@ -12186,6 +12198,7 @@ const Pages = {
     h += '<tr><td class="fw7">Bolsas Chicas</td><td>' + (bolsas.chico||0) + '</td><td>' + adjInput('bolsa', 'chico', null, 'Bolsas chica', bolsas.chico||0) + '</td></tr>';
     h += '<tr><td class="fw7">Bolsas Grandes</td><td>' + (bolsas.grande||0) + '</td><td>' + adjInput('bolsa', 'grande', null, 'Bolsas grande', bolsas.grande||0) + '</td></tr>';
     h += '<tr><td class="fw7">Cintas</td><td>' + (db.stockCintas||0) + '</td><td>' + adjInput('cinta', 'cinta', null, 'Cintas', db.stockCintas||0) + '</td></tr>';
+    h += '<tr><td class="fw7">Cajas de madera</td><td>' + (db.stockCajas||0) + '</td><td>' + adjInput('caja', 'caja', null, 'Cajas de madera', db.stockCajas||0) + '</td></tr>';
     h += '</tbody></table></div></div></div>';
 
     // === SECTION 4: STICKERS ===
@@ -12436,6 +12449,8 @@ const Pages = {
           '<option value="blend">Blend</option>' +
           '<option value="envase">Frascos</option>' +
           '<option value="bolsa">Bolsas</option>' +
+          '<option value="cinta">Cintas</option>' +
+          '<option value="caja">Cajas de madera</option>' +
           '<option value="sticker">Stickers</option>' +
         '</select></div>' +
         '<div class="form-group" id="f-aj-prod-wrap"><label>Producto</label><select class="input" id="f-aj-prod"></select></div>' +
@@ -12512,7 +12527,7 @@ const Pages = {
     function updateForm() {
       var cat = catSel.value;
       // Show/hide product selector
-      if (cat === 'envase' || cat === 'bolsa') {
+      if (cat === 'envase' || cat === 'bolsa' || cat === 'cinta' || cat === 'caja') {
         prodWrap.style.display = 'none';
       } else {
         prodWrap.style.display = '';
@@ -12529,6 +12544,10 @@ const Pages = {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       } else if (cat === 'bolsa') {
         subSel.innerHTML = '<option value="chico">Chica (unidades)</option><option value="grande">Grande (unidades)</option>';
+      } else if (cat === 'cinta') {
+        subSel.innerHTML = '<option value="cinta">Unidades</option>';
+      } else if (cat === 'caja') {
+        subSel.innerHTML = '<option value="caja">Unidades</option>';
       } else if (cat === 'sticker') {
         subSel.innerHTML = '<option value="chico">Chico (unidades)</option><option value="grande">Grande (unidades)</option>';
       }
@@ -12556,6 +12575,7 @@ const Pages = {
         return sub === 'grande' ? (bol.grande || 0) : (bol.chico || 0);
       }
       if (cat === 'cinta') return ArcanoDB.getDB().stockCintas || 0;
+      if (cat === 'caja') return ArcanoDB.getDB().stockCajas || 0;
       if (cat === 'sticker' && prodNombre) {
         var allStks = ArcanoDB.getProductosConStickers();
         for (var i = 0; i < allStks.length; i++) {
@@ -12576,7 +12596,7 @@ const Pages = {
       var prodNombre = prodSel.options[prodSel.selectedIndex] ? prodSel.options[prodSel.selectedIndex].textContent : '';
       var actual = getStockActualFor(cat, sub, prodId, prodNombre);
       var unidad = sub === 'pala' ? 'g' : 'u';
-      var nombre = prodNombre || (cat === 'envase' ? 'Frascos ' + sub : cat === 'bolsa' ? 'Bolsas ' + sub : cat === 'cinta' ? 'Cintas' : '');
+      var nombre = prodNombre || (cat === 'envase' ? 'Frascos ' + sub : cat === 'bolsa' ? 'Bolsas ' + sub : cat === 'cinta' ? 'Cintas' : cat === 'caja' ? 'Cajas de madera' : '');
       if (!nombre) { previewDiv.style.display = 'none'; return; }
 
       var resultante, delta, valorLabel;

@@ -122,6 +122,7 @@ function _ensureStructure() {
   if (!_db.stockEnvases) _db.stockEnvases = { chico: 0, grande: 0 };
   if (!_db.stockBolsas) _db.stockBolsas = { chico: 0, grande: 0 };
   if (!_db.stockCintas) _db.stockCintas = 0;
+  if (!_db.stockCajas) _db.stockCajas = 0;  // Cajas de madera para packs (1 caja por pack)
   if (!_db.usuarios) _db.usuarios = {
     admin: { id: 'admin', nombre: 'Administrador', pin: '1234', rol: 'admin', activo: true, creado: new Date().toISOString() }
   };
@@ -209,6 +210,7 @@ function _emptyDB() {
     stockEnvases: { chico: 0, grande: 0 },
     stockBolsas: { chico: 0, grande: 0 },
     stockCintas: 0,
+    stockCajas: 0,  // Cajas de madera para packs (1 caja por pack vendido)
     productTags: {
       'Comidas': ['Aves', 'Pescados y Mariscos', 'Cerdo', 'Salsas y Aderezos', 'Verduras y Vegetales', 'Granos y Legumbres'],
       'Infusiones': ['Relajante', 'Digestiva', 'Energ\u00E9tica', 'Citrica', 'Refrescante', 'Detox', 'Aromatica'],
@@ -359,6 +361,7 @@ function saveNow() {
         stockEnvases: _db.stockEnvases || {},
         stockBolsas: _db.stockBolsas || {},
         stockCintas: _db.stockCintas || 0,
+        stockCajas: _db.stockCajas || 0,
         costales: _db.costales || {},
         stickers: _db.stickers || {},
         ventas: _db.ventas || {},
@@ -1499,6 +1502,12 @@ function saveAjuste(data) {
     if (nv < 0) throw new Error('Stock resultante negativo (' + nv + ') para cintas');
     _db.stockCintas = nv;
     data.productoNombre = 'Cintas';
+  } else if (cat === 'caja') {
+    if (!_db.stockCajas) _db.stockCajas = 0;
+    var nvCaja = (_db.stockCajas || 0) + cantidad;
+    if (nvCaja < 0) throw new Error('Stock resultante negativo (' + nvCaja + ') para cajas de madera');
+    _db.stockCajas = nvCaja;
+    data.productoNombre = 'Cajas de madera';
   }
 
   data.cantidad = cantidad;
@@ -1559,6 +1568,9 @@ function saveAjusteReal(data) {
   } else if (cat === 'cinta') {
     stockActual = Number(_db.stockCintas) || 0;
     productoNombre = 'Cintas';
+  } else if (cat === 'caja') {
+    stockActual = Number(_db.stockCajas) || 0;
+    productoNombre = 'Cajas de madera';
   } else if (cat === 'sticker') {
     var stk = _getOrCreateSticker(productoNombre);
     stockActual = Number(stk[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
@@ -1605,6 +1617,9 @@ function getStockActual(categoria, subtipo, productoId, productoNombre) {
   }
   if (cat === 'cinta') {
     return Number(_db.stockCintas) || 0;
+  }
+  if (cat === 'caja') {
+    return Number(_db.stockCajas) || 0;
   }
   if (cat === 'sticker') {
     var stk = _getOrCreateSticker(productoNombre);
@@ -3380,6 +3395,33 @@ function producirPack(packId, cantidad) {
     _notify('update', 'blends', blend.id);
   }
 
+  // === Insumos de packaging del pack: 1 caja de madera + 1 bolsa (talla del pack) + 1 cinta por unidad ===
+  // La talla del pack la define configTalla (default 'chico')
+  var packTalla = (pack.configTalla === 'grande') ? 'grande' : 'chico';
+
+  // Caja de madera
+  if (!_db.stockCajas) _db.stockCajas = 0;
+  if ((_db.stockCajas || 0) < cantidad) {
+    throw new Error('Cajas de madera insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockCajas || 0));
+  }
+
+  // Bolsa (packaging exterior — el pack va en una bolsa junto con la caja)
+  if (!_db.stockBolsas) _db.stockBolsas = { chico: 0, grande: 0 };
+  if ((_db.stockBolsas[packTalla] || 0) < cantidad) {
+    throw new Error('Bolsas ' + packTalla + ' insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockBolsas[packTalla] || 0));
+  }
+
+  // Cinta
+  if (!_db.stockCintas) _db.stockCintas = 0;
+  if ((_db.stockCintas || 0) < cantidad) {
+    throw new Error('Cintas insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockCintas || 0));
+  }
+
+  // Consumir insumos de packaging
+  _db.stockCajas = (_db.stockCajas || 0) - cantidad;
+  _db.stockBolsas[packTalla] = (_db.stockBolsas[packTalla] || 0) - cantidad;
+  _db.stockCintas = (_db.stockCintas || 0) - cantidad;
+
   // Store pack stock
   pack.stock = (pack.stock || 0) + cantidad;
   _notify('update', 'packs', pack.id);
@@ -3388,9 +3430,11 @@ function producirPack(packId, cantidad) {
   var prodId = nextId('producciones');
   var prod = {
     id: prodId, tipo: 'pack', productoId: packId, productoNombre: pack.nombre,
-    categoria: 'Pack', talla: '-', cantidad: cantidad,
+    categoria: 'Pack', talla: packTalla, cantidad: cantidad,
     ingredientes: detalleBlends, gramosTotal: 0,
-    envasesConsumidos: 0, stickersConsumidos: 0, bolsasConsumidas: 0, cintasConsumidas: 0,
+    envasesConsumidos: 0, stickersConsumidos: 0,
+    bolsasConsumidas: cantidad, cintasConsumidas: cantidad,
+    cajasConsumidas: cantidad,
     fecha: new Date().toISOString().slice(0, 10), creado: new Date().toISOString()
   };
   _db.producciones[prodId] = prod;
