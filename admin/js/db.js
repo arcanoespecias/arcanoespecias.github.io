@@ -2997,7 +2997,7 @@ function savePDVVenta(data) {
 }
 
 /* ==================== COSTOS DE INSUMOS (FIREBASE SEPARATE) ==================== */
-var _COSTOS_DEFAULTS = { envaseChico: 0, envaseGrande: 0, bolsaChica: 0, bolsaGrande: 0, cinta: 0, stickerChico: 0, stickerGrande: 0, especias: {} };
+var _COSTOS_DEFAULTS = { envaseChico: 0, envaseGrande: 0, bolsaChica: 0, bolsaGrande: 0, cinta: 0, stickerChico: 0, stickerGrande: 0, caja: 0, especias: {} };
 
 function getCostosInsumos() {
   return _costosInsumos || Object.assign({}, _COSTOS_DEFAULTS);
@@ -3212,6 +3212,22 @@ function getCostoProducto(tipo, productoId, talla) {
       total += g * cpg;
     }
     return total + pkg;
+  } else if (tipo === 'pack') {
+    // Pack: el packaging del pack = caja de madera + bolsa (talla) + cinta
+    // (sin frasco ni sticker, esos ya están en los blends que lo componen)
+    var costoPackaging = (Number(costos.caja) || 0) + (Number(costos.cinta) || 0);
+    costoPackaging += (talla === 'grande') ? (Number(costos.bolsaGrande) || 0) : (Number(costos.bolsaChica) || 0);
+    var pack = _db.packs ? _db.packs[productoId] : null;
+    if (!pack) return costoPackaging;
+    // Sumar costo de los blends que lo componen (precio de compra interno = costo de producción)
+    var blendItems = pack.blendItems || [];
+    var totalBlends = 0;
+    for (var j = 0; j < blendItems.length; j++) {
+      var bi = blendItems[j];
+      var blendTalla = bi.talla === 'grande' ? 'grande' : 'chico';
+      totalBlends += getCostoProducto('blend', bi.blendId, blendTalla);
+    }
+    return totalBlends + costoPackaging;
   }
   return pkg;
 }

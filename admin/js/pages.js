@@ -1952,6 +1952,7 @@ const Pages = {
           '<div class="form-group"><label>Bolsa Chica</label><input type="number" class="input" id="f-cos-bol-c" value="' + (costos.bolsaChica||0) + '" min="0"></div>' +
           '<div class="form-group"><label>Bolsa Grande</label><input type="number" class="input" id="f-cos-bol-g" value="' + (costos.bolsaGrande||0) + '" min="0"></div>' +
           '<div class="form-group"><label>Cinta</label><input type="number" class="input" id="f-cos-cinta" value="' + (costos.cinta||0) + '" min="0"></div>' +
+          '<div class="form-group"><label>Caja de madera</label><input type="number" class="input" id="f-cos-caja" value="' + (costos.caja||0) + '" min="0"></div>' +
           '<div class="form-group"><label>Sticker Chico</label><input type="number" class="input" id="f-cos-stk-c" value="' + (costos.stickerChico||0) + '" min="0"></div>' +
         '</div>' +
         '<div class="form-group" style="margin-bottom:4px"><label>Sticker Grande</label><input type="number" class="input" id="f-cos-stk-g" value="' + (costos.stickerGrande||0) + '" min="0"></div>' +
@@ -1969,6 +1970,7 @@ const Pages = {
         bolsaChica: Number(document.getElementById('f-cos-bol-c').value) || 0,
         bolsaGrande: Number(document.getElementById('f-cos-bol-g').value) || 0,
         cinta: Number(document.getElementById('f-cos-cinta').value) || 0,
+        caja: Number(document.getElementById('f-cos-caja').value) || 0,
         stickerChico: Number(document.getElementById('f-cos-stk-c').value) || 0,
         stickerGrande: Number(document.getElementById('f-cos-stk-g').value) || 0,
         especias: {}
