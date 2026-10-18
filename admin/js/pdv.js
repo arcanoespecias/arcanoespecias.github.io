@@ -197,8 +197,25 @@ var PDV = {
     }
 
     // === Costales en el PDV ===
+    // Solo se muestran los costales que el admin movió al PDV (pdv.stockCostales)
+    // con gramos > 0. Se deduplica por costalId por si la estructura viene como
+    // lista con entradas duplicadas (caso edge de Firebase convirtiendo dict→array).
     var stockCostales = pdv.stockCostales || {};
-    var costalesKeys = Object.keys(stockCostales).filter(function(k) { return (stockCostales[k] || 0) > 0; });
+    var costalesKeysRaw = Object.keys(stockCostales).filter(function(k) {
+      return (stockCostales[k] || 0) > 0;
+    });
+    // Deduplicar: solo la primera entrada por costalId, ignorar costales inexistentes
+    var costalesKeys = [];
+    var seenCostalIds = {};
+    for (var ck = 0; ck < costalesKeysRaw.length; ck++) {
+      var cKey = costalesKeysRaw[ck];
+      var cId = parseInt(cKey, 10);
+      if (isNaN(cId) || seenCostalIds[cId]) continue;
+      var cObj = ArcanoDB.getCostal(cId);
+      if (!cObj) continue; // costal no existe (referencia huérfana)
+      seenCostalIds[cId] = true;
+      costalesKeys.push(cKey);
+    }
     h += '<div style="border-top:2px solid var(--border);margin:20px 0 12px"></div>';
     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
       '<h4 style="margin:0">🛍️ Costales en el PDV</h4>' +
@@ -639,8 +656,20 @@ var PDV = {
     h += '</div>';
 
     // === Sección de Costales (venta de palas) ===
+    // Solo costales movidos a ESTE PDV, deduplicados por costalId
     var stockCostales = pdv.stockCostales || {};
-    var costalesKeys = Object.keys(stockCostales).filter(function(k) { return (stockCostales[k] || 0) > 0; });
+    var costalesKeysRaw = Object.keys(stockCostales).filter(function(k) { return (stockCostales[k] || 0) > 0; });
+    var costalesKeys = [];
+    var seenCostalIdsPos = {};
+    for (var cck = 0; cck < costalesKeysRaw.length; cck++) {
+      var cckKey = costalesKeysRaw[cck];
+      var cckId = parseInt(cckKey, 10);
+      if (isNaN(cckId) || seenCostalIdsPos[cckId]) continue;
+      var cckObj = ArcanoDB.getCostal(cckId);
+      if (!cckObj) continue;
+      seenCostalIdsPos[cckId] = true;
+      costalesKeys.push(cckKey);
+    }
     if (costalesKeys.length > 0) {
       h += '<div style="border-top:2px solid var(--border);margin:16px 0 8px"></div>';
       h += '<h4 style="margin:0 0 8px">🛍️ Costales — Venta de Palas</h4>';
@@ -674,8 +703,17 @@ var PDV = {
         });
       }
     }
-    // También considerar costales abiertos
+    // También considerar costales abiertos (NO los que ya están en el PDV, para evitar duplicación)
+    var pdvCostalIds = {};
+    var scKeys = Object.keys(stockCostales);
+    for (var sci = 0; sci < scKeys.length; sci++) {
+      if ((stockCostales[scKeys[sci]] || 0) > 0) {
+        pdvCostalIds[parseInt(scKeys[sci], 10)] = true;
+      }
+    }
     var costalesAbiertos = ArcanoDB.getCostales().filter(function(c) {
+      // Excluir costales que ya están en el PDV (se muestran en la sección "Costales" de arriba)
+      if (c && pdvCostalIds[c.id]) return false;
       return c && c.estado === 'abierto' && (Number(c.gramosRestantes) || 0) > 0;
     });
     for (var ca = 0; ca < costalesAbiertos.length; ca++) {

@@ -2004,6 +2004,37 @@ function saveVenta(data) {
     if (data.envioGratis == null) data.envioGratis = false;
   }
   _db.ventas[data.id] = data;
+  // Si la venta viene de un PDV (tiene pdvId), también registrarla en /pdvVentas
+  // para que aparezca en los stats del PDV (getPDVVentas solo mira /pdvVentas).
+  // Esto era un bug: las ventas de palas directas (desde Bodega) no se sumaban al PDV.
+  if (isNew && data.pdvId) {
+    if (!_db.pdvVentas) _db.pdvVentas = {};
+    var pdv = _db.puntosDeVenta ? _db.puntosDeVenta[data.pdvId] : null;
+    var pdvVentaId = nextId('pdvVentas');
+    _db.pdvVentas[pdvVentaId] = {
+      id: pdvVentaId,
+      creado: data.creado,
+      fecha: data.fecha,
+      puntoDeVentaId: data.pdvId,
+      puntoDeVentaNombre: (pdv && pdv.nombre) || data.pdvNombre || '',
+      metodoPago: data.metodoPago || 'efectivo',
+      tipoVenta: 'palas',
+      items: (data.items || []).map(function(it) {
+        return {
+          tipo: it.tipo,
+          productoId: it.productoId,
+          productoNombre: it.productoNombre || '',
+          talla: it.talla,
+          cantidad: it.cantidad,
+          precioUnitario: it.precioUnitario,
+          subtotal: it.subtotal
+        };
+      }),
+      total: data.total,
+      ventaGlobalId: data.id
+    };
+    _notify('create', 'pdvVentas', pdvVentaId);
+  }
   _saveToFirebase(); _cacheLocal();
   _notify(isNew ? 'create' : 'update', 'ventas', data.id);
   return data;
