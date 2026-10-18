@@ -2993,11 +2993,24 @@ function getPDVStats(pdvId) {
     var vItems = v.items || [];
     for (var vj = 0; vj < vItems.length; vj++) {
       var vIt = vItems[vj];
-      var prod = vIt.tipo === 'blend' ? _db.blends[vIt.productoId] : _db.especias[vIt.productoId];
-      var nombre = prod ? prod.nombre : '?';
+      // Resolver nombre del producto/item:
+      // - tipo 'costal' o 'pala' (palas de costal): usar productoNombre del item
+      //   (ya viene seteado desde savePDVVentaPala / saveVenta), fallback al
+      //   nombre del costal en /costales.
+      // - tipo 'blend' o 'especia' (frascos): buscar en _db.blends / _db.especias.
+      var nombre = vIt.productoNombre;
+      if (!nombre) {
+        if (vIt.tipo === 'costal' || vIt.tipo === 'pala') {
+          var costalIt = _db.costales && _db.costales[vIt.productoId];
+          nombre = (costalIt && costalIt.nombre) || ('Costal #' + vIt.productoId);
+        } else {
+          var prod = vIt.tipo === 'blend' ? _db.blends[vIt.productoId] : _db.especias[vIt.productoId];
+          nombre = prod ? prod.nombre : '?';
+        }
+      }
       if (!productoVentaMap[nombre]) productoVentaMap[nombre] = { cantidad: 0, monto: 0 };
-      productoVentaMap[nombre].cantidad += (vIt.cantidad || 0);
-      productoVentaMap[nombre].monto += (vIt.subtotal || (vIt.precioUnitario || 0) * (vIt.cantidad || 0));
+      productoVentaMap[nombre].cantidad += (vIt.cantidad || vIt.palas || 0);
+      productoVentaMap[nombre].monto += (vIt.subtotal || (vIt.precioUnitario || 0) * (vIt.cantidad || vIt.palas || 0));
     }
   }
   var topArr = Object.keys(productoVentaMap).map(function(n) { return { nombre: n, cantidad: productoVentaMap[n].cantidad, monto: productoVentaMap[n].monto }; });
@@ -3826,9 +3839,20 @@ function savePDVVentaPala(data) {
     }
     // Restar del PDV — usar String(costalId) como clave
     pdv.stockCostales[cKey] = disponiblePDV - gramosNecesarios;
+    // Si llegó a 0, eliminar la clave (deja el dict limpio)
+    if (Number(pdv.stockCostales[cKey]) <= 0) delete pdv.stockCostales[cKey];
     item.gramosConsumidos = gramosNecesarios;
     item.precioUnitario = Number(costal.precioPala) || 0;
     item.subtotal = item.palas * item.precioUnitario;
+    // Asegurar campos para que se muestren bien en el historial de ventas:
+    // - productoNombre: nombre legible (Costal de Mostaza, etc.)
+    // - productoId: el costalId (para trazabilidad)
+    // - tipo: 'costal' (para que getPDVStats no busque en blends/especias)
+    // - talla: 'pala' (para mostrar "pala" en lugar de "-" o undefined)
+    if (!item.productoNombre) item.productoNombre = costal.nombre || ('Costal ' + item.costalId);
+    item.productoId = item.costalId;
+    item.tipo = 'costal';
+    item.talla = 'pala';
     total += item.subtotal;
   }
 
@@ -3847,7 +3871,7 @@ function savePDVVentaPala(data) {
   };
   _db.pdvVentas[ventaId] = venta;
 
-  // Tambi\u00E9n crear una entrada en ventas global para estad\u00EDsticas
+  // También crear una entrada en ventas global para estadísticas
   var ventaGlobalId = nextId('ventas');
   _db.ventas[ventaGlobalId] = {
     id: ventaGlobalId,
@@ -3857,8 +3881,8 @@ function savePDVVentaPala(data) {
       return {
         tipo: 'costal',
         productoId: it.costalId,
-        productoNombre: it.costalNombre + ' (x' + it.palas + ' palas)',
-        talla: '-',
+        productoNombre: it.productoNombre || (it.costalNombre + ' (x' + it.palas + ' palas)'),
+        talla: 'pala',
         cantidad: it.palas,
         precioUnitario: it.precioUnitario,
         subtotal: it.subtotal

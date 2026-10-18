@@ -572,7 +572,21 @@ var PDV = {
       h += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Items</th><th>Metodo</th><th>Total</th><th>Detalle</th></tr></thead><tbody>';
       for (var i = 0; i < ventas.length; i++) {
         var v = ventas[i];
-        var itemsStr = (v.items || []).map(function(it) { return it.productoNombre + ' x' + it.cantidad; }).join(', ');
+        // Para cada item, resolver el nombre mostrable (fallback si falta productoNombre)
+        var itemsStr = (v.items || []).map(function(it) {
+          var nombre = it.productoNombre;
+          if (!nombre) {
+            if (it.tipo === 'costal' || it.tipo === 'pala') {
+              var costal = ArcanoDB.getCostal(it.productoId || it.costalId);
+              nombre = (costal && costal.nombre) || ('Costal #' + (it.productoId || it.costalId));
+            } else {
+              var prod = it.tipo === 'blend' ? ArcanoDB.getBlend(it.productoId) : ArcanoDB.getEspecia(it.productoId);
+              nombre = prod ? prod.nombre : '?';
+            }
+          }
+          var cant = it.cantidad || it.palas || 0;
+          return nombre + ' x' + cant;
+        }).join(', ');
         var metodoTag = v.metodoPago === 'qr' ? '<span style="color:var(--blue);font-size:0.75rem;font-weight:600">QR</span>' : '<span style="color:var(--green);font-size:0.75rem;font-weight:600">Efectivo</span>';
         h += '<tr><td>' + (v.fecha || '').slice(0, 10) + '</td><td>' + itemsStr + '</td>' +
           '<td>' + metodoTag + '</td>' +
@@ -593,7 +607,20 @@ var PDV = {
     h += '<div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Producto</th><th>Talla</th><th>Cant.</th><th>P.Unit</th><th>Subtotal</th></tr></thead><tbody>';
     for (var j = 0; j < (v.items || []).length; j++) {
       var it = v.items[j];
-      h += '<tr><td>' + this.esc(it.productoNombre) + '</td><td>' + it.talla + '</td><td>' + it.cantidad + '</td>' +
+      // Resolver nombre del producto si falta productoNombre
+      var nombreItem = it.productoNombre;
+      if (!nombreItem) {
+        if (it.tipo === 'costal' || it.tipo === 'pala') {
+          var costalDet = ArcanoDB.getCostal(it.productoId || it.costalId);
+          nombreItem = (costalDet && costalDet.nombre) || ('Costal #' + (it.productoId || it.costalId));
+        } else {
+          var prodDet = it.tipo === 'blend' ? ArcanoDB.getBlend(it.productoId) : ArcanoDB.getEspecia(it.productoId);
+          nombreItem = prodDet ? prodDet.nombre : '?';
+        }
+      }
+      var tallaItem = it.talla || (it.tipo === 'costal' || it.tipo === 'pala' ? 'pala' : '-');
+      var cantItem = it.cantidad || it.palas || 0;
+      h += '<tr><td>' + this.esc(nombreItem) + '</td><td>' + tallaItem + '</td><td>' + cantItem + '</td>' +
         '<td>$' + (it.precioUnitario || 0).toLocaleString() + '</td><td class="fw7">$' + (it.subtotal || 0).toLocaleString() + '</td></tr>';
     }
     h += '</tbody></table></div>';
@@ -1188,7 +1215,20 @@ var PDV = {
       var recent = ventas.slice(-5).reverse();
       for (var r = 0; r < recent.length; r++) {
         var rv = recent[r];
-        var itemNames = (rv.items || []).map(function(it) { return it.productoNombre; }).join(', ');
+        var itemNames = (rv.items || []).map(function(it) {
+          // Resolver nombre del producto si falta (palas de costal)
+          var n = it.productoNombre;
+          if (!n) {
+            if (it.tipo === 'costal' || it.tipo === 'pala') {
+              var costal = ArcanoDB.getCostal(it.productoId || it.costalId);
+              n = (costal && costal.nombre) || ('Costal #' + (it.productoId || it.costalId));
+            } else {
+              var p = it.tipo === 'blend' ? ArcanoDB.getBlend(it.productoId) : ArcanoDB.getEspecia(it.productoId);
+              n = p ? p.nombre : '?';
+            }
+          }
+          return n;
+        }).join(', ');
         var rvMetodo = rv.metodoPago === 'qr' ? '<span style="color:var(--blue);font-size:0.75rem;font-weight:600">QR</span>' : '<span style="color:var(--green);font-size:0.75rem;font-weight:600">Efectivo</span>';
         h += '<tr><td>' + rv.id + '</td><td>' + (rv.fecha || '').slice(0, 16) + '</td><td class="text-sm">' + this.esc(itemNames) + '</td><td>' + rvMetodo + '</td><td class="fw7">$' + (rv.total || 0).toLocaleString() + '</td></tr>';
       }
