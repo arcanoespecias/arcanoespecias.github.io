@@ -1203,6 +1203,8 @@ const Pages = {
     var stickers = db.stickers || {};
     var bolsas = db.stockBolsas || { chico: 0, grande: 0 };
     var cintas = db.stockCintas || 0;
+    var cajas = db.stockCajas || 0;
+    var packTalla = (pk.configTalla === 'grande') ? 'grande' : 'chico';
 
     var modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -1226,6 +1228,8 @@ const Pages = {
         '<div class="form-group"><label>Cantidad de packs</label><input type="number" class="input" id="f-pkprod-cant" value="1" min="1" style="max-width:120px" oninput="Pages._updatePackProdPreview(' + packId + ')"></div>' +
         '<h4 class="mt-12 mb-8">Blends del pack</h4>' +
         '<div id="f-pkprod-items">' + blendRows + '</div>' +
+        '<h4 class="mt-12 mb-8">Insumos de packaging</h4>' +
+        '<div id="f-pkprod-packaging"></div>' +
         '<div id="f-pkprod-preview" class="mt-12"></div>' +
       '</div><div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
@@ -1249,9 +1253,55 @@ const Pages = {
   _updatePackProdPreview: function(packId) {
     var pk = ArcanoDB.getPack(packId);
     if (!pk) return;
+    var db = ArcanoDB.getDB();
+    var costos = ArcanoDB.getCostosInsumos();
     var blendItems = pk.blendItems || [];
+    var packTalla = (pk.configTalla === 'grande') ? 'grande' : 'chico';
     var cant = Number((document.getElementById('f-pkprod-cant') || {}).value) || 0;
     var allOk = true;
+
+    // === Stock de insumos de packaging ===
+    var cajasDisp = db.stockCajas || 0;
+    var bolsasDisp = (db.stockBolsas && db.stockBolsas[packTalla]) || 0;
+    var cintasDisp = db.stockCintas || 0;
+    // Costos unitarios
+    var costoCaja = Number(costos.caja) || 0;
+    var costoBolsa = (packTalla === 'grande') ? (Number(costos.bolsaGrande) || 0) : (Number(costos.bolsaChica) || 0);
+    var costoCinta = Number(costos.cinta) || 0;
+
+    // === Tabla de insumos de packaging ===
+    var packH = '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th>Insumo</th><th class="text-center">Cant.</th><th class="text-center">Costo unit.</th><th class="text-center">Costo total</th><th class="text-center">Stock</th>' +
+      '</tr></thead><tbody>';
+    // Caja de madera
+    var cajaOk = cajasDisp >= cant;
+    if (cant > 0 && !cajaOk) allOk = false;
+    packH += '<tr><td class="fw7">Caja de madera</td>' +
+      '<td class="text-center">' + cant + '</td>' +
+      '<td class="text-center">$' + costoCaja.toLocaleString() + '</td>' +
+      '<td class="text-center fw7" style="color:var(--gold)">$' + (costoCaja * cant).toLocaleString() + '</td>' +
+      '<td class="text-center" style="color:' + (cant === 0 || cajaOk ? 'var(--green)' : 'var(--red)') + '">' + cajasDisp + '</td></tr>';
+    // Bolsa
+    var bolsaOk = bolsasDisp >= cant;
+    if (cant > 0 && !bolsaOk) allOk = false;
+    packH += '<tr><td class="fw7">Bolsa ' + packTalla + '</td>' +
+      '<td class="text-center">' + cant + '</td>' +
+      '<td class="text-center">$' + costoBolsa.toLocaleString() + '</td>' +
+      '<td class="text-center fw7" style="color:var(--gold)">$' + (costoBolsa * cant).toLocaleString() + '</td>' +
+      '<td class="text-center" style="color:' + (cant === 0 || bolsaOk ? 'var(--green)' : 'var(--red)') + '">' + bolsasDisp + '</td></tr>';
+    // Cinta
+    var cintaOk = cintasDisp >= cant;
+    if (cant > 0 && !cintaOk) allOk = false;
+    packH += '<tr><td class="fw7">Cinta</td>' +
+      '<td class="text-center">' + cant + '</td>' +
+      '<td class="text-center">$' + costoCinta.toLocaleString() + '</td>' +
+      '<td class="text-center fw7" style="color:var(--gold)">$' + (costoCinta * cant).toLocaleString() + '</td>' +
+      '<td class="text-center" style="color:' + (cant === 0 || cintaOk ? 'var(--green)' : 'var(--red)') + '">' + cintasDisp + '</td></tr>';
+    packH += '</tbody></table></div></div></div>';
+    var packagingEl = document.getElementById('f-pkprod-packaging');
+    if (packagingEl) packagingEl.innerHTML = packH;
+
+    // === Preview de blends ===
     var h = '<div class="card"><div class="card-body">';
 
     // Check stock de cada blend
@@ -1265,6 +1315,35 @@ const Pages = {
         if (!ok) allOk = false;
         h += '<div class="list-row"><span>' + bl.nombre + ' (' + talla + ')</span><span class="' + (ok ? 'text-green' : 'text-red fw7') + '">' + disponible + ' fr \u2192 necesita ' + cant + ' ' + (ok ? 'OK' : 'FALTA') + '</span></div>';
       }
+    }
+
+    // Resumen de costos de packaging
+    if (cant > 0) {
+      var costoPackagingTotal = (costoCaja + costoBolsa + costoCinta) * cant;
+      h += '<div class="mt-12 p-8" style="background:var(--bg2);border-radius:8px">';
+      h += '<div class="fw7 mb-4">Resumen de costos de packaging</div>';
+      h += '<div class="text-sm">Caja + Bolsa + Cinta por pack: <span class="fw7">$' + (costoCaja + costoBolsa + costoCinta).toLocaleString() + '</span></div>';
+      h += '<div class="text-sm mt-4">Costo total packaging (' + cant + ' packs): <span class="fw7" style="color:var(--gold)">$' + costoPackagingTotal.toLocaleString() + '</span></div>';
+      // Costo de los blends (informativo)
+      var costoBlendsTotal = 0;
+      for (var j = 0; j < blendItems.length; j++) {
+        var blCosto = ArcanoDB.getBlend(blendItems[j].blendId);
+        if (blCosto) {
+          var blTalla = blendItems[j].talla === 'grande' ? 'grande' : 'chico';
+          costoBlendsTotal += ArcanoDB.getCostoProducto('blend', blCosto.id, blTalla) * cant;
+        }
+      }
+      if (costoBlendsTotal > 0) {
+        h += '<div class="text-sm mt-4">Costo de blends (informativo): <span class="fw7">$' + costoBlendsTotal.toLocaleString(undefined, {maximumFractionDigits:0}) + '</span></div>';
+      }
+      var costoTotal = costoPackagingTotal + costoBlendsTotal;
+      h += '<div class="text-sm mt-4 fw7" style="color:var(--gold)">Costo TOTAL: $' + costoTotal.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div>';
+      var precioVenta = (pk.precio || 0) * cant;
+      var margen = precioVenta - costoTotal;
+      var margenPct = precioVenta > 0 ? (margen / precioVenta) * 100 : 0;
+      h += '<div class="text-sm mt-4">Precio venta (' + cant + ' packs): $' + precioVenta.toLocaleString() + '</div>';
+      h += '<div class="text-sm mt-4" style="color:' + (margen >= 0 ? 'var(--green)' : 'var(--red)') + '">Margen (' + margenPct.toFixed(0) + '%): $' + margen.toLocaleString(undefined, {maximumFractionDigits:0}) + '</div>';
+      h += '</div>';
     }
 
     h += '</div></div>';
