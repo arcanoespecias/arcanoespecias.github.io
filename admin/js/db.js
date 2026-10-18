@@ -123,6 +123,45 @@ function _ensureStructure() {
   if (!_db.stockBolsas) _db.stockBolsas = { chico: 0, grande: 0 };
   if (!_db.stockCintas) _db.stockCintas = 0;
   if (!_db.stockCajas) _db.stockCajas = 0;  // Cajas de madera para packs (1 caja por pack)
+  // === Normalizar stockCostales de cada PDV ===
+  // Firebase RTDB convierte un objeto { "5": 200, "8": 923 } a un array sparse
+  // si las claves son numéricas. Esto causa el bug de "costales duplicados"
+  // y entradas huérfanas. Aquí lo reconstruimos como dict limpio.
+  if (_db.puntosDeVenta) {
+    var _pdvKeys = Object.keys(_db.puntosDeVenta);
+    for (var _pi = 0; _pi < _pdvKeys.length; _pi++) {
+      var _pdv = _db.puntosDeVenta[_pdvKeys[_pi]];
+      if (!_pdv || !_pdv.stockCostales) continue;
+      var _sc = _pdv.stockCostales;
+      if (Array.isArray(_sc)) {
+        // Convertir lista sparse a dict limpio
+        var _newSc = {};
+        for (var _si = 0; _si < _sc.length; _si++) {
+          if (_sc[_si] != null && Number(_sc[_si]) > 0) {
+            // Validar que el costal existe en /costales
+            var _costal = _db.costales && _db.costales[_si];
+            if (_costal) {
+              _newSc[String(_si)] = Number(_sc[_si]);
+            }
+          }
+        }
+        _pdv.stockCostales = _newSc;
+      } else if (typeof _sc === 'object') {
+        // Ya es dict: limpiar entradas huérfanas y claves con valor 0
+        var _cleanSc = {};
+        var _scKeys = Object.keys(_sc);
+        for (var _sci = 0; _sci < _scKeys.length; _sci++) {
+          var _k = _scKeys[_sci];
+          var _v = Number(_sc[_k]) || 0;
+          if (_v > 0) {
+            var _costal2 = _db.costales && _db.costales[_k];
+            if (_costal2) _cleanSc[String(_k)] = _v;
+          }
+        }
+        _pdv.stockCostales = _cleanSc;
+      }
+    }
+  }
   if (!_db.usuarios) _db.usuarios = {
     admin: { id: 'admin', nombre: 'Administrador', pin: '1234', rol: 'admin', activo: true, creado: new Date().toISOString() }
   };
@@ -2903,12 +2942,16 @@ function devolverCostalDePDV(pdvId, costalId, gramos) {
   if (!pdv.stockCostales) pdv.stockCostales = {};
   gramos = Number(gramos) || 0;
   if (gramos <= 0) throw new Error('Gramos inv\u00E1lidos');
-  var disponible = Number(pdv.stockCostales[costalId]) || 0;
+  // Usar String(costalId) como clave para mantener consistencia
+  var cKey = String(costalId);
+  var disponible = Number(pdv.stockCostales[cKey]) || 0;
   if (disponible < gramos) {
     throw new Error('Gramos insuficientes en PDV. Disponibles: ' + disponible + 'g');
   }
   // Restar del PDV
-  pdv.stockCostales[costalId] = disponible - gramos;
+  pdv.stockCostales[cKey] = disponible - gramos;
+  // Si llegó a 0, eliminar la clave (deja el dict limpio)
+  if (Number(pdv.stockCostales[cKey]) <= 0) delete pdv.stockCostales[cKey];
   // Devolver al costal principal
   var costal = _db.costales && _db.costales[costalId];
   if (costal) {
@@ -3620,6 +3663,25 @@ function deleteCostal(id) {
       }
     }
   }
+
+  // Limpiar referencias en PDVs: si el costal está en algún pdv.stockCostales,
+  // eliminar la entrada (los gramos en PDV se pierden — el admin debería
+  // devolverlos al inventario principal antes de eliminar el costal).
+  // Esto previene entradas huérfanas que causaban el bug de "costales duplicados".
+  var sId = String(id);
+  if (_db.puntosDeVenta) {
+    var pdvKeys = Object.keys(_db.puntosDeVenta);
+    for (var pi = 0; pi < pdvKeys.length; pi++) {
+      var pdv = _db.puntosDeVenta[pdvKeys[pi]];
+      if (pdv && pdv.stockCostales && pdv.stockCostales[sId] != null) {
+        var gramosEnPdv = Number(pdv.stockCostales[sId]) || 0;
+        delete pdv.stockCostales[sId];
+        console.warn('[DB] deleteCostal(' + id + '): eliminada entrada huérfana en PDV ' + pdv.id + ' (' + gramosEnPdv + 'g perdidos)');
+        _notify('update', 'puntosDeVenta', pdv.id);
+      }
+    }
+  }
+
   delete _db.costales[id];
   _saveToFirebase(); _cacheLocal();
   _notify('delete', 'costales', id);
@@ -3730,9 +3792,12 @@ function moverCostalAPDV(pdvId, costalId, gramos) {
   // Restar del costal
   costal.gramosRestantes = (Number(costal.gramosRestantes) || 0) - gramos;
   if (costal.gramosRestantes <= 0) costal.estado = 'vacio';
-  // Sumar al PDV
+  // Sumar al PDV — usar String(costalId) como clave para que Firebase
+  // no convierta el dict a array (las claves numéricas se serializan como array).
+  // Esto previene el bug de "costales duplicados" y entradas huérfanas.
   if (!pdv.stockCostales) pdv.stockCostales = {};
-  pdv.stockCostales[costalId] = (Number(pdv.stockCostales[costalId]) || 0) + gramos;
+  var cKey = String(costalId);
+  pdv.stockCostales[cKey] = (Number(pdv.stockCostales[cKey]) || 0) + gramos;
   _saveToFirebase(); _cacheLocal();
   return true;
 }
@@ -3751,15 +3816,16 @@ function savePDVVentaPala(data) {
   var items = data.items || [];
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
+    var cKey = String(item.costalId);
     var costal = _db.costales && _db.costales[item.costalId];
     if (!costal) throw new Error('Costal no encontrado: ' + item.costalNombre);
     var gramosNecesarios = item.palas * (Number(costal.gramosPorPala) || 50);
-    var disponiblePDV = Number(pdv.stockCostales[item.costalId]) || 0;
+    var disponiblePDV = Number(pdv.stockCostales[cKey]) || 0;
     if (disponiblePDV < gramosNecesarios) {
       throw new Error('Gramos insuficientes en PDV para ' + (costal.nombre || 'costal') + '. Necesitas ' + gramosNecesarios + 'g, tienes ' + disponiblePDV + 'g');
     }
-    // Restar del PDV
-    pdv.stockCostales[item.costalId] = disponiblePDV - gramosNecesarios;
+    // Restar del PDV — usar String(costalId) como clave
+    pdv.stockCostales[cKey] = disponiblePDV - gramosNecesarios;
     item.gramosConsumidos = gramosNecesarios;
     item.precioUnitario = Number(costal.precioPala) || 0;
     item.subtotal = item.palas * item.precioUnitario;
