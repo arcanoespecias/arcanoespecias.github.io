@@ -699,7 +699,8 @@ var PDV = {
     }
     if (costalesKeys.length > 0) {
       h += '<div style="border-top:2px solid var(--border);margin:16px 0 8px"></div>';
-      h += '<h4 style="margin:0 0 8px">🛍️ Costales — Venta de Palas</h4>';
+      h += '<h4 style="margin:0 0 8px">🥄 Palas</h4>';
+      h += '<p class="text-muted text-sm" style="margin:0 0 8px">Vendé palas de los costales movidos a este PDV</p>';
       h += '<div id="pos-costales" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
       for (var ck = 0; ck < costalesKeys.length; ck++) {
         var costalKey = costalesKeys[ck];
@@ -716,78 +717,15 @@ var PDV = {
       h += '</div>';
     }
 
-    // === Sección de Palas (venta directa por producto, descuenta de Bodega o costal abierto) ===
-    var productosPalas = [];
-    for (var ek = 0; ek < especias.length; ek++) {
-      var eP = especias[ek];
-      var pesoPalaE = Number(eP.pesoPala) || 0;
-      if (pesoPalaE > 0 && (Number(eP.stockBolsa) || 0) > 0) {
-        productosPalas.push({
-          tipo: 'especia', id: eP.id, nombre: eP.nombre, pesoPala: pesoPalaE,
-          precioPala: Number(eP.precioPala) || 0,
-          bodega: Number(eP.stockBolsa) || 0,
-          palasDispBodega: pesoPalaE > 0 ? Math.floor((Number(eP.stockBolsa) || 0) / pesoPalaE) : 0
-        });
-      }
-    }
-    // También considerar costales abiertos (NO los que ya están en el PDV, para evitar duplicación)
-    var pdvCostalIds = {};
-    var scKeys = Object.keys(stockCostales);
-    for (var sci = 0; sci < scKeys.length; sci++) {
-      if ((stockCostales[scKeys[sci]] || 0) > 0) {
-        pdvCostalIds[parseInt(scKeys[sci], 10)] = true;
-      }
-    }
-    var costalesAbiertos = ArcanoDB.getCostales().filter(function(c) {
-      // Excluir costales que ya están en el PDV (se muestran en la sección "Costales" de arriba)
-      if (c && pdvCostalIds[c.id]) return false;
-      return c && c.estado === 'abierto' && (Number(c.gramosRestantes) || 0) > 0;
-    });
-    for (var ca = 0; ca < costalesAbiertos.length; ca++) {
-      var caObj = costalesAbiertos[ca];
-      var caPeso = Number(caObj.pesoPala) || 20;
-      var caRest = Number(caObj.gramosRestantes) || 0;
-      var caPalas = caPeso > 0 ? Math.floor(caRest / caPeso) : 0;
-      if (caPalas <= 0) continue;
-      // Verificar si ya agregamos el producto desde Bodega
-      var yaAgregado = false;
-      for (var pp2 = 0; pp2 < productosPalas.length; pp2++) {
-        if (productosPalas[pp2].tipo === caObj.productoTipo && productosPalas[pp2].id === caObj.productoId) {
-          productosPalas[pp2].palasDispBodega += caPalas;
-          productosPalas[pp2].palasEnCostal = caPalas;
-          productosPalas[pp2].costalId = caObj.id;
-          yaAgregado = true;
-          break;
-        }
-      }
-      if (!yaAgregado) {
-        var prodCA = caObj.productoTipo === 'blend' ? ArcanoDB.getBlend(caObj.productoId) : ArcanoDB.getEspecia(caObj.productoId);
-        if (prodCA) {
-          productosPalas.push({
-            tipo: caObj.productoTipo, id: caObj.productoId, nombre: prodCA.nombre, pesoPala: caPeso,
-            precioPala: Number(prodCA.precioPala) || 0,
-            bodega: 0,
-            palasDispBodega: caPalas,
-            palasEnCostal: caPalas,
-            costalId: caObj.id
-          });
-        }
-      }
-    }
-    if (productosPalas.length > 0) {
-      h += '<div style="border-top:2px solid var(--border);margin:16px 0 8px"></div>';
-      h += '<h4 style="margin:0 0 8px">🥄 Palas (vender directo de Bodega o Costal abierto)</h4>';
-      h += '<div id="pos-palas" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
-      for (var pp3 = 0; pp3 < productosPalas.length; pp3++) {
-        var pp = productosPalas[pp3];
-        var onclickStr = "PDV.posAddPalaProducto('" + pp.tipo + "'," + pp.id + ",'" + this.esc(pp.nombre).replace(/'/g, "\\'") + "'," + pp.pesoPala + "," + (pp.precioPala || 0) + "," + pp.palasDispBodega + "," + (pp.costalId || 0) + ")";
-        h += '<div class="card pos-product" data-name="' + this.esc(pp.nombre).toLowerCase() + ' pala" style="cursor:pointer;padding:10px;border-left:3px solid var(--gold)" onclick="' + onclickStr + '">' +
-          '<div class="fw7" style="font-size:0.9em">🥄 ' + this.esc(pp.nombre) + ' (pala ' + pp.pesoPala + 'g)</div>' +
-          '<div class="text-muted text-sm">Palas: ' + pp.palasDispBodega + (pp.palasEnCostal ? ' (costal #' + pp.costalId + ')' : ' (Bodega)') + '</div>' +
-          '<div class="fw7" style="color:var(--gold)">$' + (pp.precioPala || 0).toLocaleString() + '/pala</div></div>';
-      }
-      h += '</div>';
-    }
+    // === SECCIÓN ELIMINADA ===
+    // Antes existía una sección "🥄 Palas (vender directo de Bodega o Costal abierto)"
+    // que mostraba palas tomadas directamente de especias.stockBolsa o de costales
+    // abiertos en /costales. Esto generaba duplicación con la sección "Costales"
+    // de arriba y permitía vender palas sin mover primero el costal al PDV.
+    //
+    // Flujo correcto: el admin crea costales → admin los mueve al PDV →
+    // el PDV vende palas SOLO de los costales que están en pdv.stockCostales.
+    // No hay venta de palas directo desde Bodega ni desde costales no-PDV.
 
     // Cart
     h += '<div style="border-top:2px solid var(--border);margin-top:12px;padding-top:12px">' +
@@ -851,36 +789,17 @@ var PDV = {
     this._renderPosCart();
   },
 
-  /** Agrega una pala al carrito (vender directo de Bodega o costal abierto).
-   *  Tipo de item en carrito: 'pala' (NO 'costal').
-   *  Al confirmar la venta, se procesa con saveVenta directamente
-   *  (que descuenta de costal abierto o Bodega). */
-  posAddPalaProducto(productoTipo, productoId, nombre, pesoPala, precioPala, maxPalas, costalId) {
-    for (var i = 0; i < this._posCart.length; i++) {
-      var c = this._posCart[i];
-      if (c.tipo === 'pala' && c.productoId === productoId) {
-        if (c.cantidad >= maxPalas) { toast('Palas máximas alcanzadas: ' + maxPalas, 'err'); return; }
-        c.cantidad++;
-        c.subtotal = c.precioUnitario * c.cantidad;
-        this._renderPosCart();
-        return;
-      }
-    }
-    this._posCart.push({
-      tipo: 'pala',
-      productoTipo: productoTipo,
-      productoId: productoId,
-      productoNombre: nombre + ' (pala ' + pesoPala + 'g)',
-      talla: 'pala',
-      peso: pesoPala,
-      precioUnitario: precioPala,
-      cantidad: 1,
-      subtotal: precioPala,
-      maxPalas: maxPalas,
-      costalId: costalId || null
-    });
-    this._renderPosCart();
-  },
+  /* posAddPalaProducto: ELIMINADO.
+   * Antes permitía vender palas directo de Bodega o de costales abiertos en
+   * /costales que no estaban en el PDV. Eso generaba duplicación con la sección
+   * "Costales" de arriba. El flujo correcto ahora es:
+   *   1. Admin crea costales en la sección Costales
+   *   2. Admin mueve los costales al PDV (botón "Mover Costales al PDV")
+   *   3. PDV vende palas SOLO de los costales que están en pdv.stockCostales
+   *      (a través de posAddPala, que está arriba).
+   * Si una pala se quiere vender directo de Bodega, hay que armar un costal
+   * primero, moverlo al PDV, y luego vender la pala desde ahí.
+   */
 
   posRemove(idx) {
     this._posCart.splice(idx, 1);
@@ -1008,59 +927,24 @@ var PDV = {
     if (!pdv) return;
     var self = this;
 
-    // Separar items de frascos (especia/blend/pack) de items de palas (costal) y palas directas (pala)
+    // Separar items de frascos (especia/blend/pack) de items de palas (costal del PDV)
     var frascosItems = [];
-    var palasCostalItems = [];  // items tipo 'costal' (sistema viejo)
-    var palasDirectasItems = []; // items tipo 'pala' (sistema nuevo)
+    var palasCostalItems = [];  // items tipo 'costal' (palas de costales del PDV)
     for (var i = 0; i < this._posCart.length; i++) {
       var it = this._posCart[i];
       if (it.tipo === 'costal') {
         palasCostalItems.push({ costalId: it.costalId, costalNombre: it.costalNombre, palas: it.cantidad });
-      } else if (it.tipo === 'pala') {
-        palasDirectasItems.push({
-          tipo: 'pala',
-          productoTipo: it.productoTipo,
-          productoId: it.productoId,
-          peso: it.peso,
-          cantidad: it.cantidad,
-          precioUnitario: it.precioUnitario
-        });
       } else {
         frascosItems.push({ tipo: it.tipo, productoId: it.productoId, talla: it.talla, cantidad: it.cantidad, precioUnitario: it.precioUnitario });
       }
     }
-    var palasItems = palasCostalItems; // mantener compatibilidad con savePDVVentaPala
-    var hayPalasDirectas = palasDirectasItems.length > 0;
 
-    // Si hay palas directas (de Bodega/costal abierto), usar saveVenta (que descuenta de costal o Bodega)
-    if (hayPalasDirectas && frascosItems.length === 0 && palasCostalItems.length === 0) {
-      var saleDataPalaDirecta = {
-        puntoDeVentaId: pdv.id,
-        puntoDeVentaNombre: pdv.nombre,
-        fecha: new Date().toISOString().slice(0, 10),
-        items: palasDirectasItems
-      };
-      this._showPDVPagoModal(saleDataPalaDirecta, function(data) {
-        try {
-          var itemsConPago = data.items.map(function(it) {
-            return Object.assign({}, it, { metodoPago: data.metodoPago });
-          });
-          var venta = ArcanoDB.saveVenta({ fecha: data.fecha || new Date().toISOString().slice(0,10), items: itemsConPago, pdvId: pdv.id, pdvNombre: pdv.nombre, metodoPago: data.metodoPago });
-          self._posCart = [];
-          toast('Venta de palas registrada! #' + venta.id);
-          self.currentPDV = ArcanoDB.getPuntoDeVenta(pdv.id);
-          self.renderPos(document.getElementById('page-content'));
-        } catch (e) { toast(e.message, 'err'); }
-      });
-      return;
-    }
-
-    // Si solo hay palas (costales viejos), usar savePDVVentaPala
-    if (palasCostalItems.length > 0 && frascosItems.length === 0 && !hayPalasDirectas) {
+    // Si solo hay palas de costales del PDV, usar savePDVVentaPala
+    if (palasCostalItems.length > 0 && frascosItems.length === 0) {
       var saleDataPala = {
         puntoDeVentaId: pdv.id,
         puntoDeVentaNombre: pdv.nombre,
-        items: palasItems
+        items: palasCostalItems
       };
       this._showPDVPagoModal(saleDataPala, function(data) {
         try {
@@ -1075,7 +959,7 @@ var PDV = {
     }
 
     // Si solo hay frascos, usar savePDVVenta (original)
-    if (frascosItems.length > 0 && palasCostalItems.length === 0 && !hayPalasDirectas) {
+    if (frascosItems.length > 0 && palasCostalItems.length === 0) {
       var saleData = {
         puntoDeVentaId: pdv.id,
         puntoDeVentaNombre: pdv.nombre,
@@ -1093,42 +977,31 @@ var PDV = {
       return;
     }
 
-    // Si hay MEZCLADOS (frascos + palas costal y/o palas directas): procesar todo
-    // Combinar todos los items para mostrar total en el modal de pago
-    var combinedItems = frascosItems.concat(palasDirectasItems);
-    if (combinedItems.length > 0 || palasCostalItems.length > 0) {
-      var combinedData = {
-        puntoDeVentaId: pdv.id,
-        puntoDeVentaNombre: pdv.nombre,
-        items: combinedItems.concat(palasCostalItems.map(function(p) {
-          return { tipo: 'costal_legacy', costalId: p.costalId, costalNombre: p.costalNombre, cantidad: p.palas, precioUnitario: 0 };
-        }))
-      };
-      this._showPDVPagoModal(combinedData, function(data) {
-        try {
-          // Vender frascos (si hay)
-          if (frascosItems.length > 0) {
-            ArcanoDB.savePDVVenta({ puntoDeVentaId: pdv.id, puntoDeVentaNombre: pdv.nombre, items: frascosItems, metodoPago: data.metodoPago });
-          }
-          // Vender palas directas (de Bodega o costal abierto) con saveVenta
-          if (palasDirectasItems.length > 0) {
-            var itemsPalaFinal = palasDirectasItems.map(function(it) {
-              return Object.assign({}, it, { metodoPago: data.metodoPago });
-            });
-            ArcanoDB.saveVenta({ fecha: data.fecha || new Date().toISOString().slice(0,10), items: itemsPalaFinal, pdvId: pdv.id, pdvNombre: pdv.nombre, metodoPago: data.metodoPago });
-          }
-          // Vender palas de costales viejos con savePDVVentaPala
-          if (palasCostalItems.length > 0) {
-            ArcanoDB.savePDVVentaPala({ puntoDeVentaId: pdv.id, puntoDeVentaNombre: pdv.nombre, items: palasCostalItems, metodoPago: data.metodoPago });
-          }
-          self._posCart = [];
-          toast('Venta mixta registrada (frascos + palas)');
-          self.currentPDV = ArcanoDB.getPuntoDeVenta(pdv.id);
-          self.renderPos(document.getElementById('page-content'));
-        } catch (e) { toast(e.message, 'err'); }
-      });
-      return;
-    }
+    // Si hay MEZCLADOS (frascos + palas de costales): procesar todo
+    var combinedItems = frascosItems.concat(palasCostalItems.map(function(p) {
+      return { tipo: 'costal_legacy', costalId: p.costalId, costalNombre: p.costalNombre, cantidad: p.palas, precioUnitario: 0 };
+    }));
+    var combinedData = {
+      puntoDeVentaId: pdv.id,
+      puntoDeVentaNombre: pdv.nombre,
+      items: combinedItems
+    };
+    this._showPDVPagoModal(combinedData, function(data) {
+      try {
+        // Vender frascos (si hay)
+        if (frascosItems.length > 0) {
+          ArcanoDB.savePDVVenta({ puntoDeVentaId: pdv.id, puntoDeVentaNombre: pdv.nombre, items: frascosItems, metodoPago: data.metodoPago });
+        }
+        // Vender palas de costales del PDV con savePDVVentaPala
+        if (palasCostalItems.length > 0) {
+          ArcanoDB.savePDVVentaPala({ puntoDeVentaId: pdv.id, puntoDeVentaNombre: pdv.nombre, items: palasCostalItems, metodoPago: data.metodoPago });
+        }
+        self._posCart = [];
+        toast('Venta mixta registrada (frascos + palas)');
+        self.currentPDV = ArcanoDB.getPuntoDeVenta(pdv.id);
+        self.renderPos(document.getElementById('page-content'));
+      } catch (e) { toast(e.message, 'err'); }
+    });
   },
 
   /* ==================== ESTADISTICAS ==================== */
