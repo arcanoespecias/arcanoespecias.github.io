@@ -475,8 +475,6 @@ const App = {
               '<span class="nav-icon">\u{1F4E6}</span><span class="nav-label">Insumos</span></a>' +
             '<a class="nav-item" data-page="produccion" onclick="App.navigate(\'produccion\')">' +
               '<span class="nav-icon">\u{1F3ED}</span><span class="nav-label">Produccion</span></a>' +
-            '<a class="nav-item" data-page="costales" onclick="App.navigate(\'costales\')">' +
-              '<span class="nav-icon">\u{1F6CD}\uFE0F</span><span class="nav-label">Costales</span></a>' +
             '<a class="nav-item" data-page="ventas" onclick="App.navigate(\'ventas\')">' +
               '<span class="nav-icon">\u{1F4B0}</span><span class="nav-label">Ventas</span></a>' +
             '<a class="nav-item" data-page="gastos" onclick="App.navigate(\'gastos\')">' +
@@ -619,7 +617,7 @@ const App = {
         case 'productos': Pages.renderProductos(container); break;
         case 'insumos': Pages.renderInsumos(container); break;
         case 'produccion': Pages.renderProduccion(container); break;
-        case 'costales': Pages.renderCostales(container); break;
+        case 'costales': Pages._palasTab = 'costales'; Pages.renderPalas(container); break;
         case 'ventas': Pages.renderVentas(container); break;
         case 'gastos': Pages.renderGastos(container); break;
         case 'pedidos': Pages.renderPedidos(container); break;

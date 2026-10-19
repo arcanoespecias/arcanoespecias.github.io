@@ -868,7 +868,11 @@ var PDV = {
   _showPDVPagoModal: function(saleData, onSuccess) {
     var total = 0;
     for (var i = 0; i < saleData.items.length; i++) {
-      total += (Number(saleData.items[i].precioUnitario) || 0) * (Number(saleData.items[i].cantidad) || 0);
+      var it = saleData.items[i];
+      // Soportar items con 'cantidad' (frascos) y 'palas' (palas de costal)
+      var cant = Number(it.cantidad != null ? it.cantidad : it.palas) || 0;
+      var precio = Number(it.precioUnitario) || 0;
+      total += precio * cant;
     }
     saleData.total = total;
     var qrImg = (typeof Pages !== 'undefined' && Pages._qrPagoImage) ? Pages._qrPagoImage : localStorage.getItem('arcano_qr_pago_image');
@@ -936,10 +940,13 @@ var PDV = {
     for (var i = 0; i < this._posCart.length; i++) {
       var it = this._posCart[i];
       if (it.tipo === 'costal') {
+        // Cada item de palas lleva 'palas' (alias histórico) y 'cantidad' (estándar)
+        // para que tanto _showPDVPagoModal como savePDVVentaPala lo procesen bien.
         palasCostalItems.push({
           costalId: it.costalId,
           costalNombre: it.costalNombre,
           palas: it.cantidad,
+          cantidad: it.cantidad,
           precioUnitario: it.precioUnitario || 0,
           productoNombre: it.productoNombre || (it.costalNombre + ' (pala)')
         });
@@ -987,19 +994,20 @@ var PDV = {
     }
 
     // Si hay MEZCLADOS (frascos + palas de costales): procesar todo
-    // Para el modal de pago: combinar frascosItems + palasCostalItems
-    // IMPORTANTE: preservar el precioUnitario de cada pala para que el total
-    // del modal sea correcto (suma de frascos + palas).
-    var palasConPrecio = palasCostalItems.map(function(p) {
+    // Para el modal de pago: combinar frascosItems + palasCostalItems.
+    // Cada pala ya tiene 'cantidad' (alias de 'palas') y 'precioUnitario',
+    // así que _showPDVPagoModal puede calcular el total correctamente.
+    var combinedItems = frascosItems.concat(palasCostalItems.map(function(p) {
       return {
         tipo: 'costal_legacy',
         costalId: p.costalId,
         costalNombre: p.costalNombre,
-        cantidad: p.palas,
-        precioUnitario: p.precioUnitario || 0
+        cantidad: p.cantidad,
+        palas: p.palas,
+        precioUnitario: p.precioUnitario || 0,
+        productoNombre: p.productoNombre
       };
-    });
-    var combinedItems = frascosItems.concat(palasConPrecio);
+    }));
     var combinedData = {
       puntoDeVentaId: pdv.id,
       puntoDeVentaNombre: pdv.nombre,
