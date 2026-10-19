@@ -2659,3 +2659,32 @@ html.no-opening #opening-overlay {
   .bb-prep-title { font-size: 1.2rem; }
   .bb-prep-subtitle { font-size: 0.85rem; max-width: 220px; }
 }
+
+/* === BUSCADOR DE RECETAS === */
+.recipe-search-bar {
+  margin: 16px 0;
+}
+.recipe-search-bar input {
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.recipe-search-bar input::placeholder {
+  color: var(--stone);
+  opacity: 0.5;
+}
+.recipe-search-bar input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(245,238,215,0.10);
+}
+.rgc-products {
+  display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0;
+}
+.rgc-product-tag {
+  display: inline-block; padding: 2px 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 100px; font-size: 0.7rem; color: var(--text-muted);
+}
+.rgc-product-match {
+  background: var(--stone-mid); border-color: var(--stone);
+  color: var(--stone); font-weight: 600;
+}
