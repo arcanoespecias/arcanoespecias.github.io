@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcano-tienda-v7';
+const CACHE_NAME = 'arcano-tienda-v8';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
