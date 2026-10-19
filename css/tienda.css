@@ -22,6 +22,16 @@
   --gold-light: rgba(232,184,75,0.15);
   --gold-glow: rgba(232,184,75,0.25);
 
+  /* === PIEDRA / ARCANO STONE (#DCD8CF) — beige cálido neutro ===
+     Neutro complementario: equilibra el dorado y el marrón oscuro.
+     Uso: hover states secundarios, hairlines, placeholders tipo "pergamino".
+     Jerarquía: idle → hover(stone) → active(gold). */
+  --stone: #DCD8CF;
+  --stone-soft:   rgba(220, 216, 207, 0.06);
+  --stone-mid:    rgba(220, 216, 207, 0.12);
+  --stone-border: rgba(220, 216, 207, 0.22);
+  --stone-text:   rgba(220, 216, 207, 0.75);
+
   /* === ACENTOS DE ESPECIAS: matices complementarios === */
   --spice-red: #C0492C;     /* pimentón / ají */
   --spice-green: #6B8E4E;   /* hierbas */
@@ -455,7 +465,8 @@ main {
 
 .hero-subtitle-landing {
   font-size: clamp(1rem, 3vw, 1.35rem);
-  color: #a08b6e;
+  color: var(--stone);
+  opacity: 0.85;
   max-width: 600px;
   margin: 0 auto 24px;
   line-height: 1.7;
@@ -467,7 +478,8 @@ main {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: #8a7a5c;
+  color: var(--stone);
+  opacity: 0.7;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.3em;
@@ -514,7 +526,7 @@ main {
   background: var(--bg-card); transition: all 0.25s var(--ease);
   letter-spacing: 0.02em;
 }
-.filter-pill:hover { border-color: var(--gold); color: var(--gold); }
+.filter-pill:hover { border-color: var(--stone); color: var(--text); background: var(--stone-mid); }
 .filter-pill.active {
   background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600;
 }
@@ -578,7 +590,7 @@ main {
 .card-type-badge.blend { background: var(--gold); color: #1A130D; }
 .card-type-badge.especia { background: var(--spice-green); color: #1A130D; }
 .card-type-badge.pack { background: var(--spice-red); color: var(--text-on-dark); }
-.card-body { padding: 16px 18px 18px; background: var(--bg-secondary); }
+.card-body { padding: 16px 18px 18px; background: var(--bg-secondary); border-top: 1px solid var(--stone-border); }
 .card-name {
   font-family: var(--font-body); font-size: 1rem; font-weight: 700;
   color: var(--text); margin-bottom: 4px;
@@ -634,7 +646,8 @@ main {
   margin: 4px auto;
 }
 .empty-state {
-  text-align: center; padding: 60px 20px; color: var(--text-muted);
+  text-align: center; padding: 60px 20px;
+  color: var(--stone); opacity: 0.7;
 }
 .empty-state p { font-size: 1.15rem; margin-top: 8px; }
 
@@ -772,7 +785,7 @@ main {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: 400px; max-width: 100vw; z-index: 301;
   background: var(--bg-card);
-  border-left: 2px solid rgba(232, 184, 75, 0.15);
+  border-left: 2px solid var(--stone-border);
   transform: translateX(100%);
   transition: transform 0.4s var(--ease);
   display: flex; flex-direction: column;
@@ -896,7 +909,7 @@ main {
   outline: none;
 }
 .form-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
-.form-input::placeholder { color: var(--text-muted); }
+.form-input::placeholder { color: var(--stone); opacity: 0.5; }
 textarea.form-input { min-height: 70px; resize: vertical; }
 .qr-section {
   margin-top: 16px; padding: 16px;
@@ -918,7 +931,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   line-height: 1.1;
 }
 .page-header p {
-  color: var(--text-sec); font-size: 0.95rem;
+  color: var(--stone); opacity: 0.75; font-size: 0.95rem;
 }
 .recipe-tabs {
   display: flex; gap: 8px; justify-content: center;
@@ -932,7 +945,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   letter-spacing: 0.02em;
 }
 .recipe-tab.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
-.recipe-tab:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+.recipe-tab:hover:not(.active) { border-color: var(--stone); color: var(--text); background: var(--stone-mid); }
 .recipe-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
@@ -1665,7 +1678,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 /* === BLOG === */
 .blog-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
 .blog-tab { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-sec); cursor: pointer; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.02em; transition: all 0.25s var(--ease); }
-.blog-tab:hover { border-color: var(--gold); color: var(--gold); }
+.blog-tab:hover { border-color: var(--stone); color: var(--text); background: var(--stone-mid); }
 .blog-tab.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
 .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 .blog-card { background-color: var(--bg-card); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; transition: all 0.3s var(--ease); border: 1px solid var(--border); }
@@ -2657,10 +2670,15 @@ html.no-opening #opening-overlay {
 }
 .recipe-search-bar input {
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.recipe-search-bar input::placeholder {
+  color: var(--stone);
+  opacity: 0.5;
 }
 .recipe-search-bar input:focus {
   border-color: var(--gold, #c9a84c);
+  box-shadow: 0 0 0 3px rgba(220, 216, 207, 0.10);
 }
 
 /* Tags de productos usados en recetas (cuando hay búsqueda) */
