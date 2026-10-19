@@ -936,7 +936,13 @@ var PDV = {
     for (var i = 0; i < this._posCart.length; i++) {
       var it = this._posCart[i];
       if (it.tipo === 'costal') {
-        palasCostalItems.push({ costalId: it.costalId, costalNombre: it.costalNombre, palas: it.cantidad });
+        palasCostalItems.push({
+          costalId: it.costalId,
+          costalNombre: it.costalNombre,
+          palas: it.cantidad,
+          precioUnitario: it.precioUnitario || 0,
+          productoNombre: it.productoNombre || (it.costalNombre + ' (pala)')
+        });
       } else {
         frascosItems.push({ tipo: it.tipo, productoId: it.productoId, talla: it.talla, cantidad: it.cantidad, precioUnitario: it.precioUnitario });
       }
@@ -981,9 +987,19 @@ var PDV = {
     }
 
     // Si hay MEZCLADOS (frascos + palas de costales): procesar todo
-    var combinedItems = frascosItems.concat(palasCostalItems.map(function(p) {
-      return { tipo: 'costal_legacy', costalId: p.costalId, costalNombre: p.costalNombre, cantidad: p.palas, precioUnitario: 0 };
-    }));
+    // Para el modal de pago: combinar frascosItems + palasCostalItems
+    // IMPORTANTE: preservar el precioUnitario de cada pala para que el total
+    // del modal sea correcto (suma de frascos + palas).
+    var palasConPrecio = palasCostalItems.map(function(p) {
+      return {
+        tipo: 'costal_legacy',
+        costalId: p.costalId,
+        costalNombre: p.costalNombre,
+        cantidad: p.palas,
+        precioUnitario: p.precioUnitario || 0
+      };
+    });
+    var combinedItems = frascosItems.concat(palasConPrecio);
     var combinedData = {
       puntoDeVentaId: pdv.id,
       puntoDeVentaNombre: pdv.nombre,
