@@ -2,13 +2,13 @@
 
 /* === VARIABLES === */
 :root {
-  /* === BASE: marrón café cálido (45% de la paleta) === */
-  --bg: #15110E;
-  --bg-card: #1C1815;
-  --bg-secondary: #221E1A;
-  --surface: #2A2521;
-  --border: #3A332E;
-  --border-light: #2A2521;
+  /* === BASE: negro café profundo (Arcano Nocturno) === */
+  --bg: #0E0A07;
+  --bg-card: #1A130D;
+  --bg-secondary: #251A11;
+  --surface: #2B1F14;
+  --border: #3D2A1C;
+  --border-light: #2A1C12;
 
   /* === TEXTO: tonos crema cálido (alto contraste sobre negro) === */
   --text: #F5E6D0;
@@ -16,22 +16,18 @@
   --text-muted: #9A8A78;
   --dark: #F5E6D0; /* headings — ahora claros sobre fondo oscuro */
 
-  /* === ACENTOS DE MARCA: dorado cálido terroso (20% de la paleta) === */
-  --gold: #D7A04F;
-  --gold-hover: #BF8E3E;
-  --gold-light: rgba(215,160,79,0.15);
-  --gold-glow: rgba(215,160,79,0.25);
+  /* === ACENTOS DE MARCA: dorados del logo (más vivos para oscuro) === */
+  --gold: #E8B84B;
+  --gold-hover: #C9963A;
+  --gold-light: rgba(232,184,75,0.15);
+  --gold-glow: rgba(232,184,75,0.25);
 
-  /* === PIEDRA / ARCANO STONE (#DCD8CF) — beige cálido neutro (35% de la paleta) ===
-     Neutro complementario: equilibra el dorado y el marrón.
-     Uso amplio: backgrounds de cards, inputs, hover states, hairlines,
-     separadores, drawer, modales. Crea sensacion de pergamino. */
-  --stone: #DCD8CF;
-  --stone-soft:   rgba(220, 216, 207, 0.08);  /* wash para fondos de cards */
-  --stone-mid:    rgba(220, 216, 207, 0.15);   /* hover backgrounds */
-  --stone-strong: rgba(220, 216, 207, 0.25);   /* fondos visibles */
-  --stone-border: rgba(220, 216, 207, 0.30);   /* hairlines / bordes */
-  --stone-text:   rgba(220, 216, 207, 0.85);   /* texto secundario */
+  /* === STONE (#F5EED7) — beige cálido claro === */
+  --stone: #F5EED7;
+  --stone-soft:   rgba(245,238,215,0.10);
+  --stone-mid:    rgba(245,238,215,0.18);
+  --stone-border: rgba(245,238,215,0.35);
+  --stone-text:   rgba(245,238,215,0.90);
 
   /* === ACENTOS DE ESPECIAS: matices complementarios === */
   --spice-red: #C0492C;     /* pimentón / ají */
@@ -210,7 +206,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   border-bottom: 2px solid rgba(var(--border-r), var(--border-g), var(--border-b), 0.8);
   transition: box-shadow var(--ease), background 0.6s var(--ease), border-color 0.6s var(--ease);
 }
-.nav-header.scrolled { background: rgba(21,17,14,0.95); border-bottom: 1px solid var(--stone-border); box-shadow: var(--shadow-sm); }
+.nav-header.scrolled { box-shadow: var(--shadow-sm); }
 .nav-inner {
   max-width: 1280px; margin: 0 auto;
   height: 100%; display: flex; align-items: center;
@@ -257,7 +253,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 }
 
 /* === MOBILE MENU OVERLAY === */
-.mobile-menu-overlay { background: rgba(21,17,14,0.97);
+.mobile-menu-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(8px);
@@ -342,7 +338,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 }
 
 /* === BOTTOM TABS (MOBILE) === */
-.bottom-tabs { background: rgba(21,17,14,0.97); border-top: 1px solid var(--stone-border);
+.bottom-tabs {
   display: none; position: fixed; bottom: 0; left: 0; right: 0;
   height: var(--tabs-h); z-index: 100;
   background: rgba(var(--bg-card-r), var(--bg-card-g), var(--bg-card-b), 0.95);
@@ -510,7 +506,7 @@ main {
 }
 
 /* === FILTER BAR === */
-.filter-bar { background: var(--stone-soft); 
+.filter-bar {
   display: flex; gap: 8px; justify-content: center;
   flex-wrap: wrap; margin-bottom: 16px;
   position: sticky; top: var(--nav-h);
@@ -787,7 +783,6 @@ main {
   width: 400px; max-width: 100vw; z-index: 301;
   background: var(--bg-card);
   border-left: 2px solid var(--stone-border);
-  box-shadow: -8px 0 32px rgba(220,216,207,0.04);
   transform: translateX(100%);
   transition: transform 0.4s var(--ease);
   display: flex; flex-direction: column;
@@ -935,7 +930,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .page-header p {
   color: var(--stone); opacity: 0.75; font-size: 0.95rem;
 }
-.recipe-tabs { background: var(--stone-soft); 
+.recipe-tabs {
   display: flex; gap: 8px; justify-content: center;
   margin-bottom: 28px;
 }
@@ -1407,7 +1402,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* === FOOTER === */
-.store-footer { background: var(--stone-soft); 
+.store-footer {
   text-align: center; padding: 36px 24px;
   color: var(--text-muted); font-size: 0.8rem;
   border-top: 2px solid rgba(var(--border-r), var(--border-g), var(--border-b), 0.6);
@@ -1529,7 +1524,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
   .nav-left { flex-shrink: 0; }
   .mc-btn { margin-right: auto; }
   .hamburger { display: flex; }
-  .bottom-tabs { background: rgba(21,17,14,0.97); border-top: 1px solid var(--stone-border); display: block; }
+  .bottom-tabs { display: block; }
   main { padding: calc(var(--nav-h) + 16px) 16px calc(var(--tabs-h) + 24px); }
   .hero-section { padding: 32px 16px 28px; }
   .page-header { padding: 32px 16px 28px; }
@@ -1678,7 +1673,7 @@ textarea.form-input { min-height: 70px; resize: vertical; }
 .gc-form .btn-primary { margin-top: 4px; }
 
 /* === BLOG === */
-.blog-tabs { background: var(--stone-soft);  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.blog-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
 .blog-tab { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-sec); cursor: pointer; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.02em; transition: all 0.25s var(--ease); }
 .blog-tab:hover { border-color: var(--stone); color: var(--text); background: var(--stone-mid); }
 .blog-tab.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
@@ -2571,7 +2566,7 @@ html.no-opening #opening-overlay {
 
 /* Mobile: filtros en una sola fila con scroll horizontal */
 @media (max-width: 768px) {
-  .filter-bar { background: var(--stone-soft); 
+  .filter-bar {
     flex-wrap: nowrap !important;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -2663,45 +2658,4 @@ html.no-opening #opening-overlay {
   .bb-prep-frasco-img { width: 110px; height: 110px; }
   .bb-prep-title { font-size: 1.2rem; }
   .bb-prep-subtitle { font-size: 0.85rem; max-width: 220px; }
-}
-
-
-/* === BUSCADOR DE RECETAS === */
-.recipe-search-bar {
-  margin: 16px 0;
-}
-.recipe-search-bar input {
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.recipe-search-bar input::placeholder {
-  color: var(--stone);
-  opacity: 0.5;
-}
-.recipe-search-bar input:focus {
-  border-color: var(--gold, #c9a84c);
-  box-shadow: 0 0 0 3px rgba(220, 216, 207, 0.10);
-}
-
-/* Tags de productos usados en recetas (cuando hay búsqueda) */
-.rgc-products {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 6px 0;
-}
-.rgc-product-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  background: var(--surface, #2d1a10);
-  border: 1px solid var(--border, #3d2a1c);
-  border-radius: 100px;
-  font-size: 0.7rem;
-  color: var(--text-muted, #a08b6e);
-}
-.rgc-product-match {
-  background: rgba(201, 168, 76, 0.15);
-  border-color: var(--gold, #c9a84c);
-  color: var(--gold, #c9a84c);
-  font-weight: 600;
 }
