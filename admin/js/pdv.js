@@ -218,34 +218,30 @@ var PDV = {
     }
     h += '<div style="border-top:2px solid var(--border);margin:20px 0 12px"></div>';
     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
-      '<h4 style="margin:0">🛍️ Costales en el PDV</h4>' +
+      '<h4 style="margin:0">🥄 Palas (especies disponibles para vender)</h4>' +
       '<button class="btn btn-gold btn-sm" onclick="PDV.formMoverCostales()">Mover Costales al PDV</button>' +
       '<button class="btn btn-green btn-sm" onclick="PDV.go(' + pdv.id + ',\'pos\')">Vender Palas</button>' +
     '</div>';
     if (costalesKeys.length === 0) {
       h += '<div class="card"><div class="card-body text-center text-muted" style="padding:16px">' +
-        '<p>Sin costales en este punto de venta</p>' +
-        '<p class="text-sm">Usa "Mover Costales al PDV" para enviar gramos de costales</p></div></div>';
+        '<p>Sin especias disponibles para vender como palas</p>' +
+        '<p class="text-sm">Usa "Mover Costales al PDV" para enviar gramos de especias</p></div></div>';
     } else {
       h += '<div class="table-wrap"><table class="table"><thead><tr>' +
-        '<th>Costal</th><th>Especias</th><th>Gramos en PDV</th><th>Precio/Pala</th><th>g/Pala</th><th>Palas disp.</th></tr></thead><tbody>';
+        '<th>Especia</th><th>Gramos en PDV</th><th>Precio/Pala</th><th>g/Pala</th><th>Palas disp.</th></tr></thead><tbody>';
       for (var ci = 0; ci < costalesKeys.length; ci++) {
         var costalKey = costalesKeys[ci];
         var costalObj = ArcanoDB.getCostal(parseInt(costalKey, 10));
         if (!costalObj) continue;
         var gramosPDV = stockCostales[costalKey] || 0;
         var palasDisp = costalObj.gramosPorPala > 0 ? Math.floor(gramosPDV / costalObj.gramosPorPala) : 0;
-        var especiasCostal = '';
-        if (costalObj.items) {
-          var nombres = [];
-          for (var ei = 0; ei < costalObj.items.length; ei++) {
-            nombres.push(costalObj.items[ei].especiaNombre);
-          }
-          especiasCostal = nombres.join(', ');
+        // Mostrar el nombre de la especia (sin "Costal de ...")
+        var nombreEspeciaStk = costalObj.nombre || 'Costal';
+        if (nombreEspeciaStk.indexOf('Costal de ') === 0) {
+          nombreEspeciaStk = nombreEspeciaStk.substring('Costal de '.length);
         }
         h += '<tr>' +
-          '<td class="fw7">' + this.esc(costalObj.nombre || 'Costal ' + costalObj.id) + '</td>' +
-          '<td class="text-sm">' + this.esc(especiasCostal) + '</td>' +
+          '<td class="fw7">🥄 ' + this.esc(nombreEspeciaStk) + '</td>' +
           '<td class="fw7 text-gold">' + gramosPDV + 'g</td>' +
           '<td>$' + (costalObj.precioPala || 0).toLocaleString() + '</td>' +
           '<td>' + (costalObj.gramosPorPala || 50) + 'g</td>' +
@@ -700,7 +696,7 @@ var PDV = {
     if (costalesKeys.length > 0) {
       h += '<div style="border-top:2px solid var(--border);margin:16px 0 8px"></div>';
       h += '<h4 style="margin:0 0 8px">🥄 Palas</h4>';
-      h += '<p class="text-muted text-sm" style="margin:0 0 8px">Vendé palas de los costales movidos a este PDV</p>';
+      h += '<p class="text-muted text-sm" style="margin:0 0 8px">Vendé palas de especias (de los costales movidos a este PDV)</p>';
       h += '<div id="pos-costales" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
       for (var ck = 0; ck < costalesKeys.length; ck++) {
         var costalKey = costalesKeys[ck];
@@ -709,8 +705,15 @@ var PDV = {
         var grsDisp = stockCostales[costalKey] || 0;
         var palasDisp = costalObj.gramosPorPala > 0 ? Math.floor(grsDisp / costalObj.gramosPorPala) : 0;
         if (palasDisp <= 0) continue;
-        h += '<div class="card pos-product" data-name="' + this.esc(costalObj.nombre || 'costal').toLowerCase() + '" style="cursor:pointer;padding:10px;border-left:3px solid var(--gold)" onclick="PDV.posAddPala(' + costalObj.id + ',\'' + this.esc(costalObj.nombre || 'Costal').replace(/'/g, "\\'") + '\',' + (costalObj.precioPala || 0) + ',' + palasDisp + ')">' +
-          '<div class="fw7" style="font-size:0.9em">' + this.esc(costalObj.nombre || 'Costal') + '</div>' +
+        // Mostrar el nombre de la especia (no "Costal de ...")
+        // El costal.productoNombre tiene el formato "Costal de Ajo" o "Costal de Mostaza".
+        // Para mostrar "Ajo", "Mostaza", quitamos el prefijo "Costal de ".
+        var nombreEspecia = costalObj.nombre || 'Costal';
+        if (nombreEspecia.indexOf('Costal de ') === 0) {
+          nombreEspecia = nombreEspecia.substring('Costal de '.length);
+        }
+        h += '<div class="card pos-product" data-name="' + this.esc(nombreEspecia).toLowerCase() + '" style="cursor:pointer;padding:10px;border-left:3px solid var(--gold)" onclick="PDV.posAddPala(' + costalObj.id + ',\'' + this.esc(nombreEspecia).replace(/'/g, "\\'") + '\',' + (costalObj.precioPala || 0) + ',' + palasDisp + ')">' +
+          '<div class="fw7" style="font-size:0.9em">🥄 ' + this.esc(nombreEspecia) + '</div>' +
           '<div class="text-muted text-sm">Palas: ' + palasDisp + ' · ' + (costalObj.gramosPorPala || 50) + 'g c/u</div>' +
           '<div class="fw7" style="color:var(--gold)">$' + (costalObj.precioPala || 0).toLocaleString() + '/pala</div></div>';
       }
@@ -762,7 +765,7 @@ var PDV = {
     this._renderPosCart();
   },
 
-  posAddPala(costalId, costalNombre, precioPala, maxPalas) {
+  posAddPala(costalId, nombreEspecia, precioPala, maxPalas) {
     for (var i = 0; i < this._posCart.length; i++) {
       var c = this._posCart[i];
       if (c.tipo === 'costal' && c.productoId === costalId) {
@@ -774,11 +777,11 @@ var PDV = {
       }
     }
     this._posCart.push({
-      tipo: 'costal',
+      tipo: 'costal',  // tipo interno para el flujo de savePDVVentaPala
       productoId: costalId,
       costalId: costalId,
-      costalNombre: costalNombre,
-      productoNombre: costalNombre + ' (pala)',
+      costalNombre: 'Costal de ' + nombreEspecia,  // preservar nombre completo para savePDVVentaPala
+      productoNombre: nombreEspecia + ' (pala)',   // nombre mostrado en el carrito
       talla: 'pala',
       palas: 1,
       precioUnitario: precioPala,
@@ -849,7 +852,7 @@ var PDV = {
     for (var i = 0; i < this._posCart.length; i++) {
       var it = this._posCart[i];
       total += it.subtotal;
-      var tipoLabel = it.tipo === 'costal' ? '🛍️ Pala' : (it.tipo === 'pala' ? '🥄 Pala' : (it.talla === '-' ? 'Pack' : it.talla));
+      var tipoLabel = it.tipo === 'costal' ? '🥄 Pala' : (it.tipo === 'pala' ? '🥄 Pala' : (it.talla === '-' ? 'Pack' : it.talla));
       h += '<tr><td>' + this.esc(it.productoNombre) + '</td><td>' + tipoLabel + '</td>' +
         '<td><button class="btn btn-sm btn-ghost" onclick="PDV.posChangeQty(' + i + ',-1)">-</button> ' + it.cantidad + ' <button class="btn btn-sm btn-ghost" onclick="PDV.posChangeQty(' + i + ',1)">+</button></td>' +
         '<td class="fw7">$' + it.subtotal.toLocaleString() + '</td>' +
