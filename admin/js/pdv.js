@@ -2,7 +2,7 @@
 
 var PDV = {
   currentPDV: null,
-  currentView: 'list', // list | stock | ventas | stats | pos
+  currentView: 'list', // list | stock | ventas | stats | pos | inventario
 
   render(container) {
     var hash = window.location.hash || '';
@@ -80,6 +80,7 @@ var PDV = {
           '<button class="btn btn-sm btn-outline" style="flex:1" onclick="event.stopPropagation();PDV.go(' + p.id + ',\'ventas\')">Ventas</button>' +
           '<button class="btn btn-sm btn-outline" style="flex:1" onclick="event.stopPropagation();PDV.go(' + p.id + ',\'gastos\')">Gastos</button>' +
           '<button class="btn btn-sm btn-outline" style="flex:1" onclick="event.stopPropagation();PDV.go(' + p.id + ',\'stats\')">Stats</button>' +
+          '<button class="btn btn-sm btn-outline" style="flex:1" onclick="event.stopPropagation();PDV.go(' + p.id + ',\'inventario\')">Inv.</button>' +
           '<button class="btn btn-sm btn-gold" onclick="event.stopPropagation();PDV.showQR(' + p.id + ')" title="Generar QR de ventas">QR</button>' +
           '</div></div></div>';
       }
@@ -161,6 +162,7 @@ var PDV = {
       '<button class="btn btn-gold" onclick="PDV.formMoverStock()">Mover Stock al PDV</button>' +
       '<button class="btn btn-green" onclick="PDV.go(' + pdv.id + ',\'pos\')">Nueva Venta</button>' +
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'stats\')">Stats</button>' +
+      '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'inventario\')">Inventario</button>' +
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'gastos\')">Gastos</button>' +
       '<button class="btn btn-outline" onclick="PDV.formDevolverStock()">Devolver Stock</button>' +
       '<button class="btn btn-outline" onclick="PDV.formEditar(' + pdv.id + ')">Editar</button>' +
@@ -554,6 +556,7 @@ var PDV = {
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'stock\')">Stock</button>' +
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'gastos\')">Gastos</button>' +
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'stats\')">Stats</button>' +
+      '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'inventario\')">Inventario</button>' +
       '</div>';
     h += '<div style="border-bottom:2px solid var(--border);margin:0 0 16px"></div>';
     // Summary cards
@@ -1029,6 +1032,169 @@ var PDV = {
         self.renderPos(document.getElementById('page-content'));
       } catch (e) { toast(e.message, 'err'); }
     });
+  },
+
+  /* ==================== INVENTARIO ==================== */
+  renderInventario(container) {
+    var pdv = this.currentPDV;
+    if (!pdv) return;
+    var db = ArcanoDB.getDB();
+    var stockInicial = pdv.stockInicial || {};
+    var stockActual = pdv.stock || {};
+    var costalesInicial = pdv.stockCostalesInicial || {};
+    var costalesActual = pdv.stockCostales || {};
+    var ventas = ArcanoDB.getPDVVentas(pdv.id);
+
+    // Acumular ventas reales por item (lo que efectivamente se vendió)
+    var ventasPorFrascos = {};  // {stockKey: cantidad vendida}
+    var ventasPorCostal = {};  // {costalId: gramos vendidos}
+    for (var vi = 0; vi < ventas.length; vi++) {
+      var v = ventas[vi];
+      var items = v.items || [];
+      for (var ii = 0; ii < items.length; ii++) {
+        var it = items[ii];
+        if (it.tipo === 'costal' || it.tipo === 'costal_legacy' || it.tipo === 'pala') {
+          var cId = String(it.costalId || it.productoId);
+          var gramos = Number(it.gramosConsumidos) || 0;
+          if (gramos <= 0 && it.palas) {
+            var costal = ArcanoDB.getCostal(parseInt(cId, 10));
+            var gpp = costal ? (Number(costal.gramosPorPala) || 0) : 0;
+            gramos = Number(it.palas) * gpp;
+          }
+          ventasPorCostal[cId] = (ventasPorCostal[cId] || 0) + gramos;
+        } else if (it.tipo === 'especia' || it.tipo === 'blend' || it.tipo === 'pack') {
+          var sk = it.tipo + '_' + it.productoId + '_' + (it.talla || '-');
+          ventasPorFrascos[sk] = (ventasPorFrascos[sk] || 0) + (Number(it.cantidad) || 0);
+        }
+      }
+    }
+
+    var h = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-ghost" onclick="PDV.go(null)">← Puntos de Venta</button>' +
+      '<h3 style="margin:0">' + this.esc(pdv.nombre) + '</h3>' +
+      '<span class="badge badge-gold">Inventario</span></div>';
+    h += '<div style="display:flex;gap:6px;margin:12px 0;flex-wrap:wrap">' +
+      '<button class="btn btn-green btn-sm" onclick="PDV.go(' + pdv.id + ',\'pos\')">Nueva Venta</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="PDV.go(' + pdv.id + ',\'stock\')">Stock</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="PDV.go(' + pdv.id + ',\'ventas\')">Ventas</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="PDV.go(' + pdv.id + ',\'stats\')">Stats</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="PDV.go(' + pdv.id + ',\'gastos\')">Gastos</button>' +
+      '</div>';
+    h += '<div style="border-bottom:2px solid var(--border);margin:0 0 16px"></div>';
+
+    // === Resumen de KPIs ===
+    var totalFrascosInicial = 0, totalFrascosActual = 0, totalFrascosVendidos = 0;
+    var totalGramosInicial = 0, totalGramosActual = 0, totalGramosVendidos = 0;
+    for (var k in stockInicial) {
+      totalFrascosInicial += Number(stockInicial[k]) || 0;
+    }
+    for (var k2 in stockActual) {
+      totalFrascosActual += Number(stockActual[k2]) || 0;
+    }
+    for (var k3 in ventasPorFrascos) {
+      totalFrascosVendidos += Number(ventasPorFrascos[k3]) || 0;
+    }
+    for (var k4 in costalesInicial) {
+      totalGramosInicial += Number(costalesInicial[k4]) || 0;
+    }
+    for (var k5 in costalesActual) {
+      totalGramosActual += Number(costalesActual[k5]) || 0;
+    }
+    for (var k6 in ventasPorCostal) {
+      totalGramosVendidos += Number(ventasPorCostal[k6]) || 0;
+    }
+
+    h += '<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">';
+    h += '<div class="stat-card"><div class="stat-value">' + totalFrascosInicial + '</div><div class="stat-label">Frascos Iniciales</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value text-green">' + totalFrascosActual + '</div><div class="stat-label">Frascos Actuales</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value text-gold">' + totalFrascosVendidos + '</div><div class="stat-label">Frascos Vendidos</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-value text-red">' + (totalFrascosInicial - totalFrascosActual - totalFrascosVendidos) + '</div><div class="stat-label">Diferencia</div><div class="stat-sub">inicial − actual − vendidos</div></div>';
+    h += '</div>';
+
+    h += '<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">';
+    h += '<div class="stat-card"><div class="stat-value">' + totalGramosInicial.toLocaleString() + 'g</div><div class="stat-label">Gramos Iniciales</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-value text-green">' + totalGramosActual.toLocaleString() + 'g</div><div class="stat-label">Gramos Actuales</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-value text-gold">' + totalGramosVendidos.toLocaleString() + 'g</div><div class="stat-label">Gramos Vendidos</div></div>';
+    h += '<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-value text-red">' + (totalGramosInicial - totalGramosActual - totalGramosVendidos).toLocaleString() + 'g</div><div class="stat-label">Diferencia</div><div class="stat-sub">inicial − actual − vendidos</div></div>';
+    h += '</div>';
+
+    // === Tabla de frascos ===
+    h += '<h4 style="margin:0 0 8px">Frascos (Blends y Especias)</h4>';
+    var allFrascosKeys = {};
+    for (var fk in stockInicial) allFrascosKeys[fk] = true;
+    for (var fk2 in stockActual) allFrascosKeys[fk2] = true;
+    for (var fk3 in ventasPorFrascos) allFrascosKeys[fk3] = true;
+    var frascosKeys = Object.keys(allFrascosKeys);
+
+    if (frascosKeys.length === 0) {
+      h += '<div class="card"><div class="card-body text-center text-muted" style="padding:16px">Sin frascos movidos a este PDV</div></div>';
+    } else {
+      h += '<div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Producto</th><th>Talla</th><th>Inicial</th><th>Vendido</th><th>Actual</th><th>Diferencia</th>' +
+        '</tr></thead><tbody>';
+      for (var fi = 0; fi < frascosKeys.length; fi++) {
+        var sk2 = frascosKeys[fi];
+        var parts = sk2.split('_');
+        var tipo = parts[0], prodId = Number(parts[1]), talla = parts[2];
+        var producto;
+        if (tipo === 'pack') producto = (ArcanoDB.getPacks ? ArcanoDB.getPacks().find(function(x){return x.id===prodId;}) : null);
+        else producto = tipo === 'blend' ? ArcanoDB.getBlend(prodId) : ArcanoDB.getEspecia(prodId);
+        var nombre = producto ? producto.nombre : '?';
+        var inicial = Number(stockInicial[sk2]) || 0;
+        var vendido = Number(ventasPorFrascos[sk2]) || 0;
+        var actual = Number(stockActual[sk2]) || 0;
+        var diff = inicial - vendido - actual;
+        var diffColor = diff === 0 ? 'var(--green)' : (Math.abs(diff) > 0 ? 'var(--red)' : 'var(--text-muted)');
+        h += '<tr>' +
+          '<td class="fw7">' + this.esc(nombre) + '</td>' +
+          '<td>' + (talla === '-' ? 'Pack' : talla) + '</td>' +
+          '<td>' + inicial + '</td>' +
+          '<td class="text-gold">' + vendido + '</td>' +
+          '<td class="text-green">' + actual + '</td>' +
+          '<td style="color:' + diffColor + '" class="fw7">' + (diff > 0 ? '+' : '') + diff + '</td>' +
+        '</tr>';
+      }
+      h += '</tbody></table></div>';
+    }
+
+    // === Tabla de costales (gramos de especias) ===
+    h += '<h4 style="margin:24px 0 8px">🥄 Especies (gramos para palas)</h4>';
+    var allCostalKeys = {};
+    for (var ck in costalesInicial) allCostalKeys[ck] = true;
+    for (var ck2 in costalesActual) allCostalKeys[ck2] = true;
+    for (var ck3 in ventasPorCostal) allCostalKeys[ck3] = true;
+    var costalKeysList = Object.keys(allCostalKeys);
+
+    if (costalKeysList.length === 0) {
+      h += '<div class="card"><div class="card-body text-center text-muted" style="padding:16px">Sin especias movidas a este PDV</div></div>';
+    } else {
+      h += '<div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Especia</th><th>Inicial (g)</th><th>Vendido (g)</th><th>Actual (g)</th><th>Diferencia (g)</th>' +
+        '</tr></thead><tbody>';
+      for (var ci = 0; ci < costalKeysList.length; ci++) {
+        var cId2 = costalKeysList[ci];
+        var costalObj = ArcanoDB.getCostal(parseInt(cId2, 10));
+        var nombreEsp = costalObj ? (costalObj.nombre || 'Costal') : '?';
+        if (nombreEsp.indexOf('Costal de ') === 0) nombreEsp = nombreEsp.substring('Costal de '.length);
+        var grInicial = Number(costalesInicial[cId2]) || 0;
+        var grVendido = Number(ventasPorCostal[cId2]) || 0;
+        var grActual = Number(costalesActual[cId2]) || 0;
+        var grDiff = grInicial - grVendido - grActual;
+        var grDiffColor = grDiff === 0 ? 'var(--green)' : (Math.abs(grDiff) > 1 ? 'var(--red)' : 'var(--text-muted)');
+        h += '<tr>' +
+          '<td class="fw7">🥄 ' + this.esc(nombreEsp) + '</td>' +
+          '<td>' + grInicial.toLocaleString() + '</td>' +
+          '<td class="text-gold">' + grVendido.toLocaleString() + '</td>' +
+          '<td class="text-green">' + grActual.toLocaleString() + '</td>' +
+          '<td style="color:' + grDiffColor + '" class="fw7">' + (grDiff > 0 ? '+' : '') + grDiff.toLocaleString() + '</td>' +
+        '</tr>';
+      }
+      h += '</tbody></table></div>';
+    }
+
+    h += '<p class="text-muted text-sm" style="margin-top:16px"><strong>Diferencia</strong> = Inicial − Vendido − Actual. Si es 0, el inventario cuadra. Si es positiva, hay más stock del esperado (posible devolución o ajuste). Si es negativa, falta stock (posible pérdida o venta no registrada).</p>';
+
+    container.innerHTML = h;
   },
 
   /* ==================== ESTADISTICAS ==================== */
@@ -1655,6 +1821,7 @@ var PDV = {
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'stock\')">Stock</button>' +
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'ventas\')">Ventas</button>' +
       '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'stats\')">Stats</button>' +
+      '<button class="btn btn-outline" onclick="PDV.go(' + pdv.id + ',\'inventario\')">Inventario</button>' +
       '</div>';
     h += '<div style="border-bottom:2px solid var(--border);margin:0 0 16px"></div>';
     // KPIs

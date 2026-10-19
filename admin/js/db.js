@@ -2859,6 +2859,7 @@ function moverStockAPDV(pdvId, items) {
   var pdv = _db.puntosDeVenta ? _db.puntosDeVenta[pdvId] : null;
   if (!pdv) throw new Error('Punto de venta no encontrado');
   if (!pdv.stock) pdv.stock = {};
+  if (!pdv.stockInicial) pdv.stockInicial = {};
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
     var producto;
@@ -2893,6 +2894,8 @@ function moverStockAPDV(pdvId, items) {
       stockKey = it2.tipo + '_' + it2.productoId + '_' + it2.talla;
     }
     pdv.stock[stockKey] = (pdv.stock[stockKey] || 0) + it2.cantidad;
+    // Acumular en stockInicial (para panel de Inventario: vendido = inicial - actual)
+    pdv.stockInicial[stockKey] = (pdv.stockInicial[stockKey] || 0) + it2.cantidad;
   }
   _saveToFirebase(); _cacheLocal();
   _notify('update', 'puntosDeVenta', pdvId);
@@ -2903,6 +2906,7 @@ function devolverStockDePDV(pdvId, items) {
   var pdv = _db.puntosDeVenta ? _db.puntosDeVenta[pdvId] : null;
   if (!pdv) throw new Error('Punto de venta no encontrado');
   if (!pdv.stock) pdv.stock = {};
+  if (!pdv.stockInicial) pdv.stockInicial = {};
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
     var stockKey = it.tipo + '_' + it.productoId + '_' + it.talla;
@@ -2914,6 +2918,14 @@ function devolverStockDePDV(pdvId, items) {
     var it2 = items[j];
     var stockKey2 = it2.tipo + '_' + it2.productoId + '_' + it2.talla;
     pdv.stock[stockKey2] = (pdv.stock[stockKey2] || 0) - it2.cantidad;
+    // Si llegó a 0, eliminar la clave del dict
+    if (Number(pdv.stock[stockKey2]) <= 0) delete pdv.stock[stockKey2];
+    // Restar de stockInicial también (porque se devuelve al inventario principal,
+    // ya no está "asignado" al PDV)
+    if (pdv.stockInicial[stockKey2] != null) {
+      pdv.stockInicial[stockKey2] = (Number(pdv.stockInicial[stockKey2]) || 0) - it2.cantidad;
+      if (Number(pdv.stockInicial[stockKey2]) <= 0) delete pdv.stockInicial[stockKey2];
+    }
     var prod2;
     if (it2.tipo === 'pack') {
       var pack3 = _db.packs[it2.productoId];
@@ -2940,6 +2952,7 @@ function devolverCostalDePDV(pdvId, costalId, gramos) {
   var pdv = _db.puntosDeVenta ? _db.puntosDeVenta[pdvId] : null;
   if (!pdv) throw new Error('Punto de venta no encontrado');
   if (!pdv.stockCostales) pdv.stockCostales = {};
+  if (!pdv.stockCostalesInicial) pdv.stockCostalesInicial = {};
   gramos = Number(gramos) || 0;
   if (gramos <= 0) throw new Error('Gramos inv\u00E1lidos');
   // Usar String(costalId) como clave para mantener consistencia
@@ -2952,6 +2965,11 @@ function devolverCostalDePDV(pdvId, costalId, gramos) {
   pdv.stockCostales[cKey] = disponible - gramos;
   // Si llegó a 0, eliminar la clave (deja el dict limpio)
   if (Number(pdv.stockCostales[cKey]) <= 0) delete pdv.stockCostales[cKey];
+  // Restar de stockCostalesInicial también (porque se devuelve al costal principal)
+  if (pdv.stockCostalesInicial[cKey] != null) {
+    pdv.stockCostalesInicial[cKey] = (Number(pdv.stockCostalesInicial[cKey]) || 0) - gramos;
+    if (Number(pdv.stockCostalesInicial[cKey]) <= 0) delete pdv.stockCostalesInicial[cKey];
+  }
   // Devolver al costal principal
   var costal = _db.costales && _db.costales[costalId];
   if (costal) {
@@ -3809,8 +3827,11 @@ function moverCostalAPDV(pdvId, costalId, gramos) {
   // no convierta el dict a array (las claves numéricas se serializan como array).
   // Esto previene el bug de "costales duplicados" y entradas huérfanas.
   if (!pdv.stockCostales) pdv.stockCostales = {};
+  if (!pdv.stockCostalesInicial) pdv.stockCostalesInicial = {};
   var cKey = String(costalId);
   pdv.stockCostales[cKey] = (Number(pdv.stockCostales[cKey]) || 0) + gramos;
+  // Acumular en stockCostalesInicial (para panel de Inventario: vendido = inicial - actual)
+  pdv.stockCostalesInicial[cKey] = (Number(pdv.stockCostalesInicial[cKey]) || 0) + gramos;
   _saveToFirebase(); _cacheLocal();
   return true;
 }
