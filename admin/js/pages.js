@@ -339,7 +339,10 @@ const Pages = {
         var ped = pedidosNuevos[pn];
         var cl = ped.cliente || {};
         var hora = ped.creado ? ped.creado.slice(11, 16) : '';
-        h += '<div class="dash-pedido-item"><div class="dash-pedido-left"><div class="dash-pedido-time">' + hora + '</div><div class="dash-pedido-cliente">' + (cl.nombre || '?') + '</div><div class="dash-pedido-ciudad">' + (cl.ciudad || '') + '</div></div><div class="dash-pedido-right"><div class="dash-pedido-total">$' + (ped.total || 0).toLocaleString() + '</div><div class="dash-pedido-items">' + ((ped.items || []).length) + ' items</div></div></div>';
+        // Calcular faltantes
+        var pedFalt = Pages._calcularFaltantesPedido(ped);
+        var faltBadge = pedFalt.length > 0 ? ' <span style="color:var(--red);font-size:0.65rem;background:rgba(180,40,40,0.15);padding:2px 6px;border-radius:4px">⚠ ' + pedFalt.length + ' faltante' + (pedFalt.length > 1 ? 's' : '') + '</span>' : '';
+        h += '<div class="dash-pedido-item"><div class="dash-pedido-left"><div class="dash-pedido-time">' + hora + '</div><div class="dash-pedido-cliente">' + (cl.nombre || '?') + faltBadge + '</div><div class="dash-pedido-ciudad">' + (cl.ciudad || '') + '</div></div><div class="dash-pedido-right"><div class="dash-pedido-total">$' + (ped.total || 0).toLocaleString() + '</div><div class="dash-pedido-items">' + ((ped.items || []).length) + ' items</div></div></div>';
       }
       h += '</div>';
     } else { h += '<div class="est-empty">Sin pedidos pendientes</div>'; }
@@ -4244,6 +4247,38 @@ const Pages = {
     }
     h += '</div>';
 
+    // === Alerta de faltantes de stock ===
+    var pedidosConFaltantes = [];
+    for (var pf = 0; pf < pedidos.length; pf++) {
+      if (pedidos[pf].estado === 'cancelado' || pedidos[pf].estado === 'entregado') continue;
+      var faltantes = Pages._calcularFaltantesPedido(pedidos[pf]);
+      if (faltantes.length > 0) {
+        pedidosConFaltantes.push({ pedido: pedidos[pf], faltantes: faltantes });
+      }
+    }
+    if (pedidosConFaltantes.length > 0) {
+      h += '<div class="card mt-16" style="border:2px solid var(--red);background:rgba(180,40,40,0.08)"><div class="card-header"><h3 style="color:var(--red)">⚠ URGENTE — Faltantes de Stock</h3></div><div class="card-body">';
+      h += '<p class="text-sm" style="margin:0 0 12px">Los siguientes pedidos tienen productos SIN stock disponible. Producí los blends marcados para poder completarlos.</p>';
+      h += '<div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>Producto Faltante</th><th>Cant.</th><th>Talla</th><th>Stock actual</th><th>Acción</th></tr></thead><tbody>';
+      for (var pcf = 0; pcf < pedidosConFaltantes.length; pcf++) {
+        var pc = pedidosConFaltantes[pcf].pedido;
+        var falt = pedidosConFaltantes[pcf].faltantes;
+        for (var fi = 0; fi < falt.length; fi++) {
+          var f = falt[fi];
+          h += '<tr>' +
+            '<td class="fw7">' + esc((pc.cliente || {}).nombre || '?') + '</td>' +
+            '<td class="fw7" style="color:var(--red)">' + esc(f.nombre) + '</td>' +
+            '<td>' + f.cantidad + '</td>' +
+            '<td>' + f.talla + '</td>' +
+            '<td style="color:var(--red)">' + f.stockActual + (f.producible ? ' (producible)' : ' (NO producible)') + '</td>' +
+            '<td><button class="btn btn-sm btn-gold" onclick="Pages.verPedido(\'' + pc._key + '\')">Ver Pedido</button></td>' +
+          '</tr>';
+        }
+      }
+      h += '</tbody></table></div>';
+      h += '</div></div>';
+    }
+
     // Table
     h += '<div class="card mt-16"><div class="card-header"><h3>Todos los Pedidos</h3></div><div class="card-body">';
     if (pedidos.length === 0) {
@@ -4258,10 +4293,15 @@ const Pages = {
         var nItems = (p.items || []).length;
         var estClass = estadoColors[p.estado] || 'text-muted';
         var estLabel = estadoLabels[p.estado] || p.estado;
-        h += '<tr>' +
+        // Calcular si tiene faltantes
+        var tieneFaltantes = false;
+        if (p.estado !== 'cancelado' && p.estado !== 'entregado') {
+          tieneFaltantes = Pages._calcularFaltantesPedido(p).length > 0;
+        }
+        h += '<tr' + (tieneFaltantes ? ' style="background:rgba(180,40,40,0.06)"' : '') + '>' +
           '<td>' + fecha + '</td>' +
           '<td class="fw7">' + hora + '</td>' +
-          '<td class="fw7">' + (cl.nombre || '?') + '</td>' +
+          '<td class="fw7">' + (cl.nombre || '?') + (tieneFaltantes ? ' <span style="color:var(--red);font-size:0.7rem">⚠ FALTANTE</span>' : '') + '</td>' +
           '<td>' + (cl.telefono || '') + '</td>' +
           '<td>' + (cl.ciudad || '') + '</td>' +
           '<td>' + nItems + '</td>' +
@@ -4276,6 +4316,77 @@ const Pages = {
     }
     h += '</div></div>';
     container.innerHTML = h;
+  },
+
+  /* === Calcular faltantes de stock para un pedido ===
+   * Recorre los items del pedido y verifica si hay stock disponible
+   * (stock producido > 0 OR puedeProducirse = true).
+   * Retorna array de { nombre, tipo, productId, talla, cantidad, stockActual, producible, faltantes }
+   * Solo para items que NO tienen stock suficiente.
+   */
+  _calcularFaltantesPedido(pedido) {
+    if (!pedido || !pedido.items) return [];
+    var faltantes = [];
+    for (var i = 0; i < pedido.items.length; i++) {
+      var it = pedido.items[i];
+      var tipo = it.tipo;
+      var productId = it.productId;
+      var talla = it.talla === 'grande' ? 'grande' : 'chico';
+      var cantidad = Number(it.qty) || 1;
+      if (tipo === 'pack') {
+        // Para packs, validar stock del pack
+        var pk = ArcanoDB.getPack ? ArcanoDB.getPack(productId) : null;
+        if (pk) {
+          var stockPack = Number(pk.stock) || 0;
+          if (stockPack < cantidad) {
+            faltantes.push({
+              nombre: pk.nombre || 'Pack',
+              tipo: 'pack',
+              productId: productId,
+              talla: '-',
+              cantidad: cantidad,
+              stockActual: stockPack,
+              producible: false,
+              faltantes: ['stock de pack insuficiente']
+            });
+          }
+        }
+        continue;
+      }
+      if (tipo !== 'blend' && tipo !== 'especia') continue;
+      // Buscar el producto
+      var prod = tipo === 'blend' ? ArcanoDB.getBlend(Number(productId)) : ArcanoDB.getEspecia(Number(productId));
+      if (!prod) {
+        // Producto no encontrado
+        faltantes.push({
+          nombre: it.nombre || '?',
+          tipo: tipo,
+          productId: productId,
+          talla: talla,
+          cantidad: cantidad,
+          stockActual: 0,
+          producible: false,
+          faltantes: ['producto no encontrado']
+        });
+        continue;
+      }
+      var stockKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
+      var stockActual = Number(prod[stockKey]) || 0;
+      if (stockActual >= cantidad) continue; // Hay stock suficiente
+      // No hay stock suficiente, verificar si se puede producir
+      var disp = ArcanoDB.puedeProducirse ? ArcanoDB.puedeProducirse(tipo, Number(productId), talla) : { disponible: false, producible: false, faltantes: [] };
+      faltantes.push({
+        nombre: prod.nombre || it.nombre || '?',
+        tipo: tipo,
+        productId: productId,
+        talla: talla,
+        cantidad: cantidad,
+        stockActual: stockActual,
+        producible: disp.producible,
+        faltantes: disp.faltantes || []
+      });
+    }
+    return faltantes;
   },
 
   verPedido(pedidoKey) {
@@ -4324,6 +4435,32 @@ const Pages = {
       }
     }
     h += '</tbody></table></div>';
+
+    // === Alerta de faltantes de stock en este pedido ===
+    if (p.estado !== 'cancelado' && p.estado !== 'entregado') {
+      var faltantesPedido = Pages._calcularFaltantesPedido(p);
+      if (faltantesPedido.length > 0) {
+        h += '<div class="mt-12" style="padding:16px;border:2px solid var(--red);background:rgba(180,40,40,0.08);border-radius:8px">';
+        h += '<h4 style="color:var(--red);margin:0 0 8px">⚠ URGENTE — Faltantes de Stock</h4>';
+        h += '<p class="text-sm" style="margin:0 0 12px">Los siguientes productos NO tienen stock disponible. Necesitás producirlos para completar este pedido.</p>';
+        h += '<div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Cant.</th><th>Talla</th><th>Stock actual</th><th>¿Producible?</th><th>Insumos faltantes</th></tr></thead><tbody>';
+        for (var fp = 0; fp < faltantesPedido.length; fp++) {
+          var falt = faltantesPedido[fp];
+          h += '<tr>' +
+            '<td class="fw7" style="color:var(--red)">' + esc(falt.nombre) + '</td>' +
+            '<td>' + falt.cantidad + '</td>' +
+            '<td>' + falt.talla + '</td>' +
+            '<td style="color:var(--red)">' + falt.stockActual + '</td>' +
+            '<td>' + (falt.producible ? '<span style="color:var(--green)">✓ Sí</span>' : '<span style="color:var(--red)">✗ No</span>') + '</td>' +
+            '<td class="text-sm">' + esc((falt.faltantes || []).join(', ')) + '</td>' +
+          '</tr>';
+        }
+        h += '</tbody></table></div>';
+        // Botón para ir a producir
+        h += '<div class="mt-12"><button class="btn btn-gold" onclick="App.navigate(\'produccion\')">🏭 Ir a Producción</button></div>';
+        h += '</div>';
+      }
+    }
 
     // Mostrar subtotal (productos) + env\u00EDo + total separados
     var envio = p.envio || {};
