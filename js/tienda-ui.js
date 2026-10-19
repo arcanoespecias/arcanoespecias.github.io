@@ -963,6 +963,7 @@ function _updateDetailContent(overlay, products, idx) {
 }
 
 /* === RECETAS === */
+var _recetaSearchQuery = '';
 function selectRecetaCat(cat) {
   var items = document.querySelectorAll('#sidebar-receta-cats li');
   for (var i = 0; i < items.length; i++) items[i].classList.toggle('active', items[i].textContent.trim() === cat);
@@ -971,14 +972,55 @@ function selectRecetaCat(cat) {
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].dataset.cat === cat);
   var grid = document.getElementById('recipe-grid'); if (grid) grid.style.display = '';
   var rd = document.getElementById('recipe-detail'); if (rd) rd.innerHTML = '';
+  // Limpiar búsqueda al cambiar de categoría
+  _recetaSearchQuery = '';
+  var searchInput = document.getElementById('receta-search-input');
+  if (searchInput) searchInput.value = '';
   renderRecipeGrid();
 }
+
+function searchRecetas(query) {
+  _recetaSearchQuery = (query || '').trim().toLowerCase();
+  renderRecipeGrid();
+}
+
 function renderRecipeGrid() {
   var recetas = getRecetas();
   var filtered = [];
-  for (var i = 0; i < recetas.length; i++) { if (recetas[i].categoria === _currentRecetaCat) filtered.push(recetas[i]); }
+  for (var i = 0; i < recetas.length; i++) {
+    if (recetas[i].categoria === _currentRecetaCat) filtered.push(recetas[i]);
+  }
+  // Si hay búsqueda, filtrar por productos_usados o título
+  if (_recetaSearchQuery) {
+    var q = _recetaSearchQuery;
+    var searchFiltered = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var r = filtered[i];
+      // Buscar en productos_usados
+      var productos = r.productos_usados || [];
+      var matchProducto = false;
+      for (var j = 0; j < productos.length; j++) {
+        if (productos[j].toLowerCase().indexOf(q) >= 0) { matchProducto = true; break; }
+      }
+      // Buscar en título
+      var matchTitulo = (r.titulo || '').toLowerCase().indexOf(q) >= 0;
+      // Buscar en ingredientes
+      var ingredientes = r.ingredientes || [];
+      var matchIngrediente = false;
+      for (var k = 0; k < ingredientes.length; k++) {
+        if ((ingredientes[k] || '').toLowerCase().indexOf(q) >= 0) { matchIngrediente = true; break; }
+      }
+      if (matchProducto || matchTitulo || matchIngrediente) {
+        searchFiltered.push(r);
+      }
+    }
+    filtered = searchFiltered;
+  }
   var grid = document.getElementById('recipe-grid');
-  if (filtered.length === 0) { grid.innerHTML = '<div class="page-placeholder"><p>Sin recetas a\u00FAn</p></div>'; return; }
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="page-placeholder"><p>' + (_recetaSearchQuery ? 'No se encontraron recetas para "' + _recetaSearchQuery + '"' : 'Sin recetas a\u00FAn') + '</p></div>';
+    return;
+  }
   var h = '';
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
@@ -986,6 +1028,16 @@ function renderRecipeGrid() {
     h += '<div class="recipe-grid-card" onclick="showRecipeDetail(\'' + r._key + '\')">';
     h += '<div class="rgc-cat">' + (r.categoria || '') + '</div>';
     h += '<div class="rgc-title">' + (r.titulo || 'Sin t\u00EDtulo') + '</div>';
+    // Mostrar productos usados si hay búsqueda activa
+    if (_recetaSearchQuery && r.productos_usados && r.productos_usados.length > 0) {
+      h += '<div class="rgc-products">';
+      for (var pi = 0; pi < r.productos_usados.length; pi++) {
+        var prodName = r.productos_usados[pi];
+        var hl = prodName.toLowerCase().indexOf(_recetaSearchQuery) >= 0;
+        h += '<span class="rgc-product-tag' + (hl ? ' rgc-product-match' : '') + '">' + prodName + '</span>';
+      }
+      h += '</div>';
+    }
     h += '<div class="rgc-meta">';
     h += '<span class="rgc-diff ' + diffClass + '">' + (r.dificultad || '') + '</span>';
     if (r.tiempo) h += '<span>' + r.tiempo + '</span>';

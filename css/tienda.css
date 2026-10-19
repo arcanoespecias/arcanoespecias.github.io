@@ -2649,3 +2649,39 @@ html.no-opening #opening-overlay {
   .bb-prep-title { font-size: 1.2rem; }
   .bb-prep-subtitle { font-size: 0.85rem; max-width: 220px; }
 }
+
+
+/* === BUSCADOR DE RECETAS === */
+.recipe-search-bar {
+  margin: 16px 0;
+}
+.recipe-search-bar input {
+  outline: none;
+  transition: border-color 0.2s;
+}
+.recipe-search-bar input:focus {
+  border-color: var(--gold, #c9a84c);
+}
+
+/* Tags de productos usados en recetas (cuando hay búsqueda) */
+.rgc-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+.rgc-product-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--surface, #2d1a10);
+  border: 1px solid var(--border, #3d2a1c);
+  border-radius: 100px;
+  font-size: 0.7rem;
+  color: var(--text-muted, #a08b6e);
+}
+.rgc-product-match {
+  background: rgba(201, 168, 76, 0.15);
+  border-color: var(--gold, #c9a84c);
+  color: var(--gold, #c9a84c);
+  font-weight: 600;
+}
