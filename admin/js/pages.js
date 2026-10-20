@@ -12952,6 +12952,7 @@ function _saveBlendPrecios() {
 Pages.renderClientes = function(el) {
   var clientes = ArcanoDB.getClientes();
   var pedidos = ArcanoDB.getPedidos();
+  var pendientesSeg = ArcanoDB.getMensajesPendientes();
 
   // Calcular total comprado historico por cliente (sumando pedidos no cancelados)
   var totalPorCliente = {};
@@ -12973,8 +12974,63 @@ Pages.renderClientes = function(el) {
   var h = '<div class="page-header"><h2>Clientes</h2>';
   h += '<span class="badge badge-gold" style="font-size:0.85rem">' + totalClientes + ' clientes</span>';
   if (nuevosEsteMes > 0) h += '<span class="badge badge-green" style="font-size:0.85rem;margin-left:8px">' + nuevosEsteMes + ' nuevos este mes</span>';
+  if (pendientesSeg.length > 0) h += '<span class="badge badge-red" style="font-size:0.85rem;margin-left:8px" onclick="Pages._seguimientoTab=\'pendientes\';Pages._renderSeguimientoPanelInline()">' + pendientesSeg.length + ' mensajes pendientes</span>';
   h += '</div>';
 
+  // Tabs: Clientes | Seguimiento | Configuración
+  h += '<div class="tabs mb-16">';
+  h += '<button class="tab-btn ' + (Pages._clientesTab !== 'seguimiento' && Pages._clientesTab !== 'config' ? 'active' : '') + '" onclick="Pages._clientesTab=\'lista\';App.renderPage(\'clientes\')">👥 Clientes</button>';
+  h += '<button class="tab-btn ' + (Pages._clientesTab === 'seguimiento' ? 'active' : '') + '" onclick="Pages._clientesTab=\'seguimiento\';App.renderPage(\'clientes\')">';
+  h += '⏳ Seguimiento';
+  if (pendientesSeg.length > 0) h += ' (' + pendientesSeg.length + ')';
+  h += '</button>';
+  h += '<button class="tab-btn ' + (Pages._clientesTab === 'config' ? 'active' : '') + '" onclick="Pages._clientesTab=\'config\';App.renderPage(\'clientes\')">⚙ Config</button>';
+  h += '</div>';
+
+  if (Pages._clientesTab === 'seguimiento') {
+    // Panel de seguimiento (bandeja de salida)
+    if (pendientesSeg.length === 0) {
+      h += '<div class="card"><div class="card-body text-center text-muted" style="padding:40px">';
+      h += '<p style="font-size:2rem;margin-bottom:12px">✅</p>';
+      h += '<p>No hay mensajes pendientes. Todos los clientes están al día.</p>';
+      h += '</div></div>';
+    } else {
+      h += '<div class="card"><div class="card-header"><h3>⏳ Mensajes Pendientes (' + pendientesSeg.length + ')</h3></div><div class="card-body">';
+      h += '<div class="table-wrap"><table class="table"><thead><tr>';
+      h += '<th>Cliente</th><th>Teléfono</th><th>Mensaje</th><th>Disparo</th><th>Acciones</th>';
+      h += '</tr></thead><tbody>';
+      for (var si = 0; si < pendientesSeg.length; si++) {
+        var item = pendientesSeg[si];
+        var c = item.cliente;
+        var m = item.mensaje;
+        var telNorm = c.telNorm || '';
+        var waUrl = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent(m.mensaje.replace(/{nombre}/g, c.nombre || ''))) : '#';
+        var fechaEst = m.fechaEstimada ? new Date(m.fechaEstimada).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '-';
+        h += '<tr>';
+        h += '<td class="fw7">' + esc(c.nombre || '?') + '</td>';
+        h += '<td>' + esc(c.telefono || '-') + '</td>';
+        h += '<td class="text-sm"><b>' + esc(m.titulo) + '</b><br><span class="text-muted">' + esc(m.mensaje.substring(0, 80)) + '...</span></td>';
+        h += '<td class="text-sm text-muted">' + fechaEst + '</td>';
+        h += '<td>';
+        h += '<a href="' + waUrl + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none;margin-right:4px">📱 Enviar</a>';
+        h += '<button class="btn btn-sm btn-outline" onclick="Pages._marcarEnviadoSeg(\'' + item.clienteKey + '\',\'' + m.tipo + '\')" style="margin-right:4px">✓ Enviado</button>';
+        h += '<button class="btn btn-sm btn-outline" onclick="Pages._posponerSeg(\'' + item.clienteKey + '\',\'' + m.tipo + '\')">⏰ Posponer</button>';
+        h += '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table></div>';
+      h += '</div></div>';
+    }
+    el.innerHTML = h;
+    return;
+  }
+
+  if (Pages._clientesTab === 'config') {
+    el.innerHTML = h + Pages._renderConfigSeguimiento();
+    return;
+  }
+
+  // Tab: Lista de Clientes (default)
   if (totalClientes === 0) {
     h += '<div class="card"><div class="card-body"><p class="text-center text-muted">Todav\u00EDa no hay clientes registrados. Cuando un cliente haga click en "Mi Cuenta" en la tienda y se registre con su WhatsApp + nombre, aparecer\u00E1 aqu\u00ED autom\u00E1ticamente.</p></div></div>';
     el.innerHTML = h;
@@ -16288,4 +16344,261 @@ Pages.marcarEnvioSinCargo = function(pedidoKey) {
       App.renderPage(App.currentPage);
     }
   });
+};
+
+/* ================================================================
+   SEGUIMIENTO DE CLIENTES
+   ================================================================ */
+
+Pages._seguimientoTab = 'pendientes';
+
+Pages.renderSeguimientoPanel = function(el) {
+  var pendientes = ArcanoDB.getMensajesPendientes();
+  var clientes = ArcanoDB.getClientes();
+
+  var h = '<div class="page-header"><h2>Seguimiento de Clientes</h2>';
+  if (pendientes.length > 0) {
+    h += '<span class="badge badge-red" style="font-size:0.85rem">' + pendientes.length + ' mensajes pendientes</span>';
+  }
+  h += '</div>';
+
+  // Tabs
+  h += '<div class="tabs mb-16">';
+  h += '<button class="tab-btn ' + (Pages._seguimientoTab === 'pendientes' ? 'active' : '') + '" onclick="Pages._seguimientoTab=\'pendientes\';App.renderPage(\'clientes\')">';
+  h += '⏳ Pendientes (' + pendientes.length + ')</button>';
+  h += '<button class="tab-btn ' + (Pages._seguimientoTab === 'config' ? 'active' : '') + '" onclick="Pages._seguimientoTab=\'config\';App.renderPage(\'clientes\')">';
+  h += '⚙ Configuración</button>';
+  h += '</div>';
+
+  if (Pages._seguimientoTab === 'config') {
+    h += Pages._renderConfigSeguimiento();
+  } else {
+    // Panel de pendientes (bandeja de salida)
+    if (pendientes.length === 0) {
+      h += '<div class="card"><div class="card-body text-center text-muted" style="padding:40px">';
+      h += '<p style="font-size:2rem;margin-bottom:12px">✅</p>';
+      h += '<p>No hay mensajes pendientes. Todos los clientes están al día.</p>';
+      h += '</div></div>';
+    } else {
+      h += '<div class="card"><div class="card-body">';
+      h += '<div class="table-wrap"><table class="table"><thead><tr>';
+      h += '<th>Cliente</th><th>Teléfono</th><th>Mensaje</th><th>Disparo</th><th>Acciones</th>';
+      h += '</tr></thead><tbody>';
+      for (var i = 0; i < pendientes.length; i++) {
+        var item = pendientes[i];
+        var c = item.cliente;
+        var m = item.mensaje;
+        var telNorm = c.telNorm || '';
+        var waUrl = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent(m.mensaje.replace(/{nombre}/g, c.nombre || ''))) : '#';
+        var fechaEst = m.fechaEstimada ? new Date(m.fechaEstimada).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '-';
+        h += '<tr>';
+        h += '<td class="fw7">' + esc(c.nombre || '?') + '</td>';
+        h += '<td>' + esc(c.telefono || '-') + '</td>';
+        h += '<td class="text-sm"><b>' + esc(m.titulo) + '</b><br><span class="text-muted">' + esc(m.mensaje.substring(0, 80)) + '...</span></td>';
+        h += '<td class="text-sm text-muted">' + fechaEst + '</td>';
+        h += '<td>';
+        h += '<a href="' + waUrl + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none;margin-right:4px">📱 Enviar</a>';
+        h += '<button class="btn btn-sm btn-outline" onclick="Pages._marcarEnviadoSeg(\'' + item.clienteKey + '\',\'' + m.tipo + '\')" style="margin-right:4px">✓ Enviado</button>';
+        h += '<button class="btn btn-sm btn-outline" onclick="Pages._posponerSeg(\'' + item.clienteKey + '\',\'' + m.tipo + '\')">⏰ Posponer</button>';
+        h += '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table></div>';
+      h += '</div></div>';
+    }
+  }
+
+  el.innerHTML = h;
+};
+
+Pages._renderConfigSeguimiento = function() {
+  var cfg = ArcanoDB.getConfigSeguimiento();
+  var h = '<div class="card"><div class="card-header"><h3>Configuración de Seguimiento</h3></div><div class="card-body">';
+  h += '<p class="text-sm text-muted mb-16">Configurá los días y los mensajes de cada tipo de seguimiento. Los cambios se guardan automáticamente.</p>';
+
+  // Días configurables
+  h += '<h4 class="mb-8">Tiempos (días)</h4>';
+  h += '<div class="g2 mb-16">';
+  h += '<div class="form-group"><label>Días sin pedido → recordatorio</label><input class="input" type="number" id="cfg-dias-sin-pedido" value="' + cfg.diasSinPedido + '" min="1" max="90"></div>';
+  h += '<div class="form-group"><label>Días post-entrega → seguimiento</label><input class="input" type="number" id="cfg-dias-post-entrega" value="' + cfg.diasPostEntrega + '" min="1" max="30"></div>';
+  h += '<div class="form-group"><label>Días desde última compra → recompra</label><input class="input" type="number" id="cfg-dias-recompra" value="' + cfg.diasRecompra + '" min="1" max="180"></div>';
+  h += '<div class="form-group"><label>Días desde última compra → inactivo</label><input class="input" type="number" id="cfg-dias-inactivo" value="' + cfg.diasInactivo + '" min="1" max="365"></div>';
+  h += '<div class="form-group"><label>Frascos para Colección Arcano</label><input class="input" type="number" id="cfg-frascos-coleccion" value="' + cfg.frascosColeccion + '" min="1" max="100"></div>';
+  h += '</div>';
+
+  // Plantillas de mensajes
+  h += '<h4 class="mb-8">Plantillas de Mensajes</h4>';
+  h += '<p class="text-xs text-muted mb-8">Usá <code>{nombre}</code> para el nombre del cliente, <code>{total}</code> para el monto del pedido, <code>{items}</code> para el listado de productos.</p>';
+
+  var tipos = [
+    { key: 'bienvenida', label: '🌱 Bienvenida' },
+    { key: 'sin_pedido_7d', label: '📅 Sin pedido (N días)' },
+    { key: 'carrito_abandonado', label: '🛒 Carrito abandonado' },
+    { key: 'primer_pedido', label: '✨ Primer pedido' },
+    { key: 'pedido_entregado', label: '📦 Pedido entregado' },
+    { key: 'post_entrega', label: '💬 Post-entrega (N días)' },
+    { key: 'recurrente_3', label: '🔄 Cliente recurrente (3+ pedidos)' },
+    { key: 'coleccion_10', label: '🎉 Colección Arcano (N frascos)' },
+    { key: 'recompra_30d', label: '🔄 Recompra sugerida (N días)' },
+    { key: 'inactivo_60d', label: '💤 Inactivo (N días)' }
+  ];
+
+  for (var i = 0; i < tipos.length; i++) {
+    var t = tipos[i];
+    var p = cfg.plantillas[t.key] || { activo: true, mensaje: '' };
+    h += '<div class="form-group">';
+    h += '<label><input type="checkbox" id="cfg-activo-' + t.key + '" ' + (p.activo ? 'checked' : '') + '> ' + t.label + '</label>';
+    h += '<textarea class="input" id="cfg-msg-' + t.key + '" rows="3" style="margin-top:4px;font-family:inherit;resize:vertical">' + esc(p.mensaje) + '</textarea>';
+    h += '</div>';
+  }
+
+  h += '<div class="mt-16"><button class="btn btn-gold" onclick="Pages._guardarConfigSeguimiento()">Guardar configuración</button></div>';
+  h += '</div></div>';
+  return h;
+};
+
+Pages._guardarConfigSeguimiento = function() {
+  var cfg = {
+    diasSinPedido: Number(document.getElementById('cfg-dias-sin-pedido').value) || 7,
+    diasPostEntrega: Number(document.getElementById('cfg-dias-post-entrega').value) || 4,
+    diasRecompra: Number(document.getElementById('cfg-dias-recompra').value) || 30,
+    diasInactivo: Number(document.getElementById('cfg-dias-inactivo').value) || 60,
+    frascosColeccion: Number(document.getElementById('cfg-frascos-coleccion').value) || 10,
+    tiempoAbandonoMin: 14,
+    plantillas: {}
+  };
+
+  var tipos = ['bienvenida','sin_pedido_7d','carrito_abandonado','primer_pedido','pedido_entregado','post_entrega','recurrente_3','coleccion_10','recompra_30d','inactivo_60d'];
+  for (var i = 0; i < tipos.length; i++) {
+    var key = tipos[i];
+    var activoEl = document.getElementById('cfg-activo-' + key);
+    var msgEl = document.getElementById('cfg-msg-' + key);
+    cfg.plantillas[key] = {
+      activo: activoEl ? activoEl.checked : true,
+      mensaje: msgEl ? msgEl.value : ''
+    };
+  }
+
+  ArcanoDB.saveConfigSeguimiento(cfg);
+  toast('Configuración de seguimiento guardada');
+  App.renderPage('clientes');
+};
+
+Pages._marcarEnviadoSeg = function(clienteKey, tipoMensaje) {
+  ArcanoDB.marcarMensajeEnviado(clienteKey, tipoMensaje);
+  toast('Mensaje marcado como enviado');
+  App.renderPage('clientes');
+};
+
+Pages._posponerSeg = function(clienteKey, tipoMensaje) {
+  ArcanoDB.posponerMensaje(clienteKey, tipoMensaje);
+  toast('Mensaje pospuesto');
+  App.renderPage('clientes');
+};
+
+Pages._renderSeguimientoCliente = function(cliente, clienteKey) {
+  var seg = ArcanoDB.calcularSeguimientoCliente(cliente);
+  var h = '<div class="card"><div class="card-header"><h3>Seguimiento</h3></div><div class="card-body">';
+
+  // Estado del cliente
+  var estadoLabels = { nuevo: '🔵 Nuevo', activo: '🟢 Activo', en_riesgo: '🟡 En riesgo', inactivo: '🔴 Inactivo', fiel: '🟣 Fiel' };
+  h += '<div style="margin-bottom:16px"><span class="badge badge-gold" style="font-size:0.85rem">' + (estadoLabels[seg.estado] || seg.estado) + '</span>';
+  if (seg.pendientesCount > 0) h += ' <span class="badge badge-red" style="font-size:0.85rem">' + seg.pendientesCount + ' pendientes</span>';
+  h += '</div>';
+
+  // Timeline
+  h += '<h4 class="mb-8">Timeline de Seguimiento</h4>';
+  h += '<div class="table-wrap"><table class="table"><thead><tr><th>Mensaje</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+  for (var i = 0; i < seg.mensajes.length; i++) {
+    var m = seg.mensajes[i];
+    var estadoIcon = m.estado === 'enviado' ? '✅ Enviado' :
+                     m.estado === 'pendiente' ? '⏳ Pendiente' :
+                     m.estado === 'pendiente_futuro' ? '📅 Programado' :
+                     m.estado === 'pospuesto' ? '⏰ Pospuesto' : '— No aplica';
+    var fecha = m.fechaEnviado ? new Date(m.fechaEnviado).toLocaleDateString('es-CO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) :
+                m.fechaEstimada ? new Date(m.fechaEstimada).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '-';
+    h += '<tr>';
+    h += '<td class="fw7">' + esc(m.titulo);
+    if (m.progreso) h += ' <span class="text-muted text-xs">(' + m.progreso + ')</span>';
+    h += '</td>';
+    h += '<td>' + estadoIcon + '</td>';
+    h += '<td class="text-sm text-muted">' + fecha + '</td>';
+    h += '<td>';
+    if (m.estado === 'pendiente' && m.activo) {
+      var telNorm = cliente.telNorm || '';
+      var waUrl = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent(m.mensaje.replace(/{nombre}/g, cliente.nombre || ''))) : '#';
+      h += '<a href="' + waUrl + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none;margin-right:4px">📱 Enviar</a>';
+      h += '<button class="btn btn-sm btn-outline" onclick="Pages._marcarEnviadoSeg(\'' + clienteKey + '\',\'' + m.tipo + '\')">✓</button>';
+      h += ' <button class="btn btn-sm btn-outline" onclick="Pages._posponerSeg(\'' + clienteKey + '\',\'' + m.tipo + '\')">⏰</button>';
+    }
+    h += '</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '</div></div>';
+  return h;
+};
+
+// Modificar el historial del cliente para incluir pestaña de seguimiento
+var _originalVerHistorialCliente = Pages._verHistorialCliente;
+Pages._verHistorialCliente = function(clienteKey) {
+  var clientes = ArcanoDB.getClientes();
+  var cliente = null;
+  for (var i = 0; i < clientes.length; i++) {
+    if (clientes[i]._key === clienteKey) { cliente = clientes[i]; break; }
+  }
+  if (!cliente) { alert('Cliente no encontrado'); return; }
+  var pedidos = ArcanoDB.getPedidosByCliente(clienteKey);
+  var totalComprado = 0;
+  for (var j = 0; j < pedidos.length; j++) {
+    if (pedidos[j].estado !== 'cancelado') totalComprado += (pedidos[j].total || 0);
+  }
+  var telNorm = cliente.telNorm || '';
+  var waLink = telNorm ? 'https://wa.me/' + telNorm : '#';
+
+  var seg = ArcanoDB.calcularSeguimientoCliente(cliente);
+  var estadoLabels = { nuevo: '🔵 Nuevo', activo: '🟢 Activo', en_riesgo: '🟡 En riesgo', inactivo: '🔴 Inactivo', fiel: '🟣 Fiel' };
+
+  var body =
+    '<div class="card-hdr"><h3 style="margin:0">' + esc(cliente.nombre || 'Cliente') + ' <span class="badge badge-gold" style="font-size:0.75rem">' + (estadoLabels[seg.estado] || seg.estado) + '</span>';
+  if (seg.pendientesCount > 0) body += ' <span class="badge badge-red" style="font-size:0.75rem">' + seg.pendientesCount + ' pendientes</span>';
+  body += '</h3></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">' +
+      '<div><div class="text-sm text-muted">WhatsApp</div><a href="' + waLink + '" target="_blank" style="color:var(--gold)">' + esc(cliente.telefono || '-') + '</a></div>' +
+      '<div><div class="text-sm text-muted">Email</div>' + esc(cliente.email || '-') + '</div>' +
+      '<div><div class="text-sm text-muted">Ciudad</div>' + esc(cliente.ciudad || '-') + '</div>' +
+      '<div><div class="text-sm text-muted">Total pedidos</div><b>' + (cliente.totalPedidos || 0) + '</b></div>' +
+      '<div><div class="text-sm text-muted">Total comprado</div><b style="color:var(--green)">$' + totalComprado.toLocaleString() + '</b></div>' +
+      '<div><div class="text-sm text-muted">Frascos comprados</div><b>' + seg.frascosComprados + '</b></div>' +
+      '<div><div class="text-sm text-muted">Cliente desde</div>' + (cliente.creado ? new Date(cliente.creado).toLocaleDateString('es-CO') : '-') + '</div>' +
+      '<div><div class="text-sm text-muted">Último pedido</div>' + (cliente.ultimoPedido ? new Date(cliente.ultimoPedido).toLocaleDateString('es-CO') : '-') + '</div>' +
+    '</div>';
+
+  // Seguimiento
+  body += Pages._renderSeguimientoCliente(cliente, clienteKey);
+
+  // Historial de pedidos
+  body += '<h4 style="margin:16px 0 8px">Historial de Pedidos (' + pedidos.length + ')</h4>';
+  if (pedidos.length === 0) {
+    body += '<p class="text-muted">No hay pedidos vinculados a este cliente.</p>';
+  } else {
+    body += '<div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Estado</th><th>Items</th><th>Total</th></tr></thead><tbody>';
+    for (var k = 0; k < pedidos.length; k++) {
+      var p = pedidos[k];
+      var fecha = p.creado ? new Date(p.creado).toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+      body += '<tr><td>' + fecha + '</td><td>' + (p.estado || '-') + '</td><td>' + ((p.items||[]).length) + '</td><td class="fw7">$' + (p.total||0).toLocaleString() + '</td></tr>';
+    }
+    body += '</tbody></table></div>';
+  }
+
+  openModal('Detalle de Cliente', body);
+};
+
+// Agregar botón de seguimiento en la tabla de clientes
+var _originalRenderClientesTable = Pages._renderClientesTable;
+Pages._renderClientesTable = function(clientes, totalPorCliente) {
+  var h = _originalRenderClientesTable.call(this, clientes, totalPorCliente);
+  // Reemplazar el botón de historial para incluir seguimiento
+  // (el botón original llama a Pages._verHistorialCliente que ya fue sobreescrito arriba)
+  return h;
 };

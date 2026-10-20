@@ -4074,6 +4074,367 @@ function canjearColeccion(whatsapp, reset) {
 function onColeccionesChange(callback) { _coleccionesListeners.push(callback); }
 /* ==================== FIN COLECCI\u00D3N ARCANO ==================== */
 
+/* ==================== SEGUIMIENTO DE CLIENTES ==================== */
+
+/* Configuración por defecto (días y plantillas) */
+var _SEGUIMIENTO_DEFAULTS = {
+  diasSinPedido: 7,
+  diasPostEntrega: 4,
+  diasRecompra: 30,
+  diasInactivo: 60,
+  frascosColeccion: 10,
+  tiempoAbandonoMin: 14,
+  plantillas: {
+    bienvenida: { activo: true, mensaje: 'Hola {nombre}! 🌿 Bienvenido a Arcano Especias. Explorá nuestra tienda de blends artesanales del mundo. Envíos a toda Colombia. arcanoespecias.com' },
+    sin_pedido_7d: { activo: true, mensaje: 'Hola {nombre}! 😊 Vimos que aún no hiciste tu primer pedido. Tenemos blends de todo el mundo esperándote. Usá el código BIENVENIDA10 para 10% off en tu primera compra. arcanoespecias.com' },
+    carrito_abandonado: { activo: true, mensaje: 'Hola {nombre}! 👀 ¡Parece que dejaste algo pendiente! Hay Blends esperándote en tu carrito. 🛍️✨ arcanoespecias.com' },
+    primer_pedido: { activo: true, mensaje: 'Hola {nombre}!\n✨ ¡Felicidades por tu primera compra en ARCANO!\nTu pedido es:\n{items}\n\nYa puedes realizar el pago de {total} de las siguientes formas:\nNequi: 3042156462 Jeimy Tatiana Linares\nBre-B/Llave: @3042156462\n\nEnvíanos el comprobante y continuamos con la entrega😊\n\nMuchas Gracias por tu compra!🫶' },
+    pedido_entregado: { activo: true, mensaje: 'Hola {nombre}!\n\n✨ ¡Nos confirman que ya llegó tu pedido!🥳🥳🥳\nEsperamos que disfrutes tus Blends y descubras todo lo que puedes crear con ellos. Nos encanta ser ese toque secreto de tus preparaciones🌿\n\nAhora viene la mejor parte: Chicanear en tus redes que ARCANO es Cómplice del Sabor!😎\nNos ayuda mucho que compartas tus experiencia y nos etiquetes 😃\n\nMuchas Gracias por tu compra!🫶\narcanoespecias.com' },
+    post_entrega: { activo: true, mensaje: 'Hola {nombre}! 😊\nHan pasado unos días desde que recibiste tus Blends ARCANO y tenemos que preguntarte algo:\n**¿Qué te parecieron? ¿Ya los probaste?** 👀✨\nQueremos conocer tu experiencia y saber cuál fue tu favorito. ❤️\n\nY si preparaste algo delicioso con ellos, ¡nos encantaría verlo!\nPuedes compartirlo en tus redes y etiquetarnos!🫶\n\n¡Esperamos que los estés disfrutando mucho!😃\narcanoespecias.com' },
+    recurrente_3: { activo: true, mensaje: 'Hola {nombre}! 🌿 ¡Gracias por confiar nuevamente en Arcano! Como cliente recurrente, te obsequiamos envío gratis en tu próximo pedido. Usá el código RECURRENTE al confirmar.' },
+    coleccion_10: { activo: true, mensaje: '¡Hola {nombre}! 🎉 ¡Felicitaciones por completar tu Colección Arcano de 10 Blends! Como regalo, tu próximo Blend Grande va gratis. Reclámalo en tu próximo pedido.🫶' },
+    recompra_30d: { activo: true, mensaje: 'Hola {nombre}! 🌿 Han pasado 30 días desde tu última compra. ¿Te quedaste sin tus Blends favoritos? Tenemos novedades y blends nuevos esperándote. 😃 arcanoespecias.com' },
+    inactivo_60d: { activo: true, mensaje: 'Hola {nombre}! Te extrañamos en Arcano Especias 🌿. Volvé a disfrutar de tus Blends favoritos con 15% off usando el código TEEXTRANAMOS. ¡Te esperamos! 😃 arcanoespecias.com' }
+  }
+};
+
+function getConfigSeguimiento() {
+  if (!_db.tiendaConfig) _db.tiendaConfig = {};
+  var cfg = _db.tiendaConfig.seguimiento;
+  if (!cfg) return JSON.parse(JSON.stringify(_SEGUIMIENTO_DEFAULTS));
+  // Merge con defaults para campos nuevos
+  var merged = JSON.parse(JSON.stringify(_SEGUIMIENTO_DEFAULTS));
+  for (var k in cfg) {
+    if (typeof cfg[k] === 'object' && !Array.isArray(cfg[k])) {
+      merged[k] = merged[k] || {};
+      for (var sk in cfg[k]) merged[k][sk] = cfg[k][sk];
+    } else {
+      merged[k] = cfg[k];
+    }
+  }
+  // Merge plantillas
+  if (cfg.plantillas) {
+    for (var pk in cfg.plantillas) {
+      merged.plantillas[pk] = cfg.plantillas[pk];
+    }
+  }
+  return merged;
+}
+
+function saveConfigSeguimiento(config) {
+  if (!_db.tiendaConfig) _db.tiendaConfig = {};
+  _db.tiendaConfig.seguimiento = config;
+  if (_firebaseRef) {
+    _firebaseRef.child('tiendaConfig/seguimiento').set(config, function(err) {
+      if (err) console.error('[DB] Error guardando config seguimiento:', err);
+    });
+  }
+  _notify('update', 'tiendaConfig', 'seguimiento');
+}
+
+/**
+ * Calcula el estado de seguimiento para un cliente.
+ * Retorna: {
+ *   estado: 'nuevo'|'activo'|'en_riesgo'|'inactivo'|'fiel',
+ *   mensajes: [
+ *     { tipo, estado: 'pendiente'|'enviado'|'no_aplica', fechaEstimada, mensaje, titulo },
+ *     ...
+ *   ],
+ *   pendientesCount: N,
+ *   frascosComprados: N
+ * }
+ */
+function calcularSeguimientoCliente(cliente) {
+  if (!cliente) return { estado: 'nuevo', mensajes: [], pendientesCount: 0, frascosComprados: 0 };
+  var cfg = getConfigSeguimiento();
+  var seguimiento = cliente.seguimiento || {};
+  var ahora = new Date();
+  var creado = cliente.creado ? new Date(cliente.creado) : null;
+  var ultimoPedido = cliente.ultimoPedido ? new Date(cliente.ultimoPedido) : null;
+  var totalPedidos = cliente.totalPedidos || 0;
+  var frascosComprados = cliente.frascosComprados || _contarFrascosCliente(cliente);
+  
+  // Calcular estado del cliente
+  var estadoCliente = 'nuevo';
+  if (totalPedidos === 0) {
+    estadoCliente = creado ? 'nuevo' : 'nuevo';
+  } else if (totalPedidos >= 5) {
+    estadoCliente = 'fiel';
+  } else if (ultimoPedido) {
+    var diasUltimo = Math.floor((ahora - ultimoPedido) / 86400000);
+    if (diasUltimo <= cfg.diasRecompra) estadoCliente = 'activo';
+    else if (diasUltimo <= cfg.diasInactivo) estadoCliente = 'en_riesgo';
+    else estadoCliente = 'inactivo';
+  }
+  
+  // Obtener último pedido entregado
+  var fechaEntregado = null;
+  if (cliente.pedidos) {
+    for (var i = 0; i < cliente.pedidos.length; i++) {
+      if (cliente.pedidos[i].estado === 'entregado') {
+        var f = cliente.pedidos[i].entregadoAt || cliente.pedidos[i].creado;
+        if (f && (!fechaEntregado || f > fechaEntregado)) fechaEntregado = f;
+      }
+    }
+  }
+  
+  // Generar mensajes
+  var mensajes = [];
+  
+  // 1. Bienvenida
+  var bienvenida = seguimiento.bienvenida || {};
+  mensajes.push({
+    tipo: 'bienvenida',
+    titulo: 'Bienvenida',
+    estado: bienvenida.estado || (creado ? 'pendiente' : 'no_aplica'),
+    fechaEnviado: bienvenida.fechaEnviado,
+    fechaEstimada: creado ? creado.toISOString() : null,
+    mensaje: cfg.plantillas.bienvenida.mensaje,
+    activo: cfg.plantillas.bienvenida.activo
+  });
+  
+  // 2. Sin pedido (7 días)
+  var sinPedido = seguimiento.sin_pedido_7d || {};
+  var fecha7d = creado ? new Date(creado.getTime() + cfg.diasSinPedido * 86400000) : null;
+  var estado7d = 'no_aplica';
+  if (totalPedidos === 0 && fecha7d && ahora >= fecha7d) {
+    estado7d = sinPedido.estado || 'pendiente';
+  } else if (totalPedidos > 0) {
+    estado7d = 'no_aplica';
+  } else {
+    estado7d = 'pendiente_futuro';
+  }
+  mensajes.push({
+    tipo: 'sin_pedido_7d',
+    titulo: 'Sin pedido (' + cfg.diasSinPedido + ' días)',
+    estado: estado7d,
+    fechaEnviado: sinPedido.fechaEnviado,
+    fechaEstimada: fecha7d ? fecha7d.toISOString() : null,
+    mensaje: cfg.plantillas.sin_pedido_7d.mensaje,
+    activo: cfg.plantillas.sin_pedido_7d.activo
+  });
+  
+  // 3. Carrito abandonado
+  var carrito = seguimiento.carrito_abandonado || {};
+  mensajes.push({
+    tipo: 'carrito_abandonado',
+    titulo: 'Carrito abandonado',
+    estado: carrito.estado || 'no_aplica',
+    fechaEnviado: carrito.fechaEnviado,
+    fechaEstimada: null,
+    mensaje: cfg.plantillas.carrito_abandonado.mensaje,
+    activo: cfg.plantillas.carrito_abandonado.activo
+  });
+  
+  // 4. Primer pedido
+  var primerPedido = seguimiento.primer_pedido || {};
+  mensajes.push({
+    tipo: 'primer_pedido',
+    titulo: 'Primer pedido',
+    estado: totalPedidos > 0 ? (primerPedido.estado || 'enviado') : 'no_aplica',
+    fechaEnviado: primerPedido.fechaEnviado,
+    fechaEstimada: null,
+    mensaje: cfg.plantillas.primer_pedido.mensaje,
+    activo: cfg.plantillas.primer_pedido.activo
+  });
+  
+  // 5. Pedido entregado
+  var entregado = seguimiento.pedido_entregado || {};
+  mensajes.push({
+    tipo: 'pedido_entregado',
+    titulo: 'Pedido entregado',
+    estado: fechaEntregado ? (entregado.estado || 'pendiente') : 'no_aplica',
+    fechaEnviado: entregado.fechaEnviado,
+    fechaEstimada: fechaEntregado,
+    mensaje: cfg.plantillas.pedido_entregado.mensaje,
+    activo: cfg.plantillas.pedido_entregado.activo
+  });
+  
+  // 6. Seguimiento post-entrega (4 días)
+  var postEntrega = seguimiento.post_entrega || {};
+  var fechaPostEntrega = fechaEntregado ? new Date(new Date(fechaEntregado).getTime() + cfg.diasPostEntrega * 86400000) : null;
+  var estadoPostEntrega = 'no_aplica';
+  if (fechaPostEntrega && ahora >= fechaPostEntrega) {
+    estadoPostEntrega = postEntrega.estado || 'pendiente';
+  } else if (fechaPostEntrega) {
+    estadoPostEntrega = 'pendiente_futuro';
+  }
+  mensajes.push({
+    tipo: 'post_entrega',
+    titulo: 'Seguimiento post-entrega (' + cfg.diasPostEntrega + ' días)',
+    estado: estadoPostEntrega,
+    fechaEnviado: postEntrega.fechaEnviado,
+    fechaEstimada: fechaPostEntrega ? fechaPostEntrega.toISOString() : null,
+    mensaje: cfg.plantillas.post_entrega.mensaje,
+    activo: cfg.plantillas.post_entrega.activo
+  });
+  
+  // 7. Recompra sugerida (30 días)
+  var recompra = seguimiento.recompra_30d || {};
+  var fechaRecompra = ultimoPedido ? new Date(ultimoPedido.getTime() + cfg.diasRecompra * 86400000) : null;
+  var estadoRecompra = 'no_aplica';
+  if (fechaRecompra && ahora >= fechaRecompra && totalPedidos > 0) {
+    estadoRecompra = recompra.estado || 'pendiente';
+  } else if (fechaRecompra && totalPedidos > 0) {
+    estadoRecompra = 'pendiente_futuro';
+  }
+  mensajes.push({
+    tipo: 'recompra_30d',
+    titulo: 'Recompra sugerida (' + cfg.diasRecompra + ' días)',
+    estado: estadoRecompra,
+    fechaEnviado: recompra.fechaEnviado,
+    fechaEstimada: fechaRecompra ? fechaRecompra.toISOString() : null,
+    mensaje: cfg.plantillas.recompra_30d.mensaje,
+    activo: cfg.plantillas.recompra_30d.activo
+  });
+  
+  // 8. Inactivo (60 días)
+  var inactivo = seguimiento.inactivo_60d || {};
+  var fechaInactivo = ultimoPedido ? new Date(ultimoPedido.getTime() + cfg.diasInactivo * 86400000) : null;
+  var estadoInactivo = 'no_aplica';
+  if (fechaInactivo && ahora >= fechaInactivo && totalPedidos > 0) {
+    estadoInactivo = inactivo.estado || 'pendiente';
+  } else if (fechaInactivo && totalPedidos > 0) {
+    estadoInactivo = 'pendiente_futuro';
+  }
+  mensajes.push({
+    tipo: 'inactivo_60d',
+    titulo: 'Inactivo (' + cfg.diasInactivo + ' días)',
+    estado: estadoInactivo,
+    fechaEnviado: inactivo.fechaEnviado,
+    fechaEstimada: fechaInactivo ? fechaInactivo.toISOString() : null,
+    mensaje: cfg.plantillas.inactivo_60d.mensaje,
+    activo: cfg.plantillas.inactivo_60d.activo
+  });
+  
+  // 9. Cliente recurrente (3+ pedidos)
+  var recurrente = seguimiento.recurrente_3 || {};
+  mensajes.push({
+    tipo: 'recurrente_3',
+    titulo: 'Cliente recurrente (3+ pedidos)',
+    estado: totalPedidos >= 3 ? (recurrente.estado || 'pendiente') : 'no_aplica',
+    fechaEnviado: recurrente.fechaEnviado,
+    fechaEstimada: null,
+    mensaje: cfg.plantillas.recurrente_3.mensaje,
+    activo: cfg.plantillas.recurrente_3.activo
+  });
+  
+  // 10. Colección Arcano (10 frascos)
+  var coleccion = seguimiento.coleccion_10 || {};
+  mensajes.push({
+    tipo: 'coleccion_10',
+    titulo: 'Colección Arcano (' + cfg.frascosColeccion + ' frascos)',
+    estado: frascosComprados >= cfg.frascosColeccion ? (coleccion.estado || 'pendiente') : 'no_aplica',
+    fechaEnviado: coleccion.fechaEnviado,
+    fechaEstimada: null,
+    mensaje: cfg.plantillas.coleccion_10.mensaje,
+    activo: cfg.plantillas.coleccion_10.activo,
+    progreso: frascosComprados + '/' + cfg.frascosColeccion
+  });
+  
+  // Contar pendientes
+  var pendientesCount = 0;
+  for (var mi = 0; mi < mensajes.length; mi++) {
+    if (mensajes[mi].estado === 'pendiente' && mensajes[mi].activo) pendientesCount++;
+  }
+  
+  return {
+    estado: estadoCliente,
+    mensajes: mensajes,
+    pendientesCount: pendientesCount,
+    frascosComprados: frascosComprados
+  };
+}
+
+/* Cuenta los frascos comprados por un cliente (chico + grande de cada pedido) */
+function _contarFrascosCliente(cliente) {
+  if (!cliente || !cliente.pedidos) {
+    // Si no tiene pedidos cargados, usar totalPedidos como aproximación
+    return (cliente.totalPedidos || 0);
+  }
+  var total = 0;
+  for (var i = 0; i < cliente.pedidos.length; i++) {
+    var items = cliente.pedidos[i].items || [];
+    for (var j = 0; j < items.length; j++) {
+      if (items[j].tipo === 'blend' || items[j].tipo === 'especia') {
+        total += (items[j].qty || 1);
+      }
+    }
+  }
+  return total;
+}
+
+/**
+ * Obtiene todos los mensajes pendientes de todos los clientes.
+ * Retorna: [{ cliente, mensaje }] donde mensaje tiene { tipo, titulo, mensaje }
+ */
+function getMensajesPendientes() {
+  var resultado = [];
+  var clientes = _clientes.slice();
+  for (var i = 0; i < clientes.length; i++) {
+    var c = clientes[i];
+    if (!c.telefono) continue;
+    var seg = calcularSeguimientoCliente(c);
+    for (var j = 0; j < seg.mensajes.length; j++) {
+      var m = seg.mensajes[j];
+      if (m.estado === 'pendiente' && m.activo) {
+        resultado.push({
+          cliente: c,
+          mensaje: m,
+          clienteKey: c._key
+        });
+      }
+    }
+  }
+  return resultado;
+}
+
+/**
+ * Marca un mensaje de seguimiento como enviado para un cliente.
+ */
+function marcarMensajeEnviado(clienteKey, tipoMensaje) {
+  if (!_clientesRef) return;
+  var now = new Date().toISOString();
+  var updates = {};
+  updates['seguimiento/' + tipoMensaje + '/estado'] = 'enviado';
+  updates['seguimiento/' + tipoMensaje + '/fechaEnviado'] = now;
+  _clientesRef.child(clienteKey).update(updates, function(err) {
+    if (err) console.error('[DB] Error marcando mensaje enviado:', err);
+  });
+  // Actualizar en memoria
+  for (var i = 0; i < _clientes.length; i++) {
+    if (_clientes[i]._key === clienteKey) {
+      if (!_clientes[i].seguimiento) _clientes[i].seguimiento = {};
+      if (!_clientes[i].seguimiento[tipoMensaje]) _clientes[i].seguimiento[tipoMensaje] = {};
+      _clientes[i].seguimiento[tipoMensaje].estado = 'enviado';
+      _clientes[i].seguimiento[tipoMensaje].fechaEnviado = now;
+      break;
+    }
+  }
+  _notify('update', 'clientes', clienteKey);
+}
+
+/**
+ * Pospone un mensaje de seguimiento (lo marca como 'pospuesto').
+ */
+function posponerMensaje(clienteKey, tipoMensaje) {
+  if (!_clientesRef) return;
+  var updates = {};
+  updates['seguimiento/' + tipoMensaje + '/estado'] = 'pospuesto';
+  _clientesRef.child(clienteKey).update(updates, function(err) {
+    if (err) console.error('[DB] Error posponiendo mensaje:', err);
+  });
+  for (var i = 0; i < _clientes.length; i++) {
+    if (_clientes[i]._key === clienteKey) {
+      if (!_clientes[i].seguimiento) _clientes[i].seguimiento = {};
+      if (!_clientes[i].seguimiento[tipoMensaje]) _clientes[i].seguimiento[tipoMensaje] = {};
+      _clientes[i].seguimiento[tipoMensaje].estado = 'pospuesto';
+      break;
+    }
+  }
+  _notify('update', 'clientes', clienteKey);
+}
+
 /* ==================== EXPORT ==================== */
 
 window.ArcanoDB = {
@@ -4127,5 +4488,13 @@ window.ArcanoDB = {
   getColecciones: getColecciones, getColeccion: getColeccion, saveColeccion: saveColeccion,
   deleteColeccion: deleteColeccion, addBlendsToColeccion: addBlendsToColeccion,
   canjearColeccion: canjearColeccion, getColeccionesCompletadas: getColeccionesCompletadas,
-  onColeccionesChange: onColeccionesChange
+  onColeccionesChange: onColeccionesChange,
+
+  // Seguimiento de clientes
+  calcularSeguimientoCliente: calcularSeguimientoCliente,
+  getMensajesPendientes: getMensajesPendientes,
+  marcarMensajeEnviado: marcarMensajeEnviado,
+  posponerMensaje: posponerMensaje,
+  getConfigSeguimiento: getConfigSeguimiento,
+  saveConfigSeguimiento: saveConfigSeguimiento
 };
