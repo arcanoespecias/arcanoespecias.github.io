@@ -85,7 +85,7 @@ var WhatsAppNotifications = (function() {
         '<div id="wa-tabs" class="wa-tabs">' +
           '<button class="wa-tab active" data-tab="plantillas" onclick="WhatsAppNotifications.showTab(\'plantillas\')">\u{1F4DD} Plantillas por evento</button>' +
           '<button class="wa-tab" data-tab="carritos" onclick="WhatsAppNotifications.showTab(\'carritos\')">\u{1F6D2} Carritos abandonados</button>' +
-          '<button class="wa-tab" data-tab="seguimiento" onclick="WhatsAppNotifications.showTab(\'seguimiento\')">\u{1F4DE} Seguimiento post-venta</button>' +
+          '<button class="wa-tab" data-tab="seguimiento" onclick="WhatsAppNotifications.showTab(\'seguimiento\')">\u{1F4DE} Seguimiento de clientes</button>' +
           '<button class="wa-tab" data-tab="estadisticas" onclick="WhatsAppNotifications.showTab(\'estadisticas\')">\u{1F4CA} Estad\u00EDsticas</button>' +
           '<button class="wa-tab" data-tab="historial" onclick="WhatsAppNotifications.showTab(\'historial\')">\u{1F4DC} Historial</button>' +
           '<button class="wa-tab" data-tab="manual" onclick="WhatsAppNotifications.showTab(\'manual\')">\u{1F4E4} Env\u00EDo manual</button>' +
@@ -487,164 +487,168 @@ var WhatsAppNotifications = (function() {
     }
   }
 
-  // === TAB: Seguimiento post-venta ===
+  // === TAB: Seguimiento de clientes (unificado) ===
 
+  var _segSubTab = 'pendientes';
   async function renderSeguimiento(container, cfg) {
-    var mw = cfg.mensajesWhatsApp || {};
-    var pedidos = [];
-    var clientes = [];
+    // Sub-tabs: Pendientes | Configuración
+    var pendientes = [];
     try {
-      if (typeof ArcanoDB !== 'undefined') {
-        if (ArcanoDB.getPedidos) pedidos = ArcanoDB.getPedidos();
-        if (ArcanoDB.getClientes) clientes = ArcanoDB.getClientes();
+      if (typeof ArcanoDB !== 'undefined' && ArcanoDB.getMensajesPendientes) {
+        pendientes = ArcanoDB.getMensajesPendientes();
       }
     } catch(e) {}
 
-    // Configuracion del mensaje de seguimiento
     var html = '<div class="wa-section">';
-    html += '<div class="wa-card">' +
-      '<h4>\u{1F4DE} Seguimiento post-venta</h4>' +
-      '<p class="text-sm text-muted mb-12">Enviale un mensaje a los clientes que recibieron su pedido hace X dias para preguntarles como les fue. Ideal para fidelizar y pedir reseñas.</p>' +
-      '<div class="g2">' +
-        '<div class="form-group"><label>Enviar mensaje despues de (dias)</label>' +
-          '<input class="input" id="sv-dias" type="number" min="1" max="30" value="' + (mw.seguimientoDias || 4) + '" placeholder="4">' +
-          '<p class="text-xs text-muted mt-4">Despues de cuantos dias de entregado el pedido, enviar el mensaje.</p>' +
-        '</div>' +
-        '<div class="form-group"><label>Activar recordatorio en panel</label>' +
-          '<select class="input" id="sv-activo">' +
-            '<option value="true"' + (mw.seguimientoActivo !== false ? ' selected' : '') + '>Activado</option>' +
-            '<option value="false"' + (mw.seguimientoActivo === false ? ' selected' : '') + '>Desactivado</option>' +
-          '</select></div>' +
-      '</div>' +
-      '<div class="form-group mt-12"><label>Mensaje de seguimiento (usa {nombre})</label>' +
-        '<textarea class="input" id="sv-mensaje" rows="4" placeholder="Hola {nombre}! Hace unos dias recibiste tu pedido de Arcano Especias. Como fue tu experiencia? Tu opinion nos ayuda mucho. Cualquier cosa, escribenos por aqui.">' + escHtml(mw.mensajeSeguimiento || '') + '</textarea>' +
-        '<p class="text-xs text-muted mt-4">Variables: <code>{nombre}</code></p>' +
-      '</div>' +
-      '<div class="mt-8">' +
-        '<button class="wa-btn wa-btn-gold" onclick="WhatsAppNotifications.guardarSeguimientoConfig()">Guardar configuracion</button>' +
-        '<span id="sv-status" class="text-sm text-muted ml-8"></span>' +
-      '</div>' +
-    '</div>';
+    html += '<div class="wa-tabs" style="margin-bottom:16px">';
+    html += '<button class="wa-tab ' + (_segSubTab === 'pendientes' ? 'active' : '') + '" onclick="WhatsAppNotifications._segSubTab=\'pendientes\';WhatsAppNotifications.showTab(\'seguimiento\')">';
+    html += '⏳ Pendientes';
+    if (pendientes.length > 0) html += ' (' + pendientes.length + ')';
+    html += '</button>';
+    html += '<button class="wa-tab ' + (_segSubTab === 'config' ? 'active' : '') + '" onclick="WhatsAppNotifications._segSubTab=\'config\';WhatsAppNotifications.showTab(\'seguimiento\')">';
+    html += '⚙ Configuración</button>';
+    html += '</div>';
 
-    // Buscar pedidos entregados hace X dias
-    var dias = mw.seguimientoDias || 4;
-    var ahora = Date.now();
-    var limiteDias = dias * 24 * 60 * 60 * 1000;
-    var candidatos = [];
-
-    for (var i = 0; i < pedidos.length; i++) {
-      var p = pedidos[i];
-      if (p.estado !== 'entregado') continue;
-      if (!p.cliente || !p.cliente.telefono) continue;
-      // Verificar si ya se envio seguimiento
-      if (p.seguimientoEnviado) continue;
-      var fechaEntrega = p.notificadoEn || p.creado || '';
-      if (!fechaEntrega) continue;
-      var fechaMs = new Date(fechaEntrega).getTime();
-      if (isNaN(fechaMs)) continue;
-      var diff = ahora - fechaMs;
-      if (diff >= limiteDias && diff < (limiteDias + 7 * 24 * 60 * 60 * 1000)) {
-        // Entre X dias y X+7 dias despues de entrega
-        candidatos.push(p);
-      }
-    }
-
-    html += '<div class="wa-card mt-16">' +
-      '<h4>Clientes para seguimiento (' + candidatos.length + ')</h4>' +
-      '<p class="text-sm text-muted mb-12">Pedidos entregados hace ' + dias + ' o mas dias sin mensaje de seguimiento enviado.</p>';
-    if (candidatos.length === 0) {
-      html += '<p class="text-center text-muted" style="padding:20px">No hay clientes pendientes de seguimiento en este momento.</p>';
+    if (_segSubTab === 'config') {
+      html += _renderSeguimientoConfig();
     } else {
-      html += '<div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Pedido</th><th>Total</th><th>Entregado hace</th><th></th></tr></thead><tbody>';
-      for (var j = 0; j < candidatos.length; j++) {
-        var ped = candidatos[j];
-        var cl = ped.cliente || {};
-        var telNorm = cl.telefono ? ('57' + cl.telefono.replace(/\D/g, '').replace(/^57/, '')) : '';
-        var nombreVar = cl.nombre || 'Cliente';
-        var mensaje = (mw.mensajeSeguimiento || 'Hola {nombre}! Hace unos dias recibiste tu pedido de Arcano Especias. Como fue tu experiencia? Tu opinion nos ayuda mucho.')
-          .replace(/\{nombre\}/g, nombreVar);
-        var waLink = telNorm ? _buildWaLink(telNorm, mensaje) : '#';
-        var fechaEntrega = ped.notificadoEn || ped.creado || '';
-        var diffMs = ahora - new Date(fechaEntrega).getTime();
-        var diasPasados = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-        html += '<tr>' +
-          '<td class="fw7">' + escHtml(cl.nombre || '?') + '</td>' +
-          '<td>' + escHtml(cl.telefono || '-') + '</td>' +
-          '<td><code>#' + (ped._key || '').slice(-6).toUpperCase() + '</code></td>' +
-          '<td class="fw7 text-gold">$' + (ped.total || 0).toLocaleString() + '</td>' +
-          '<td class="text-sm text-muted">' + diasPasados + ' dias</td>' +
-          '<td>' +
-            (waLink !== '#' ?
-              '<a href="' + waLink + '" target="_blank" class="btn btn-sm btn-gold">Enviar</a> ' +
-              '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications.marcarSeguimientoEnviado(\'' + ped._key + '\')">Marcar enviado</button>'
-              : '<span class="text-xs text-muted">Sin telefono</span>') +
-          '</td>' +
-        '</tr>';
+      // Bandeja de salida
+      if (pendientes.length === 0) {
+        html += '<div class="wa-card text-center" style="padding:40px">';
+        html += '<p style="font-size:2rem;margin-bottom:12px">✅</p>';
+        html += '<p style="color:var(--text-muted,#8a7a6e)">No hay mensajes pendientes. Todos los clientes están al día.</p>';
+        html += '</div>';
+      } else {
+        html += '<div class="wa-card">';
+        html += '<h4>⏳ Mensajes Pendientes (' + pendientes.length + ')</h4>';
+        html += '<p class="text-sm text-muted mb-12">Estos son los mensajes que tenés que enviar a tus clientes. Hacé clic en "Enviar" para abrir WhatsApp con el mensaje pre-cargado.</p>';
+        html += '<div class="table-wrap"><table class="table"><thead><tr>';
+        html += '<th>Cliente</th><th>Teléfono</th><th>Mensaje</th><th>Disparo</th><th>Acciones</th>';
+        html += '</tr></thead><tbody>';
+        for (var i = 0; i < pendientes.length; i++) {
+          var item = pendientes[i];
+          var c = item.cliente;
+          var m = item.mensaje;
+          var telNorm = c.telNorm || '';
+          var msgFinal = (m.mensaje || '').replace(/\{nombre\}/g, c.nombre || '');
+          var waUrl = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent(msgFinal)) : '#';
+          var fechaEst = m.fechaEstimada ? new Date(m.fechaEstimada).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '-';
+          html += '<tr>';
+          html += '<td class="fw7">' + escHtml(c.nombre || '?') + '</td>';
+          html += '<td>' + escHtml(c.telefono || '-') + '</td>';
+          html += '<td class="text-sm"><b>' + escHtml(m.titulo) + '</b><br><span style="color:var(--text-muted,#8a7a6e)">' + escHtml(msgFinal.substring(0, 80)) + '...</span></td>';
+          html += '<td class="text-sm" style="color:var(--text-muted,#8a7a6e)">' + fechaEst + '</td>';
+          html += '<td>';
+          html += '<a href="' + waUrl + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none;margin-right:4px">📱 Enviar</a>';
+          html += '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications._marcarEnviado(\'' + item.clienteKey + '\',\'' + m.tipo + '\')" style="margin-right:4px">✓ Enviado</button>';
+          html += '<button class="btn btn-sm btn-outline" onclick="WhatsAppNotifications._posponer(\'' + item.clienteKey + '\',\'' + m.tipo + '\')">⏰ Posponer</button>';
+          html += '</td>';
+          html += '</tr>';
+        }
+        html += '</tbody></table></div>';
+        html += '</div>';
       }
-      html += '</tbody></table></div>';
     }
-    html += '</div></div>';
+    html += '</div>';
     container.innerHTML = html;
   }
 
-  async function guardarSeguimientoConfig() {
-    var dias = parseInt(document.getElementById('sv-dias').value, 10) || 4;
-    var activo = document.getElementById('sv-activo').value === 'true';
-    var mensaje = document.getElementById('sv-mensaje').value.trim();
-    try {
-      var r = await fetch(FB_URL + '/tiendaConfig.json');
-      var current = r.ok ? await r.json() : {};
-      current = current || {};
-      current.mensajesWhatsApp = current.mensajesWhatsApp || {};
-      current.mensajesWhatsApp.seguimientoDias = dias;
-      current.mensajesWhatsApp.seguimientoActivo = activo;
-      current.mensajesWhatsApp.mensajeSeguimiento = mensaje;
-      await fetch(FB_URL + '/tiendaConfig.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(current)
-      });
-      var status = document.getElementById('sv-status');
-      if (status) status.innerHTML = '<span style="color:var(--green)">Guardado</span>';
-      toast('Configuracion de seguimiento guardada');
-      setTimeout(function() { if (status) status.innerHTML = ''; }, 3000);
-    } catch (e) {
-      alert('Error: ' + e.message);
+  function _renderSeguimientoConfig() {
+    var cfg = {};
+    try { if (typeof ArcanoDB !== 'undefined' && ArcanoDB.getConfigSeguimiento) cfg = ArcanoDB.getConfigSeguimiento(); } catch(e) {}
+    if (!cfg.plantillas) cfg.plantillas = {};
+
+    var html = '<div class="wa-card">';
+    html += '<h4>⚙ Configuración de Seguimiento</h4>';
+    html += '<p class="text-sm text-muted mb-12">Configurá los días y los mensajes de cada tipo de seguimiento.</p>';
+
+    // Días
+    html += '<h5 style="margin:8px 0">Tiempos (días)</h5>';
+    html += '<div class="g2 mb-16">';
+    html += '<div class="form-group"><label>Días sin pedido → recordatorio</label><input class="input" type="number" id="seg-cfg-dias-sin-pedido" value="' + (cfg.diasSinPedido || 7) + '" min="1" max="90"></div>';
+    html += '<div class="form-group"><label>Días post-entrega → seguimiento</label><input class="input" type="number" id="seg-cfg-dias-post-entrega" value="' + (cfg.diasPostEntrega || 4) + '" min="1" max="30"></div>';
+    html += '<div class="form-group"><label>Días → recompra sugerida</label><input class="input" type="number" id="seg-cfg-dias-recompra" value="' + (cfg.diasRecompra || 30) + '" min="1" max="180"></div>';
+    html += '<div class="form-group"><label>Días → inactivo</label><input class="input" type="number" id="seg-cfg-dias-inactivo" value="' + (cfg.diasInactivo || 60) + '" min="1" max="365"></div>';
+    html += '<div class="form-group"><label>Frascos para Colección Arcano</label><input class="input" type="number" id="seg-cfg-frascos-coleccion" value="' + (cfg.frascosColeccion || 10) + '" min="1" max="100"></div>';
+    html += '</div>';
+
+    // Plantillas
+    html += '<h5 style="margin:8px 0">Plantillas de Mensajes</h5>';
+    html += '<p class="text-xs text-muted mb-8">Usá <code>{nombre}</code>, <code>{total}</code>, <code>{items}</code> como variables.</p>';
+
+    var tipos = [
+      { key: 'bienvenida', label: '🌱 Bienvenida' },
+      { key: 'sin_pedido_7d', label: '📅 Sin pedido (N días)' },
+      { key: 'carrito_abandonado', label: '🛒 Carrito abandonado' },
+      { key: 'primer_pedido', label: '✨ Primer pedido' },
+      { key: 'pedido_entregado', label: '📦 Pedido entregado' },
+      { key: 'post_entrega', label: '💬 Post-entrega (N días)' },
+      { key: 'recurrente_3', label: '🔄 Cliente recurrente (3+ pedidos)' },
+      { key: 'coleccion_10', label: '🎉 Colección Arcano (N frascos)' },
+      { key: 'recompra_30d', label: '🔄 Recompra sugerida (N días)' },
+      { key: 'inactivo_60d', label: '💤 Inactivo (N días)' }
+    ];
+
+    for (var i = 0; i < tipos.length; i++) {
+      var t = tipos[i];
+      var p = cfg.plantillas[t.key] || { activo: true, mensaje: '' };
+      html += '<div class="form-group">';
+      html += '<label><input type="checkbox" id="seg-cfg-activo-' + t.key + '" ' + (p.activo ? 'checked' : '') + '> ' + t.label + '</label>';
+      html += '<textarea class="input" id="seg-cfg-msg-' + t.key + '" rows="3" style="margin-top:4px;font-family:inherit;resize:vertical">' + escHtml(p.mensaje || '') + '</textarea>';
+      html += '</div>';
     }
+
+    html += '<div class="mt-16"><button class="btn btn-gold" onclick="WhatsAppNotifications._guardarConfig()">Guardar configuración</button></div>';
+    html += '</div>';
+    return html;
   }
 
-  async function marcarSeguimientoEnviado(key) {
+  // Handlers accesibles desde el HTML del panel
+  function _marcarEnviadoHandler(clienteKey, tipoMensaje) {
     try {
-      if (typeof firebase !== 'undefined' && firebase.database) {
-        await firebase.database().ref('arcano/db/pedidos/' + key).update({ seguimientoEnviado: true, seguimientoEn: new Date().toISOString() });
-      } else {
-        await fetch(FB_URL + '/pedidos/' + key + '/seguimientoEnviado.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(true)
-        });
-        await fetch(FB_URL + '/pedidos/' + key + '/seguimientoEn.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(new Date().toISOString())
-        });
+      if (typeof ArcanoDB !== 'undefined' && ArcanoDB.marcarMensajeEnviado) {
+        ArcanoDB.marcarMensajeEnviado(clienteKey, tipoMensaje);
       }
-      toast('Seguimiento marcado como enviado');
-      showTab('seguimiento');
-    } catch (e) {
-      alert('Error: ' + e.message);
+    } catch(e) {}
+    showTab('seguimiento');
+  }
+
+  function _posponerHandler(clienteKey, tipoMensaje) {
+    try {
+      if (typeof ArcanoDB !== 'undefined' && ArcanoDB.posponerMensaje) {
+        ArcanoDB.posponerMensaje(clienteKey, tipoMensaje);
+      }
+    } catch(e) {}
+    showTab('seguimiento');
+  }
+
+  async function _guardarConfigHandler() {
+    var cfg = {
+      diasSinPedido: Number(document.getElementById('seg-cfg-dias-sin-pedido').value) || 7,
+      diasPostEntrega: Number(document.getElementById('seg-cfg-dias-post-entrega').value) || 4,
+      diasRecompra: Number(document.getElementById('seg-cfg-dias-recompra').value) || 30,
+      diasInactivo: Number(document.getElementById('seg-cfg-dias-inactivo').value) || 60,
+      frascosColeccion: Number(document.getElementById('seg-cfg-frascos-coleccion').value) || 10,
+      tiempoAbandonoMin: 14,
+      plantillas: {}
+    };
+    var tipos = ['bienvenida','sin_pedido_7d','carrito_abandonado','primer_pedido','pedido_entregado','post_entrega','recurrente_3','coleccion_10','recompra_30d','inactivo_60d'];
+    for (var i = 0; i < tipos.length; i++) {
+      var key = tipos[i];
+      var activoEl = document.getElementById('seg-cfg-activo-' + key);
+      var msgEl = document.getElementById('seg-cfg-msg-' + key);
+      cfg.plantillas[key] = {
+        activo: activoEl ? activoEl.checked : true,
+        mensaje: msgEl ? msgEl.value : ''
+      };
     }
+    try {
+      if (typeof ArcanoDB !== 'undefined' && ArcanoDB.saveConfigSeguimiento) {
+        ArcanoDB.saveConfigSeguimiento(cfg);
+      }
+    } catch(e) {}
+    showTab('seguimiento');
   }
-
-  function _formatearTiempo(ms) {
-    var min = Math.floor(ms / 60000);
-    if (min < 60) return min + ' min';
-    var horas = Math.floor(min / 60);
-    if (horas < 24) return horas + 'h ' + (min % 60) + 'm';
-    var dias = Math.floor(horas / 24);
-    return dias + 'd ' + (horas % 24) + 'h';
-  }
-
   function renderManual(container, cfg) {
     var clientes = (typeof ArcanoDB !== 'undefined' && ArcanoDB.getClientes) ? ArcanoDB.getClientes() : [];
     var html = '<div class="wa-section">' +
@@ -1073,7 +1077,9 @@ var WhatsAppNotifications = (function() {
     reenviar: reenviar,
     guardarCarritosConfig: guardarCarritosConfig,
     marcarCarritoNotificado: marcarCarritoNotificado,
-    guardarSeguimientoConfig: guardarSeguimientoConfig,
-    marcarSeguimientoEnviado: marcarSeguimientoEnviado
+    _segSubTab: null,
+    _marcarEnviado: _marcarEnviadoHandler,
+    _posponer: _posponerHandler,
+    _guardarConfig: _guardarConfigHandler
   };
 })();

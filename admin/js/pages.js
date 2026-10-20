@@ -12974,61 +12974,8 @@ Pages.renderClientes = function(el) {
   var h = '<div class="page-header"><h2>Clientes</h2>';
   h += '<span class="badge badge-gold" style="font-size:0.85rem">' + totalClientes + ' clientes</span>';
   if (nuevosEsteMes > 0) h += '<span class="badge badge-green" style="font-size:0.85rem;margin-left:8px">' + nuevosEsteMes + ' nuevos este mes</span>';
-  if (pendientesSeg.length > 0) h += '<span class="badge badge-red" style="font-size:0.85rem;margin-left:8px" onclick="Pages._seguimientoTab=\'pendientes\';Pages._renderSeguimientoPanelInline()">' + pendientesSeg.length + ' mensajes pendientes</span>';
+  if (pendientesSeg.length > 0) h += '<a href="#mensajes" onclick="App.navigate(\'mensajes\')" class="badge badge-red" style="font-size:0.85rem;margin-left:8px;cursor:pointer;text-decoration:none">' + pendientesSeg.length + ' mensajes pendientes</a>';
   h += '</div>';
-
-  // Tabs: Clientes | Seguimiento | Configuración
-  h += '<div class="tabs mb-16">';
-  h += '<button class="tab-btn ' + (Pages._clientesTab !== 'seguimiento' && Pages._clientesTab !== 'config' ? 'active' : '') + '" onclick="Pages._clientesTab=\'lista\';App.renderPage(\'clientes\')">👥 Clientes</button>';
-  h += '<button class="tab-btn ' + (Pages._clientesTab === 'seguimiento' ? 'active' : '') + '" onclick="Pages._clientesTab=\'seguimiento\';App.renderPage(\'clientes\')">';
-  h += '⏳ Seguimiento';
-  if (pendientesSeg.length > 0) h += ' (' + pendientesSeg.length + ')';
-  h += '</button>';
-  h += '<button class="tab-btn ' + (Pages._clientesTab === 'config' ? 'active' : '') + '" onclick="Pages._clientesTab=\'config\';App.renderPage(\'clientes\')">⚙ Config</button>';
-  h += '</div>';
-
-  if (Pages._clientesTab === 'seguimiento') {
-    // Panel de seguimiento (bandeja de salida)
-    if (pendientesSeg.length === 0) {
-      h += '<div class="card"><div class="card-body text-center text-muted" style="padding:40px">';
-      h += '<p style="font-size:2rem;margin-bottom:12px">✅</p>';
-      h += '<p>No hay mensajes pendientes. Todos los clientes están al día.</p>';
-      h += '</div></div>';
-    } else {
-      h += '<div class="card"><div class="card-header"><h3>⏳ Mensajes Pendientes (' + pendientesSeg.length + ')</h3></div><div class="card-body">';
-      h += '<div class="table-wrap"><table class="table"><thead><tr>';
-      h += '<th>Cliente</th><th>Teléfono</th><th>Mensaje</th><th>Disparo</th><th>Acciones</th>';
-      h += '</tr></thead><tbody>';
-      for (var si = 0; si < pendientesSeg.length; si++) {
-        var item = pendientesSeg[si];
-        var c = item.cliente;
-        var m = item.mensaje;
-        var telNorm = c.telNorm || '';
-        var waUrl = telNorm ? ('https://wa.me/' + telNorm + '?text=' + encodeURIComponent(m.mensaje.replace(/{nombre}/g, c.nombre || ''))) : '#';
-        var fechaEst = m.fechaEstimada ? new Date(m.fechaEstimada).toLocaleDateString('es-CO', {day:'2-digit',month:'short'}) : '-';
-        h += '<tr>';
-        h += '<td class="fw7">' + esc(c.nombre || '?') + '</td>';
-        h += '<td>' + esc(c.telefono || '-') + '</td>';
-        h += '<td class="text-sm"><b>' + esc(m.titulo) + '</b><br><span class="text-muted">' + esc(m.mensaje.substring(0, 80)) + '...</span></td>';
-        h += '<td class="text-sm text-muted">' + fechaEst + '</td>';
-        h += '<td>';
-        h += '<a href="' + waUrl + '" target="_blank" class="btn btn-sm btn-gold" style="text-decoration:none;margin-right:4px">📱 Enviar</a>';
-        h += '<button class="btn btn-sm btn-outline" onclick="Pages._marcarEnviadoSeg(\'' + item.clienteKey + '\',\'' + m.tipo + '\')" style="margin-right:4px">✓ Enviado</button>';
-        h += '<button class="btn btn-sm btn-outline" onclick="Pages._posponerSeg(\'' + item.clienteKey + '\',\'' + m.tipo + '\')">⏰ Posponer</button>';
-        h += '</td>';
-        h += '</tr>';
-      }
-      h += '</tbody></table></div>';
-      h += '</div></div>';
-    }
-    el.innerHTML = h;
-    return;
-  }
-
-  if (Pages._clientesTab === 'config') {
-    el.innerHTML = h + Pages._renderConfigSeguimiento();
-    return;
-  }
 
   // Tab: Lista de Clientes (default)
   if (totalClientes === 0) {
