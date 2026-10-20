@@ -329,6 +329,11 @@ export async function onRequestPost({ request, env }) {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
+  // DEBUG ETAPA 4.5 — verificar que env y Service Account llegan
+  console.log('[cuenta] env keys:', env ? Object.keys(env).filter(k => !k.startsWith('__')).join(',') : 'env is null');
+  console.log('[cuenta] hasServiceAccount:', hasServiceAccount(env));
+  console.log('[cuenta] FIREBASE_SERVICE_ACCOUNT length:', env?.FIREBASE_SERVICE_ACCOUNT ? (typeof env.FIREBASE_SERVICE_ACCOUNT === 'string' ? env.FIREBASE_SERVICE_ACCOUNT.length : 'object') : 'not set');
+
   try {
     const body = await request.json();
     const action = body.action;
@@ -357,7 +362,11 @@ export async function onRequestPost({ request, env }) {
     console.error('[cuenta] Error:', e.message);
     return new Response(JSON.stringify({
       ok: false,
-      error: e.message || 'Server error'
+      error: e.message || 'Server error',
+      debug: {
+        hasSA: hasServiceAccount(env),
+        envKeys: env ? Object.keys(env).filter(k => !k.startsWith('__') && k.length < 30).join(',') : 'env is null'
+      }
     }), { status: 500, headers: CORS_HEADERS });
   }
 }
