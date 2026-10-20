@@ -6,7 +6,7 @@
 // La service account se lee desde env.FIREBASE_SERVICE_ACCOUNT (JSON completo, cifrado).
 // Si no está configurada, las functions devuelven error claro.
 
-const FIREBASE_AUTH_SCOPE = 'https://www.googleapis.com/auth/datastore';
+const FIREBASE_AUTH_SCOPE = 'https://www.googleapis.com/auth/firebase.database';
 const FIREBASE_AUTH_AUDIENCE = 'https://oauth2.googleapis.com/token';
 const TOKEN_TTL_SECONDS = 3600; // 1 hora (máximo permitido por Google)
 
