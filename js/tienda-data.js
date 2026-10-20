@@ -202,44 +202,43 @@ function upsertCliente(cliente) {
   });
 }
 
+/**
+ * ETAPA 3 — Envía el pedido al servidor /api/pedido en vez de escribir directo en Firebase.
+ * El servidor valida precios, calcula envío, hace upsert del cliente y crea el pedido.
+ * Devuelve el pedido ID REAL (el mismo que ve el admin).
+ */
 function submitOrder(orderData) {
-  return new Promise(function(resolve, reject) {
-    if (!_pedidosRef) _pedidosRef = firebase.database().ref('arcano/db/pedidos');
-    orderData.creado = new Date().toISOString();
-    orderData.estado = 'nuevo';
-    // Upsert de cliente antes de guardar el pedido para vincularlo
-    if (orderData.cliente && orderData.cliente.telefono) {
-      upsertCliente(orderData.cliente).then(function(result) {
-        orderData.clienteId = result.id;
-        _pedidosRef.push(orderData, function(error) {
-          if (error) reject(error); else {
-            // Marcar carrito como convertido en tracking
-            markCarritoAsConverted();
-            // Notificar al admin por Web Push (aunque la app esté cerrada)
-            _notifyAdminPush(orderData, 'pedido');
-            resolve(orderData);
-          }
-        });
-      }).catch(function(err) {
-        // Si falla el upsert, igual guardamos el pedido sin clienteId
-        console.warn('[Tienda] upsertCliente fallo, guardando pedido sin vincular:', err);
-        _pedidosRef.push(orderData, function(error) {
-          if (error) reject(error); else {
-            markCarritoAsConverted();
-            _notifyAdminPush(orderData, 'pedido');
-            resolve(orderData);
-          }
-        });
-      });
-    } else {
-      _pedidosRef.push(orderData, function(error) {
-        if (error) reject(error); else {
-          markCarritoAsConverted();
-          _notifyAdminPush(orderData, 'pedido');
-          resolve(orderData);
-        }
-      });
+  // Extraer ciudad del envío o del cliente
+  var ciudad = (orderData.cliente && orderData.cliente.ciudad) || '';
+  var payload = {
+    cliente: orderData.cliente || {},
+    items: orderData.items || [],
+    ciudad: ciudad,
+    notas: orderData.notas || ''
+  };
+  return fetch('/api/pedido', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudo crear el pedido');
+    // Marcar carrito como convertido en tracking
+    markCarritoAsConverted();
+    // Construir objeto de retorno compatible con el código viejo
+    var savedOrder = Object.assign({}, orderData);
+    savedOrder.pedidoId = data.pedidoId;
+    savedOrder.clienteId = data.clienteId;
+    savedOrder.clienteNuevo = data.clienteNuevo;
+    // El servidor recalculó total, subtotal y envío — usamos esos valores (server authority)
+    if (typeof data.total === 'number') savedOrder.total = data.total;
+    if (typeof data.envioCosto === 'number') {
+      if (!savedOrder.envio) savedOrder.envio = {};
+      savedOrder.envio.costo = data.envioCosto;
+      savedOrder.envio.gratis = !!data.envioGratis;
     }
+    savedOrder.creado = new Date().toISOString();
+    savedOrder.estado = 'nuevo';
+    return savedOrder;
   });
 }
 
@@ -418,130 +417,77 @@ function registrarCliente(telefono, nombre) {
  * Tambi\u00E9n encola el OTP en arcano/db/otpPendientes para que el admin
  * lo vea y lo env\u00EDe por WhatsApp manualmente.
  */
+/**
+ * ETAPA 3 — Solicita un OTP al servidor /api/cuenta.
+ * El código NO se devuelve al frontend; el admin lo envía por WhatsApp.
+ */
 function requestClienteOTP(telefono, nombreOpt) {
-  return new Promise(function(resolve, reject) {
-    var tel = _normalizeWhatsapp(telefono);
-    if (!tel) { reject(new Error('Tel\u00E9fono inv\u00E1lido. Ingresa tu n\u00FAmero de WhatsApp con c\u00F3digo de pa\u00EDs.')); return; }
-    if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
-    _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
-      var data = snap.val();
-      var otp = '';
-      for (var i = 0; i < 6; i++) otp += Math.floor(Math.random() * 10);
-      var now = Date.now();
-      var otpData = { codigo: otp, creado: now, expira: now + 10 * 60 * 1000 };
-      var finish = function(key, cliente, esNuevo) {
-        // Encolar OTP pendiente para que el admin lo env\u00EDe por WhatsApp
-        try {
-          var pendienteRef = firebase.database().ref('arcano/db/otpPendientes').push();
-          pendienteRef.set({
-            clienteKey: key,
-            nombre: cliente.nombre || nombreOpt || '',
-            telefono: cliente.telefono || telefono,
-            telNorm: tel,
-            codigo: otp,
-            creado: new Date().toISOString(),
-            expira: otpData.expira,
-            enviado: false,
-            esNuevo: !!esNuevo
-          });
-        } catch(e) { console.warn('No se pudo encolar OTP pendiente:', e); }
-        // Notificar al admin por email si es cliente nuevo
-        if (esNuevo) {
-          _notifyAdminEmail(
-            '👤 Nuevo cliente registrado',
-            (cliente.nombre || nombreOpt || 'Cliente') + ' se acaba de registrar con WhatsApp ' + (cliente.telefono || telefono) + '. Revisá el panel de Mensajes WA para enviarle el código de acceso.',
-            'cliente_nuevo'
-          );
-        }
-        // Resolver sin devolver el c\u00F3digo al frontend
-        resolve({ clienteKey: key, telefono: cliente.telefono || telefono, nombre: cliente.nombre || nombreOpt || '', esNuevo: !!esNuevo });
-      };
-      if (data) {
-        var key = Object.keys(data)[0];
-        var cliente = data[key];
-        _clientesRef.child(key).update({ otp: otpData }, function(err) {
-          if (err) reject(err);
-          else finish(key, cliente, false);
-        });
-      } else {
-        var newRef = _clientesRef.push();
-        var newKey = newRef.key;
-        var newCliente = {
-          nombre: nombreOpt || '',
-          telefono: telefono,
-          telNorm: tel,
-          email: '',
-          ciudad: '',
-          direccion: '',
-          creado: new Date().toISOString(),
-          totalPedidos: 0,
-          otp: otpData
-        };
-        newRef.set(newCliente, function(err) {
-          if (err) reject(err);
-          else finish(newKey, newCliente, true);
-        });
-      }
-    }, function(err) { reject(err); });
+  return fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'otp', telefono: telefono, nombre: nombreOpt || '' })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudo generar el código');
+    // Guardar otpKey localmente para usarlo en verify
+    try {
+      localStorage.setItem('arcano_otp_key', data.otpKey);
+      localStorage.setItem('arcano_otp_phone', _normalizeWhatsapp(telefono));
+    } catch (e) {}
+    return {
+      otpKey: data.otpKey,
+      clienteKey: data.clienteKey,
+      telefono: telefono,
+      nombre: data.nombre,
+      esNuevo: data.clienteNuevo,
+      mensaje: data.mensaje || ''
+    };
   });
 }
 
 /**
- * Verifica OTP ingresado por el cliente contra el guardado en Firebase.
- * Si OK, devuelve los datos del cliente (sin OTP) para crear sesion.
+ * ETAPA 3 — Verifica el OTP en el servidor /api/cuenta.
+ * Devuelve los datos del cliente + sessionToken para futuras consultas.
  */
 function verifyClienteOTP(telefono, codigoIngresado) {
-  return new Promise(function(resolve, reject) {
-    var tel = _normalizeWhatsapp(telefono);
-    if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
-    _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
-      var data = snap.val();
-      if (!data) { reject(new Error('Cliente no encontrado')); return; }
-      var key = Object.keys(data)[0];
-      var cliente = data[key];
-      if (!cliente.otp || !cliente.otp.codigo) { reject(new Error('No hay codigo activo. Solicita uno nuevo.')); return; }
-      if (Date.now() > cliente.otp.expira) { reject(new Error('El codigo expiro. Solicita uno nuevo.')); return; }
-      if (String(cliente.otp.codigo) !== String(codigoIngresado).trim()) {
-        reject(new Error('Codigo incorrecto')); return;
-      }
-      // Limpiar OTP usado y devolver datos
-      _clientesRef.child(key).update({ otp: null, ultimoLogin: new Date().toISOString() }, function(err) {
-        if (err) reject(err);
-        else resolve({
-          id: key,
-          nombre: cliente.nombre || '',
-          telefono: cliente.telefono || '',
-          email: cliente.email || '',
-          ciudad: cliente.ciudad || '',
-          direccion: cliente.direccion || '',
-          totalPedidos: cliente.totalPedidos || 0,
-          creado: cliente.creado || ''
-        });
-      });
-    }, function(err) { reject(err); });
+  var otpKey = null;
+  try { otpKey = localStorage.getItem('arcano_otp_key'); } catch (e) {}
+  if (!otpKey) {
+    return Promise.reject(new Error('No hay código pendiente. Solicitá uno nuevo.'));
+  }
+  return fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'verify', otpKey: otpKey, codigo: codigoIngresado })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'Código incorrecto');
+    // Limpiar otpKey, guardar sessionToken
+    try {
+      localStorage.removeItem('arcano_otp_key');
+      localStorage.setItem('arcano_session_token', data.sessionToken);
+      localStorage.setItem('arcano_session_expiry', String(data.sessionExpiry));
+      localStorage.setItem('arcano_verified_phone', _normalizeWhatsapp(telefono));
+    } catch (e) {}
+    return data.cliente;
   });
 }
 
 /**
- * Obtiene los pedidos de un cliente ordenados por fecha desc.
+ * ETAPA 3 — Obtiene los pedidos del cliente autenticado vía /api/cuenta.
+ * Requiere sessionToken válido (obtenido al verificar OTP).
  */
 function getClientePedidos(clienteId) {
-  return new Promise(function(resolve, reject) {
-    if (!_pedidosRef) _pedidosRef = firebase.database().ref('arcano/db/pedidos');
-    _pedidosRef.orderByChild('clienteId').equalTo(clienteId).once('value', function(snap) {
-      var data = snap.val();
-      var pedidos = [];
-      if (data) {
-        var keys = Object.keys(data);
-        for (var i = 0; i < keys.length; i++) {
-          var p = data[keys[i]];
-          p._key = keys[i];
-          pedidos.push(p);
-        }
-      }
-      pedidos.sort(function(a, b) { return (b.creado || '').localeCompare(a.creado || ''); });
-      resolve(pedidos);
-    }, function(err) { reject(err); });
+  var sessionToken = null;
+  try { sessionToken = localStorage.getItem('arcano_session_token'); } catch (e) {}
+  if (!sessionToken) {
+    return Promise.reject(new Error('Sesión expirada. Volvé a ingresar tu código.'));
+  }
+  return fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'pedidos', sessionToken: sessionToken, clienteId: clienteId })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudo obtener el historial');
+    return data.pedidos || [];
   });
 }
 
