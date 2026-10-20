@@ -82,14 +82,19 @@ async function upsertClienteByPhone(telefono, nombreOpt) {
   const tel = normalizeWhatsapp(telefono);
   if (!tel) throw new Error('Teléfono inválido');
 
-  const data = await fbGetWithQuery('/clientes', `orderBy="telNorm"&equalTo="${tel}"&limitToFirst=1`);
+  // Leer todos los clientes y filtrar en servidor (evita dependencia de indexOn en reglas)
+  const allClientes = await fbGet('/clientes');
   var key = null;
   var existing = null;
-  if (data && typeof data === 'object') {
-    var keys = Object.keys(data);
-    if (keys.length > 0) {
-      key = keys[0];
-      existing = data[key];
+  if (allClientes && typeof allClientes === 'object') {
+    var keys = Object.keys(allClientes);
+    for (var i = 0; i < keys.length; i++) {
+      var c = allClientes[keys[i]];
+      if (c && c.telNorm === tel) {
+        key = keys[i];
+        existing = c;
+        break;
+      }
     }
   }
 
@@ -287,15 +292,16 @@ async function actionPedidos(body) {
     return { ok: false, status: 401, body: { ok: false, error: 'Sesión expirada' } };
   }
 
-  // Leer pedidos del cliente
-  const pedidosData = await fbGetWithQuery('/pedidos', `orderBy="clienteId"&equalTo="${clienteId}"`);
+  // Leer pedidos del cliente (sin orderBy para evitar dependencia de indexOn en reglas)
+  const allPedidos = await fbGet('/pedidos');
   var pedidos = [];
-  if (pedidosData && typeof pedidosData === 'object') {
-    var keys = Object.keys(pedidosData);
+  if (allPedidos && typeof allPedidos === 'object') {
+    var keys = Object.keys(allPedidos);
     for (var i = 0; i < keys.length; i++) {
-      var p = pedidosData[keys[i]];
-      if (!p) continue;
-      p._key = keys[i];
+      var k = keys[i];
+      var p = allPedidos[k];
+      if (!p || p.clienteId !== clienteId) continue;
+      p._key = k;
       pedidos.push(p);
     }
   }

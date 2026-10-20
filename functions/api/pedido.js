@@ -131,17 +131,19 @@ async function upsertCliente(cliente) {
   const tel = normalizeWhatsapp(cliente.telefono);
   if (!tel) throw new Error('Teléfono inválido');
 
-  // Buscar cliente existente por telNorm
-  const r = await fetch(`${FB_BASE}/clientes.json?orderBy="telNorm"&equalTo="${tel}"&limitToFirst=1`);
-  const data = r.ok ? await r.json() : null;
-
+  // Leer todos los clientes y filtrar en servidor (evita dependencia de indexOn en reglas)
+  const allClientes = await fbGet('/clientes');
   var key = null;
   var existing = null;
-  if (data && typeof data === 'object') {
-    var keys = Object.keys(data);
-    if (keys.length > 0) {
-      key = keys[0];
-      existing = data[key];
+  if (allClientes && typeof allClientes === 'object') {
+    var keys = Object.keys(allClientes);
+    for (var i = 0; i < keys.length; i++) {
+      var c = allClientes[keys[i]];
+      if (c && c.telNorm === tel) {
+        key = keys[i];
+        existing = c;
+        break;
+      }
     }
   }
 
