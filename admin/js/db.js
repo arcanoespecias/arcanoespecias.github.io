@@ -413,7 +413,9 @@ function saveNow() {
         productTags: _db.productTags || [],
         usoOptions: _db.usoOptions || [],
         tiendaConfig: _db.tiendaConfig || {},
-        costosInsumos: _db.costosInsumos || {},
+        // NO guardar costosInsumos aquí: se gestiona por separado via _costosRef
+        // (variable _costosInsumos, no _db.costosInsumos). Si lo incluimos aquí
+        // como _db.costosInsumos || {}, sobrescribe el nodo con {} vacío.
         meta: _db.meta || {}
       };
       _firebaseRef.update(dataToSave, function(error) {
