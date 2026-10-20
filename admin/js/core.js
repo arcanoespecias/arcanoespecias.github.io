@@ -35,12 +35,37 @@ const App = {
     } catch (e) {
       console.error('[Core] DB init failed:', e);
     }
-    var user = ArcanoDB.getCurrentUser();
-    if (user) {
-      this.enterApp();
-    } else {
-      this.showLogin();
+    // Esperar a que Firebase Auth dispare onAuthStateChanged por primera vez
+    try { await ArcanoDB.waitForAuthReady(); } catch (e) {}
+
+    // Revisar si Firebase Auth tiene un usuario logueado
+    var fbUser = ArcanoDB.getFirebaseAuth ? ArcanoDB.getFirebaseAuth().currentUser : null;
+    if (fbUser) {
+      // Hay sesión Firebase Auth vigente — verificar email en lista blanca
+      var email = (fbUser.email || '').toLowerCase();
+      if (ArcanoDB.getCurrentUser() && ArcanoDB.getCurrentUser().email === email) {
+        this.enterApp();
+        return;
+      }
     }
+    // Sesión cache local válida (boot rápido en mobile)
+    var cachedUser = ArcanoDB.getCurrentUser();
+    if (cachedUser) {
+      this.enterApp();
+      return;
+    }
+    this.showLogin();
+
+    // Listener global: si Firebase Auth cambia estado (logout desde otra pestaña),
+    // limpiar sesión cache y volver a login
+    var self = this;
+    ArcanoDB.onAuthStateChanged(function(user) {
+      if (!user && ArcanoDB.getCurrentUser()) {
+        // Logout detectado desde otra pestaña
+        try { localStorage.removeItem('arcano_v3_session'); } catch (e) {}
+        self.showLogin();
+      }
+    });
   },
 
   showSplash() {
@@ -61,32 +86,47 @@ const App = {
           '<h1 class="login-title">ARCANO</h1>' +
           '<p class="login-sub">Especias & Blends</p>' +
           '<div class="login-form">' +
-            '<label>Ingresar PIN</label>' +
-            '<input type="password" id="pin-input" maxlength="10" placeholder="PIN de acceso" onkeydown="if(event.key===\'Enter\')App.doLogin()">' +
-            '<button class="btn btn-gold btn-block" onclick="App.doLogin()">Ingresar</button>' +
+            '<label>Correo electrónico</label>' +
+            '<input type="email" id="login-email" autocomplete="username" placeholder="admin@arcanoespecias.com" onkeydown="if(event.key===\'Enter\')document.getElementById(\'login-password\').focus()">' +
+            '<label style="margin-top:12px">Contraseña</label>' +
+            '<input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key===\'Enter\')App.doLogin()">' +
+            '<button class="btn btn-gold btn-block" id="login-btn" onclick="App.doLogin()">Ingresar</button>' +
             '<p id="login-error" class="text-red text-sm mt-8" style="display:none"></p>' +
+            '<p class="text-xs text-muted mt-8" style="text-align:center">Acceso restringido al administrador autorizado.</p>' +
           '</div>' +
         '</div>' +
       '</div>';
     setTimeout(function() {
-      var inp = document.getElementById('pin-input');
+      var inp = document.getElementById('login-email');
       if (inp) inp.focus();
     }, 100);
   },
 
-  doLogin() {
-    var pin = document.getElementById('pin-input').value.trim();
-    if (!pin) { this.showLoginError('Ingresar un PIN'); return; }
-    var user = ArcanoDB.authenticateUser(pin);
-    if (user) { this.enterApp(); } else { this.showLoginError('PIN incorrecto'); }
+  async doLogin() {
+    var email = (document.getElementById('login-email').value || '').trim();
+    var password = (document.getElementById('login-password').value || '').trim();
+    var btn = document.getElementById('login-btn');
+    if (!email || !password) { this.showLoginError('Ingresá email y contraseña'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+    try {
+      await ArcanoDB.authenticateUser(email, password);
+      if (btn) { btn.disabled = false; btn.textContent = 'Ingresar'; }
+      this.enterApp();
+    } catch (err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Ingresar'; }
+      this.showLoginError(err.message || 'Credenciales inválidas');
+    }
   },
 
   showLoginError(msg) {
     var el = document.getElementById('login-error');
     el.textContent = msg;
     el.style.display = 'block';
-    document.getElementById('pin-input').classList.add('input-error');
-    setTimeout(function() { document.getElementById('pin-input').classList.remove('input-error'); }, 1500);
+    var pwd = document.getElementById('login-password');
+    if (pwd) {
+      pwd.classList.add('input-error');
+      setTimeout(function() { pwd.classList.remove('input-error'); }, 1500);
+    }
   },
 
   enterApp() {

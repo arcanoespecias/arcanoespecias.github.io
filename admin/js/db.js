@@ -270,7 +270,13 @@ function nextId(col) {
 
 var _firebaseApp = null;
 var _firebaseDb = null;
+var _firebaseAuth = null;
 var _firebaseRef = null;
+
+/* === Auth state === */
+var _authReady = false;
+var _authStateListeners = [];
+var _pendingAuthResolve = null;
 
 /* === Pedidos (path arcano/db/pedidos) === */
 var _pedidos = [];           // in-memory list of orders from tienda
@@ -317,6 +323,21 @@ function _initFirebase() {
   try {
     _firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     _firebaseDb = firebase.database();
+    if (firebase.auth) {
+      _firebaseAuth = firebase.auth();
+      // Persistencia local (válido en múltiples dispositivos)
+      try { _firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
+      // Listener global del estado de auth — dispara _authReady en la primera resolución
+      _firebaseAuth.onAuthStateChanged(function(user) {
+        if (!_authReady) {
+          _authReady = true;
+          if (_pendingAuthResolve) { _pendingAuthResolve(); _pendingAuthResolve = null; }
+        }
+        for (var i = 0; i < _authStateListeners.length; i++) {
+          try { _authStateListeners[i](user); } catch (e) {}
+        }
+      });
+    }
     _firebaseRef = _firebaseDb.ref(FB_PATH);
     _pedidosRef = _firebaseDb.ref('arcano/db/pedidos');
     _gcRef = _firebaseDb.ref('arcano/db/grandesClientes');
@@ -327,6 +348,10 @@ function _initFirebase() {
     _costosRef = _firebaseDb.ref('arcano/db/costosInsumos');
   } catch (e) {
     console.error('[DB] Firebase init error:', e);
+    if (!_authReady) {
+      _authReady = true;
+      if (_pendingAuthResolve) { _pendingAuthResolve(); _pendingAuthResolve = null; }
+    }
   }
 }
 
@@ -2128,74 +2153,93 @@ function deleteVenta(id) {
   return true;
 }
 
-/* ==================== AUTH ==================== */
+/* ==================== AUTH (Firebase Auth, ETAPA 2) ==================== */
 /*
- * Sesion persistente con localStorage (NO sessionStorage).
- * En mobile, sessionStorage se borra al cambiar de app/pestana o
- * cuando el navegador libera memoria en background, lo que cierra
- * la sesion del admin inesperadamente. localStorage persiste hasta
- * logout explicito.
+ * ETAPA 2 — Autenticación con Firebase Auth (email + password).
+ * Reemplaza al PIN en texto plano de arcano/db/usuarios/admin/pin.
  *
- * Expiracion: 30 dias desde el ultimo login. Si pasa mas tiempo,
- * se exige re-login. Resetable al volver a loguearse.
+ * Flujo:
+ *   - authenticateUser(email, password) → llama firebase.auth().signInWithEmailAndPassword()
+ *     Devuelve Promise<{ id, nombre, rol, email, issuedAt }> o reject(Error)
+ *   - getCurrentUser() → devuelve sesión local cacheada si el usuario está logueado en Firebase Auth
+ *   - logoutUser() → llama firebase.auth().signOut() y limpia cache local
+ *
+ * Persistencia: firebase.auth.Auth.Persistence.LOCAL → sesión válida en múltiples
+ * dispositivos y pestañas, sobrevive reinicios del browser.
+ *
+ * En ETAPA 2 (configuración inicial), solo se permite el usuario 'admin@arcanoespecias.com'
+ * creado manualmente en Firebase Console. Cuando se agreguen más usuarios en el futuro,
+ * se mapeará el email → rol leyendo arcano/db/usuarios (sin el campo 'pin' que se borrará).
  */
 var SESSION_KEY = DB_KEY + '_session';
-var SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
+var SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días (cache local; Firebase Auth decide la expiración real)
+var ADMIN_EMAILS = ['arcanoespecias@gmail.com']; // Lista blanca provisional ETAPA 2
 
-function authenticateUser(pin) {
-  var users = _db.usuarios || {};
-  var keys = Object.keys(users);
-  for (var i = 0; i < keys.length; i++) {
-    var u = users[keys[i]];
-    if (u && u.pin === pin && u.activo !== false) {
-      var now = Date.now();
-      var session = {
-        id: u.id,
-        nombre: u.nombre,
-        rol: u.rol,
-        issuedAt: now,
-        expiresAt: now + SESSION_TTL_MS
-      };
-      try {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        // Limpiar sesion vieja de sessionStorage si existia (migracion)
-        sessionStorage.removeItem(SESSION_KEY);
-      } catch (e) { console.warn('[Auth] No se pudo persistir sesion:', e); }
-      return session;
+function authenticateUser(email, password) {
+  return new Promise(function(resolve, reject) {
+    if (!_firebaseAuth) {
+      reject(new Error('Firebase Auth no inicializado'));
+      return;
     }
-  }
-  return null;
+    if (!email || !password) {
+      reject(new Error('Email y contraseña son obligatorios'));
+      return;
+    }
+    _firebaseAuth.signInWithEmailAndPassword(email, password)
+      .then(function(cred) {
+        var user = cred.user;
+        // Verificar lista blanca (ETAPA 2: solo emails autorizados)
+        var emailLower = (user.email || email || '').toLowerCase();
+        if (ADMIN_EMAILS.indexOf(emailLower) === -1) {
+          // Logout inmediato si el usuario no es admin autorizado
+          _firebaseAuth.signOut();
+          reject(new Error('Este usuario no tiene permisos de administrador'));
+          return;
+        }
+        var now = Date.now();
+        var session = {
+          id: 'admin',
+          nombre: 'Administrador',
+          rol: 'admin',
+          email: emailLower,
+          uid: user.uid,
+          issuedAt: now,
+          expiresAt: now + SESSION_TTL_MS
+        };
+        try {
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        } catch (e) {}
+        resolve(session);
+      })
+      .catch(function(err) {
+        // Firebase Auth devuelve errores con códigos tipo 'auth/wrong-password', 'auth/user-not-found'
+        var msg = 'Credenciales inválidas';
+        if (err && err.code === 'auth/wrong-password') msg = 'Contraseña incorrecta';
+        else if (err && err.code === 'auth/user-not-found') msg = 'Usuario no encontrado';
+        else if (err && err.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Esperá unos minutos.';
+        else if (err && err.code === 'auth/invalid-email') msg = 'Email inválido';
+        else if (err && err.message) msg = err.message;
+        reject(new Error(msg));
+      });
+  });
 }
 
 function getCurrentUser() {
   try {
     var raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) {
-      // Migracion: si existe en sessionStorage (version anterior), moverla a localStorage
-      raw = sessionStorage.getItem(SESSION_KEY);
-      if (raw) {
-        try {
-          var migrated = JSON.parse(raw);
-          if (migrated && migrated.id) {
-            var now = Date.now();
-            migrated.issuedAt = migrated.issuedAt || now;
-            migrated.expiresAt = migrated.expiresAt || (now + SESSION_TTL_MS);
-            localStorage.setItem(SESSION_KEY, JSON.stringify(migrated));
-            sessionStorage.removeItem(SESSION_KEY);
-            return migrated;
-          }
-        } catch (e2) {}
-      }
-      return null;
-    }
+    if (!raw) return null;
     var session = JSON.parse(raw);
     if (!session || !session.id) return null;
-    // Verificar expiracion
+    // Verificar expiración del cache local
     if (session.expiresAt && Date.now() > session.expiresAt) {
-      console.info('[Auth] Sesion expirada, elimininando.');
+      console.info('[Auth] Sesión cache expirada.');
       localStorage.removeItem(SESSION_KEY);
       return null;
     }
+    // Importante: si Firebase Auth no tiene usuario logueado, la sesión cache no es válida.
+    // El core.js usa onAuthStateChanged para reaccionar al logout real; este método se usa
+    // solo para el boot inicial. Si hay sesión cache pero Firebase dice que no hay usuario,
+    // el listener onAuthStateChanged limpia la cache.
     return session;
   } catch (e) { return null; }
 }
@@ -2203,7 +2247,30 @@ function getCurrentUser() {
 function logoutUser() {
   try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
   try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  if (_firebaseAuth) {
+    _firebaseAuth.signOut().catch(function(e) {
+      console.warn('[Auth] Error en signOut:', e);
+    });
+  }
 }
+
+/* Devuelve Promise que se resuelve cuando onAuthStateChanged disparó la primera vez. */
+function waitForAuthReady() {
+  return new Promise(function(resolve) {
+    if (_authReady) { resolve(); return; }
+    _pendingAuthResolve = resolve;
+    // Safety timeout de 5s por si Firebase Auth no responde
+    setTimeout(function() {
+      if (!_authReady) {
+        _authReady = true;
+        resolve();
+      }
+    }, 5000);
+  });
+}
+
+/* Permite subscribirse a cambios de auth state (login/logout desde otra pestaña). */
+function onAuthStateChanged(fn) { _authStateListeners.push(fn); }
 
 function getUsuarios() {
   return _filterValid(Object.values(_db.usuarios || {}));
@@ -4453,6 +4520,8 @@ window.ArcanoDB = {
   getVentas: getVentas, saveVenta: saveVenta, deleteVenta: deleteVenta,
   getUsuarios: getUsuarios, saveUsuario: saveUsuario, deleteUsuario: deleteUsuario,
   authenticateUser: authenticateUser, getCurrentUser: getCurrentUser, logoutUser: logoutUser,
+  waitForAuthReady: waitForAuthReady, onAuthStateChanged: onAuthStateChanged,
+  isAuthReady: function() { return _authReady; }, getFirebaseAuth: function() { return _firebaseAuth; },
   getStats: getStats,
   findEspeciaByName: findEspeciaByName,
   importFromExcelData: importFromExcelData,
