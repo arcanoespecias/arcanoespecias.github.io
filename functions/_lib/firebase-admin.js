@@ -144,8 +144,10 @@ async function fbAdminGet(env, dbPath) {
   const token = await getAccessToken(env);
   const sa = _loadServiceAccount(env);
   const baseUrl = sa.databaseURL || `https://${sa.project_id}-default-rtdb.firebaseio.com`;
-  const url = baseUrl + dbPath + '.json?auth=' + encodeURIComponent(token);
-  const r = await fetch(url);
+  const url = baseUrl + dbPath + '.json';
+  const r = await fetch(url, {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
   if (!r.ok) {
     const text = await r.text();
     throw new Error('Firebase GET failed: ' + r.status + ' ' + text);
@@ -157,10 +159,13 @@ async function fbAdminPost(env, dbPath, body) {
   const token = await getAccessToken(env);
   const sa = _loadServiceAccount(env);
   const baseUrl = sa.databaseURL || `https://${sa.project_id}-default-rtdb.firebaseio.com`;
-  const url = baseUrl + dbPath + '.json?auth=' + encodeURIComponent(token);
+  const url = baseUrl + dbPath + '.json';
   const r = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
     body: JSON.stringify(body)
   });
   if (!r.ok) {
@@ -174,10 +179,13 @@ async function fbAdminPatch(env, dbPath, body) {
   const token = await getAccessToken(env);
   const sa = _loadServiceAccount(env);
   const baseUrl = sa.databaseURL || `https://${sa.project_id}-default-rtdb.firebaseio.com`;
-  const url = baseUrl + dbPath + '.json?auth=' + encodeURIComponent(token);
+  const url = baseUrl + dbPath + '.json';
   const r = await fetch(url, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
     body: JSON.stringify(body)
   });
   if (!r.ok) {
@@ -191,8 +199,11 @@ async function fbAdminDelete(env, dbPath) {
   const token = await getAccessToken(env);
   const sa = _loadServiceAccount(env);
   const baseUrl = sa.databaseURL || `https://${sa.project_id}-default-rtdb.firebaseio.com`;
-  const url = baseUrl + dbPath + '.json?auth=' + encodeURIComponent(token);
-  const r = await fetch(url, { method: 'DELETE' });
+  const url = baseUrl + dbPath + '.json';
+  const r = await fetch(url, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
   if (!r.ok) {
     const text = await r.text();
     throw new Error('Firebase DELETE failed: ' + r.status + ' ' + text);
