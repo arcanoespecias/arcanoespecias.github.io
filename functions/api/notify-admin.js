@@ -1,7 +1,8 @@
 // /api/notify-admin.js — Cloudflare Pages Function
 // Notificaciones Web Push al admin — sin dependencias externas
 // Implementa VAPID (RFC 8292) + Web Push Encryption (RFC 8291) con Web Crypto API nativo
-// Lee las VAPID keys desde Firebase (configuradas desde el panel del admin)
+// ETAPA 1: Lee las VAPID keys + Resend API key desde env vars de Cloudflare.
+// Firebase queda como fallback temporal hasta que confirmemos que env vars funcionan.
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -12,16 +13,31 @@ const CORS_HEADERS = {
 
 const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
 
-// Cache en memoria de las VAPID keys (no las lee en cada request)
+// Cache en memoria de las VAPID keys + email config (no las lee en cada request)
 let _cachedVapid = null;
 let _cachedVapidTs = 0;
+let _cachedVapidSource = null; // 'env' | 'firebase' | null
 const VAPID_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
-async function getVapidKeys() {
+async function getVapidKeys(env) {
   // Usar cache si está fresco
   if (_cachedVapid && (Date.now() - _cachedVapidTs) < VAPID_CACHE_TTL) {
-    return _cachedVapid;
+    return { ..._cachedVapid, source: _cachedVapidSource };
   }
+
+  // 1) Intentar primero desde Cloudflare env vars (fuente segura)
+  if (env?.VAPID_PUBLIC_KEY && env?.VAPID_PRIVATE_KEY && env?.VAPID_SUBJECT) {
+    _cachedVapid = {
+      publicKey: env.VAPID_PUBLIC_KEY,
+      privateKey: env.VAPID_PRIVATE_KEY,
+      subject: env.VAPID_SUBJECT
+    };
+    _cachedVapidTs = Date.now();
+    _cachedVapidSource = 'env';
+    return { ..._cachedVapid, source: 'env' };
+  }
+
+  // 2) Fallback temporal: leer desde Firebase (hasta que confirmemos env vars)
   try {
     const r = await fetch(`${FB_BASE}/pushConfig.json`);
     if (!r.ok) return null;
@@ -35,7 +51,9 @@ async function getVapidKeys() {
       subject: data.vapidSubject
     };
     _cachedVapidTs = Date.now();
-    return _cachedVapid;
+    _cachedVapidSource = 'firebase';
+    console.warn('[notify-admin] VAPID leídas de Firebase (fallback). Migrar a env vars.');
+    return { ..._cachedVapid, source: 'firebase' };
   } catch (e) {
     console.error('[notify-admin] Error leyendo VAPID de Firebase:', e);
     return null;
@@ -58,8 +76,8 @@ export async function onRequestPost({ request, env }) {
     }
 
     // === MÉTODO PRINCIPAL: EMAIL via Resend ===
-    // Leer config de email desde Firebase
-    const emailConfig = await getEmailConfig();
+    // Leer config de email: primero env var, fallback Firebase
+    const emailConfig = await getEmailConfig(env);
     let emailResult = null;
     
     if (emailConfig && emailConfig.resendApiKey && emailConfig.destinatario) {
@@ -79,7 +97,7 @@ export async function onRequestPost({ request, env }) {
 
     // === MÉTODO SECUNDARIO: Web Push (si está configurado) ===
     let pushResult = null;
-    const vapid = await getVapidKeys();
+    const vapid = await getVapidKeys(env);
     if (vapid) {
       const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
       const subsData = subRes.ok ? await subRes.json() : null;
@@ -118,12 +136,30 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-// === EMAIL: leer config desde Firebase ===
+// === EMAIL: leer config desde env var primero, fallback Firebase ===
 let _cachedEmailConfig = null;
 let _cachedEmailTs = 0;
+let _cachedEmailSource = null; // 'env' | 'firebase' | null
 
-async function getEmailConfig() {
-  if (_cachedEmailConfig && (Date.now() - _cachedEmailTs) < 5 * 60 * 1000) return _cachedEmailConfig;
+async function getEmailConfig(env) {
+  if (_cachedEmailConfig && (Date.now() - _cachedEmailTs) < 5 * 60 * 1000) {
+    return { ..._cachedEmailConfig, source: _cachedEmailSource };
+  }
+
+  // 1) Cloudflare env vars (fuente segura)
+  if (env?.RESEND_API_KEY) {
+    // Destinatario: si no está en env, usar el default conocido
+    const destinatario = env.RESEND_DESTINATARIO || 'arcanoespecias@gmail.com';
+    _cachedEmailConfig = {
+      resendApiKey: env.RESEND_API_KEY,
+      destinatario: destinatario
+    };
+    _cachedEmailTs = Date.now();
+    _cachedEmailSource = 'env';
+    return { ..._cachedEmailConfig, source: 'env' };
+  }
+
+  // 2) Fallback Firebase (temporal)
   try {
     const r = await fetch(`${FB_BASE}/emailConfig.json`);
     if (!r.ok) return null;
@@ -131,7 +167,9 @@ async function getEmailConfig() {
     if (!data || !data.resendApiKey || !data.destinatario) return null;
     _cachedEmailConfig = data;
     _cachedEmailTs = Date.now();
-    return data;
+    _cachedEmailSource = 'firebase';
+    console.warn('[notify-admin] Email config leída de Firebase (fallback). Migrar a env vars.');
+    return { ...data, source: 'firebase' };
   } catch (e) { return null; }
 }
 
@@ -197,16 +235,18 @@ export async function onRequestGet({ request, env }) {
 
   if (action === 'status') {
     try {
-      const vapid = await getVapidKeys();
-      const emailConfig = await getEmailConfig();
+      const vapid = await getVapidKeys(env);
+      const emailConfig = await getEmailConfig(env);
       const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
       const subsData = subRes.ok ? await subRes.json() : null;
       const count = subsData ? Object.keys(subsData).length : 0;
       return new Response(JSON.stringify({
         suscripciones_push: count,
         vapid_configurado: !!(vapid && vapid.publicKey && vapid.privateKey),
+        vapid_source: vapid?.source || null,
         email_configurado: !!(emailConfig && emailConfig.resendApiKey && emailConfig.destinatario),
-        email_destinatario: emailConfig?.destinatario || null
+        email_destinatario: emailConfig?.destinatario || null,
+        email_source: emailConfig?.source || null
       }, null, 2), { headers: CORS_HEADERS });
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), {
