@@ -324,7 +324,7 @@ export async function onRequestGet({ request }) {
   }), { headers: CORS_HEADERS });
 }
 
-export async function onRequestPost({ request }) {
+export async function onRequestPost({ request, env }) {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
   }
