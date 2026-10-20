@@ -1941,140 +1941,27 @@ function _mcBuscarCliente() {
 }
 
 // Registro directo: cliente solo deja WhatsApp + nombre, queda logueado
-// Ahora con verificación OTP por push notification
 function _mcRegistrar() {
   var tel = (document.getElementById('mc-tel').value || '').trim();
   var nombre = (document.getElementById('mc-nombre').value || '').trim();
-  if (!tel) { alert('Ingresa tu número de WhatsApp'); return; }
+  if (!tel) { alert('Ingresa tu n\u00FAmero de WhatsApp'); return; }
   if (!nombre) { alert('Ingresa tu nombre'); return; }
 
   var btn = document.getElementById('mc-btn-registrar');
   var original = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span>Verificando...</span>';
+  btn.innerHTML = '<span>Ingresando...</span>';
 
-  // Verificar si el usuario ya está verificado en este dispositivo
-  var verifiedPhone = getVerifiedPhone ? getVerifiedPhone() : null;
-  var telClean = tel.replace(/\D/g, '');
-  if (verifiedPhone && verifiedPhone === telClean) {
-    // Ya verificado, registrar/login directo
-    _mcDoRegistrar(tel, nombre, btn, original);
-    return;
-  }
-
-  // No verificado: pedir OTP
-  _mcShowOtpStep(tel, nombre, btn, original);
-}
-
-function _mcDoRegistrar(tel, nombre, btn, original) {
   registrarCliente(tel, nombre).then(function(cliente) {
     saveClienteSession(cliente);
-    _showToast('¡Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
+    _showToast('\u00A1Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
     _updateCuentaBadge();
     _mcShowExito(cliente);
   }).catch(function(err) {
     alert(err.message || err);
-    if (btn) { btn.disabled = false; btn.innerHTML = original; }
+    btn.disabled = false;
+    btn.innerHTML = original;
   });
-}
-
-// Paso 1: Solicitar permiso de notificaciones y enviar OTP
-async function _mcShowOtpStep(tel, nombre, btn, original) {
-  var el = document.getElementById('mc-content');
-  if (!el) return;
-
-  // Generar código OTP
-  var code = requestOtp(tel, nombre);
-  var telClean = tel.replace(/\D/g, '');
-
-  // Mostrar UI de verificación
-  el.innerHTML =
-    '<div class="mc-login">' +
-      '<div class="mc-login-header">' +
-        '<h3>🔐 Verificá tu WhatsApp</h3>' +
-        '<p class="mc-sub">Para proteger tu cuenta, te enviaremos un código de verificación.</p>' +
-      '</div>' +
-      '<div id="mc-otp-status" style="text-align:center;padding:16px;margin-bottom:12px;background:rgba(212,175,55,0.08);border-radius:8px">' +
-        '<p style="margin:0;font-size:0.9rem;color:var(--text-sec)">Enviando código...</p>' +
-      '</div>' +
-      '<div class="form-group" style="display:none" id="mc-otp-input-wrap">' +
-        '<label> Código de verificación (4 dígitos)</label>' +
-        '<input class="form-input" id="mc-otp-code" placeholder="1234" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,4)" style="text-align:center;font-size:1.5rem;letter-spacing:0.5em;font-weight:700">' +
-      '</div>' +
-      '<button class="btn-primary btn-block" onclick="_mcVerifyOtp(\'' + tel.replace(/'/g, "\\'") + '\',\'' + nombre.replace(/'/g, "\\'") + '\')" id="mc-btn-verify" disabled style="display:none">' +
-        '<span>Verificar</span>' +
-      '</button>' +
-      '<button class="btn-secondary btn-block" onclick="_mcShowLogin()" style="margin-top:8px">' +
-        '<span>Volver</span>' +
-      '</button>' +
-      '<p class="mc-hint">¿No recibiste el código? <a href="#" onclick="_mcResendOtp(\'' + tel.replace(/'/g, "\\'") + '\',\'' + nombre.replace(/'/g, "\\'") + '\');return false">Reenviar</a></p>' +
-    '</div>';
-
-  // Intentar enviar push notification
-  var statusEl = document.getElementById('mc-otp-status');
-  var inputWrap = document.getElementById('mc-otp-input-wrap');
-  var verifyBtn = document.getElementById('mc-btn-verify');
-
-  // Pedir permiso de notificaciones
-  var permission = 'denied';
-  try {
-    if ('Notification' in window) {
-      permission = await Notification.requestPermission();
-    }
-  } catch(e) {}
-
-  if (permission === 'granted') {
-    // Intentar enviar push
-    var result = await sendOtpViaPush(code, telClean);
-    if (result.method === 'push') {
-      // Push enviado, pedir código al usuario
-      if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--green)">✅ Te enviamos el código por notificación. Revisá tu pantalla.</p>';
-    } else {
-      // Fallback: mostrar código en pantalla
-      if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--gold)">Tu código es: <b style="font-size:1.5rem;letter-spacing:0.3em">' + code + '</b></p>';
-    }
-  } else {
-    // No aceptó notificaciones: mostrar código en pantalla
-    if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--gold)">Tu código de verificación es:</p><p style="margin:8px 0;font-size:2rem;font-weight:700;letter-spacing:0.3em;color:var(--gold)">' + code + '</p><p style="margin:0;font-size:0.8rem;color:var(--text-muted)">Para recibir el código por push en el futuro, activá las notificaciones del navegador.</p>';
-  }
-
-  // Mostrar input
-  if (inputWrap) inputWrap.style.display = '';
-  if (verifyBtn) { verifyBtn.style.display = ''; verifyBtn.disabled = false; }
-
-  // Focus en el input
-  setTimeout(function() {
-    var codeInput = document.getElementById('mc-otp-code');
-    if (codeInput) codeInput.focus();
-  }, 300);
-}
-
-// Reenviar OTP
-async function _mcResendOtp(tel, nombre) {
-  _mcShowOtpStep(tel, nombre, null, null);
-}
-
-// Verificar OTP ingresado
-async function _mcVerifyOtp(tel, nombre) {
-  var codeInput = document.getElementById('mc-otp-code');
-  if (!codeInput) return;
-  var code = codeInput.value.trim();
-  if (!code || code.length !== 4) { alert('Ingresa el código de 4 dígitos'); return; }
-
-  var btn = document.getElementById('mc-btn-verify');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span>Verificando...</span>'; }
-
-  var result = await verifyOtp(code);
-  if (result.success) {
-    // Código verificado, registrar cliente
-    if (btn) btn.innerHTML = '<span>✓ Verificado</span>';
-    setTimeout(function() {
-      _mcDoRegistrar(tel, nombre, btn, '<span>Ingresar</span>');
-    }, 500);
-  } else {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<span>Verificar</span>'; }
-    alert(result.error || 'Código incorrecto');
-  }
 }
 
 // Pantalla de \u00E9xito: registro confirmado

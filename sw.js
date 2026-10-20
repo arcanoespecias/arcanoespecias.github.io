@@ -1,36 +1,4 @@
-// Importar Firebase Messaging para push notifications
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey: "AIzaSyBvuJusx4_FvAdXhBl89VVlCicNb-yrdzo",
-  authDomain: "arcano-6788d.firebaseapp.com",
-  databaseURL: "https://arcano-6788d-default-rtdb.firebaseio.com",
-  projectId: "arcano-6788d",
-  storageBucket: "arcano-6788d.appspot.com",
-  messagingSenderId: "544197982462",
-  appId: "1:544197982462:web:4e8d7e3e4a9e7c6c7b3a2d"
-});
-
-// Manejar mensajes en segundo plano
-if (firebase.messaging) {
-  const messaging = firebase.messaging();
-  messaging.onBackgroundMessage(function(payload) {
-    console.log('[SW FCM] Mensaje recibido en background:', payload);
-    const notification = payload.notification || {};
-    const data = payload.data || {};
-    const title = notification.title || data.title || 'Arcano Especias';
-    const options = {
-      body: notification.body || data.body || '',
-      icon: notification.icon || '/icons/icon-192.png',
-      badge: '/icons/favicon-32.png',
-      data: { url: data.url || '/' }
-    };
-    self.registration.showNotification(title, options);
-  });
-}
-
-const CACHE_NAME = 'arcano-tienda-v10';
+const CACHE_NAME = 'arcano-tienda-v9';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
