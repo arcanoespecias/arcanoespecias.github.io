@@ -4,8 +4,11 @@
 //   POST action=verify   → verifica OTP, devuelve datos del cliente (sin OTP)
 //   POST action=pedidos  → devuelve historial de pedidos del cliente autenticado por OTP exitoso
 //   POST action=logout   → limpia sesión server-side (no-op por ahora, sesión es por OTP)
+// ETAPA 4.5 — Usa Firebase Admin (Service Account) para bypassar reglas admin-only.
 //
 // La tienda deja de leer clientes / otpPendientes / pedidos directamente desde Firebase.
+
+import { fbAdminGet, fbAdminPost, fbAdminPatch, hasServiceAccount } from '../_lib/firebase-admin.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -35,19 +38,19 @@ function genOtpCode() {
   return c;
 }
 
-async function fbGet(path) {
+async function fbGet(env, path) {
+  if (hasServiceAccount(env)) {
+    return fbAdminGet(env, '/arcano/db' + path);
+  }
   const r = await fetch(`${FB_BASE}${path}.json`);
   if (!r.ok) throw new Error('Firebase GET failed: ' + r.status);
   return r.json();
 }
 
-async function fbGetWithQuery(path, query) {
-  const r = await fetch(`${FB_BASE}${path}.json?${query}`);
-  if (!r.ok) throw new Error('Firebase GET failed: ' + r.status);
-  return r.json();
-}
-
-async function fbPost(path, body) {
+async function fbPost(env, path, body) {
+  if (hasServiceAccount(env)) {
+    return fbAdminPost(env, '/arcano/db' + path, body);
+  }
   const r = await fetch(`${FB_BASE}${path}.json`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -57,7 +60,10 @@ async function fbPost(path, body) {
   return r.json();
 }
 
-async function fbPatch(path, body) {
+async function fbPatch(env, path, body) {
+  if (hasServiceAccount(env)) {
+    return fbAdminPatch(env, '/arcano/db' + path, body);
+  }
   const r = await fetch(`${FB_BASE}${path}.json`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -67,23 +73,13 @@ async function fbPatch(path, body) {
   return r.json();
 }
 
-async function fbUpdate(path, body) {
-  const r = await fetch(`${FB_BASE}${path}.json`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) throw new Error('Firebase UPDATE failed: ' + r.status);
-  return r.json();
-}
-
 // === Buscar o crear cliente por telNorm, devolver key y datos (sin OTP) ===
-async function upsertClienteByPhone(telefono, nombreOpt) {
+async function upsertClienteByPhone(env, telefono, nombreOpt) {
   const tel = normalizeWhatsapp(telefono);
   if (!tel) throw new Error('Teléfono inválido');
 
   // Leer todos los clientes y filtrar en servidor (evita dependencia de indexOn en reglas)
-  const allClientes = await fbGet('/clientes');
+  const allClientes = await fbGet(env, '/clientes');
   var key = null;
   var existing = null;
   if (allClientes && typeof allClientes === 'object') {
@@ -101,7 +97,7 @@ async function upsertClienteByPhone(telefono, nombreOpt) {
   if (existing) {
     // Si viene nombre nuevo y no estaba seteado, actualizar
     if (nombreOpt && !existing.nombre) {
-      await fbPatch(`/clientes/${key}`, { nombre: nombreOpt, ultimoLogin: new Date().toISOString() });
+      await fbPatch(env, `/clientes/${key}`, { nombre: nombreOpt, ultimoLogin: new Date().toISOString() });
       existing.nombre = nombreOpt;
     }
     return { key, cliente: existing, isNew: false };
@@ -120,20 +116,20 @@ async function upsertClienteByPhone(telefono, nombreOpt) {
     ultimoPedido: now,
     totalPedidos: 0
   };
-  const result = await fbPost('/clientes', nuevoCliente);
+  const result = await fbPost(env, '/clientes', nuevoCliente);
   key = result.name;
   return { key, cliente: nuevoCliente, isNew: true };
 }
 
 // === ACTION: solicitar OTP ===
-async function actionOtp(body) {
+async function actionOtp(env, body) {
   const { telefono, nombre } = body;
   if (!telefono) {
     return { ok: false, status: 400, body: { ok: false, error: 'Teléfono obligatorio' } };
   }
 
   // Upsert cliente (busca por teléfono)
-  const upsert = await upsertClienteByPhone(telefono, nombre);
+  const upsert = await upsertClienteByPhone(env, telefono, nombre);
 
   // Generar OTP de 6 dígitos
   const codigo = genOtpCode();
@@ -155,7 +151,7 @@ async function actionOtp(body) {
     intentos: 0,
     verificado: false
   };
-  const result = await fbPost('/otpPendientes', otpPendiente);
+  const result = await fbPost(env, '/otpPendientes', otpPendiente);
   const otpKey = result.name;
 
   // === Notificar al admin por email/push (fire-and-forget) si es cliente nuevo ===
@@ -195,13 +191,13 @@ async function actionOtp(body) {
 }
 
 // === ACTION: verificar OTP ===
-async function actionVerify(body) {
+async function actionVerify(env, body) {
   const { otpKey, codigo } = body;
   if (!otpKey || !codigo) {
     return { ok: false, status: 400, body: { ok: false, error: 'Falta otpKey o codigo' } };
   }
 
-  const otpData = await fbGet(`/otpPendientes/${otpKey}`);
+  const otpData = await fbGet(env, `/otpPendientes/${otpKey}`);
   if (!otpData) {
     return { ok: false, status: 404, body: { ok: false, error: 'El código expiró o no existe. Solicitá uno nuevo.' } };
   }
@@ -219,7 +215,7 @@ async function actionVerify(body) {
 
   if (String(otpData.codigo) !== String(codigo).trim()) {
     // Incrementar intentos
-    await fbPatch(`/otpPendientes/${otpKey}`, { intentos: intentos + 1 });
+    await fbPatch(env, `/otpPendientes/${otpKey}`, { intentos: intentos + 1 });
     const remaining = OTP_MAX_ATTEMPTS - (intentos + 1);
     return {
       ok: false,
@@ -232,20 +228,20 @@ async function actionVerify(body) {
   }
 
   // === Código correcto: marcar verificado y devolver datos del cliente ===
-  await fbPatch(`/otpPendientes/${otpKey}`, { verificado: true, verificadoEn: Date.now() });
+  await fbPatch(env, `/otpPendientes/${otpKey}`, { verificado: true, verificadoEn: Date.now() });
 
   // Leer cliente desde Firebase
   const clienteKey = otpData.clienteKey;
   if (!clienteKey) {
     return { ok: false, status: 500, body: { ok: false, error: 'OTP sin clienteKey' } };
   }
-  const cliente = await fbGet(`/clientes/${clienteKey}`);
+  const cliente = await fbGet(env, `/clientes/${clienteKey}`);
   if (!cliente) {
     return { ok: false, status: 404, body: { ok: false, error: 'Cliente no encontrado' } };
   }
 
   // Actualizar ultimoLogin
-  await fbPatch(`/clientes/${clienteKey}`, { ultimoLogin: new Date().toISOString() });
+  await fbPatch(env, `/clientes/${clienteKey}`, { ultimoLogin: new Date().toISOString() });
 
   // Generar token de sesión simple (para que el cliente pueda pedir su historial)
   // Usamos el otpKey verificado como token de sesión (30 días)
@@ -274,14 +270,14 @@ async function actionVerify(body) {
 }
 
 // === ACTION: pedidos del cliente (requiere sessionToken) ===
-async function actionPedidos(body) {
+async function actionPedidos(env, body) {
   const { sessionToken, clienteId } = body;
   if (!sessionToken || !clienteId) {
     return { ok: false, status: 401, body: { ok: false, error: 'Sesión inválida' } };
   }
 
   // Verificar que el sessionToken sea un OTP verificado y que el clienteId coincida
-  const otpData = await fbGet(`/otpPendientes/${sessionToken}`);
+  const otpData = await fbGet(env, `/otpPendientes/${sessionToken}`);
   if (!otpData || !otpData.verificado) {
     return { ok: false, status: 401, body: { ok: false, error: 'Sesión inválida o expirada' } };
   }
@@ -293,7 +289,7 @@ async function actionPedidos(body) {
   }
 
   // Leer pedidos del cliente (sin orderBy para evitar dependencia de indexOn en reglas)
-  const allPedidos = await fbGet('/pedidos');
+  const allPedidos = await fbGet(env, '/pedidos');
   var pedidos = [];
   if (allPedidos && typeof allPedidos === 'object') {
     var keys = Object.keys(allPedidos);
@@ -340,13 +336,13 @@ export async function onRequestPost({ request }) {
     var result;
     switch (action) {
       case 'otp':
-        result = await actionOtp(body);
+        result = await actionOtp(env, body);
         break;
       case 'verify':
-        result = await actionVerify(body);
+        result = await actionVerify(env, body);
         break;
       case 'pedidos':
-        result = await actionPedidos(body);
+        result = await actionPedidos(env, body);
         break;
       default:
         result = { ok: false, status: 400, body: { ok: false, error: 'Acción inválida: ' + action } };
