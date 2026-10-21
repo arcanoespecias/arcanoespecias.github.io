@@ -252,6 +252,31 @@ export async function onRequestGet({ request, env }) {
     }
   }
 
+  if (action === 'vapid') {
+    // ETAPA 4: devolver solo la VAPID public key (no la private).
+    // El admin del browser la necesita para suscribir el dispositivo al push.
+    // Antes estaba en Firebase /pushConfig pero se borró en ETAPA 1.4.
+    try {
+      const vapid = await getVapidKeys(env);
+      if (!vapid || !vapid.publicKey) {
+        return new Response(JSON.stringify({
+          ok: false,
+          error: 'VAPID_PUBLIC_KEY no configurada en Cloudflare env vars'
+        }), { status: 500, headers: CORS_HEADERS });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        vapidPublicKey: vapid.publicKey,
+        vapidSubject: vapid.subject || ''
+      }), { headers: CORS_HEADERS });
+    } catch (e) {
+      console.error('[notify-admin] Error en vapid:', e.message);
+      return new Response(JSON.stringify({ ok: false, error: e.message }), {
+        status: 500, headers: CORS_HEADERS
+      });
+    }
+  }
+
   return new Response(JSON.stringify({
     name: 'Arcano Push API',
     endpoints: {

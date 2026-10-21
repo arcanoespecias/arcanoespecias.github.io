@@ -323,6 +323,13 @@ function _initFirebase() {
   try {
     _firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     _firebaseDb = firebase.database();
+    // ETAPA 4 fix: inicializar _db con estructura vacía para evitar crashes
+    // cuando páginas intentan acceder a _db.especias antes de que el listener
+    // de Firebase devuelva datos (después del login del admin).
+    if (!_db) {
+      _db = _emptyDB();
+      _ensureStructure();
+    }
     if (firebase.auth) {
       _firebaseAuth = firebase.auth();
       // Persistencia local (válido en múltiples dispositivos)
@@ -1088,7 +1095,16 @@ function onDBChange(fn) { _listeners.push(fn); }
 
 /* ==================== GETTERS ==================== */
 
-function getDB() { return _db; }
+// ETAPA 4 fix: getDB() siempre devuelve un objeto con estructura mínima
+// para evitar "Cannot read properties of null (reading 'especias')" en páginas
+// que se renderizan antes de que Firebase Auth termine de cargar datos.
+function getDB() {
+  if (!_db) {
+    // Fallback: devolver estructura vacía en vez de null
+    return _emptyDB();
+  }
+  return _db;
+}
 
 function getEspecias() {
   return _filterValid(Object.values(_db.especias || {})).sort(function(a, b) { return (a.nombre || '').localeCompare(b.nombre || ''); });

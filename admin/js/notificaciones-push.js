@@ -139,22 +139,39 @@ var NotificacionesPush = (function() {
 
   async function loadVapidKey() {
     try {
-      // ETAPA 4: usar Firebase SDK autenticado (no fetch REST sin token)
-      var snap = await firebase.database().ref('arcano/db/pushConfig').once('value');
-      var data = snap.val() || {};
-      _vapidPublicKey = data.vapidPublicKey || null;
-      var pubInput = document.getElementById('notif-vapid-public');
-      var privInput = document.getElementById('notif-vapid-private');
-      var subjInput = document.getElementById('notif-vapid-subject');
-      if (pubInput && data.vapidPublicKey) pubInput.value = data.vapidPublicKey;
-      if (privInput && data.vapidPrivateKey) privInput.value = data.vapidPrivateKey;
-      if (subjInput && data.vapidSubject) subjInput.value = data.vapidSubject;
+      // ETAPA 4: la VAPID public key NO está en Firebase (se borró en ETAPA 1.4).
+      // Está en Cloudflare env vars. La pedimos al endpoint /api/notify-admin?action=vapid.
+      var r = await fetch('/api/notify-admin?action=vapid');
+      var data = r.ok ? await r.json() : null;
+      if (data && data.ok && data.vapidPublicKey) {
+        _vapidPublicKey = data.vapidPublicKey;
+        var pubInput = document.getElementById('notif-vapid-public');
+        var subjInput = document.getElementById('notif-vapid-subject');
+        if (pubInput) pubInput.value = data.vapidPublicKey;
+        if (subjInput && data.vapidSubject) subjInput.value = data.vapidSubject;
+        // El campo "private key" no se muestra — está en Cloudflare, no en Firebase.
+        var privInput = document.getElementById('notif-vapid-private');
+        if (privInput) privInput.value = '(gestionada en Cloudflare)';
+        if (privInput) privInput.disabled = true;
+      } else {
+        console.warn('[Push] VAPID no configurada en Cloudflare env vars');
+      }
     } catch (e) { console.warn('[Push] loadVapidKey error:', e.message); }
   }
 
   async function loadEmailConfig() {
     try {
-      // ETAPA 4: usar Firebase SDK autenticado
+      // ETAPA 4: esperar a Firebase Auth
+      if (window.ArcanoDB && ArcanoDB.waitForAuthReady) {
+        await ArcanoDB.waitForAuthReady();
+      }
+      var fbAuth = window.firebase && firebase.auth ? firebase.auth() : null;
+      if (!fbAuth || !fbAuth.currentUser) {
+        console.warn('[Push] No hay usuario logueado — loadEmailConfig pospuesto');
+        setTimeout(loadEmailConfig, 1000);
+        return;
+      }
+      // Usar Firebase SDK autenticado
       var snap = await firebase.database().ref('arcano/db/emailConfig').once('value');
       var data = snap.val() || {};
       var destInput = document.getElementById('notif-email-destinatario');
@@ -295,7 +312,17 @@ var NotificacionesPush = (function() {
     var listEl = document.getElementById('notif-devices-list');
     if (!listEl) return;
     try {
-      // ETAPA 4: usar Firebase SDK autenticado
+      // ETAPA 4: esperar a Firebase Auth
+      if (window.ArcanoDB && ArcanoDB.waitForAuthReady) {
+        await ArcanoDB.waitForAuthReady();
+      }
+      var fbAuth = window.firebase && firebase.auth ? firebase.auth() : null;
+      if (!fbAuth || !fbAuth.currentUser) {
+        console.warn('[Push] No hay usuario logueado — loadDevices pospuesto');
+        setTimeout(loadDevices, 1000);
+        return;
+      }
+      // Usar Firebase SDK autenticado
       var snap = await firebase.database().ref('arcano/db/pushSubscriptions').once('value');
       var data = snap.val();
       if (!data || Object.keys(data).length === 0) {
