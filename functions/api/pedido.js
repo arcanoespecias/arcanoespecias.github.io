@@ -305,12 +305,20 @@ export async function onRequestPost({ request, env }) {
     }
 
     // === Leer catálogo + config desde Firebase ===
-    const [especias, blends, packs, tiendaConfig] = await Promise.all([
-      fbGet(env, '/especias'),
-      fbGet(env, '/blends'),
-      fbGet(env, '/packs'),
-      fbGet(env, '/tiendaConfig')
-    ]);
+    console.log('[pedido] Iniciando lectura de catálogo con SA...');
+    let especias, blends, packs, tiendaConfig;
+    try {
+      [especias, blends, packs, tiendaConfig] = await Promise.all([
+        fbGet(env, '/especias'),
+        fbGet(env, '/blends'),
+        fbGet(env, '/packs'),
+        fbGet(env, '/tiendaConfig')
+      ]);
+      console.log('[pedido] Catálogo leído: especias=' + (especias ? Object.keys(especias).length : 'null') + ', blends=' + (blends ? Object.keys(blends).length : 'null') + ', packs=' + (packs ? Object.keys(packs).length : 'null'));
+    } catch (e) {
+      console.error('[pedido] Error leyendo catálogo:', e.message);
+      throw new Error('No se pudo leer el catálogo: ' + e.message);
+    }
 
     // === Validar items y calcular subtotal del lado del servidor ===
     const { itemsValidados, subtotalValidado } = await validarItemsYCalcularSubtotal(items, { especias, blends, packs });
