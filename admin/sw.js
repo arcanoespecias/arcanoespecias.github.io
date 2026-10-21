@@ -92,37 +92,11 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-// === Periodic Background Sync (Android Chrome — cada 12h chequea pedidos nuevos) ===
-self.addEventListener('periodicsync', function(event) {
-  if (event.tag === 'check-pedidos') {
-    event.waitUntil(checkPedidosBackground());
-  }
-});
-
-async function checkPedidosBackground() {
-  // Consulta Firebase RTDB para ver si hay pedidos nuevos
-  try {
-    var res = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/pedidos.json?orderBy="estado"&equalTo="nuevo"');
-    if (!res.ok) return;
-    var data = await res.json();
-    if (!data) return;
-    var count = Object.keys(data).length;
-    if (count > 0) {
-      // Hay pedidos nuevos — mostrar notificación
-      self.registration.showNotification('🛒 Pedidos pendientes', {
-        body: 'Tienes ' + count + ' pedido(s) nuevo(s) esperando confirmación',
-        icon: '/admin/icons/icon-192.png',
-        badge: '/admin/icons/favicon.png',
-        tag: 'arcano-pedidos-pendientes',
-        vibrate: [200, 100, 200],
-        requireInteraction: true,
-        data: { url: '/admin/' }
-      });
-    }
-  } catch (e) {
-    console.warn('[SW] Error checking pedidos:', e);
-  }
-}
+// === ETAPA 4 — Periodic Background Sync eliminado ===
+// Antes: el SW consultaba Firebase directamente para ver pedidos nuevos.
+// Ahora: el servidor /api/notify-admin envía push al admin cuando llega un pedido,
+// no hace falta consultar Firebase desde el SW.
+// Razón: el SW no puede autenticarse con Firebase Auth del admin (sin token).
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;

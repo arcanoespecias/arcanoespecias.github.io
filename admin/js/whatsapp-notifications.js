@@ -10,7 +10,7 @@
 
 var WhatsAppNotifications = (function() {
 
-  var FB_URL = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
+  // ETAPA 4: FB_URL eliminado — todas las operaciones van por Firebase SDK autenticado.
   var ESTADOS = ['nuevo', 'confirmado', 'enviado', 'entregado', 'cancelado', 'pago_recibido', 'primer_pedido'];
   var ESTADO_LABELS = {
     nuevo: '\u{1F195} Pedido Nuevo',
@@ -448,18 +448,15 @@ var WhatsAppNotifications = (function() {
     var activo = document.getElementById('ca-activo').value === 'true';
     var mensaje = document.getElementById('ca-mensaje').value.trim();
     try {
-      var r = await fetch(FB_URL + '/tiendaConfig.json');
-      var current = r.ok ? await r.json() : {};
-      current = current || {};
+      // ETAPA 4: usar Firebase SDK autenticado
+      var ref = firebase.database().ref('arcano/db/tiendaConfig');
+      var snap = await ref.once('value');
+      var current = snap.val() || {};
       current.mensajesWhatsApp = current.mensajesWhatsApp || {};
       current.mensajesWhatsApp.tiempoAbandonoMin = tiempo;
       current.mensajesWhatsApp.notifActiva = activo;
       current.mensajesWhatsApp.mensajeAbandono = mensaje;
-      await fetch(FB_URL + '/tiendaConfig.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(current)
-      });
+      await ref.update(current);
       var status = document.getElementById('ca-status');
       if (status) status.innerHTML = '<span style="color:var(--green)">Guardado</span>';
       toast('Configuracion de carritos guardada');
@@ -471,15 +468,8 @@ var WhatsAppNotifications = (function() {
 
   async function marcarCarritoNotificado(key) {
     try {
-      if (typeof firebase !== 'undefined' && firebase.database) {
-        await firebase.database().ref('arcano/db/carritos/' + key).update({ notificadoEn: new Date().toISOString() });
-      } else {
-        await fetch(FB_URL + '/carritos/' + key + '/notificadoEn.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(new Date().toISOString())
-        });
-      }
+      // ETAPA 4: usar Firebase SDK autenticado (no fetch REST sin token)
+      await firebase.database().ref('arcano/db/carritos/' + key).update({ notificadoEn: new Date().toISOString() });
       toast('Carrito marcado como notificado');
       showTab('carritos');
     } catch (e) {
@@ -983,9 +973,10 @@ var WhatsAppNotifications = (function() {
 
   async function loadConfig() {
     try {
-      var r = await fetch(FB_URL + '/tiendaConfig.json');
-      if (!r.ok) return { plantillas: {} };
-      var data = await r.json();
+      // ETAPA 4: usar Firebase SDK autenticado
+      var snap = await firebase.database().ref('arcano/db/tiendaConfig').once('value');
+      var data = snap.val();
+      if (!data) return { plantillas: {} };
       return {
         plantillas: (data && data.mensajesWhatsApp && data.mensajesWhatsApp.plantillas) || {},
         mensajesWhatsApp: (data && data.mensajesWhatsApp) || {}
@@ -994,27 +985,23 @@ var WhatsAppNotifications = (function() {
   }
 
   async function saveConfig(cfg) {
-    // Leer config actual
-    var r = await fetch(FB_URL + '/tiendaConfig.json');
-    var current = r.ok ? await r.json() : {};
-    current = current || {};
+    // ETAPA 4: usar Firebase SDK autenticado
+    var ref = firebase.database().ref('arcano/db/tiendaConfig');
+    var snap = await ref.once('value');
+    var current = snap.val() || {};
     current.mensajesWhatsApp = current.mensajesWhatsApp || {};
     current.mensajesWhatsApp.plantillas = cfg.plantillas;
     if (cfg.mensajesWhatsApp && cfg.mensajesWhatsApp.mensajeManual !== undefined) {
       current.mensajesWhatsApp.mensajeManual = cfg.mensajesWhatsApp.mensajeManual;
     }
-    await fetch(FB_URL + '/tiendaConfig.json', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(current)
-    });
+    await ref.update(current);
   }
 
   async function loadHistorial() {
     try {
-      var r = await fetch(FB_URL + '/whatsappHistorial.json?orderBy="fecha"&limitToLast=200');
-      if (!r.ok) return [];
-      var data = await r.json();
+      // ETAPA 4: usar Firebase SDK autenticado (sin orderBy para no requerir indexOn)
+      var snap = await firebase.database().ref('arcano/db/whatsappHistorial').limitToLast(200).once('value');
+      var data = snap.val();
       if (!data) return [];
       var arr = Object.keys(data).map(function(k) { var h = data[k]; h._key = k; return h; });
       arr.sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
@@ -1024,17 +1011,11 @@ var WhatsAppNotifications = (function() {
 
   async function logHistorial(entry) {
     try {
+      // ETAPA 4: usar Firebase SDK autenticado (sin fallback a fetch público)
       var ref = firebase.database().ref('arcano/db/whatsappHistorial').push();
-      ref.set(entry);
+      await ref.set(entry);
     } catch (e) {
-      // Fallback: fetch directo
-      try {
-        await fetch(FB_URL + '/whatsappHistorial.json', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entry)
-        });
-      } catch (e2) {}
+      console.error('[WA] Error guardando historial:', e.message);
     }
   }
 

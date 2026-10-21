@@ -11722,9 +11722,15 @@ const Pages = {
     h += '<p class="text-sm text-muted mb-12">Estas acciones eliminan datos de forma permanente.</p>';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
     h += '<button class="btn btn-outline" style="border-color:var(--red);color:var(--red)" onclick="Pages._testResetStocks()">Reiniciar Stocks a 0</button>';
-    h += '<button class="btn btn-outline" style="border-color:var(--red);color:var(--red)" onclick="Pages._testClearVentas()">Borrar Todas las Ventas</button>';
     h += '<button class="btn btn-outline" style="border-color:var(--red);color:var(--red)" onclick="Pages._testClearPedidos()">Borrar Todos los Pedidos</button>';
-    h += '<button class="btn btn-red" onclick="Pages._testNuclearReset()">RESET NUCLEAR - Borrar Todo</button>';
+    // ETAPA 4: ocultar botones destructivos (Borrar Ventas / Reset Nuclear) salvo que la URL tenga ?debug=1
+    var _isDebug = window.location.search.indexOf('debug=1') >= 0;
+    if (_isDebug) {
+      h += '<button class="btn btn-outline" style="border-color:var(--red);color:var(--red)" onclick="Pages._testClearVentas()">Borrar Todas las Ventas</button>';
+      h += '<button class="btn btn-red" onclick="Pages._testNuclearReset()">RESET NUCLEAR - Borrar Todo</button>';
+    } else {
+      h += '<p class="text-muted text-xs" style="grid-column:1/-1;padding:8px">⚠️ Los botones destructivos (Borrar Ventas, Reset Nuclear) están ocultos en producción. Para activarlos, agregá <code>?debug=1</code> a la URL.</p>';
+    }
     h += '</div></div></div>';
 
     container.innerHTML = h;

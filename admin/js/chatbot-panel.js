@@ -4,7 +4,7 @@
 
 var ChatbotPanel = (function() {
 
-  var FB_URL = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot';
+  // ETAPA 4: FB_URL eliminado — todas las operaciones van por Firebase SDK autenticado.
   var _config = null;
   var _stats = null;
   var _conversaciones = null;
@@ -85,8 +85,9 @@ var ChatbotPanel = (function() {
 
   async function loadAll() {
     try {
-      var r = await fetch(FB_URL + '.json');
-      var data = await r.json();
+      // ETAPA 4: usar Firebase SDK autenticado
+      var snap = await firebase.database().ref('arcano/db/chatbot').once('value');
+      var data = snap.val();
       _config = data || { activo: false, config: {} };
       _stats = data?.estadisticas || {};
       _conversaciones = data?.conversaciones || {};
@@ -96,7 +97,7 @@ var ChatbotPanel = (function() {
       renderStats();
       renderConversaciones();
     } catch (e) {
-      console.error('[chatbot] load error:', e);
+      console.error('[chatbot] load error:', e.message);
     }
   }
 
@@ -139,11 +140,8 @@ var ChatbotPanel = (function() {
   async function toggle() {
     _config.activo = !_config.activo;
     try {
-      await fetch(FB_URL + '/activo.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(_config.activo)
-      });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/chatbot/activo').set(_config.activo);
       renderStatus();
       toast(_config.activo ? 'Chatbot activado 🔮' : 'Chatbot desactivado');
     } catch (e) {
@@ -158,11 +156,8 @@ var ChatbotPanel = (function() {
       if (!confirm('La key no empieza con "mstrl_". ¿Estás seguro que es una API key de Mistral AI válida?')) return;
     }
     try {
-      await fetch(FB_URL + '/config/apiKey.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(key)
-      });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/chatbot/config/apiKey').set(key);
       _config.config = _config.config || {};
       _config.config.apiKey = key;
       renderStatus();
@@ -188,11 +183,8 @@ var ChatbotPanel = (function() {
       palabrasBloqueadas: blocked
     };
     try {
-      await fetch(FB_URL + '/config.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/chatbot/config').set(config);
       _config.config = config;
       toast('Configuración guardada ✅');
     } catch (e) {

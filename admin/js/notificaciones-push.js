@@ -5,7 +5,7 @@
 
 var NotificacionesPush = (function() {
 
-  var FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
+  // ETAPA 4: FB_BASE eliminado — todas las operaciones van por Firebase SDK autenticado.
   var PUSH_API = '/api/notify-admin';
   // VAPID public key se lee desde Firebase (configurada por el admin)
   var _vapidPublicKey = null;
@@ -139,9 +139,9 @@ var NotificacionesPush = (function() {
 
   async function loadVapidKey() {
     try {
-      var r = await fetch(FB_BASE + '/pushConfig.json');
-      var data = r.ok ? await r.json() : null;
-      if (!data) data = {};
+      // ETAPA 4: usar Firebase SDK autenticado (no fetch REST sin token)
+      var snap = await firebase.database().ref('arcano/db/pushConfig').once('value');
+      var data = snap.val() || {};
       _vapidPublicKey = data.vapidPublicKey || null;
       var pubInput = document.getElementById('notif-vapid-public');
       var privInput = document.getElementById('notif-vapid-private');
@@ -149,19 +149,19 @@ var NotificacionesPush = (function() {
       if (pubInput && data.vapidPublicKey) pubInput.value = data.vapidPublicKey;
       if (privInput && data.vapidPrivateKey) privInput.value = data.vapidPrivateKey;
       if (subjInput && data.vapidSubject) subjInput.value = data.vapidSubject;
-    } catch (e) {}
+    } catch (e) { console.warn('[Push] loadVapidKey error:', e.message); }
   }
 
   async function loadEmailConfig() {
     try {
-      var r = await fetch(FB_BASE + '/emailConfig.json');
-      var data = r.ok ? await r.json() : null;
-      if (!data) data = {};
+      // ETAPA 4: usar Firebase SDK autenticado
+      var snap = await firebase.database().ref('arcano/db/emailConfig').once('value');
+      var data = snap.val() || {};
       var destInput = document.getElementById('notif-email-destinatario');
       var keyInput = document.getElementById('notif-resend-key');
       if (destInput && data.destinatario) destInput.value = data.destinatario;
       if (keyInput && data.resendApiKey) keyInput.value = data.resendApiKey;
-    } catch (e) {}
+    } catch (e) { console.warn('[Push] loadEmailConfig error:', e.message); }
   }
 
   async function guardarEmailConfig() {
@@ -179,11 +179,8 @@ var NotificacionesPush = (function() {
         resendApiKey: resendKey,
         actualizadoEn: Date.now()
       };
-      await fetch(FB_BASE + '/emailConfig.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/emailConfig').set(config);
       toast('Configuración de email guardada');
     } catch (e) {
       alert('Error: ' + e.message);
@@ -228,11 +225,8 @@ var NotificacionesPush = (function() {
         vapidSubject: subject,
         actualizadoEn: Date.now()
       };
-      await fetch(FB_BASE + '/pushConfig.json', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/pushConfig').update(config);
       _vapidPublicKey = publicKey;
       toast('VAPID keys guardadas en Firebase');
     } catch (e) {
@@ -301,8 +295,9 @@ var NotificacionesPush = (function() {
     var listEl = document.getElementById('notif-devices-list');
     if (!listEl) return;
     try {
-      var r = await fetch(FB_BASE + '/pushSubscriptions.json');
-      var data = r.ok ? await r.json() : null;
+      // ETAPA 4: usar Firebase SDK autenticado
+      var snap = await firebase.database().ref('arcano/db/pushSubscriptions').once('value');
+      var data = snap.val();
       if (!data || Object.keys(data).length === 0) {
         listEl.innerHTML = '<p class="text-muted text-center" style="padding:20px">No hay dispositivos suscriptos todavía.</p>';
         return;
@@ -334,7 +329,8 @@ var NotificacionesPush = (function() {
   async function borrarDispositivo(key) {
     if (!confirm('¿Eliminar este dispositivo? Ya no recibirá notificaciones.')) return;
     try {
-      await fetch(FB_BASE + '/pushSubscriptions/' + key + '.json', { method: 'DELETE' });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/pushSubscriptions/' + key).remove();
       loadDevices();
       toast('Dispositivo eliminado');
     } catch (e) { alert('Error: ' + e.message); }
@@ -388,11 +384,8 @@ var NotificacionesPush = (function() {
       };
       // Generar ID único para este dispositivo
       var deviceId = 'd' + Date.now() + Math.random().toString(36).slice(2, 8);
-      await fetch(FB_BASE + '/pushSubscriptions/' + deviceId + '.json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subData)
-      });
+      // ETAPA 4: usar Firebase SDK autenticado
+      await firebase.database().ref('arcano/db/pushSubscriptions/' + deviceId).set(subData);
       toast('Notificaciones activadas en este dispositivo');
       loadStatus();
       loadDevices();
@@ -452,12 +445,13 @@ var NotificacionesPush = (function() {
       // También borrar de Firebase (buscar por endpoint)
       if (_currentSubscription) {
         var endpoint = _currentSubscription.endpoint;
-        var r = await fetch(FB_BASE + '/pushSubscriptions.json');
-        var data = r.ok ? await r.json() : null;
+        // ETAPA 4: usar Firebase SDK autenticado
+        var snap = await firebase.database().ref('arcano/db/pushSubscriptions').once('value');
+        var data = snap.val();
         if (data) {
           for (var k in data) {
-            if (data[k].endpoint === endpoint) {
-              await fetch(FB_BASE + '/pushSubscriptions/' + k + '.json', { method: 'DELETE' });
+            if (data[k] && data[k].endpoint === endpoint) {
+              await firebase.database().ref('arcano/db/pushSubscriptions/' + k).remove();
               break;
             }
           }
@@ -541,8 +535,9 @@ var NotificacionesPush = (function() {
     // 4. VAPID key configurada
     output.push('4. VAPID key:');
     try {
-      var r = await fetch(FB_BASE + '/pushConfig.json');
-      var data = r.ok ? await r.json() : null;
+      // ETAPA 4: usar Firebase SDK autenticado
+      var snap = await firebase.database().ref('arcano/db/pushConfig').once('value');
+      var data = snap.val();
       if (data && data.vapidPublicKey) {
         output.push('   ✓ Configurada (len=' + data.vapidPublicKey.length + ')');
         output.push('   Public key (primeros 30): ' + data.vapidPublicKey.substring(0, 30) + '...');
