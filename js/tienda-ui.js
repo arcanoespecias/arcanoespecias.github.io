@@ -1813,29 +1813,24 @@ function submitGrandesClientes(e) {
   if (!nombre || !tel) { alert('Nombre y telefono son obligatorios'); return; }
   var btn = document.getElementById('gc-submit-btn');
   btn.disabled = true; btn.textContent = 'Enviando...';
-  var ref = firebase.database().ref('arcano/db/grandesClientes').push();
-  ref.set({
-    nombre: nombre,
-    telefono: tel,
-    empresa: empresa || '',
-    creado: new Date().toISOString(),
-    estado: 'nuevo'
-  }).then(function() {
-    _showToast('Solicitud enviada correctamente');
-    closeGrandesClientes();
-    document.getElementById('gc-form').reset();
-    btn.disabled = false; btn.textContent = 'Enviar Solicitud';
-    // Notificar al admin por email
-    if (typeof _notifyAdminEmail === 'function') {
-      _notifyAdminEmail(
-        '🏢 Nueva solicitud de Grandes Clientes',
-        nombre + ' (' + (empresa || 'sin empresa') + ') solicitó información para grandes clientes. WhatsApp: ' + tel,
-        'grandes_clientes'
-      );
+  // ETAPA 4: enviar vía /api/grandes-clientes (no escribir directo en Firebase)
+  fetch('/api/grandes-clientes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre: nombre, telefono: tel, empresa: empresa })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok) {
+      _showToast('Solicitud enviada correctamente');
+      closeGrandesClientes();
+      document.getElementById('gc-form').reset();
+    } else {
+      alert('Error al enviar: ' + (data.error || 'desconocido'));
     }
-  }).catch(function() {
+    btn.disabled = false; btn.textContent = 'Enviar Solicitud';
+  }).catch(function(e) {
     alert('Error al enviar. Intenta de nuevo.');
     btn.disabled = false; btn.textContent = 'Enviar Solicitud';
+    console.warn('[Grandes Clientes] Error:', e.message);
   });
 }
 
@@ -1899,45 +1894,41 @@ function _mcShowLogin() {
 // Busca si el WhatsApp ya existe en Firebase \u2192 autocompleta nombre y cambia UI
 function _mcBuscarCliente() {
   var tel = (document.getElementById('mc-tel').value || '').trim();
-  if (!tel || tel.length < 6) return; // necesita al menos 6 d\u00EDgitos
-  var telNorm = _normalizeWhatsapp(tel);
-  if (!telNorm) return;
-  try {
-    if (typeof firebase === 'undefined' || !firebase.database) return;
-    var ref = firebase.database().ref('arcano/db/clientes');
-    ref.orderByChild('telNorm').equalTo(telNorm).limitToFirst(1).once('value', function(snap) {
-      var data = snap.val();
-      var subLabel = document.getElementById('mc-sub-label');
-      var hint = document.getElementById('mc-hint');
-      var nombreInput = document.getElementById('mc-nombre');
-      var btn = document.getElementById('mc-btn-registrar');
-      if (!btn) return;
-      if (data) {
-        // Cliente existente: autocompletar nombre
-        var key = Object.keys(data)[0];
-        var cliente = data[key];
-        if (nombreInput && cliente.nombre) {
-          nombreInput.value = cliente.nombre;
-          nombreInput.style.color = 'var(--gold)';
-          nombreInput.style.fontWeight = '600';
-        }
-        if (subLabel) subLabel.textContent = '\u00A1Bienvenido de nuevo, ' + (cliente.nombre || '').split(' ')[0] + '!';
-        if (btn) btn.innerHTML = '<span>Ingresar</span>';
-        if (hint) hint.innerHTML = '\u{1F4A1} Ya est\u00E1s registrado. Solo presiona <b>Ingresar</b>.';
-      } else {
-        // Cliente nuevo: limpiar y mostrar registro
-        if (nombreInput) {
-          nombreInput.style.color = '';
-          nombreInput.style.fontWeight = '';
-        }
-        if (subLabel) subLabel.textContent = 'Reg\u00EDstrate para ver tus pedidos y promociones exclusivas';
-        if (btn) btn.innerHTML = '<span>Registrarme</span>';
-        if (hint) hint.innerHTML = '\u{1F4A1} Reg\u00EDstrate con tu WhatsApp y nombre.';
+  if (!tel || tel.length < 6) return; // necesita al menos 6 dígitos
+  // ETAPA 4: buscar vía /api/cuenta (no leer Firebase directo)
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'check', telefono: tel })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    var subLabel = document.getElementById('mc-sub-label');
+    var hint = document.getElementById('mc-hint');
+    var nombreInput = document.getElementById('mc-nombre');
+    var btn = document.getElementById('mc-btn-registrar');
+    if (!btn) return;
+    if (data.ok && data.existe) {
+      // Cliente existente: autocompletar nombre
+      if (nombreInput && data.cliente && data.cliente.nombre) {
+        nombreInput.value = data.cliente.nombre;
+        nombreInput.style.color = 'var(--gold)';
+        nombreInput.style.fontWeight = '600';
       }
-    });
-  } catch (e) {
-    console.warn('[Mi Cuenta] No se pudo buscar cliente:', e);
-  }
+      if (subLabel) subLabel.textContent = '¡Bienvenido de nuevo, ' + ((data.cliente && data.cliente.nombre) || '').split(' ')[0] + '!';
+      if (btn) btn.innerHTML = '<span>Ingresar</span>';
+      if (hint) hint.innerHTML = '💡 Ya estás registrado. Solo presiona <b>Ingresar</b>.';
+    } else {
+      // Cliente nuevo: limpiar y mostrar registro
+      if (nombreInput) {
+        nombreInput.style.color = '';
+        nombreInput.style.fontWeight = '';
+      }
+      if (subLabel) subLabel.textContent = 'Regístrate para ver tus pedidos y promociones exclusivas';
+      if (btn) btn.innerHTML = '<span>Registrarme</span>';
+      if (hint) hint.innerHTML = '💡 Regístrate con tu WhatsApp y nombre.';
+    }
+  }).catch(function(e) {
+    console.warn('[Mi Cuenta] No se pudo buscar cliente:', e.message);
+  });
 }
 
 // Registro directo: cliente solo deja WhatsApp + nombre, queda logueado
@@ -2433,22 +2424,45 @@ function _usosHtml(p) {
 function _mcLoadColeccion(cliente) {
   var el = document.getElementById('mc-coleccion-section');
   if (!el) return;
-  var wa = cliente.telefono || cliente.whatsapp || '';
-  if (!wa) { el.innerHTML = ''; return; }
-
-  // Normalizar whatsapp
-  wa = wa.replace(/[^0-9+]/g, '');
-  if (wa.startsWith('+')) wa = wa.substring(1);
 
   // Mostrar loading
-  el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">\u{1F3C5} Colecci\u00F3n Arcano</div><div class="loader" style="margin:12px auto"></div></div>';
+  el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">\u{1F3C5} Colección Arcano</div><div class="loader" style="margin:12px auto"></div></div>';
 
-  onColeccionReady(wa, function(col) {
-    if (!col) {
-      // No tiene cart\u00F3n todav\u00EDa \u2014 mostrar cart\u00F3n vac\u00EDo
-      col = { whatsapp: wa, nombre: cliente.nombre || '', casilleros: 0, completado: false, canjeado: false, historial: [] };
+  // ETAPA 4: pedir colección al servidor (no leer directo de Firebase)
+  // Necesitamos sessionToken y clienteId guardados en localStorage
+  var sessionToken = null, clienteId = null;
+  try {
+    sessionToken = localStorage.getItem('arcano_session_token');
+    clienteId = (cliente && cliente.id) || localStorage.getItem('arcano_cliente_id');
+  } catch (e) {}
+
+  if (!sessionToken || !clienteId) {
+    // Sin sesión — mostrar cartón vacío (no debería pasar, _mcShowHistorial solo se llama si hay sesión)
+    _mcRenderColeccion(el, {
+      whatsapp: '', nombre: (cliente && cliente.nombre) || '',
+      casilleros: 0, completado: false, canjeado: false, historial: []
+    });
+    return;
+  }
+
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'coleccion', sessionToken: sessionToken, clienteId: clienteId })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.ok) {
+      el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">\u{1F3C5} Colección Arcano</div><p class="text-muted text-center" style="padding:16px">No se pudo cargar tu colección.</p></div>';
+      console.warn('[Mi Cuenta] Error cargando colección:', data.error);
+      return;
     }
+    var col = data.coleccion || {
+      whatsapp: '', nombre: (cliente && cliente.nombre) || '',
+      casilleros: 0, completado: false, canjeado: false, historial: []
+    };
     _mcRenderColeccion(el, col);
+  }).catch(function(err) {
+    el.innerHTML = '<div class="coleccion-card"><div class="coleccion-title">\u{1F3C5} Colección Arcano</div><p class="text-muted text-center" style="padding:16px">No se pudo cargar tu colección.</p></div>';
+    console.error('[Mi Cuenta] Error cargando colección:', err);
   });
 }
 

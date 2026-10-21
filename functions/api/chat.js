@@ -1,6 +1,11 @@
 // /api/chat.js — Cloudflare Pages Function
 // Proxy seguro a Gemini API. Lee la API key desde Firebase (configurada en admin).
 // Cache de 5 min para la key → no hacemos fetch a Firebase en cada request.
+// ETAPA 4.5: Usa Firebase Admin SDK para escribir conversaciones y estadísticas (regla auth.uid admin).
+
+import { fbAdminGet, fbAdminPatch, fbAdminPost, hasServiceAccount } from '../_lib/firebase-admin.js';
+
+const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
 
 export async function onRequestPost({ request, env }) {
   const corsHeaders = {
@@ -107,11 +112,19 @@ async function getApiKey(env) {
     return _cachedKey;
   }
 
-  // Leer de Firebase
+  // Leer de Firebase (Admin si hay SA, fallback público)
   try {
-    const r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot.json');
-    if (!r.ok) return null;
-    const data = await r.json();
+    let data;
+    if (hasServiceAccount(env)) {
+      data = await fbAdminGet(env, '/arcano/db/chatbot');
+    } else {
+      const r = await fetch(`${FB_BASE}/chatbot.json`);
+      if (!r.ok) {
+        console.error('[chat] Firebase GET chatbot failed:', r.status);
+        return null;
+      }
+      data = await r.json();
+    }
     const key = data?.config?.apiKey;
     // Aceptar formatos AIzaSy... (legacy) y AQ.Ab8RN6K... (nuevo formato Gemini 2026)
     if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
@@ -121,7 +134,7 @@ async function getApiKey(env) {
     }
     return null;
   } catch (e) {
-    console.error('[chat] Firebase read error:', e);
+    console.error('[chat] Firebase read error:', e.message);
     return null;
   }
 }
@@ -189,16 +202,23 @@ function extractBlendIds(text, catalogo) {
 }
 
 async function logConversation(env, sessionId, messages, reply, mentionedIds) {
-  // Log a Firebase RTDB (escritura rápida, fire-and-forget)
+  // Log a Firebase RTDB (escritura rápida, fire-and-forget pero con logging de errores)
   const lastUser = messages.filter(m => m.role === 'user').pop();
-  const logRef = `https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot/conversaciones/${sessionId}.json`;
+  const dbPathConv = `/chatbot/conversaciones/${sessionId}`;
+  const dbPathMetric = `/chatbot/estadisticas/porDia/${new Date().toISOString().slice(0, 10)}`;
 
   // Primero leer si ya existe
   let existing = null;
   try {
-    const r = await fetch(logRef);
-    if (r.ok) existing = await r.json();
-  } catch (e) {}
+    if (hasServiceAccount(env)) {
+      existing = await fbAdminGet(env, '/arcano/db' + dbPathConv);
+    } else {
+      const r = await fetch(`${FB_BASE}${dbPathConv}.json`);
+      if (r.ok) existing = await r.json();
+    }
+  } catch (e) {
+    console.error('[chat] Error leyendo conversación existente:', e.message);
+  }
 
   const newMsg = {
     role: 'user',
@@ -224,25 +244,44 @@ async function logConversation(env, sessionId, messages, reply, mentionedIds) {
     cantMensajes: mensajes.length
   };
 
-  await fetch(logRef, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  // Guardar conversación (PATCH = actualizar sin sobrescribir otros campos)
+  try {
+    if (hasServiceAccount(env)) {
+      await fbAdminPatch(env, '/arcano/db' + dbPathConv, payload);
+    } else {
+      await fetch(`${FB_BASE}${dbPathConv}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+  } catch (e) {
+    console.error('[chat] Error guardando conversación:', e.message);
+  }
 
   // Incrementar métricas diarias
-  const hoy = new Date().toISOString().slice(0, 10);
-  const metricRef = `https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot/estadisticas/porDia/${hoy}.json`;
   try {
-    const r = await fetch(metricRef);
-    const cur = r.ok ? (await r.json()) || {} : {};
-    await fetch(metricRef, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mensajes: (cur.mensajes || 0) + 1,
-        conversaciones: existing ? 0 : 1 // solo si es nueva conversación
-      })
-    });
-  } catch (e) {}
+    let cur = {};
+    if (hasServiceAccount(env)) {
+      cur = (await fbAdminGet(env, '/arcano/db' + dbPathMetric)) || {};
+    } else {
+      const r = await fetch(`${FB_BASE}${dbPathMetric}.json`);
+      cur = r.ok ? (await r.json()) || {} : {};
+    }
+    const newMetrics = {
+      mensajes: (cur.mensajes || 0) + 1,
+      conversaciones: existing ? 0 : 1 // solo si es nueva conversación
+    };
+    if (hasServiceAccount(env)) {
+      await fbAdminPatch(env, '/arcano/db' + dbPathMetric, newMetrics);
+    } else {
+      await fetch(`${FB_BASE}${dbPathMetric}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMetrics)
+      });
+    }
+  } catch (e) {
+    console.error('[chat] Error actualizando métricas diarias:', e.message);
+  }
 }

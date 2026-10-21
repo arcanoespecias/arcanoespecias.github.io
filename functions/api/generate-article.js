@@ -1,6 +1,7 @@
 // /api/generate-article.js — Cloudflare Pages Function
 // Genera artículos de blog usando Gemini API.
 // Lee la API key desde Firebase (configurada por el admin en el panel Chatbot IA).
+// ETAPA 4.5: Usa Firebase Admin SDK para leer config/gemini_key (regla auth.uid admin).
 //
 // Acepta 2 formatos de API key:
 //   - AIzaSy... (formato legacy, hasta 2025)
@@ -8,6 +9,10 @@
 //
 // El admin hace POST con: { prompt, config: { temperatura, maxTokens } }
 // Recibe: { text, model, usage }
+
+import { fbAdminGet, hasServiceAccount } from '../_lib/firebase-admin.js';
+
+const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,31 +49,45 @@ async function getApiKey(env) {
     return _cachedKey;
   }
 
-  // 3. Leer de Firebase (public read)
+  // 3. Leer de Firebase (Admin si hay SA, fallback público)
   //    Primero buscar en arcano/db/config/gemini_key (panel Blog)
   //    Luego en arcano/db/chatbot/config/apiKey (panel Chatbot IA)
   //    Aceptar cualquier de los 2 paths para compatibilidad.
   try {
-    // Intento 1: arcano/db/config/gemini_key
-    let r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/config/gemini_key.json');
-    if (r.ok) {
-      const key = await r.json();
-      // Aceptar formatos AIzaSy... (legacy) y AQ.... (nuevo Gemini 2026)
-      if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
-        _cachedKey = key;
-        _cachedKeyTs = Date.now();
-        return key;
+    let key1 = null, key2 = null;
+    if (hasServiceAccount(env)) {
+      // Admin: leer config completa (más eficiente que 2 fetches separados)
+      try {
+        const config = await fbAdminGet(env, '/arcano/db/config');
+        key1 = config?.gemini_key;
+      } catch (e) {
+        console.error('[generate-article] Error leyendo /config (admin):', e.message);
       }
+      try {
+        const chatbot = await fbAdminGet(env, '/arcano/db/chatbot');
+        key2 = chatbot?.config?.apiKey;
+      } catch (e) {
+        console.error('[generate-article] Error leyendo /chatbot (admin):', e.message);
+      }
+    } else {
+      // Fallback público
+      const r1 = await fetch(`${FB_BASE}/config/gemini_key.json`);
+      if (r1.ok) key1 = await r1.json();
+      const r2 = await fetch(`${FB_BASE}/chatbot/config/apiKey.json`);
+      if (r2.ok) key2 = await r2.json();
+    }
+
+    // Intento 1: arcano/db/config/gemini_key
+    if (key1 && typeof key1 === 'string' && (key1.startsWith('AIzaSy') || key1.startsWith('AQ.'))) {
+      _cachedKey = key1;
+      _cachedKeyTs = Date.now();
+      return key1;
     }
     // Intento 2: arcano/db/chatbot/config/apiKey
-    r = await fetch('https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db/chatbot/config/apiKey.json');
-    if (r.ok) {
-      const key = await r.json();
-      if (key && (key.startsWith('AIzaSy') || key.startsWith('AQ.'))) {
-        _cachedKey = key;
-        _cachedKeyTs = Date.now();
-        return key;
-      }
+    if (key2 && typeof key2 === 'string' && (key2.startsWith('AIzaSy') || key2.startsWith('AQ.'))) {
+      _cachedKey = key2;
+      _cachedKeyTs = Date.now();
+      return key2;
     }
     return null;
   } catch (e) {

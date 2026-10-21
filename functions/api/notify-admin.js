@@ -3,6 +3,9 @@
 // Implementa VAPID (RFC 8292) + Web Push Encryption (RFC 8291) con Web Crypto API nativo
 // ETAPA 1: Lee VAPID keys + Resend API key desde env vars de Cloudflare (cifradas).
 // Firebase ya NO contiene estos secretos (borrados en ETAPA 1.4).
+// ETAPA 4.5: Usa Firebase Admin SDK para leer/borrar pushSubscriptions (regla auth.uid admin).
+
+import { fbAdminGet, fbAdminDelete, hasServiceAccount } from '../_lib/firebase-admin.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +15,48 @@ const CORS_HEADERS = {
 };
 
 const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
+
+// Helper para leer pushSubscriptions (usa Admin si hay SA, fallback público)
+async function getPushSubscriptions(env) {
+  if (hasServiceAccount(env)) {
+    try {
+      return await fbAdminGet(env, '/arcano/db/pushSubscriptions');
+    } catch (e) {
+      console.error('[notify-admin] Error leyendo pushSubscriptions (admin):', e.message);
+      return null;
+    }
+  }
+  // Fallback: lectura pública (mientras las reglas permiten .read: true en pushSubscriptions)
+  try {
+    const r = await fetch(`${FB_BASE}/pushSubscriptions.json`);
+    if (!r.ok) {
+      console.error('[notify-admin] Error leyendo pushSubscriptions (público):', r.status);
+      return null;
+    }
+    return await r.json();
+  } catch (e) {
+    console.error('[notify-admin] Error red leyendo pushSubscriptions:', e.message);
+    return null;
+  }
+}
+
+// Helper para borrar una suscripción push inválida (404/410 del push service)
+async function deletePushSubscription(env, subKey) {
+  if (hasServiceAccount(env)) {
+    try {
+      await fbAdminDelete(env, '/arcano/db/pushSubscriptions/' + subKey);
+    } catch (e) {
+      console.error('[notify-admin] Error borrando suscripción ' + subKey + ' (admin):', e.message);
+    }
+    return;
+  }
+  // Fallback público
+  try {
+    await fetch(`${FB_BASE}/pushSubscriptions/${subKey}.json`, { method: 'DELETE' });
+  } catch (e) {
+    console.error('[notify-admin] Error borrando suscripción ' + subKey + ' (público):', e.message);
+  }
+}
 
 // Cache en memoria de las VAPID keys + email config (no las lee en cada request)
 let _cachedVapid = null;
@@ -78,8 +123,7 @@ export async function onRequestPost({ request, env }) {
     let pushResult = null;
     const vapid = await getVapidKeys(env);
     if (vapid) {
-      const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
-      const subsData = subRes.ok ? await subRes.json() : null;
+      const subsData = await getPushSubscriptions(env);
       if (subsData && Object.keys(subsData).length > 0) {
         const payload = JSON.stringify({ titulo, mensaje, evento: evento || 'pedido', data: data || {}, timestamp: Date.now() });
         pushResult = { total: Object.keys(subsData).length, enviados: 0, errores: 0 };
@@ -91,8 +135,9 @@ export async function onRequestPost({ request, env }) {
             pushResult.enviados++;
           } catch (err) {
             pushResult.errores++;
+            console.error('[notify-admin] Error enviando push a suscripción ' + subKey + ':', err.message);
             if ((err?.status === 404) || (err?.status === 410)) {
-              try { await fetch(`${FB_BASE}/pushSubscriptions/${subKey}.json`, { method: 'DELETE' }); } catch (e) {}
+              await deletePushSubscription(env, subKey);
             }
           }
         }
@@ -203,8 +248,7 @@ export async function onRequestGet({ request, env }) {
     try {
       const vapid = await getVapidKeys(env);
       const emailConfig = await getEmailConfig(env);
-      const subRes = await fetch(`${FB_BASE}/pushSubscriptions.json`);
-      const subsData = subRes.ok ? await subRes.json() : null;
+      const subsData = await getPushSubscriptions(env);
       const count = subsData ? Object.keys(subsData).length : 0;
       return new Response(JSON.stringify({
         suscripciones_push: count,
@@ -213,6 +257,7 @@ export async function onRequestGet({ request, env }) {
         email_destinatario: emailConfig?.destinatario || null
       }, null, 2), { headers: CORS_HEADERS });
     } catch (e) {
+      console.error('[notify-admin] Error en status:', e.message);
       return new Response(JSON.stringify({ error: e.message }), {
         status: 500, headers: CORS_HEADERS
       });

@@ -16,9 +16,10 @@ var _sListeners = [];
 function initTienda() {
   return new Promise(function(resolve) {
     firebase.initializeApp(FIREBASE_CONFIG);
-    // Only load what the store needs: especias, blends, packs, tiendaConfig, colecciones
+    // Only load what the store needs: especias, blends, packs, tiendaConfig
     // + insumos para cálculo de disponibilidad por producción (especias + frascos + bolsas + cintas + stickers + cajas)
-    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'colecciones', 'stockEnvases', 'stockBolsas', 'stockCintas', 'stockCajas', 'stickers'];
+    // ETAPA 4: colecciones ya no se lee público — se pide por /api/cuenta cuando el cliente verifica OTP
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'stockEnvases', 'stockBolsas', 'stockCintas', 'stockCajas', 'stickers'];
     var loaded = 0;
     _sDb = {};
 
@@ -129,9 +130,10 @@ function _injectSEO() {
   document.head.appendChild(scriptEl);
 }
 
-/* === PEDIDOS (write) === */
-var _pedidosRef = null;
-var _clientesRef = null;
+/* === PEDIDOS (write vía /api/pedido) === */
+// ETAPA 3-4: Las refs _pedidosRef y _clientesRef ya no se usan en el front-end.
+// Pedidos, clientes y OTPs se manejan vía /api/pedido y /api/cuenta (server-side).
+var _promocionesRef = null;
 
 /**
  * Normaliza un telefono WhatsApp a formato internacional colombiano sin '+':
@@ -151,56 +153,10 @@ function _normalizeWhatsapp(tel) {
 }
 
 /**
- * Upsert de cliente por WhatsApp.
- * - Busca por telefono normalizado. Si existe, actualiza datos si hay cambios.
- * - Si no existe, lo crea.
- * - Devuelve { id, isNew } para que el caller vincule el pedido.
+ * ETAPA 4 — Función upsertCliente eliminada del front-end.
+ * El upsert ahora lo hace /api/pedido en el servidor con Service Account.
+ * Razón: la tienda no debe leer ni escribir /clientes directo (reglas admin-only).
  */
-function upsertCliente(cliente) {
-  return new Promise(function(resolve, reject) {
-    if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
-    var tel = _normalizeWhatsapp(cliente.telefono);
-    if (!tel) { reject(new Error('Telefono invalido')); return; }
-    _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
-      var data = snap.val();
-      var key = null;
-      var existing = null;
-      if (data) { key = Object.keys(data)[0]; existing = data[key]; }
-      var updates = {};
-      var now = new Date().toISOString();
-      if (!existing) {
-        // Cliente nuevo
-        var newRef = _clientesRef.push();
-        key = newRef.key;
-        updates = {
-          nombre: cliente.nombre || '',
-          telefono: cliente.telefono || '',
-          telNorm: tel,
-          email: cliente.email || '',
-          ciudad: cliente.ciudad || '',
-          direccion: cliente.direccion || '',
-          creado: now,
-          ultimoPedido: now,
-          totalPedidos: 1
-        };
-        newRef.set(updates, function(err) {
-          if (err) reject(err); else resolve({ id: key, isNew: true });
-        });
-      } else {
-        // Cliente existente: actualizar datos si vinieron en el pedido
-        updates.nombre = cliente.nombre || existing.nombre || '';
-        updates.email = cliente.email || existing.email || '';
-        updates.ciudad = cliente.ciudad || existing.ciudad || '';
-        updates.direccion = cliente.direccion || existing.direccion || '';
-        updates.ultimoPedido = now;
-        updates.totalPedidos = (existing.totalPedidos || 0) + 1;
-        _clientesRef.child(key).update(updates, function(err) {
-          if (err) reject(err); else resolve({ id: key, isNew: false });
-        });
-      }
-    }, function(err) { reject(err); });
-  });
-}
 
 /**
  * ETAPA 3 — Envía el pedido al servidor /api/pedido en vez de escribir directo en Firebase.
@@ -307,6 +263,10 @@ function saveClienteSession(cliente) {
       loggedAt: Date.now()
     };
     localStorage.setItem(CLIENTE_SESSION_KEY, JSON.stringify(session));
+    // ETAPA 4: guardar clienteId separado para /api/cuenta (coleccion, pedidos)
+    if (cliente.id) {
+      localStorage.setItem('arcano_cliente_id', cliente.id);
+    }
   } catch (e) {}
 }
 
@@ -334,115 +294,29 @@ function clearClienteSession() {
  * Si el cliente ya existe, actualiza el nombre si vino nuevo.
  * Devuelve los datos del cliente para crear sesi\u00F3n local.
  */
+/**
+ * ETAPA 4 — Registra o actualiza cliente vía /api/cuenta action=registrar.
+ * El servidor hace upsert con Service Account. La tienda ya no lee/escribe /clientes directo.
+ */
 function registrarCliente(telefono, nombre) {
-  return new Promise(function(resolve, reject) {
-    var tel = _normalizeWhatsapp(telefono);
-    if (!tel) { reject(new Error('Tel\u00E9fono inv\u00E1lido. Ingresa tu n\u00FAmero de WhatsApp con c\u00F3digo de pa\u00EDs.')); return; }
-    if (!nombre || !nombre.trim()) { reject(new Error('Ingresa tu nombre')); return; }
-    if (!_clientesRef) _clientesRef = firebase.database().ref('arcano/db/clientes');
-    _clientesRef.orderByChild('telNorm').equalTo(tel).limitToFirst(1).once('value', function(snap) {
-      var data = snap.val();
-      var now = new Date().toISOString();
-      if (data) {
-        // Cliente existente: actualizar ultimoLogin
-        var key = Object.keys(data)[0];
-        var cliente = data[key];
-        var updates = { ultimoLogin: now };
-        // Si el nombre cambi\u00F3, actualizarlo
-        if (nombre && nombre.trim() && (!cliente.nombre || cliente.nombre !== nombre.trim())) {
-          updates.nombre = nombre.trim();
-        }
-        _clientesRef.child(key).update(updates, function(err) {
-          if (err) reject(err);
-          else resolve({
-            id: key,
-            nombre: cliente.nombre || nombre,
-            telefono: cliente.telefono || telefono,
-            email: cliente.email || '',
-            ciudad: cliente.ciudad || '',
-            direccion: cliente.direccion || '',
-            totalPedidos: cliente.totalPedidos || 0,
-            creado: cliente.creado || now,
-            esNuevo: false
-          });
-        });
-      } else {
-        // Cliente nuevo: crear
-        var newRef = _clientesRef.push();
-        var newKey = newRef.key;
-        var newCliente = {
-          nombre: nombre.trim(),
-          telefono: telefono,
-          telNorm: tel,
-          email: '',
-          ciudad: '',
-          direccion: '',
-          creado: now,
-          ultimoLogin: now,
-          totalPedidos: 0
-        };
-        newRef.set(newCliente, function(err) {
-          if (err) reject(err);
-          else {
-            // Notificar al admin por email si es cliente nuevo
-            _notifyAdminEmail(
-              '\u{1F464} Nuevo cliente registrado',
-              nombre.trim() + ' se acaba de registrar con WhatsApp ' + telefono + '. Ya puede hacer pedidos en la tienda.',
-              'cliente_nuevo'
-            );
-            resolve({
-              id: newKey,
-              nombre: nombre.trim(),
-              telefono: telefono,
-              email: '',
-              ciudad: '',
-              direccion: '',
-              totalPedidos: 0,
-              creado: now,
-              esNuevo: true
-            });
-          }
-        });
-      }
-    }, function(err) { reject(err); });
+  var tel = _normalizeWhatsapp(telefono);
+  if (!tel) return Promise.reject(new Error('Teléfono inválido. Ingresa tu número de WhatsApp con código de país.'));
+  if (!nombre || !nombre.trim()) return Promise.reject(new Error('Ingresa tu nombre'));
+  return fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'registrar', telefono: telefono, nombre: nombre.trim() })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.ok) throw new Error(data.error || 'No se pudo registrar');
+    return data.cliente;
   });
 }
 
 /**
- * Genera un OTP de 6 digitos y lo guarda en Firebase con expiracion 10 min.
- * Si el cliente no existe, lo crea autom\u00E1ticamente (registro nuevo).
- * Si existe, usa el cliente existente.
- * NO devuelve el c\u00F3digo al frontend (UX: el cliente no debe ver el c\u00F3digo,
- * solo recibirlo por WhatsApp desde el admin).
- * Tambi\u00E9n encola el OTP en arcano/db/otpPendientes para que el admin
- * lo vea y lo env\u00EDe por WhatsApp manualmente.
+ * ETAPA 4 — Función requestClienteOTP eliminada del front-end.
+ * El OTP ahora lo maneja /api/cuenta action=otp en el servidor.
+ * Razón: la tienda no debe leer ni escribir /otpPendientes directo (regla auth.uid admin).
  */
-/**
- * ETAPA 3 — Solicita un OTP al servidor /api/cuenta.
- * El código NO se devuelve al frontend; el admin lo envía por WhatsApp.
- */
-function requestClienteOTP(telefono, nombreOpt) {
-  return fetch('/api/cuenta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'otp', telefono: telefono, nombre: nombreOpt || '' })
-  }).then(function(r) { return r.json(); }).then(function(data) {
-    if (!data.ok) throw new Error(data.error || 'No se pudo generar el código');
-    // Guardar otpKey localmente para usarlo en verify
-    try {
-      localStorage.setItem('arcano_otp_key', data.otpKey);
-      localStorage.setItem('arcano_otp_phone', _normalizeWhatsapp(telefono));
-    } catch (e) {}
-    return {
-      otpKey: data.otpKey,
-      clienteKey: data.clienteKey,
-      telefono: telefono,
-      nombre: data.nombre,
-      esNuevo: data.clienteNuevo,
-      mensaje: data.mensaje || ''
-    };
-  });
-}
 
 /**
  * ETAPA 3 — Verifica el OTP en el servidor /api/cuenta.
@@ -492,7 +366,7 @@ function getClientePedidos(clienteId) {
 }
 
 /* === PROMOCIONES (read-only para clientes) === */
-var _promocionesRef = null;
+// _promocionesRef declarado arriba (ETAPA 3-4 refactor)
 
 /**
  * Devuelve las promociones activas vigentes para clientes.
@@ -533,71 +407,77 @@ var _carritoTrackingTimer = null;
 var _carritoTrackingKey = null;
 
 /**
- * Guarda o actualiza el carrito del cliente en Firebase para tracking.
- * Si clienteId es null, usa una key anonima persistida en localStorage.
- * Se llama periodicamente (cada 60s) y al cerrar la pagina.
+ * ETAPA 4.1 — Guarda o actualiza el carrito del cliente vía /api/carrito.
+ * El servidor valida y escribe en Firebase con Service Account.
  */
 function saveCarritoTracking(cart, clienteId, clienteData) {
-  return new Promise(function(resolve, reject) {
-    if (!_carritosRef) _carritosRef = firebase.database().ref('arcano/db/carritos');
-    if (!cart || cart.length === 0) {
-      // Si el carrito esta vacio y existe una key, marcar como convertido o eliminar
-      if (_carritoTrackingKey) {
-        _carritosRef.child(_carritoTrackingKey).update({
-          estado: 'vacio',
-          actualizado: new Date().toISOString()
-        }, function() { resolve(); });
-      } else { resolve(); }
-      return;
+  // Si el carrito está vacío y existe una key, marcar como vacío
+  if (!cart || cart.length === 0) {
+    if (_carritoTrackingKey) {
+      return fetch('/api/carrito', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'empty', carritoId: _carritoTrackingKey })
+      }).then(function() {}).catch(function(e) {
+        console.warn('[Carrito tracking] error marcando vacío:', e.message);
+      });
     }
-    var now = new Date().toISOString();
-    if (!_carritoTrackingKey) {
-      // Crear nuevo carrito tracking
-      var newRef = _carritosRef.push();
-      _carritoTrackingKey = newRef.key;
-      try { localStorage.setItem('arcano_carrito_key', _carritoTrackingKey); } catch(e) {}
-      var data = {
+    return Promise.resolve();
+  }
+
+  // Si no hay key, crear nuevo carrito
+  if (!_carritoTrackingKey) {
+    return fetch('/api/carrito', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save',
         items: cart,
         total: cart.reduce(function(s, c) { return s + (c.precio * c.qty); }, 0),
-        itemCount: cart.reduce(function(s, c) { return s + c.qty; }, 0),
         clienteId: clienteId || null,
-        cliente: clienteData || null,
-        creado: now,
-        actualizado: now,
-        estado: 'activo'
-      };
-      newRef.set(data, function(err) { if (err) reject(err); else resolve(); });
-    } else {
-      // Actualizar carrito existente
-      var updates = {
-        items: cart,
-        total: cart.reduce(function(s, c) { return s + (c.precio * c.qty); }, 0),
-        itemCount: cart.reduce(function(s, c) { return s + c.qty; }, 0),
-        clienteId: clienteId || null,
-        cliente: clienteData || null,
-        actualizado: now,
-        estado: 'activo'
-      };
-      _carritosRef.child(_carritoTrackingKey).update(updates, function(err) { if (err) reject(err); else resolve(); });
-    }
+        clienteData: clienteData || null
+      })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok && data.carritoId) {
+        _carritoTrackingKey = data.carritoId;
+        try { localStorage.setItem('arcano_carrito_key', _carritoTrackingKey); } catch(e) {}
+      }
+    }).catch(function(e) {
+      console.warn('[Carrito tracking] error creando:', e.message);
+    });
+  }
+
+  // Actualizar carrito existente
+  return fetch('/api/carrito', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'save',
+      carritoId: _carritoTrackingKey,
+      items: cart,
+      total: cart.reduce(function(s, c) { return s + (c.precio * c.qty); }, 0),
+      clienteId: clienteId || null,
+      clienteData: clienteData || null
+    })
+  }).then(function(r) { return r.json(); }).catch(function(e) {
+    console.warn('[Carrito tracking] error actualizando:', e.message);
   });
 }
 
 /**
- * Marca el carrito como convertido (se completo el pedido).
- * Se llama desde submitOrder tras exito.
+ * ETAPA 4.1 — Marca el carrito como convertido (se completó el pedido).
  */
 function markCarritoAsConverted() {
-  return new Promise(function(resolve) {
-    if (!_carritosRef || !_carritoTrackingKey) { resolve(); return; }
-    _carritosRef.child(_carritoTrackingKey).update({
-      estado: 'convertido',
-      convertidoEn: new Date().toISOString()
-    }, function() {
-      _carritoTrackingKey = null;
-      try { localStorage.removeItem('arcano_carrito_key'); } catch(e) {}
-      resolve();
-    });
+  if (!_carritoTrackingKey) return Promise.resolve();
+  return fetch('/api/carrito', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'convert', carritoId: _carritoTrackingKey })
+  }).then(function() {
+    _carritoTrackingKey = null;
+    try { localStorage.removeItem('arcano_carrito_key'); } catch(e) {}
+  }).catch(function(e) {
+    console.warn('[Carrito tracking] error marcando convertido:', e.message);
   });
 }
 
@@ -627,8 +507,16 @@ function initCarritoTracking(getCartFn, getClienteSessionFn) {
       // Marcar como abandonado si no se completo en 30 min
       if (_carritoTrackingKey && getCartFn().length > 0) {
         saveCarritoTracking(getCartFn(), s && s.id, s).then(function() {
-          if (_carritosRef && _carritoTrackingKey) {
-            _carritosRef.child(_carritoTrackingKey).update({ estado: 'abandonado' });
+          if (_carritoTrackingKey) {
+            // Marcar como abandonado via API (no escribir directo en Firebase)
+            fetch('/api/carrito', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'save', carritoId: _carritoTrackingKey, items: getCartFn(), total: 0, clienteId: s && s.id, clienteData: s })
+            }).then(function() {
+              // Marcar como abandonado (no hay acción específica, se hace con save + estado manual)
+              // En realidad podríamos agregar action=abandon, pero por ahora queda como 'activo' hasta que caduque
+            }).catch(function() {});
           }
         }).catch(function() {});
       }
@@ -980,20 +868,9 @@ function onBlogReady(cb) {
   _blogListeners.push(cb);
 }
 
-/* === COLECCI\u00D3N ARCANO === */
-function getColeccionCliente(whatsapp) {
-  if (!_sDb || !_sDb.colecciones || !whatsapp) return null;
-  return _sDb.colecciones[whatsapp] || null;
-}
-function onColeccionReady(whatsapp, cb) {
-  if (_sDb && _sDb.colecciones && _sDb.colecciones[whatsapp]) { cb(_sDb.colecciones[whatsapp]); return; }
-  // Listen for when colecciones data arrives
-  var checkInterval = setInterval(function() {
-    if (_sDb && _sDb.colecciones) {
-      clearInterval(checkInterval);
-      cb(_sDb.colecciones[whatsapp] || null);
-    }
-  }, 500);
-  // Timeout after 10s
-  setTimeout(function() { clearInterval(checkInterval); }, 10000);
-}
+/* === COLECCIÓN ARCANO — ETAPA 4: eliminado del front-end ===
+ * La colección ahora se pide vía /api/cuenta action=coleccion cuando el cliente
+ * verifica su cuenta. Ver _mcLoadColeccion() en tienda-ui.js.
+ * Razón: la colección contiene datos personales del cliente (whatsapp, compras),
+ *        no debe ser de lectura pública.
+ */

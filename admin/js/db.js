@@ -2174,6 +2174,7 @@ function deleteVenta(id) {
 var SESSION_KEY = DB_KEY + '_session';
 var SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días (cache local; Firebase Auth decide la expiración real)
 var ADMIN_EMAILS = ['arcanoespecias@gmail.com']; // Lista blanca provisional ETAPA 2
+var ADMIN_UIDS = ['V8ccJn6KP2cCmnVKVgn8ejlGUG22']; // UID del admin (ETAPA 4: las reglas de Firebase validan esto)
 
 function authenticateUser(email, password) {
   return new Promise(function(resolve, reject) {
@@ -2188,12 +2189,18 @@ function authenticateUser(email, password) {
     _firebaseAuth.signInWithEmailAndPassword(email, password)
       .then(function(cred) {
         var user = cred.user;
-        // Verificar lista blanca (ETAPA 2: solo emails autorizados)
+        // Verificar lista blanca por email (defensa en profundidad)
         var emailLower = (user.email || email || '').toLowerCase();
         if (ADMIN_EMAILS.indexOf(emailLower) === -1) {
           // Logout inmediato si el usuario no es admin autorizado
           _firebaseAuth.signOut();
           reject(new Error('Este usuario no tiene permisos de administrador'));
+          return;
+        }
+        // Verificar UID (defensa en profundidad — las reglas de Firebase también validan esto)
+        if (ADMIN_UIDS.indexOf(user.uid) === -1) {
+          _firebaseAuth.signOut();
+          reject(new Error('UID no autorizado. Contactá al administrador del sistema.'));
           return;
         }
         var now = Date.now();

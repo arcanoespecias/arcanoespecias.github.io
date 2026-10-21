@@ -269,23 +269,35 @@ async function actionVerify(env, body) {
   };
 }
 
+// === Helper: verificar sesión y devolver cliente + otpData ===
+async function _verifySession(env, sessionToken, clienteId) {
+  if (!sessionToken || !clienteId) {
+    return { ok: false, status: 401, error: 'Sesión inválida' };
+  }
+  const otpData = await fbGet(env, `/otpPendientes/${sessionToken}`);
+  if (!otpData || !otpData.verificado) {
+    return { ok: false, status: 401, error: 'Sesión inválida o expirada' };
+  }
+  if (otpData.clienteKey !== clienteId) {
+    return { ok: false, status: 403, error: 'Token no corresponde al cliente' };
+  }
+  if (Date.now() > (otpData.expira || 0) + VERIFIED_TTL_MS) {
+    return { ok: false, status: 401, error: 'Sesión expirada' };
+  }
+  // Leer cliente para obtener telNorm (key de la colección)
+  const cliente = await fbGet(env, `/clientes/${clienteId}`);
+  if (!cliente) {
+    return { ok: false, status: 404, error: 'Cliente no encontrado' };
+  }
+  return { ok: true, otpData, cliente };
+}
+
 // === ACTION: pedidos del cliente (requiere sessionToken) ===
 async function actionPedidos(env, body) {
   const { sessionToken, clienteId } = body;
-  if (!sessionToken || !clienteId) {
-    return { ok: false, status: 401, body: { ok: false, error: 'Sesión inválida' } };
-  }
-
-  // Verificar que el sessionToken sea un OTP verificado y que el clienteId coincida
-  const otpData = await fbGet(env, `/otpPendientes/${sessionToken}`);
-  if (!otpData || !otpData.verificado) {
-    return { ok: false, status: 401, body: { ok: false, error: 'Sesión inválida o expirada' } };
-  }
-  if (otpData.clienteKey !== clienteId) {
-    return { ok: false, status: 403, body: { ok: false, error: 'Token no corresponde al cliente' } };
-  }
-  if (Date.now() > (otpData.expira || 0) + VERIFIED_TTL_MS) {
-    return { ok: false, status: 401, body: { ok: false, error: 'Sesión expirada' } };
+  const sessionCheck = await _verifySession(env, sessionToken, clienteId);
+  if (!sessionCheck.ok) {
+    return { ok: false, status: sessionCheck.status, body: { ok: false, error: sessionCheck.error } };
   }
 
   // Leer pedidos del cliente (sin orderBy para evitar dependencia de indexOn en reglas)
@@ -313,6 +325,148 @@ async function actionPedidos(env, body) {
   };
 }
 
+// === ACTION: colección del cliente (tarjeta de lealtad, requiere sessionToken) ===
+async function actionColeccion(env, body) {
+  const { sessionToken, clienteId } = body;
+  const sessionCheck = await _verifySession(env, sessionToken, clienteId);
+  if (!sessionCheck.ok) {
+    return { ok: false, status: sessionCheck.status, body: { ok: false, error: sessionCheck.error } };
+  }
+
+  // La colección se guarda en /colecciones con key = whatsapp del cliente
+  const cliente = sessionCheck.cliente;
+  const whatsapp = cliente.telefono || cliente.telNorm || '';
+  if (!whatsapp) {
+    // Cliente sin teléfono — devolver cartón vacío
+    return {
+      ok: true,
+      body: {
+        ok: true,
+        coleccion: {
+          whatsapp: '', nombre: cliente.nombre || '', casilleros: 0,
+          completado: false, canjeado: false, historial: []
+        }
+      }
+    };
+  }
+
+  // Normalizar whatsapp para buscarlo como key en /colecciones
+  // La key original en Firebase es el teléfono sin '+' ni espacios (formato internacional colombiano)
+  var keyWhatsapp = String(whatsapp).replace(/[^0-9+]/g, '');
+  if (keyWhatsapp.startsWith('+')) keyWhatsapp = keyWhatsapp.substring(1);
+
+  // Probar varias claves posibles (con y sin código de país)
+  const allColecciones = await fbGet(env, '/colecciones');
+  var coleccion = null;
+  if (allColecciones && typeof allColecciones === 'object') {
+    // Buscar match exacto primero
+    if (allColecciones[keyWhatsapp]) {
+      coleccion = allColecciones[keyWhatsapp];
+    } else {
+      // Buscar por variantes: sin '57' adelante, con '57' adelante
+      var keys = Object.keys(allColecciones);
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        // Comparar solo por dígitos
+        var kDigits = k.replace(/\D/g, '');
+        var wDigits = keyWhatsapp.replace(/\D/g, '');
+        if (kDigits === wDigits || kDigits.endsWith(wDigits) || wDigits.endsWith(kDigits)) {
+          coleccion = allColecciones[k];
+          break;
+        }
+      }
+    }
+  }
+
+  if (!coleccion) {
+    // Cartón vacío para clientes nuevos
+    coleccion = {
+      whatsapp: keyWhatsapp,
+      nombre: cliente.nombre || '',
+      casilleros: 0,
+      completado: false,
+      canjeado: false,
+      historial: []
+    };
+  }
+
+  return {
+    ok: true,
+    body: {
+      ok: true,
+      coleccion: coleccion
+    }
+  };
+}
+
+// === ACTION: registrar o actualizar cliente (login directo por WhatsApp) ===
+// ETAPA 4 — Migración de registrarCliente (tienda-data.js) al servidor.
+// La tienda ya no lee/escribe /clientes directo.
+async function actionRegistrar(env, body) {
+  const { telefono, nombre } = body;
+  if (!telefono) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Teléfono obligatorio' } };
+  }
+  if (!nombre || !nombre.trim()) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Nombre obligatorio' } };
+  }
+  // Reutilizar upsertClienteByPhone
+  const result = await upsertClienteByPhone(env, telefono, nombre.trim());
+  // Devolver datos del cliente al frontend
+  return {
+    ok: true,
+    body: {
+      ok: true,
+      cliente: {
+        id: result.key,
+        nombre: result.cliente.nombre || nombre.trim(),
+        telefono: result.cliente.telefono || telefono,
+        email: result.cliente.email || '',
+        ciudad: result.cliente.ciudad || '',
+        direccion: result.cliente.direccion || '',
+        totalPedidos: result.cliente.totalPedidos || 0,
+        creado: result.cliente.creado || ''
+      },
+      esNuevo: result.isNew
+    }
+  };
+}
+
+// === ACTION: verificar si existe un cliente por teléfono (para autocompletar UI) ===
+// ETAPA 4 — Migración de _mcBuscarCliente (tienda-ui.js).
+// La tienda ya no lee /clientes directo.
+async function actionCheck(env, body) {
+  const { telefono } = body;
+  if (!telefono) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Teléfono obligatorio' } };
+  }
+  const tel = normalizeWhatsapp(telefono);
+  if (!tel) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Teléfono inválido' } };
+  }
+  const allClientes = await fbGet(env, '/clientes');
+  if (allClientes && typeof allClientes === 'object') {
+    var keys = Object.keys(allClientes);
+    for (var i = 0; i < keys.length; i++) {
+      var c = allClientes[keys[i]];
+      if (c && c.telNorm === tel) {
+        return {
+          ok: true,
+          body: {
+            ok: true,
+            existe: true,
+            cliente: { nombre: c.nombre || '' }
+          }
+        };
+      }
+    }
+  }
+  return {
+    ok: true,
+    body: { ok: true, existe: false, cliente: null }
+  };
+}
+
 // === MAIN ROUTER ===
 export async function onRequestGet({ request }) {
   const url = new URL(request.url);
@@ -320,7 +474,7 @@ export async function onRequestGet({ request }) {
   return new Response(JSON.stringify({
     ok: true,
     service: 'cuenta',
-    actions: ['otp', 'verify', 'pedidos', 'logout']
+    actions: ['otp', 'verify', 'pedidos', 'coleccion', 'registrar', 'check', 'logout']
   }), { headers: CORS_HEADERS });
 }
 
@@ -343,6 +497,15 @@ export async function onRequestPost({ request, env }) {
         break;
       case 'pedidos':
         result = await actionPedidos(env, body);
+        break;
+      case 'coleccion':
+        result = await actionColeccion(env, body);
+        break;
+      case 'registrar':
+        result = await actionRegistrar(env, body);
+        break;
+      case 'check':
+        result = await actionCheck(env, body);
         break;
       default:
         result = { ok: false, status: 400, body: { ok: false, error: 'Acción inválida: ' + action } };
