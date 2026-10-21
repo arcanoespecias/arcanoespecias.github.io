@@ -60,9 +60,13 @@ function calcularPesoTotal(items, cfgEnvio) {
     var item = items[i];
     var pesoUnitario = 0;
     var talla = (item.talla || '').toLowerCase();
-    if (talla === 'grande') pesoUnitario = cfgEnvio.frascoGrande;
-    else if (talla === 'pequeño' || talla === 'pequeno') pesoUnitario = cfgEnvio.frascoPequeno;
-    else if (talla === 'pack') pesoUnitario = cfgEnvio.pack;
+    // ETAPA 4 fix: normalizar alias de tallas — la tienda usa 'chico' internamente
+    var tallaItem = String(item.talla || '').toLowerCase();
+    if (tallaItem === 'chico' || tallaItem === 'small') tallaItem = 'pequeño';
+    if (tallaItem === 'grande' || tallaItem === 'large') tallaItem = 'grande';
+    if (tallaItem === 'grande') pesoUnitario = cfgEnvio.frascoGrande;
+    else if (tallaItem === 'pequeño' || tallaItem === 'pequeno') pesoUnitario = cfgEnvio.frascoPequeno;
+    else if (tallaItem === 'pack') pesoUnitario = cfgEnvio.pack;
     gramos += (pesoUnitario * (Number(item.qty) || 1));
   }
   return gramos;
@@ -229,7 +233,12 @@ async function validarItemsYCalcularSubtotal(items, catalogo) {
     if (!prod) {
       throw new Error('Producto no encontrado en catálogo: ' + tipo + ' #' + pid);
     }
-    var talla = (item.talla || '').toLowerCase();
+    var tallaOriginal = (item.talla || '').toLowerCase();
+    // ETAPA 4 fix: normalizar alias de tallas — la tienda usa 'chico' internamente
+    // pero el catálogo usa 'pequeño'. Aceptamos ambos + variantes.
+    var talla = tallaOriginal;
+    if (talla === 'chico' || talla === 'small') talla = 'pequeño';
+    if (talla === 'grande' || talla === 'large') talla = 'grande';
     var precioEsperado = 0;
     if (talla === 'grande') precioEsperado = Number(prod.precioTiendaGrande) || Number(prod.precioGrande) || 0;
     else if (talla === 'pequeño' || talla === 'pequeno') precioEsperado = Number(prod.precioTiendaChico) || Number(prod.precioChico) || 0;
