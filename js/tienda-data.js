@@ -18,8 +18,8 @@ function initTienda() {
     firebase.initializeApp(FIREBASE_CONFIG);
     // Only load what the store needs: especias, blends, packs, tiendaConfig
     // + insumos para cálculo de disponibilidad por producción (especias + frascos + bolsas + cintas + stickers + cajas)
-    // ETAPA 4: colecciones ya no se lee público — se pide por /api/cuenta cuando el cliente verifica OTP
-    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'stockEnvases', 'stockBolsas', 'stockCintas', 'stockCajas', 'stickers'];
+    // ETAPA 4 paso 4: stock* ya no se lee de Firebase directo — se piden vía /api/disponibilidad
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
     var loaded = 0;
     _sDb = {};
 
@@ -44,6 +44,8 @@ function initTienda() {
           // Render inmediato con datos cacheados
           resolve();
           cacheValid = true;
+          // ETAPA 4 paso 4: cargar stock de insumos desde /api/disponibilidad
+          _loadStockFromAPI();
         }
       }
     } catch(e) {}
@@ -55,6 +57,8 @@ function initTienda() {
         _injectSEO();
         _notifyListeners();
         if (!cacheValid) resolve();
+        // ETAPA 4 paso 4: cargar stock de insumos desde /api/disponibilidad
+        _loadStockFromAPI();
         // Guardar cache
         try {
           var toCache = { timestamp: Date.now() };
@@ -88,6 +92,31 @@ function _notifyListeners() {
 }
 
 function onTiendaChange(fn) { _sListeners.push(fn); }
+
+/* === ETAPA 4 paso 4: Cargar stock de insumos desde /api/disponibilidad ===
+ * Antes se leían de Firebase directo (stockEnvases, stockBolsas, etc.)
+ * Ahora se piden al servidor que los lee con Service Account.
+ * Se llama una vez al iniciar la tienda, después de que especias/blends estén listos.
+ */
+var _stockLoaded = false;
+function _loadStockFromAPI() {
+  if (_stockLoaded) return;
+  _stockLoaded = true;
+  fetch('/api/disponibilidad').then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || !data.ok) {
+      console.warn('[Tienda] No se pudo cargar disponibilidad — productos sin info de stock');
+      return;
+    }
+    _sDb.stockEnvases = data.stockEnvases || { chico: 0, grande: 0 };
+    _sDb.stockBolsas = data.stockBolsas || { chico: 0, grande: 0 };
+    _sDb.stockCintas = data.stockCintas || 0;
+    _sDb.stockCajas = data.stockCajas || 0;
+    _sDb.stickers = data.stickers || {};
+    _notifyListeners();
+  }).catch(function(e) {
+    console.warn('[Tienda] Error cargando disponibilidad:', e.message);
+  });
+}
 
 /* === SEO: JSON-LD fallback (only if no static prerender) === */
 var _seoInjected = false;
