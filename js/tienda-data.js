@@ -17,11 +17,14 @@ function initTienda() {
   return new Promise(function(resolve) {
     firebase.initializeApp(FIREBASE_CONFIG);
     // Only load what the store needs: especias, blends, packs, tiendaConfig
-    // + insumos para cálculo de disponibilidad por producción (especias + frascos + bolsas + cintas + stickers + cajas)
-    // ETAPA 4 paso 4: stock* ya no se lee de Firebase directo — se piden vía /api/disponibilidad
+    // ETAPA 4 paso 4: stock* se piden vía /api/disponibilidad (ver _loadStockFromAPI)
     var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
     var loaded = 0;
     _sDb = {};
+
+    // ETAPA 4: precargar /api/disponibilidad inmediatamente (en paralelo con Firebase)
+    // para que el stock llegue lo antes posible y no retrase el render del catálogo.
+    _loadStockFromAPI();
 
     // === CACHE LOCAL: cargar datos cacheados instant\u00E1neamente ===
     var CACHE_KEY = 'arcano_tienda_cache';
@@ -44,8 +47,6 @@ function initTienda() {
           // Render inmediato con datos cacheados
           resolve();
           cacheValid = true;
-          // ETAPA 4 paso 4: cargar stock de insumos desde /api/disponibilidad
-          _loadStockFromAPI();
         }
       }
     } catch(e) {}
@@ -57,8 +58,6 @@ function initTienda() {
         _injectSEO();
         _notifyListeners();
         if (!cacheValid) resolve();
-        // ETAPA 4 paso 4: cargar stock de insumos desde /api/disponibilidad
-        _loadStockFromAPI();
         // Guardar cache
         try {
           var toCache = { timestamp: Date.now() };
