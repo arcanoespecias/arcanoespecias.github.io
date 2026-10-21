@@ -38,30 +38,56 @@ const App = {
     // Esperar a que Firebase Auth dispare onAuthStateChanged por primera vez
     try { await ArcanoDB.waitForAuthReady(); } catch (e) {}
 
-    // Revisar si Firebase Auth tiene un usuario logueado
+    // ETAPA 4: NO entrar directo con cache localStorage si Firebase Auth no tiene usuario.
+    // Las reglas auth.uid === UID_ADMIN rechazan lecturas sin token válido.
     var fbUser = ArcanoDB.getFirebaseAuth ? ArcanoDB.getFirebaseAuth().currentUser : null;
     if (fbUser) {
-      // Hay sesión Firebase Auth vigente — verificar email en lista blanca
-      var email = (fbUser.email || '').toLowerCase();
-      if (ArcanoDB.getCurrentUser() && ArcanoDB.getCurrentUser().email === email) {
-        this.enterApp();
-        return;
+      // Usuario logueado en Firebase Auth → entrar a la app
+      // (los listeners de DB ya arrancaron desde _startAllListeners en onAuthStateChanged)
+      // Forzar sesión cacheada para getCurrentUser()
+      if (!ArcanoDB.getCurrentUser()) {
+        try {
+          var session = {
+            id: 'admin',
+            nombre: 'Administrador',
+            rol: 'admin',
+            email: (fbUser.email || '').toLowerCase(),
+            uid: fbUser.uid,
+            issuedAt: Date.now(),
+            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000
+          };
+          localStorage.setItem('arcano_v3_session', JSON.stringify(session));
+        } catch (e) {}
       }
-    }
-    // Sesión cache local válida (boot rápido en mobile)
-    var cachedUser = ArcanoDB.getCurrentUser();
-    if (cachedUser) {
       this.enterApp();
       return;
     }
+
+    // No hay usuario logueado en Firebase Auth — mostrar login
+    // (no usar cache localStorage porque daría permission_denied en lecturas)
     this.showLogin();
 
-    // Listener global: si Firebase Auth cambia estado (logout desde otra pestaña),
-    // limpiar sesión cache y volver a login
+    // Listener global: si el usuario se loguea más tarde (ej. otra pestaña),
+    // entrar a la app automáticamente
     var self = this;
     ArcanoDB.onAuthStateChanged(function(user) {
-      if (!user && ArcanoDB.getCurrentUser()) {
-        // Logout detectado desde otra pestaña
+      if (user && !ArcanoDB.getCurrentUser()) {
+        // Forzar sesión cacheada
+        try {
+          var session = {
+            id: 'admin',
+            nombre: 'Administrador',
+            rol: 'admin',
+            email: (user.email || '').toLowerCase(),
+            uid: user.uid,
+            issuedAt: Date.now(),
+            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000
+          };
+          localStorage.setItem('arcano_v3_session', JSON.stringify(session));
+        } catch (e) {}
+        self.enterApp();
+      } else if (!user && ArcanoDB.getCurrentUser()) {
+        // Logout detectado — limpiar cache y volver a login
         try { localStorage.removeItem('arcano_v3_session'); } catch (e) {}
         self.showLogin();
       }

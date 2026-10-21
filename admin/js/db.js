@@ -333,6 +333,12 @@ function _initFirebase() {
           _authReady = true;
           if (_pendingAuthResolve) { _pendingAuthResolve(); _pendingAuthResolve = null; }
         }
+        // ETAPA 4: si el usuario se loguea tardíamente (después del boot),
+        // arrancar los listeners de Firebase ahora que tenemos token válido.
+        if (user && !_ready) {
+          console.log('[DB] Usuario logueado detectado — arrancando listeners');
+          _startAllListeners();
+        }
         for (var i = 0; i < _authStateListeners.length; i++) {
           try { _authStateListeners[i](user); } catch (e) {}
         }
@@ -476,14 +482,70 @@ function initDB() {
   return new Promise(function(resolve) {
     _initFirebase();
 
-    // Always try localStorage cache for instant UI
-    var cached = null;
-    try { cached = JSON.parse(localStorage.getItem(DB_KEY)); } catch (e) {}
+    // ETAPA 4 fix: esperar a que Firebase Auth dispare onAuthStateChanged ANTES de
+    // hacer cualquier lectura/escritura a la database. Sin esto, las reglas
+    // auth.uid === UID_ADMIN rechazan con permission_denied y el admin queda colgado.
+    waitForAuthReady().then(function() {
+      // Verificar si hay un usuario logueado en Firebase Auth
+      var fbUser = _firebaseAuth ? _firebaseAuth.currentUser : null;
+      if (!fbUser) {
+        // No hay usuario logueado — no arrancar listeners (van a fallar).
+        // El core.js mostrará el login. Cuando el usuario se loguee, el listener
+        // onAuthStateChanged en _initFirebase() disparará y llamaremos _startAllListeners().
+        console.log('[DB] Sin usuario en Firebase Auth — esperando login antes de listeners');
+        _ready = false;
+        resolve();
+        return;
+      }
 
-    if (cached && cached.meta && cached.meta.version === DB_VERSION && _ensureStructureOn(cached)) {
-      _db = cached;
-      _ensureStructure();  // ensure new fields exist on cached data
+      // Hay usuario logueado — arrancar listeners con token válido
+      _startAllListeners();
+      resolve();
+    }).catch(function(e) {
+      console.error('[DB] Error esperando auth:', e);
+      resolve();
+    });
+  });
+}
+
+// ETAPA 4: extraer arranque de listeners en función aparte para poder llamarlo
+// también desde onAuthStateChanged cuando el usuario se loguea tardíamente.
+function _startAllListeners() {
+  // Always try localStorage cache for instant UI
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem(DB_KEY)); } catch (e) {}
+
+  if (cached && cached.meta && cached.meta.version === DB_VERSION && _ensureStructureOn(cached)) {
+    _db = cached;
+    _ensureStructure();  // ensure new fields exist on cached data
+    _ready = true;
+    _startFirebaseListener();
+    _startPedidosListener();
+    _startGrandesClientesListener();
+    _startClientesListener();
+    _startPromocionesListener();
+    _startCarritosListener();
+    _startOtpPendientesListener();
+    _startCostosListener();
+    return;
+  }
+
+  // Load from Firebase
+  if (_firebaseRef) {
+    _firebaseRef.once('value').then(function(snap) {
+      var fbData = snap.val();
+      if (fbData && fbData.meta && fbData.meta.version === DB_VERSION && _ensureStructureOn(fbData)) {
+        delete fbData.pedidos;
+        delete fbData.costosInsumos;
+        _db = fbData;
+        _ensureStructure();  // ensure new fields exist on Firebase data
+      } else {
+        _db = _emptyDB();
+        _ensureStructure();
+        _saveToFirebase();
+      }
       _ready = true;
+      _cacheLocal();
       _startFirebaseListener();
       _startPedidosListener();
       _startGrandesClientesListener();
@@ -492,48 +554,17 @@ function initDB() {
       _startCarritosListener();
       _startOtpPendientesListener();
       _startCostosListener();
-      resolve();
-      return;
-    }
-
-    // Load from Firebase
-    if (_firebaseRef) {
-      _firebaseRef.once('value').then(function(snap) {
-        var fbData = snap.val();
-        if (fbData && fbData.meta && fbData.meta.version === DB_VERSION && _ensureStructureOn(fbData)) {
-          delete fbData.pedidos;
-          delete fbData.costosInsumos;
-          _db = fbData;
-          _ensureStructure();  // ensure new fields exist on Firebase data
-        } else {
-          _db = _emptyDB();
-          _ensureStructure();
-          _saveToFirebase();
-        }
-        _ready = true;
-        _cacheLocal();
-        _startFirebaseListener();
-        _startPedidosListener();
-        _startGrandesClientesListener();
-        _startClientesListener();
-        _startPromocionesListener();
-        _startCarritosListener();
-      _startOtpPendientesListener();
-        _startCostosListener();
-        resolve();
-      }).catch(function() {
-        _db = _emptyDB();
-        _ensureStructure();
-        _ready = true;
-        resolve();
-      });
-    } else {
+    }).catch(function(err) {
+      console.error('[DB] Error cargando desde Firebase:', err.message);
       _db = _emptyDB();
       _ensureStructure();
       _ready = true;
-      resolve();
-    }
-  });
+    });
+  } else {
+    _db = _emptyDB();
+    _ensureStructure();
+    _ready = true;
+  }
 }
 
 function _ensureStructureOn(data) {
