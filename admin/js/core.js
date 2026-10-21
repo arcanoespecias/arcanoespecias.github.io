@@ -160,7 +160,10 @@ const App = {
     if (!user) { this.showLogin(); return; }
 
     ArcanoDB.onDBChange(function(type) {
-      if (type === 'remote_change') App.renderPage(App.currentPage);
+      // ETAPA 4: re-render siempre que lleguen datos (no solo remote_change).
+      // Antes solo re-renderizaba en 'remote_change', pero la primera carga
+      // venía con type 'init' y el dashboard quedaba en ceros.
+      App.renderPage(App.currentPage);
     });
 
     // Pedidos badge listener + audio notification

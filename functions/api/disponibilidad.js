@@ -3,7 +3,7 @@
 // La tienda ya no lee stock* directo de Firebase (reglas auth.uid admin).
 //
 // GET /api/disponibilidad → { stockEnvases, stockBolsas, stockCintas, stockCajas, stickers }
-// Solo devuelve los campos mínimos que la tienda necesita para calcular disponibilidad.
+// Optimización: 5 lecturas en paralelo (Promise.all) + cache en memoria 5 min.
 
 import { fbAdminGet, hasServiceAccount } from '../_lib/firebase-admin.js';
 
@@ -14,7 +14,38 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
+// Cache en memoria (5 minutos) — los stocks no cambian mientras un cliente navega
+let _cachedStock = null;
+let _cachedStockTs = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+async function leerStock(env, path) {
+  try {
+    const data = await fbAdminGet(env, '/arcano/db' + path);
+    return data || null;
+  } catch (e) {
+    console.error('[disponibilidad] Error leyendo ' + path + ':', e.message);
+    return null;
+  }
+}
+
+function _filterStickers(stickers) {
+  if (!stickers || typeof stickers !== 'object') return {};
+  var filtered = {};
+  var keys = Object.keys(stickers);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var st = stickers[k];
+    if (st && typeof st === 'object') {
+      filtered[k] = {
+        nombre: st.nombre || '',
+        stockChico: Number(st.stockChico) || 0,
+        stockGrande: Number(st.stockGrande) || 0
+      };
+    }
+  }
+  return filtered;
+}
 
 export async function onRequestGet({ request, env }) {
   if (request.method === 'OPTIONS') {
@@ -22,7 +53,6 @@ export async function onRequestGet({ request, env }) {
   }
 
   try {
-    // Leer las 5 colecciones de stock con Service Account
     if (!hasServiceAccount(env)) {
       return new Response(JSON.stringify({
         ok: false,
@@ -30,51 +60,39 @@ export async function onRequestGet({ request, env }) {
       }), { status: 500, headers: CORS_HEADERS });
     }
 
-    // Función helper: leer y filtrar solo campos necesarios
-    async function leerStock(path) {
-      try {
-        const data = await fbAdminGet(env, '/arcano/db' + path);
-        console.log('[disponibilidad] fbAdminGet ruta usada: arcano/db' + path);
-        return data || null;
-      } catch (e) {
-        console.error('[disponibilidad] Error leyendo ' + path + ':', e.message);
-        return null;
-      }
+    // Cache: si tenemos datos frescos (<5 min), devolver directo
+    if (_cachedStock && (Date.now() - _cachedStockTs) < CACHE_TTL) {
+      return new Response(JSON.stringify({
+        ok: true,
+        ..._cachedStock,
+        cached: true
+      }), { headers: CORS_HEADERS });
     }
 
+    // 5 lecturas en paralelo con Promise.all (más rápido que leer /arcano/db entero de 3MB)
     const [stockEnvases, stockBolsas, stockCintas, stockCajas, stickers] = await Promise.all([
-      leerStock('/stockEnvases'),
-      leerStock('/stockBolsas'),
-      leerStock('/stockCintas'),
-      leerStock('/stockCajas'),
-      leerStock('/stickers')
+      leerStock(env, '/stockEnvases'),
+      leerStock(env, '/stockBolsas'),
+      leerStock(env, '/stockCintas'),
+      leerStock(env, '/stockCajas'),
+      leerStock(env, '/stickers')
     ]);
 
-    // Filtrar stickers: solo nombre + stockChico + stockGrande (no otros campos internos)
-    var stickersFiltrados = null;
-    if (stickers && typeof stickers === 'object') {
-      stickersFiltrados = {};
-      var keys = Object.keys(stickers);
-      for (var i = 0; i < keys.length; i++) {
-        var k = keys[i];
-        var st = stickers[k];
-        if (st && typeof st === 'object') {
-          stickersFiltrados[k] = {
-            nombre: st.nombre || '',
-            stockChico: Number(st.stockChico) || 0,
-            stockGrande: Number(st.stockGrande) || 0
-          };
-        }
-      }
-    }
-
-    return new Response(JSON.stringify({
-      ok: true,
+    const result = {
       stockEnvases: stockEnvases || { chico: 0, grande: 0 },
       stockBolsas: stockBolsas || { chico: 0, grande: 0 },
       stockCintas: stockCintas || 0,
       stockCajas: stockCajas || 0,
-      stickers: stickersFiltrados || {}
+      stickers: _filterStickers(stickers)
+    };
+
+    // Guardar en cache
+    _cachedStock = result;
+    _cachedStockTs = Date.now();
+
+    return new Response(JSON.stringify({
+      ok: true,
+      ...result
     }), { headers: CORS_HEADERS });
 
   } catch (e) {
