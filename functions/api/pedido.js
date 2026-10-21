@@ -87,53 +87,41 @@ function calcularEnvio(ciudad, items, subtotal, cfgEnvio) {
   return { exito: true, costo: costo, gratis: false, categoria: categoria, pesoGramos: pesoGramos };
 }
 
-// === Helpers Firebase REST (usan Admin SDK cuando hay Service Account, fallback público) ===
+// === Helpers Firebase REST (requieren Service Account — sin fallback público) ===
 async function fbGet(env, path) {
-  if (hasServiceAccount(env)) {
-    return fbAdminGet(env, '/arcano/db' + path);
+  if (!hasServiceAccount(env)) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT no configurada. Operación rechazada.');
   }
-  const r = await fetch(`${FB_BASE}${path}.json`);
-  if (!r.ok) throw new Error('Firebase GET failed: ' + r.status);
-  return r.json();
+  const data = await fbAdminGet(env, '/arcano/db' + path);
+  console.log('[pedido] fbGet ruta usada: arcano/db' + path);
+  return data;
 }
 
 async function fbPut(env, path, body) {
-  if (hasServiceAccount(env)) {
-    return fbAdminPatch(env, '/arcano/db' + path, body); // PUT == PATCH para nuestros fines
+  if (!hasServiceAccount(env)) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT no configurada. Operación rechazada.');
   }
-  const r = await fetch(`${FB_BASE}${path}.json`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) throw new Error('Firebase PUT failed: ' + r.status);
-  return r.json();
+  const data = await fbAdminPatch(env, '/arcano/db' + path, body);
+  console.log('[pedido] fbPut ruta usada: arcano/db' + path);
+  return data;
 }
 
 async function fbPatch(env, path, body) {
-  if (hasServiceAccount(env)) {
-    return fbAdminPatch(env, '/arcano/db' + path, body);
+  if (!hasServiceAccount(env)) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT no configurada. Operación rechazada.');
   }
-  const r = await fetch(`${FB_BASE}${path}.json`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) throw new Error('Firebase PATCH failed: ' + r.status);
-  return r.json();
+  const data = await fbAdminPatch(env, '/arcano/db' + path, body);
+  console.log('[pedido] fbPatch ruta usada: arcano/db' + path);
+  return data;
 }
 
 async function fbPost(env, path, body) {
-  if (hasServiceAccount(env)) {
-    return fbAdminPost(env, '/arcano/db' + path, body);
+  if (!hasServiceAccount(env)) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT no configurada. Operación rechazada.');
   }
-  const r = await fetch(`${FB_BASE}${path}.json`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) throw new Error('Firebase POST failed: ' + r.status);
-  return r.json();
+  const data = await fbAdminPost(env, '/arcano/db' + path, body);
+  console.log('[pedido] fbPost ruta usada: arcano/db' + path);
+  return data;
 }
 
 // Normaliza teléfono WhatsApp a formato internacional colombiano sin +

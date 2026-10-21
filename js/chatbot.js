@@ -1,6 +1,7 @@
 /* ===================== CHATBOT ARCANO — WIDGET TIENDA =====================
- * Llama directamente a Mistral AI desde el navegador.
- * Lee API key y config desde Firebase (configurable desde admin).
+ * ETAPA 4: No accede a Firebase directo. Config pública vía /api/chat?action=config.
+ * Los logs de conversación los guarda /api/chat en el servidor (no duplicar en el browser).
+ * Catálogo de blends se sigue leyendo de Firebase (es público).
  */
 
 (function() {
@@ -41,14 +42,15 @@
   async function loadConfig() {
     if (_config && (Date.now() - _configTs) < CONFIG_CACHE_TTL) return _config;
     try {
-      var r = await fetch(FB_URL + '/chatbot.json');
+      // ETAPA 4: pedir config al servidor (no leer Firebase directo)
+      var r = await fetch('/api/chat?action=config');
       if (!r.ok) return null;
       var data = await r.json();
-      _config = data || { activo: false, config: {} };
+      _config = data || { activo: false };
       _configTs = Date.now();
       return _config;
     } catch (e) {
-      console.warn('[chatbot] config load error:', e);
+      console.warn('[chatbot] config load error:', e.message);
       return null;
     }
   }
@@ -106,7 +108,7 @@
 
     loadSession();
     if (_messages.length === 0) {
-      var saludo = (_config.config && _config.config.saludo) || 'Bienvenido, viajero. Soy el Guardián de Arcano. Contame qué vas a cocinar y te guiaré hacia el blend perfecto.';
+      var saludo = _config.saludo || 'Bienvenido, viajero. Soy el Guardián de Arcano. Contame qué vas a cocinar y te guiaré hacia el blend perfecto.';
       addMessage('bot', saludo);
       showQuickReplies(getDefaultQuickReplies());
     } else {
@@ -128,8 +130,7 @@
   }
 
   function getDefaultQuickReplies() {
-    var cfg = _config.config || {};
-    if (cfg.quickReplies && cfg.quickReplies.length) return cfg.quickReplies;
+    if (_config.quickReplies && _config.quickReplies.length) return _config.quickReplies;
     return [
       { label: '🌶 Para carnes', text: 'Tengo carne y quiero algo para parrilla' },
       { label: '🐟 Para pescado', text: 'Voy a cocinar pescado' },
@@ -224,48 +225,23 @@
     try {
       if (!_catalogo) _catalogo = await loadCatalogo();
 
-      var config = (_config && _config.config) || {};
-      var apiKey = config.apiKey;
-
-      if (!apiKey) {
-        removeTyping();
-        _isTyping = false;
-        addMessage('bot', ' 🔮 El Guardián aún no despierta. Pedile al administrador que configure la API key en el panel del chatbot. 🌿');
-        return;
-      }
-
+      // ETAPA 4: usar /api/chat como proxy al LLM (no llamar al LLM directo desde el browser).
+      // El servidor lee la API key con Service Account y la usa.
       var history = _messages.slice(-10).map(function(m) {
         return { role: m.role === 'bot' ? 'assistant' : 'user', content: m.content };
       });
       // Quitar el último user message (lo mandamos como nuevo messages)
       history.pop();
 
-      var systemPrompt = buildSystemPrompt(config, _catalogo);
-
-      // Llamar a Mistral AI directamente desde el navegador
-      var modelName = config.modelo || 'mistral-small-latest';
-      var url = 'https://api.mistral.ai/v1/chat/completions';
-
-      // Mistral usa formato OpenAI: messages = [{role, content}]
-      var messages = [{ role: 'system', content: systemPrompt }];
-      if (history.length > 0) {
-        messages = messages.concat(history);
-      } else {
-        messages.push({ role: 'user', content: text });
-      }
-
-      var resp = await fetch(url, {
+      var resp = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: modelName,
-          messages: messages,
-          temperature: Number(config.temperature) || 0.7,
-          max_tokens: 1200,
-          top_p: 0.9
+          messages: history.length > 0
+            ? history.concat([{ role: 'user', content: text }])
+            : [{ role: 'user', content: text }],
+          catalogo: _catalogo,
+          sessionId: _sessionId
         })
       });
 
@@ -274,7 +250,7 @@
       _isTyping = false;
 
       if (!resp.ok) {
-        console.error('[chatbot] Mistral error:', data);
+        console.error('[chatbot] /api/chat error:', data);
         var errMsg = 'Disculpá, tuve un problema técnico. ';
         if (resp.status === 429) errMsg += 'Límite de consultas alcanzado. Intentá de nuevo en unos minutos. 🌿';
         else if (resp.status === 401) errMsg += 'API key inválida. Avisale al administrador. 🌿';
@@ -283,13 +259,13 @@
         return;
       }
 
-      var reply = data?.choices?.[0]?.message?.content || 'Disculpá, no pude procesar tu consulta. 🌿';
-      var mentionedIds = extractBlendIds(reply, _catalogo);
+      var reply = data?.reply || data?.text || data?.choices?.[0]?.message?.content || 'Disculpá, no pude procesar tu consulta. 🌿';
+      var mentionedIds = data?.productosMencionados || extractBlendIds(reply, _catalogo);
       var cleanReply = reply.replace(/\[ID:\d+\]/g, '').trim();
       addMessage('bot', cleanReply, mentionedIds);
 
-      // Log asíncrono a Firebase (fire and forget)
-      logConversation(_sessionId, text, reply, mentionedIds);
+      // ETAPA 4: el log de conversación lo hace el servidor (chat.js logConversation)
+      // No duplicar en el browser — borrado logConversation del front-end.
 
       if (_messages.length <= 2) {
         showQuickReplies([
@@ -299,7 +275,7 @@
         ]);
       }
     } catch (e) {
-      console.error('[chatbot] send error:', e);
+      console.error('[chatbot] send error:', e.message);
       removeTyping();
       _isTyping = false;
       addMessage('bot', ' 🔌 Hubo un problema de conexión. Intentá de nuevo. 🌿');
@@ -379,20 +355,8 @@
     } catch (e) {}
   }
 
-  function buildSystemPrompt(config, catalogo) {
-    var personalidad = config?.personalidad || 'Eres el "Guardián de Arcano", asesor culinario místico de Arcano Especias, tienda colombiana de especias y blends artesanales.';
-    var saludo = config?.saludo || '';
-    var bloqueadas = (config?.palabrasBloqueadas || []).join(', ');
-
-    var catalogoStr = 'Ninguno';
-    if (catalogo && catalogo.length) {
-      catalogoStr = catalogo.map(function(b) {
-        return 'ID:' + b.id + ' | ' + b.nombre + ' | ' + b.categoria + ' | ' + (b.uso || '') + ' | $' + b.precioChico + '/$' + b.precioGrande + ' | ' + (b.descripcion?.slice(0, 200) || '');
-      }).join('\n');
-    }
-
-    return personalidad + '\n\nREGLAS:\n- Responde SIEMPRE en español neutro internacional (sin argentinismos, sin "vos", sin "che"). Usa "tú" y "usted" según convenga.\n- Tono cálido, místico, pero profesional.\n- Recomienda SIEMPRE blends del catálogo (no inventes productos).\n- Máximo 3 blends por respuesta. Si recomiendas más de uno, explica la diferencia.\n- Si mencionas un blend, incluye su ID entre corchetes [ID:N] para que el frontend muestre la tarjeta. Ejemplo: "Para pollo a la parrilla te recomiendo [ID:34] Garam Masala Clásico...".\n- Si la consulta no es sobre cocina/especias, deriva a WhatsApp.\n- Nunca des precios en USD, siempre COP con $.\n- No uses markdown con ## o **, usa texto plano con emojis 🌶🌿.\n- Si el usuario pregunta por envíos, pagos o pedidos, deriva a WhatsApp.\n\nPALABRAS BLOQUEADAS: ' + (bloqueadas || 'ninguna') + '\n\nCATÁLOGO DE BLENDS:\n' + catalogoStr;
-  }
+  // ETAPA 4 — buildSystemPrompt eliminado del front-end.
+  // El system prompt ahora lo construye el servidor en /api/chat.
 
   function extractBlendIds(text, catalogo) {
     var ids = new Set();
@@ -404,44 +368,8 @@
     return Array.from(ids);
   }
 
-  function logConversation(sessionId, userMsg, botReply, mentionedIds) {
-    try {
-      var logRef = FB_URL + '/chatbot/conversaciones/' + sessionId + '.json';
-      fetch(logRef).then(function(r) { return r.json(); }).then(function(existing) {
-        var mensajes = existing?.mensajes || [];
-        mensajes.push({ role: 'user', content: userMsg, ts: Date.now() });
-        mensajes.push({ role: 'assistant', content: botReply, productosMencionados: mentionedIds, ts: Date.now() + 1 });
-        var payload = {
-          sessionId: sessionId,
-          inicio: existing?.inicio || Date.now(),
-          ultimoMensaje: Date.now(),
-          mensajes: mensajes.slice(-20),
-          productosRecomendados: [...new Set([...(existing?.productosRecomendados || []), ...mentionedIds])],
-          cantMensajes: mensajes.length
-        };
-        return fetch(logRef, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }).then(function() {
-        // Incrementar métricas diarias
-        var hoy = new Date().toISOString().slice(0, 10);
-        var metricRef = FB_URL + '/chatbot/estadisticas/porDia/' + hoy + '.json';
-        return fetch(metricRef).then(function(r) { return r.json(); }).then(function(cur) {
-          cur = cur || {};
-          return fetch(metricRef, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              mensajes: (cur.mensajes || 0) + 1,
-              conversaciones: existing ? (cur.conversaciones || 0) : (cur.conversaciones || 0) + 1
-            })
-          });
-        });
-      }).catch(function() {});
-    } catch (e) {}
-  }
+  // ETAPA 4 — logConversation eliminado del front-end.
+  // El servidor /api/chat ya guarda conversaciones y métricas con Service Account.
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

@@ -49,32 +49,28 @@ async function getApiKey(env) {
     return _cachedKey;
   }
 
-  // 3. Leer de Firebase (Admin si hay SA, fallback público)
+  // 3. Leer de Firebase (requiere Service Account — sin fallback público)
   //    Primero buscar en arcano/db/config/gemini_key (panel Blog)
   //    Luego en arcano/db/chatbot/config/apiKey (panel Chatbot IA)
   //    Aceptar cualquier de los 2 paths para compatibilidad.
   try {
+    if (!hasServiceAccount(env)) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT no configurada.');
+    }
     let key1 = null, key2 = null;
-    if (hasServiceAccount(env)) {
-      // Admin: leer config completa (más eficiente que 2 fetches separados)
-      try {
-        const config = await fbAdminGet(env, '/arcano/db/config');
-        key1 = config?.gemini_key;
-      } catch (e) {
-        console.error('[generate-article] Error leyendo /config (admin):', e.message);
-      }
-      try {
-        const chatbot = await fbAdminGet(env, '/arcano/db/chatbot');
-        key2 = chatbot?.config?.apiKey;
-      } catch (e) {
-        console.error('[generate-article] Error leyendo /chatbot (admin):', e.message);
-      }
-    } else {
-      // Fallback público
-      const r1 = await fetch(`${FB_BASE}/config/gemini_key.json`);
-      if (r1.ok) key1 = await r1.json();
-      const r2 = await fetch(`${FB_BASE}/chatbot/config/apiKey.json`);
-      if (r2.ok) key2 = await r2.json();
+    try {
+      const config = await fbAdminGet(env, '/arcano/db/config');
+      console.log('[generate-article] fbAdminGet ruta usada: arcano/db/config');
+      key1 = config?.gemini_key;
+    } catch (e) {
+      console.error('[generate-article] Error leyendo /config:', e.message);
+    }
+    try {
+      const chatbot = await fbAdminGet(env, '/arcano/db/chatbot');
+      console.log('[generate-article] fbAdminGet ruta usada: arcano/db/chatbot');
+      key2 = chatbot?.config?.apiKey;
+    } catch (e) {
+      console.error('[generate-article] Error leyendo /chatbot:', e.message);
     }
 
     // Intento 1: arcano/db/config/gemini_key

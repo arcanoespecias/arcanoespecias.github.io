@@ -24,19 +24,12 @@ function validateField(value, maxLen, fieldName) {
 }
 
 async function fbPost(env, path, body) {
-  if (hasServiceAccount(env)) {
-    return fbAdminPost(env, '/arcano/db' + path, body);
+  if (!hasServiceAccount(env)) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT no configurada. Operación rechazada.');
   }
-  const r = await fetch(`${FB_BASE}${path}.json`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) {
-    const text = await r.text();
-    throw new Error('Firebase POST failed: ' + r.status + ' ' + text);
-  }
-  return r.json();
+  const data = await fbAdminPost(env, '/arcano/db' + path, body);
+  console.log('[grandes-clientes] fbPost ruta usada: arcano/db' + path);
+  return data;
 }
 
 export async function onRequestGet({ request }) {

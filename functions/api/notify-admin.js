@@ -16,45 +16,33 @@ const CORS_HEADERS = {
 
 const FB_BASE = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
 
-// Helper para leer pushSubscriptions (usa Admin si hay SA, fallback público)
+// Helper para leer pushSubscriptions (requiere Service Account — sin fallback público)
 async function getPushSubscriptions(env) {
-  if (hasServiceAccount(env)) {
-    try {
-      return await fbAdminGet(env, '/arcano/db/pushSubscriptions');
-    } catch (e) {
-      console.error('[notify-admin] Error leyendo pushSubscriptions (admin):', e.message);
-      return null;
-    }
+  if (!hasServiceAccount(env)) {
+    console.error('[notify-admin] FIREBASE_SERVICE_ACCOUNT no configurada. Operación rechazada.');
+    return null;
   }
-  // Fallback: lectura pública (mientras las reglas permiten .read: true en pushSubscriptions)
   try {
-    const r = await fetch(`${FB_BASE}/pushSubscriptions.json`);
-    if (!r.ok) {
-      console.error('[notify-admin] Error leyendo pushSubscriptions (público):', r.status);
-      return null;
-    }
-    return await r.json();
+    const data = await fbAdminGet(env, '/arcano/db/pushSubscriptions');
+    console.log('[notify-admin] fbAdminGet ruta usada: arcano/db/pushSubscriptions');
+    return data;
   } catch (e) {
-    console.error('[notify-admin] Error red leyendo pushSubscriptions:', e.message);
+    console.error('[notify-admin] Error leyendo pushSubscriptions:', e.message);
     return null;
   }
 }
 
 // Helper para borrar una suscripción push inválida (404/410 del push service)
 async function deletePushSubscription(env, subKey) {
-  if (hasServiceAccount(env)) {
-    try {
-      await fbAdminDelete(env, '/arcano/db/pushSubscriptions/' + subKey);
-    } catch (e) {
-      console.error('[notify-admin] Error borrando suscripción ' + subKey + ' (admin):', e.message);
-    }
+  if (!hasServiceAccount(env)) {
+    console.error('[notify-admin] FIREBASE_SERVICE_ACCOUNT no configurada. No se puede borrar suscripción.');
     return;
   }
-  // Fallback público
   try {
-    await fetch(`${FB_BASE}/pushSubscriptions/${subKey}.json`, { method: 'DELETE' });
+    await fbAdminDelete(env, '/arcano/db/pushSubscriptions/' + subKey);
+    console.log('[notify-admin] fbAdminDelete ruta usada: arcano/db/pushSubscriptions/' + subKey);
   } catch (e) {
-    console.error('[notify-admin] Error borrando suscripción ' + subKey + ' (público):', e.message);
+    console.error('[notify-admin] Error borrando suscripción ' + subKey + ':', e.message);
   }
 }
 
