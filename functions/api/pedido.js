@@ -422,7 +422,8 @@ export async function onRequestPost({ request, env }) {
           email: clienteEmail,
           nombre: cliente.nombre,
           telefono: cliente.telefono,
-          ciudad: cliente.ciudad || ciudad
+          ciudad: cliente.ciudad || ciudad,
+          ultimoPedido: now
         });
         brevoDebug.steps.push({ step: 'syncContact', ok: true });
       } catch (e) {

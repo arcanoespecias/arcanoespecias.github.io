@@ -12,7 +12,7 @@ const BREVO_SENDER_NAME = 'Arcano Especias';
 // === Agregar o actualizar contacto en Brevo + agregarlo a la lista ===
 // Si el contacto ya existe, lo actualiza (updateEnabled: true).
 // Si no tiene email, no hace nada (Brevo requiere email).
-async function syncContact(env, { email, nombre, telefono, ciudad }) {
+async function syncContact(env, { email, nombre, telefono, ciudad, ultimoPedido }) {
   console.log('[brevo] syncContact called:', { email, hasKey: !!env?.BREVO_API_KEY });
   if (!email || !env?.BREVO_API_KEY) {
     console.warn('[brevo] syncContact SKIP:', { email: !!email, hasKey: !!env?.BREVO_API_KEY });
@@ -25,10 +25,11 @@ async function syncContact(env, { email, nombre, telefono, ciudad }) {
       attributes: {
         NOMBRE: nombre || '',
         TELEFONO: telefono || '',
-        CIUDAD: ciudad || ''
+        CIUDAD: ciudad || '',
+        ULTIMO_PEDIDO: ultimoPedido || new Date().toISOString()
       },
       listIds: [BREVO_LIST_ID],
-      updateEnabled: true // Si ya existe, actualiza los atributos
+      updateEnabled: true
     };
 
     const resp = await fetch(`${BREVO_API_BASE}/contacts`, {
@@ -57,13 +58,14 @@ async function syncContact(env, { email, nombre, telefono, ciudad }) {
 }
 
 // === Actualizar contacto existente en Brevo ===
-async function updateContact(env, { email, nombre, telefono, ciudad }) {
+async function updateContact(env, { email, nombre, telefono, ciudad, ultimoPedido }) {
   try {
     const payload = {
       attributes: {
         NOMBRE: nombre || '',
         TELEFONO: telefono || '',
-        CIUDAD: ciudad || ''
+        CIUDAD: ciudad || '',
+        ULTIMO_PEDIDO: ultimoPedido || new Date().toISOString()
       }
     };
     const resp = await fetch(`${BREVO_API_BASE}/contacts/${encodeURIComponent(email)}`, {
