@@ -405,8 +405,10 @@ export async function onRequestPost({ request, env }) {
       console.warn('[pedido] notify-admin falló (no crítico):', e.message);
     }
 
-    // === Brevo: sincronizar contacto + emails transaccionales (fire-and-forget) ===
-    // Solo si el cliente tiene email. Si Brevo falla, el pedido igual se creó.
+    // === Brevo: sincronizar contacto + emails transaccionales ===
+    // Cloudflare Workers NO espera promesas sin await — si hacemos return sin await,
+    // el worker se cierra y las llamadas a Brevo se cancelan.
+    // Usamos await con try/catch para que no bloqueen el pedido si fallan.
     var clienteEmail = (cliente.email || '').trim();
     if (clienteEmail) {
       var itemsResumen = itemsValidados.map(function(it) {
@@ -416,37 +418,43 @@ export async function onRequestPost({ request, env }) {
       var pedidoResumen = itemsResumen + ' | Envío: ' + envioResumen;
 
       // 1. Sincronizar contacto en Brevo (agregar/actualizar en lista #2)
-      syncContact(env, {
-        email: clienteEmail,
-        nombre: cliente.nombre,
-        telefono: cliente.telefono,
-        ciudad: cliente.ciudad || ciudad
-      }).catch(function(e) {
+      try {
+        await syncContact(env, {
+          email: clienteEmail,
+          nombre: cliente.nombre,
+          telefono: cliente.telefono,
+          ciudad: cliente.ciudad || ciudad
+        });
+      } catch (e) {
         console.warn('[pedido] Brevo syncContact falló:', e.message);
-      });
+      }
 
       // 2. Email de bienvenida (solo si es cliente nuevo)
       if (clienteResult.isNew) {
-        sendWelcomeEmail(env, {
-          email: clienteEmail,
-          nombre: cliente.nombre,
-          pedidoResumen: pedidoResumen,
-          total: totalFinal
-        }).catch(function(e) {
+        try {
+          await sendWelcomeEmail(env, {
+            email: clienteEmail,
+            nombre: cliente.nombre,
+            pedidoResumen: pedidoResumen,
+            total: totalFinal
+          });
+        } catch (e) {
           console.warn('[pedido] Brevo welcomeEmail falló:', e.message);
-        });
+        }
       }
 
       // 3. Email de confirmación de pedido (siempre)
-      sendConfirmationEmail(env, {
-        email: clienteEmail,
-        nombre: cliente.nombre,
-        itemsResumen: itemsResumen,
-        envioResumen: envioResumen,
-        total: totalFinal
-      }).catch(function(e) {
+      try {
+        await sendConfirmationEmail(env, {
+          email: clienteEmail,
+          nombre: cliente.nombre,
+          itemsResumen: itemsResumen,
+          envioResumen: envioResumen,
+          total: totalFinal
+        });
+      } catch (e) {
         console.warn('[pedido] Brevo confirmationEmail falló:', e.message);
-      });
+      }
     }
 
     return new Response(JSON.stringify({
