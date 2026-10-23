@@ -13,7 +13,11 @@ const BREVO_SENDER_NAME = 'Arcano Especias';
 // Si el contacto ya existe, lo actualiza (updateEnabled: true).
 // Si no tiene email, no hace nada (Brevo requiere email).
 async function syncContact(env, { email, nombre, telefono, ciudad }) {
-  if (!email || !env?.BREVO_API_KEY) return;
+  console.log('[brevo] syncContact called:', { email, hasKey: !!env?.BREVO_API_KEY });
+  if (!email || !env?.BREVO_API_KEY) {
+    console.warn('[brevo] syncContact SKIP:', { email: !!email, hasKey: !!env?.BREVO_API_KEY });
+    return;
+  }
 
   try {
     const payload = {
@@ -80,7 +84,11 @@ async function updateContact(env, { email, nombre, telefono, ciudad }) {
 
 // === Enviar email transaccional con plantilla de Brevo ===
 async function sendTransactionalEmail(env, { templateId, toEmail, params }) {
-  if (!toEmail || !env?.BREVO_API_KEY) return;
+  console.log('[brevo] sendTransactionalEmail called:', { templateId, toEmail, hasKey: !!env?.BREVO_API_KEY });
+  if (!toEmail || !env?.BREVO_API_KEY) {
+    console.warn('[brevo] sendTransactionalEmail SKIP:', { toEmail: !!toEmail, hasKey: !!env?.BREVO_API_KEY });
+    return;
+  }
 
   try {
     const payload = {
@@ -105,9 +113,9 @@ async function sendTransactionalEmail(env, { templateId, toEmail, params }) {
 
     const result = await resp.json().catch(() => ({}));
     if (resp.ok) {
-      console.log('[brevo] Email transaccional enviado:', toEmail, 'template:', templateId);
+      console.log('[brevo] Email transaccional enviado:', toEmail, 'template:', templateId, 'messageId:', result.messageId);
     } else {
-      console.warn('[brevo] Error enviando email:', result.code || result.message || resp.status);
+      console.warn('[brevo] Error enviando email:', result.code || result.message || resp.status, JSON.stringify(result));
     }
   } catch (e) {
     console.warn('[brevo] sendTransactionalEmail error:', e.message);
