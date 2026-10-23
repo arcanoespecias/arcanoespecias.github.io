@@ -2,8 +2,10 @@
 // ETAPA 3 — Recibe el carrito del cliente, valida precios y envío en el servidor,
 // y crea el pedido en Firebase. La tienda deja de escribir pedidos directo.
 // ETAPA 4.5 — Usa Firebase Admin (Service Account) para bypassar reglas admin-only.
+// ETAPA Brevo — Sincroniza contacto + envía emails transaccionales (fire-and-forget).
 
 import { fbAdminGet, fbAdminPost, fbAdminPatch, hasServiceAccount } from '../_lib/firebase-admin.js';
+import { syncContact, sendWelcomeEmail, sendConfirmationEmail } from '../_lib/brevo.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -394,13 +396,57 @@ export async function onRequestPost({ request, env }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           evento: 'pedido',
-          titulo: '🛒 Pedido nuevo #' + pedidoId.slice(-6),
-          mensaje: cliente.nombre + ' (' + cliente.telefono + ') — $' + totalFinal.toLocaleString('es-CO') + ' — ' + itemsValidados.length + ' items',
+          titulo: '\u{1F6D2} Pedido nuevo #' + pedidoId.slice(-6),
+          mensaje: cliente.nombre + ' (' + cliente.telefono + ') \u2014 $' + totalFinal.toLocaleString('es-CO') + ' \u2014 ' + itemsValidados.length + ' items',
           data: { url: '/admin/', pedidoId: pedidoId }
         })
       });
     } catch (e) {
       console.warn('[pedido] notify-admin falló (no crítico):', e.message);
+    }
+
+    // === Brevo: sincronizar contacto + emails transaccionales (fire-and-forget) ===
+    // Solo si el cliente tiene email. Si Brevo falla, el pedido igual se creó.
+    var clienteEmail = (cliente.email || '').trim();
+    if (clienteEmail) {
+      var itemsResumen = itemsValidados.map(function(it) {
+        return it.qty + 'x ' + it.nombre + ' (' + it.talla + ')';
+      }).join(', ');
+      var envioResumen = envioGratis ? 'Gratis' : '$' + envioCosto.toLocaleString('es-CO');
+      var pedidoResumen = itemsResumen + ' | Envío: ' + envioResumen;
+
+      // 1. Sincronizar contacto en Brevo (agregar/actualizar en lista #2)
+      syncContact(env, {
+        email: clienteEmail,
+        nombre: cliente.nombre,
+        telefono: cliente.telefono,
+        ciudad: cliente.ciudad || ciudad
+      }).catch(function(e) {
+        console.warn('[pedido] Brevo syncContact falló:', e.message);
+      });
+
+      // 2. Email de bienvenida (solo si es cliente nuevo)
+      if (clienteResult.isNew) {
+        sendWelcomeEmail(env, {
+          email: clienteEmail,
+          nombre: cliente.nombre,
+          pedidoResumen: pedidoResumen,
+          total: totalFinal
+        }).catch(function(e) {
+          console.warn('[pedido] Brevo welcomeEmail falló:', e.message);
+        });
+      }
+
+      // 3. Email de confirmación de pedido (siempre)
+      sendConfirmationEmail(env, {
+        email: clienteEmail,
+        nombre: cliente.nombre,
+        itemsResumen: itemsResumen,
+        envioResumen: envioResumen,
+        total: totalFinal
+      }).catch(function(e) {
+        console.warn('[pedido] Brevo confirmationEmail falló:', e.message);
+      });
     }
 
     return new Response(JSON.stringify({
