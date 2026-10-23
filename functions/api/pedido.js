@@ -406,10 +406,9 @@ export async function onRequestPost({ request, env }) {
     }
 
     // === Brevo: sincronizar contacto + emails transaccionales ===
-    // Cloudflare Workers NO espera promesas sin await — si hacemos return sin await,
-    // el worker se cierra y las llamadas a Brevo se cancelan.
-    // Usamos await con try/catch para que no bloqueen el pedido si fallan.
     var clienteEmail = (cliente.email || '').trim();
+    var brevoDebug = { email: clienteEmail, hasKey: !!env?.BREVO_API_KEY, isNew: clienteResult.isNew, steps: [] };
+
     if (clienteEmail) {
       var itemsResumen = itemsValidados.map(function(it) {
         return it.qty + 'x ' + it.nombre + ' (' + it.talla + ')';
@@ -425,8 +424,9 @@ export async function onRequestPost({ request, env }) {
           telefono: cliente.telefono,
           ciudad: cliente.ciudad || ciudad
         });
+        brevoDebug.steps.push({ step: 'syncContact', ok: true });
       } catch (e) {
-        console.warn('[pedido] Brevo syncContact falló:', e.message);
+        brevoDebug.steps.push({ step: 'syncContact', ok: false, error: e.message });
       }
 
       // 2. Email de bienvenida (solo si es cliente nuevo)
@@ -438,8 +438,9 @@ export async function onRequestPost({ request, env }) {
             pedidoResumen: pedidoResumen,
             total: totalFinal
           });
+          brevoDebug.steps.push({ step: 'welcomeEmail', ok: true });
         } catch (e) {
-          console.warn('[pedido] Brevo welcomeEmail falló:', e.message);
+          brevoDebug.steps.push({ step: 'welcomeEmail', ok: false, error: e.message });
         }
       }
 
@@ -452,9 +453,12 @@ export async function onRequestPost({ request, env }) {
           envioResumen: envioResumen,
           total: totalFinal
         });
+        brevoDebug.steps.push({ step: 'confirmationEmail', ok: true });
       } catch (e) {
-        console.warn('[pedido] Brevo confirmationEmail falló:', e.message);
+        brevoDebug.steps.push({ step: 'confirmationEmail', ok: false, error: e.message });
       }
+    } else {
+      brevoDebug.steps.push({ step: 'skip', reason: 'cliente sin email' });
     }
 
     return new Response(JSON.stringify({
@@ -465,7 +469,8 @@ export async function onRequestPost({ request, env }) {
       total: totalFinal,
       envioCosto: envioCosto,
       envioGratis: envio.gratis,
-      items: itemsValidados.length
+      items: itemsValidados.length,
+      brevoDebug: brevoDebug
     }), { headers: CORS_HEADERS });
 
   } catch (e) {
