@@ -412,7 +412,7 @@ export async function onRequestPost({ request, env }) {
       var itemsResumen = itemsValidados.map(function(it) {
         return it.qty + 'x ' + it.nombre + ' (' + it.talla + ')';
       }).join(', ');
-      var envioResumen = envioGratis ? 'Gratis' : '$' + envioCosto.toLocaleString('es-CO');
+      var envioResumen = envio.gratis ? 'Gratis' : '$' + envioCosto.toLocaleString('es-CO');
       var pedidoResumen = itemsResumen + ' | Envío: ' + envioResumen;
 
       // 1. Sincronizar contacto en Brevo (agregar/actualizar en lista #2)
