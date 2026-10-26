@@ -151,8 +151,21 @@ async function sendConfirmationEmail(env, { email, nombre, itemsResumen, envioRe
   });
 }
 
+// === Email de código OTP de verificación ===
+async function sendOTPEmail(env, { email, nombre, codigo }) {
+  await sendTransactionalEmail(env, {
+    templateId: 6,
+    toEmail: email,
+    params: {
+      NOMBRE: nombre || 'Cliente',
+      CODIGO: codigo
+    }
+  });
+}
+
 export {
   syncContact,
   sendWelcomeEmail,
-  sendConfirmationEmail
+  sendConfirmationEmail,
+  sendOTPEmail
 };

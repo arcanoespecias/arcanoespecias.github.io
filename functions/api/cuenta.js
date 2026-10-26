@@ -9,6 +9,7 @@
 // La tienda deja de leer clientes / otpPendientes / pedidos directamente desde Firebase.
 
 import { fbAdminGet, fbAdminPost, fbAdminPatch, hasServiceAccount } from '../_lib/firebase-admin.js';
+import { sendOTPEmail } from '../_lib/brevo.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -459,6 +460,125 @@ async function actionCheck(env, body) {
   };
 }
 
+// === ACTION: enviar código OTP por email (verificación de email) ===
+async function actionSendOTPEmail(env, body) {
+  const { email, nombre, telefono } = body;
+  if (!email || !email.trim()) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Email es obligatorio' } };
+  }
+
+  // Generar código de 4 dígitos
+  var codigo = String(Math.floor(1000 + Math.random() * 9000));
+  var now = Date.now();
+  var expira = now + 10 * 60 * 1000; // 10 minutos
+
+  // Guardar OTP en /otpPendientes con referencia al email
+  var otpData = {
+    tipo: 'email_verification',
+    email: email.trim().toLowerCase(),
+    nombre: nombre || '',
+    telefono: telefono || '',
+    codigo: codigo,
+    creadoTs: now,
+    expira: expira,
+    intentos: 0,
+    verificado: false
+  };
+
+  try {
+    const result = await fbPost(env, '/otpPendientes', otpData);
+    const otpKey = result.name;
+
+    // Enviar email con el código via Brevo
+    try {
+      await sendOTPEmail(env, { email: email.trim(), nombre: nombre || '', codigo: codigo });
+    } catch (e) {
+      console.warn('[cuenta] Error enviando OTP email:', e.message);
+      return { ok: false, status: 500, body: { ok: false, error: 'No se pudo enviar el email de verificación' } };
+    }
+
+    return {
+      ok: true,
+      body: {
+        ok: true,
+        otpKey: otpKey,
+        email: email.trim(),
+        mensaje: 'Te enviamos un código de 4 dígitos por email. Revisá tu casilla.'
+      }
+    };
+  } catch (e) {
+    console.error('[cuenta] Error en sendOTP:', e.message);
+    return { ok: false, status: 500, body: { ok: false, error: 'No se pudo generar el código' } };
+  }
+}
+
+// === ACTION: verificar código OTP por email ===
+async function actionVerifyOTPEmail(env, body) {
+  const { otpKey, codigo, email } = body;
+  if (!otpKey || !codigo) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Falta otpKey o codigo' } };
+  }
+
+  try {
+    const otpData = await fbGet(env, '/otpPendientes/' + otpKey);
+    if (!otpData) {
+      return { ok: false, status: 404, body: { ok: false, error: 'El código expiró o no existe. Solicitá uno nuevo.' } };
+    }
+
+    // Verificar expiración
+    if (Date.now() > (otpData.expira || 0)) {
+      return { ok: false, status: 400, body: { ok: false, error: 'El código expiró. Solicitá uno nuevo.' } };
+    }
+
+    // Verificar intentos
+    const intentos = otpData.intentos || 0;
+    if (intentos >= 3) {
+      return { ok: false, status: 429, body: { ok: false, error: 'Demasiados intentos. Esperá 10 minutos.' } };
+    }
+
+    if (String(otpData.codigo) !== String(codigo).trim()) {
+      await fbPatch(env, '/otpPendientes/' + otpKey, { intentos: intentos + 1 });
+      var remaining = 3 - (intentos + 1);
+      return {
+        ok: false,
+        status: 400,
+        body: { ok: false, error: 'Código incorrecto. ' + (remaining > 0 ? remaining + ' intentos restantes.' : 'Sin intentos.') }
+      };
+    }
+
+    // Código correcto: marcar verificado
+    await fbPatch(env, '/otpPendientes/' + otpKey, { verificado: true, verificadoEn: Date.now() });
+
+    // Buscar y actualizar el cliente para marcar email como verificado
+    var clienteEmail = email || otpData.email || '';
+    if (clienteEmail) {
+      const allClientes = await fbGet(env, '/clientes');
+      if (allClientes && typeof allClientes === 'object') {
+        var keys = Object.keys(allClientes);
+        for (var i = 0; i < keys.length; i++) {
+          var c = allClientes[keys[i]];
+          if (c && (c.email || '').toLowerCase() === clienteEmail.toLowerCase()) {
+            await fbPatch(env, '/clientes/' + keys[i], { emailVerificado: true });
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      body: {
+        ok: true,
+        email: clienteEmail,
+        mensaje: 'Email verificado correctamente'
+      }
+    };
+  } catch (e) {
+    console.error('[cuenta] Error en verifyOTP:', e.message);
+    return { ok: false, status: 500, body: { ok: false, error: 'Error de conexión' } };
+  }
+}
+
 // === MAIN ROUTER ===
 export async function onRequestGet({ request }) {
   const url = new URL(request.url);
@@ -466,7 +586,7 @@ export async function onRequestGet({ request }) {
   return new Response(JSON.stringify({
     ok: true,
     service: 'cuenta',
-    actions: ['otp', 'verify', 'pedidos', 'coleccion', 'registrar', 'check', 'logout']
+    actions: ['otp', 'verify', 'pedidos', 'coleccion', 'registrar', 'check', 'send-otp-email', 'verify-otp-email', 'logout']
   }), { headers: CORS_HEADERS });
 }
 
@@ -498,6 +618,12 @@ export async function onRequestPost({ request, env }) {
         break;
       case 'check':
         result = await actionCheck(env, body);
+        break;
+      case 'send-otp-email':
+        result = await actionSendOTPEmail(env, body);
+        break;
+      case 'verify-otp-email':
+        result = await actionVerifyOTPEmail(env, body);
         break;
       default:
         result = { ok: false, status: 400, body: { ok: false, error: 'Acción inválida: ' + action } };

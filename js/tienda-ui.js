@@ -350,8 +350,109 @@ function sendOrder() {
   var dir = document.getElementById('o-dir').value.trim();
   var notas = document.getElementById('o-notas').value.trim();
   if (!nombre || !tel) { alert('Nombre y tel\u00E9fono son obligatorios'); return; }
+  if (!email) { alert('El email es obligatorio para confirmar tu pedido'); document.getElementById('o-email').focus(); return; }
   if (!ciudad) { alert('Selecciona tu ciudad'); return; }
   if (cart.length === 0) { alert('El carrito est\u00E1 vac\u00EDo'); return; }
+
+  // ETAPA email-verification: si el email no est\u00E1 verificado, pedir c\u00F3digo
+  var verifiedEmail = null;
+  try { verifiedEmail = localStorage.getItem('arcano_verified_email'); } catch(e) {}
+  if (verifiedEmail !== email.toLowerCase()) {
+    _showEmailVerificationStep(nombre, tel, email, ciudad, dir, notas);
+    return;
+  }
+
+  _proceedWithOrder(nombre, tel, email, ciudad, dir, notas);
+}
+
+// Pantalla de verificaci\u00F3n de email
+function _showEmailVerificationStep(nombre, tel, email, ciudad, dir, notas) {
+  var body = document.getElementById('cart-drawer-body');
+  body.innerHTML =
+    '<div style="padding:24px 16px">' +
+      '<h3 style="color:var(--gold);text-align:center;margin-bottom:8px">\u{1F510} Verific\u00E1 tu email</h3>' +
+      '<p style="color:var(--text-sec);text-align:center;font-size:0.9rem;margin-bottom:20px">Te enviamos un c\u00F3digo de 4 d\u00EDgitos a:<br><b style="color:var(--text)">' + esc(email) + '</b></p>' +
+      '<div id="otp-send-status" style="text-align:center;padding:16px;margin-bottom:12px;background:rgba(232,184,75,0.08);border-radius:8px">' +
+        '<p style="margin:0;font-size:0.9rem;color:var(--text-sec)">Enviando c\u00F3digo...</p>' +
+      '</div>' +
+      '<div class="form-group" style="display:none" id="otp-input-wrap">' +
+        '<label>C\u00F3digo de verificaci\u00F3n (4 d\u00EDgitos)</label>' +
+        '<input class="form-input" id="otp-code-input" placeholder="1234" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,4)" style="text-align:center;font-size:1.5rem;letter-spacing:0.5em;font-weight:700">' +
+      '</div>' +
+      '<button class="btn-primary btn-block" id="otp-verify-btn" disabled style="display:none;margin-top:12px">Verificar y enviar pedido</button>' +
+      '<button class="btn-secondary btn-block" id="otp-resend-btn" style="margin-top:8px">Reenviar c\u00F3digo</button>' +
+      '<button class="btn-secondary btn-block" onclick="renderCartDrawer()" style="margin-top:8px">Volver</button>' +
+    '</div>';
+
+  var verifyBtn = document.getElementById('otp-verify-btn');
+  var resendBtn = document.getElementById('otp-resend-btn');
+  if (verifyBtn) verifyBtn.onclick = function() { _verifyEmailOTP(email, nombre, tel, ciudad, dir, notas); };
+  if (resendBtn) resendBtn.onclick = function() { _resendEmailOTP(email, nombre); };
+
+  _resendEmailOTP(email, nombre);
+}
+
+var _currentOTPKey = null;
+
+function _resendEmailOTP(email, nombre) {
+  var statusEl = document.getElementById('otp-send-status');
+  var inputWrap = document.getElementById('otp-input-wrap');
+  var verifyBtn = document.getElementById('otp-verify-btn');
+  if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--text-sec)">Enviando c\u00F3digo...</p>';
+
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'send-otp-email', email: email, nombre: nombre })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok) {
+      _currentOTPKey = data.otpKey;
+      if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--green)">\u2705 Te enviamos el c\u00F3digo por email.</p>';
+      if (inputWrap) inputWrap.style.display = '';
+      if (verifyBtn) { verifyBtn.style.display = ''; verifyBtn.disabled = false; }
+      setTimeout(function() {
+        var codeInput = document.getElementById('otp-code-input');
+        if (codeInput) codeInput.focus();
+      }, 300);
+    } else {
+      if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--error)">\u274C ' + esc(data.error || 'Error') + '</p>';
+    }
+  }).catch(function(e) {
+    if (statusEl) statusEl.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--error)">\u274C Error de conexi\u00F3n</p>';
+  });
+}
+
+function _verifyEmailOTP(email, nombre, tel, ciudad, dir, notas) {
+  var codeInput = document.getElementById('otp-code-input');
+  if (!codeInput) return;
+  var codigo = codeInput.value.trim();
+  if (!codigo || codigo.length !== 4) { alert('Ingresa el c\u00F3digo de 4 d\u00EDgitos'); return; }
+
+  var btn = document.getElementById('otp-verify-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'verify-otp-email', otpKey: _currentOTPKey, codigo: codigo, email: email })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok) {
+      try { localStorage.setItem('arcano_verified_email', email.toLowerCase()); } catch(e) {}
+      if (btn) btn.textContent = '\u2713 Verificado';
+      setTimeout(function() {
+        _proceedWithOrder(nombre, tel, email, ciudad, dir, notas);
+      }, 500);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Verificar y enviar pedido'; }
+      alert(data.error || 'C\u00F3digo incorrecto');
+    }
+  }).catch(function(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Verificar y enviar pedido'; }
+    alert('Error de conexi\u00F3n');
+  });
+}
+
+function _proceedWithOrder(nombre, tel, email, ciudad, dir, notas) {
   var total = getCartTotal();
   // C\u00E1lculo real de env\u00EDo con Servientrega
   var envio = (typeof arcanoCalcularEnvio === 'function')
