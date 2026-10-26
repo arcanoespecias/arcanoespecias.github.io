@@ -1,33 +1,38 @@
-// /api/rebuild-coleccion.js — Cloudflare Pages Function (TEMPORAL)
+// /api/rebuild-coleccion.js — Cloudflare Pages Function (TEMPORAL) v2
 // =============================================================================
-// PROPOSITO: Reconstrucción ONE-TIME de la Colección Arcano.
-// Recorre TODOS los pedidos en /pedidos de Firebase, cuenta los blends pequeños
-// de cada pedido, y actualiza /colecciones/{whatsapp} con el conteo correcto.
+// PROPOSITO: Reconstrucción ONE-TIME de la Colección Arcano (v2).
+// Recorre TODOS los pedidos ENTREGADOS en /pedidos de Firebase, cuenta los
+// blends (chicos Y grandes, cada uno como 1) y reconstruye /colecciones.
+//
+// DIFERENCIAS vs v1:
+//   - Solo cuenta pedidos con estado === 'entregado' (no pedidos nuevos/cancelados)
+//   - Cuenta blends chicos Y grandes (antes solo chicos)
+//   - Resetea TODAS las colecciones existentes antes de reconstruir
+//   - El reset borra el flag canjeado y el historial previo (se reconstruye limpio)
 //
 // LÓGICA:
-//   1. Lee /pedidos (todos los pedidos históricos)
-//   2. Lee /colecciones (estado actual, para no perder historial manual)
-//   3. Lee /clientes (para obtener whatsapp normalizado)
-//   4. Para cada pedido:
-//      - Cuenta blends chicos (tipo blend o especia, talla chico/pequeño)
-//      - Identifica al cliente por telefono
-//      - Acumula el conteo en un mapa temporal { whatsapp: total }
+//   1. Lee /pedidos (todos)
+//   2. Filtra solo los pedidos con estado === 'entregado'
+//   3. Para cada pedido entregado:
+//      - Cuenta blends y especias en talla chico o grande (cada uno = 1)
+//      - Acumula en mapa temporal { whatsapp: { total, pedidos: [] } }
+//   4. Resetea /colecciones (borra todas las existentes)
 //   5. Para cada cliente en el mapa:
-//      - Si ya tiene colección: actualiza casilleros (preserva historial)
-//      - Si no tiene colección: crea una nueva
-//      - Caso especial: si ya canjeó (canjeado=true), resetea a 0 + suma nuevos
-//   6. Sincroniza el conteo actualizado a Brevo (COLECCION_ARCANO + PCT)
-//   7. Devuelve resumen con el detalle por cliente
+//      - Crea colección nueva con casilleros = min(10, total)
+//      - historial con todos los pedidos entregados
+//      - canjeado = false, completado = (casilleros >= 10)
+//   6. Sincroniza a Brevo (COLECCION_ARCANO + PCT)
+//   7. Devuelve resumen detallado
 //
 // USO:
 //   GET https://arcanoespecias.com/api/rebuild-coleccion?token=ARCANO_ADMIN_TOKEN
 //
 // SEGURIDAD:
-//   - Requiere token admin en query string (igual que sync-coleccion-brevo)
+//   - Requiere token admin en query string
 //   - CORRER UNA SOLA VEZ — después borrar del repo
 // =============================================================================
 
-import { fbAdminGet, fbAdminPatch, hasServiceAccount } from '../_lib/firebase-admin.js';
+import { fbAdminGet, fbAdminPatch, fbAdminDelete, hasServiceAccount } from '../_lib/firebase-admin.js';
 import { syncContact } from '../_lib/brevo.js';
 
 const CORS_HEADERS = {
@@ -35,7 +40,6 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-const BREVO_LIST_ID = 2;
 const FB_BASE = '/arcano/db';
 
 // === Normalizar whatsapp (igual que pedido.js) ===
@@ -52,34 +56,33 @@ function normalizeWhatsapp(phone) {
   return digits;
 }
 
-// === Contar blends chicos en un pedido ===
-// Mismo criterio que _contarBlendsColeccion del admin (db.js:992)
-function contarBlendsChicos(pedido) {
+// === Contar blends en un pedido (chicos Y grandes, cada uno = 1) ===
+function contarBlends(pedido) {
   var items = (pedido && pedido.items) || [];
   var count = 0;
   var nombres = [];
+  var detalle = { chicos: 0, grandes: 0 };
 
   for (var i = 0; i < items.length; i++) {
     var item = items[i] || {};
     var tipo = (item.tipo || 'blend').toLowerCase();
-    var tallaOriginal = (item.talla || 'chico').toLowerCase();
-    // Normalizar tallas (igual que pedido.js)
+    var tallaOriginal = (item.talla || '').toLowerCase();
     var talla = tallaOriginal;
-    if (talla === 'chico' || talla === 'small') talla = 'pequeño';
-    if (talla === 'grande' || talla === 'large') talla = 'grande';
+    if (talla === 'small' || talla === 'pequeno' || talla === 'pequeño') talla = 'chico';
+    if (talla === 'large') talla = 'grande';
     var qty = Number(item.qty) || Number(item.cantidad) || 0;
 
-    // Solo contar blends y especias en talla chico/pequeño
-    if ((tipo === 'blend' || tipo === 'especia') && (talla === 'pequeño' || talla === 'chico') && qty > 0) {
+    if ((tipo === 'blend' || tipo === 'especia') && (talla === 'chico' || talla === 'grande') && qty > 0) {
       count += qty;
+      if (talla === 'chico') detalle.chicos += qty;
+      if (talla === 'grande') detalle.grandes += qty;
       if (item.nombre) nombres.push(item.nombre);
     }
   }
-  return { count: count, nombres: nombres };
+  return { count: count, nombres: nombres, detalle: detalle };
 }
 
 export async function onRequestGet({ request, env }) {
-  // === Validar token admin ===
   const url = new URL(request.url);
   const token = url.searchParams.get('token');
   const expectedToken = env?.ARCANO_ADMIN_TOKEN;
@@ -97,7 +100,6 @@ export async function onRequestGet({ request, env }) {
     }), { status: 401, headers: CORS_HEADERS });
   }
 
-  // === Validar Service Account Firebase ===
   if (!hasServiceAccount(env)) {
     return new Response(JSON.stringify({
       ok: false,
@@ -106,9 +108,8 @@ export async function onRequestGet({ request, env }) {
   }
 
   try {
-    console.log('[rebuild-coleccion] Iniciando lectura de /pedidos, /colecciones, /clientes...');
+    console.log('[rebuild-coleccion-v2] Iniciando lectura de /pedidos, /colecciones, /clientes...');
 
-    // === Leer todo en paralelo ===
     const [pedidos, colecciones, clientes] = await Promise.all([
       fbAdminGet(env, FB_BASE + '/pedidos'),
       fbAdminGet(env, FB_BASE + '/colecciones'),
@@ -122,23 +123,11 @@ export async function onRequestGet({ request, env }) {
       }), { status: 500, headers: CORS_HEADERS });
     }
 
-    console.log('[rebuild-coleccion] Pedidos:', Object.keys(pedidos).length);
-    console.log('[rebuild-coleccion] Colecciones existentes:', colecciones ? Object.keys(colecciones).length : 0);
-    console.log('[rebuild-coleccion] Clientes:', clientes ? Object.keys(clientes).length : 0);
+    console.log('[rebuild-coleccion-v2] Pedidos totales:', Object.keys(pedidos).length);
+    console.log('[rebuild-coleccion-v2] Colecciones existentes:', colecciones ? Object.keys(colecciones).length : 0);
+    console.log('[rebuild-coleccion-v2] Clientes:', clientes ? Object.keys(clientes).length : 0);
 
-    // === Paso 1: Indexar colecciones existentes por teléfono normalizado ===
-    var coleccionByTel = {};
-    if (colecciones && typeof colecciones === 'object') {
-      var collKeys = Object.keys(colecciones);
-      for (var i = 0; i < collKeys.length; i++) {
-        var k = collKeys[i];
-        var kDigits = String(k).replace(/\D/g, '');
-        if (kDigits) coleccionByTel[kDigits] = { key: k, data: colecciones[k] };
-      }
-    }
-
-    // === Paso 2: Indexar clientes por telefono normalizado ===
-    // Para conseguir el email y sincronizar con Brevo
+    // === Indexar clientes por telefono normalizado ===
     var clienteByTel = {};
     if (clientes && typeof clientes === 'object') {
       var cliKeys = Object.keys(clientes);
@@ -156,11 +145,11 @@ export async function onRequestGet({ request, env }) {
       }
     }
 
-    // === Paso 3: Recorrer pedidos y acumular blends por cliente ===
-    // Mapa: { tel_normalizado: { totalBlends: N, pedidos: [{pedidoKey, fecha, count, nombres}], nombre, email } }
+    // === Filtrar solo pedidos ENTREGADOS y acumular blends por cliente ===
     var acumuladoPorTel = {};
     var pedidoKeys = Object.keys(pedidos);
-    var pedidosProcesados = 0;
+    var pedidosEntregados = 0;
+    var pedidosNoEntregados = 0;
     var pedidosSinCliente = 0;
     var pedidosSinBlends = 0;
 
@@ -168,6 +157,13 @@ export async function onRequestGet({ request, env }) {
       var pedidoKey = pedidoKeys[p];
       var pedido = pedidos[pedidoKey];
       if (!pedido) continue;
+
+      var estado = (pedido.estado || '').toLowerCase();
+      if (estado !== 'entregado') {
+        pedidosNoEntregados++;
+        continue;
+      }
+      pedidosEntregados++;
 
       var cliente = pedido.cliente || {};
       var telPedido = normalizeWhatsapp(cliente.telefono || cliente.whatsapp || '');
@@ -177,13 +173,11 @@ export async function onRequestGet({ request, env }) {
         continue;
       }
 
-      var conteo = contarBlendsChicos(pedido);
+      var conteo = contarBlends(pedido);
       if (conteo.count === 0) {
         pedidosSinBlends++;
         continue;
       }
-
-      pedidosProcesados++;
 
       if (!acumuladoPorTel[telPedido]) {
         var clienteData = clienteByTel[telPedido] || {};
@@ -193,76 +187,66 @@ export async function onRequestGet({ request, env }) {
           email: clienteData.email || '',
           telefonoOriginal: cliente.telefono || clienteData.telefono || '',
           totalBlends: 0,
+          totalChicos: 0,
+          totalGrandes: 0,
           pedidos: []
         };
       }
 
       acumuladoPorTel[telPedido].totalBlends += conteo.count;
+      acumuladoPorTel[telPedido].totalChicos += conteo.detalle.chicos;
+      acumuladoPorTel[telPedido].totalGrandes += conteo.detalle.grandes;
       acumuladoPorTel[telPedido].pedidos.push({
         pedidoKey: pedidoKey,
         fecha: pedido.creado || '',
         count: conteo.count,
+        chicos: conteo.detalle.chicos,
+        grandes: conteo.detalle.grandes,
         nombres: conteo.nombres
       });
 
-      // Actualizar nombre si no lo teníamos
       if (!acumuladoPorTel[telPedido].nombre && cliente.nombre) {
         acumuladoPorTel[telPedido].nombre = cliente.nombre;
       }
     }
 
-    console.log('[rebuild-coleccion] Pedidos procesados con blends:', pedidosProcesados);
-    console.log('[rebuild-coleccion] Clientes únicos con blends:', Object.keys(acumuladoPorTel).length);
+    console.log('[rebuild-coleccion-v2] Pedidos entregados:', pedidosEntregados);
+    console.log('[rebuild-coleccion-v2] Pedidos NO entregados (skip):', pedidosNoEntregados);
+    console.log('[rebuild-coleccion-v2] Clientes únicos con blends en pedidos entregados:', Object.keys(acumuladoPorTel).length);
 
-    // === Paso 4: Actualizar /colecciones en Firebase y sincronizar Brevo ===
+    // === Resetear TODAS las colecciones existentes ===
+    var coleccionesReseteadas = 0;
+    if (colecciones && typeof colecciones === 'object') {
+      var collResetKeys = Object.keys(colecciones);
+      for (var cr = 0; cr < collResetKeys.length; cr++) {
+        try {
+          await fbAdminDelete(env, FB_BASE + '/colecciones/' + collResetKeys[cr]);
+          coleccionesReseteadas++;
+        } catch (e) {
+          console.warn('[rebuild-coleccion-v2] No se pudo resetear colección', collResetKeys[cr], ':', e.message);
+        }
+      }
+    }
+    console.log('[rebuild-coleccion-v2] Colecciones reseteadas:', coleccionesReseteadas);
+
+    // === Crear colecciones nuevas con el conteo correcto ===
     var resultados = [];
-    var actualizados = 0;
-    var creados = 0;
-    var reseteados = 0;
-    var errores = 0;
+    var coleccionesCreadas = 0;
     var brevoSync = 0;
     var brevoErrores = 0;
+    var errores = 0;
 
     var telsAActualizar = Object.keys(acumuladoPorTel);
     for (var t = 0; t < telsAActualizar.length; t++) {
       var tel = telsAActualizar[t];
       var data = acumuladoPorTel[tel];
-      var coleccionExistente = coleccionByTel[tel] || null;
-      var keyColeccion = coleccionExistente ? coleccionExistente.key : tel;
 
       try {
-        // Determinar casilleros finales
-        var casillerosPrevios = coleccionExistente ? (Number(coleccionExistente.data.casilleros) || 0) : 0;
-        var canjeado = coleccionExistente ? (coleccionExistente.data.canjeado === true) : false;
-        var fueReseteado = false;
-
-        // Si ya canjeó, la colección empieza desde 0 + nuevos blends
-        // (comportamiento confirmado por el cliente: "casillero vuelve a 0")
-        var casillerosBase = 0;
-        if (canjeado) {
-          // El cliente ya canjeó — reseteamos y sumamos solo los blends nuevos
-          // Pero para no perder el historial de pedidos anteriores al canje,
-          // vamos a sumar TODOS los blends históricos al reset
-          // (esto puede llevar a >10 si hizo muchos pedidos)
-          casillerosBase = 0;
-          reseteados++;
-          fueReseteado = true;
-        } else {
-          // Cliente sin canjear: mantener lo que tiene y sumar los nuevos
-          // PERO: como estamos reconstruyendo desde cero, los casilleros previos
-          // ya fueron sumados por pedidos anteriores. Para no duplicar, usamos
-          // solo el total acumulado de TODOS los pedidos.
-          casillerosBase = 0; // Empezamos desde 0 y sumamos todo
-        }
-
-        // El total real es: casillerosBase (0) + todos los blends históricos
-        // Pero capamos a 10 (igual que addBlendsToColeccion en db.js:4165)
-        var casillerosFinal = Math.min(10, casillerosBase + data.totalBlends);
+        var casillerosFinal = Math.min(10, data.totalBlends);
         var completado = casillerosFinal >= 10;
+        var now = new Date().toISOString();
 
-        // Construir historial nuevo (preserva el existente)
-        var historialPrevio = (coleccionExistente && coleccionExistente.data.historial) || [];
-        var historialNuevo = data.pedidos.map(function(p) {
+        var historial = data.pedidos.map(function(p) {
           return {
             pedidoKey: p.pedidoKey,
             fecha: p.fecha,
@@ -271,47 +255,25 @@ export async function onRequestGet({ request, env }) {
           };
         });
 
-        // Combinar historial (no duplicar entries con mismo pedidoKey)
-        var historialCombinado = historialPrevio.slice();
-        var existingKeys = {};
-        for (var h = 0; h < historialCombinado.length; h++) {
-          if (historialCombinado[h].pedidoKey) {
-            existingKeys[historialCombinado[h].pedidoKey] = true;
-          }
-        }
-        for (var h2 = 0; h2 < historialNuevo.length; h2++) {
-          if (!existingKeys[historialNuevo[h2].pedidoKey]) {
-            historialCombinado.push(historialNuevo[h2]);
-          }
-        }
-
-        // Construir objeto coleccion completo
         var nuevaColeccion = {
           whatsapp: tel,
           nombre: data.nombre,
           casilleros: casillerosFinal,
           completado: completado,
-          canjeado: false, // Si estamos reconstruyendo, el canje se resetea
-          historial: historialCombinado,
-          creado: (coleccionExistente && coleccionExistente.data.creado) || new Date().toISOString(),
-          updated: new Date().toISOString(),
+          canjeado: false,
+          historial: historial,
+          creado: now,
+          updated: now,
           rebuilt: true,
-          rebuiltAt: new Date().toISOString()
+          rebuiltAt: now,
+          rebuiltVersion: 2
         };
 
-        // Guardar en Firebase
-        await fbAdminPatch(env, FB_BASE + '/colecciones/' + keyColeccion, nuevaColeccion);
+        await fbAdminPatch(env, FB_BASE + '/colecciones/' + tel, nuevaColeccion);
+        coleccionesCreadas++;
 
-        if (coleccionExistente) {
-          actualizados++;
-        } else {
-          creados++;
-        }
-
-        // Calcular pct para Brevo
         var pct = Math.min(100, casillerosFinal * 10);
 
-        // Sincronizar con Brevo (si tiene email)
         var brevoStatus = 'skip-no-email';
         if (data.email && env?.BREVO_API_KEY) {
           try {
@@ -319,8 +281,8 @@ export async function onRequestGet({ request, env }) {
               email: data.email,
               nombre: data.nombre,
               telefono: data.telefonoOriginal,
-              ciudad: '', // No lo tenemos acá, syncContact no lo sobreescribe si viene vacío? Sí lo sobreescribe con ''
-              ultimoPedido: new Date().toISOString(),
+              ciudad: '',
+              ultimoPedido: now,
               coleccionArcano: casillerosFinal,
               coleccionArcanoPct: pct
             });
@@ -337,13 +299,14 @@ export async function onRequestGet({ request, env }) {
           nombre: data.nombre,
           email: data.email || '(sin email)',
           telefono: data.telefonoOriginal,
-          pedidosContados: data.pedidos.length,
-          totalBlendsHistoricos: data.totalBlends,
-          casillerosPrevios: casillerosPrevios,
+          pedidosEntregados: data.pedidos.length,
+          totalBlends: data.totalBlends,
+          totalChicos: data.totalChicos,
+          totalGrandes: data.totalGrandes,
           casillerosFinales: casillerosFinal,
           pct: pct,
-          fueReseteado: fueReseteado,
-          coleccionStatus: coleccionExistente ? 'actualizada' : 'creada',
+          completado: completado,
+          coleccionStatus: 'creada',
           brevoStatus: brevoStatus
         });
 
@@ -355,31 +318,32 @@ export async function onRequestGet({ request, env }) {
           status: 'error',
           error: e.message
         });
-        console.error('[rebuild-coleccion] Error con cliente', tel, ':', e.message);
+        console.error('[rebuild-coleccion-v2] Error con cliente', tel, ':', e.message);
       }
     }
 
     return new Response(JSON.stringify({
       ok: true,
+      version: 2,
       resumen: {
         totalPedidosFirebase: pedidoKeys.length,
-        pedidosProcesadosConBlends: pedidosProcesados,
+        pedidosEntregados: pedidosEntregados,
+        pedidosNoEntregadosSkip: pedidosNoEntregados,
         pedidosSinCliente: pedidosSinCliente,
-        pedidosSinBlendsChicos: pedidosSinBlends,
+        pedidosSinBlends: pedidosSinBlends,
         clientesUnicosConBlends: Object.keys(acumuladoPorTel).length,
-        coleccionesActualizadas: actualizados,
-        coleccionesCreadas: creados,
-        coleccionesReseteadasPorCanje: reseteados,
+        coleccionesReseteadas: coleccionesReseteadas,
+        coleccionesCreadas: coleccionesCreadas,
         brevoSincronizados: brevoSync,
         brevoErrores: brevoErrores,
         errores: errores
       },
       resultados: resultados,
-      instrucciones: 'Si todo está OK, BORRAR este endpoint del repo y redesplegar. El comportamiento del canje es: casilleros vuelve a 0 (confirmado por el cliente).'
+      instrucciones: 'v2: solo cuenta pedidos entregados + cuenta blends chicos Y grandes (cada uno = 1). BORRAR después de correr.'
     }, null, 2), { headers: CORS_HEADERS });
 
   } catch (e) {
-    console.error('[rebuild-coleccion] Error:', e.message);
+    console.error('[rebuild-coleccion-v2] Error:', e.message);
     return new Response(JSON.stringify({
       ok: false,
       error: e.message

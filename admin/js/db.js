@@ -989,7 +989,7 @@ function _descontarStockPedido(pedido) {
   }
 }
 
-/* === Colecci\u00F3n Arcano: contar blends peque\u00F1os de un pedido === */
+/* === Colecci\u00F3n Arcano: contar blends de un pedido (chicos Y grandes) === */
 function _contarBlendsColeccion(pedido, pedidoKey) {
   try {
     var cliente = pedido.cliente || {};
@@ -1000,25 +1000,31 @@ function _contarBlendsColeccion(pedido, pedidoKey) {
     if (whatsapp.startsWith('+')) whatsapp = whatsapp.substring(1);
 
     var items = pedido.items || [];
-    var blendsChicosCount = 0;
+    var blendsCount = 0;
     var blendNombres = [];
 
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
       var tipo = item.tipo || 'blend';
-      var talla = item.talla || 'chico';
+      var tallaOriginal = (item.talla || 'chico').toLowerCase();
+      // Normalizar tallas (aceptar aliases)
+      var talla = tallaOriginal;
+      if (talla === 'small') talla = 'chico';
+      if (talla === 'pequeno' || talla === 'pequeño') talla = 'chico';
+      if (talla === 'large') talla = 'grande';
       var qty = Number(item.qty) || Number(item.cantidad) || 0;
 
-      // Solo contar blends y especias en talla chico (peque\u00F1o)
-      if ((tipo === 'blend' || tipo === 'especia') && talla === 'chico' && qty > 0) {
-        blendsChicosCount += qty;
+      // Contar blends y especias en talla chico O grande (cada frasco cuenta como 1)
+      // Confirmado por el negocio: los grandes también cuentan como 1 hacia la colección
+      if ((tipo === 'blend' || tipo === 'especia') && (talla === 'chico' || talla === 'grande') && qty > 0) {
+        blendsCount += qty;
         var nombre = item.nombre || item.productoNombre || '';
         if (nombre) blendNombres.push(nombre);
       }
     }
 
-    if (blendsChicosCount > 0) {
-      var col = addBlendsToColeccion(whatsapp, blendsChicosCount, pedidoKey, blendNombres);
+    if (blendsCount > 0) {
+      var col = addBlendsToColeccion(whatsapp, blendsCount, pedidoKey, blendNombres);
       // Actualizar el nombre del cliente en la colecci\u00F3n si no lo tiene
       if (!col.nombre && cliente.nombre) {
         col.nombre = cliente.nombre;

@@ -187,126 +187,6 @@ async function leerColeccionCliente(env, whatsapp) {
   }
 }
 
-// === Incrementar Colección Arcano del cliente después de un pedido ===
-// Cuenta los blends chicos del pedido y los suma a /colecciones/{whatsapp}.
-// Si el cliente no tiene colección, la crea. Si ya canjeó (canjeado=true),
-// respeta el reset (vuelve a 0 y suma los nuevos blends).
-// Devuelve { casillerosFinales, pct, incrementados, creado } o null si no aplica.
-async function incrementarColeccionCliente(env, items, cliente, pedidoId) {
-  const tel = normalizeWhatsapp(cliente.telefono);
-  if (!tel) {
-    console.warn('[pedido] incrementarColeccionCliente: teléfono inválido');
-    return null;
-  }
-
-  // Contar blends chicos en el pedido (mismo criterio que _contarBlendsColeccion del admin)
-  var blendsChicosCount = 0;
-  var blendNombres = [];
-  for (var i = 0; i < items.length; i++) {
-    var item = items[i] || {};
-    var tipo = (item.tipo || 'blend').toLowerCase();
-    var tallaOriginal = (item.talla || '').toLowerCase();
-    var talla = tallaOriginal;
-    if (talla === 'chico' || talla === 'small') talla = 'pequeño';
-    if (talla === 'grande' || talla === 'large') talla = 'grande';
-    var qty = Number(item.qty) || 0;
-
-    if ((tipo === 'blend' || tipo === 'especia') && talla === 'pequeño' && qty > 0) {
-      blendsChicosCount += qty;
-      if (item.nombre) blendNombres.push(item.nombre);
-    }
-  }
-
-  if (blendsChicosCount === 0) {
-    console.log('[pedido] No hay blends chicos en este pedido, no se incrementa colección');
-    return { casillerosFinales: 0, pct: 0, incrementados: 0, creado: false, skipped: true };
-  }
-
-  try {
-    // Buscar colección existente
-    const allColecciones = await fbGet(env, '/colecciones');
-    var key = tel;
-    var coleccion = null;
-    if (allColecciones && typeof allColecciones === 'object') {
-      var keys = Object.keys(allColecciones);
-      for (var k = 0; k < keys.length; k++) {
-        var kDigits = String(keys[k]).replace(/\D/g, '');
-        if (kDigits === tel || kDigits.endsWith(tel) || tel.endsWith(kDigits)) {
-          key = keys[k];
-          coleccion = allColecciones[keys[k]];
-          break;
-        }
-      }
-    }
-
-    var now = new Date().toISOString();
-    var creado = false;
-    var fueReset = false;
-
-    if (!coleccion) {
-      // Crear nueva colección
-      coleccion = {
-        whatsapp: tel,
-        nombre: cliente.nombre || '',
-        casilleros: 0,
-        completado: false,
-        canjeado: false,
-        historial: [],
-        creado: now
-      };
-      creado = true;
-    } else {
-      coleccion.historial = coleccion.historial || [];
-      coleccion.nombre = coleccion.nombre || cliente.nombre || '';
-    }
-
-    // Si ya completó 10 y no ha canjeado, no seguir sumando (igual que db.js:4163)
-    if (coleccion.casilleros >= 10 && !coleccion.canjeado) {
-      console.log('[pedido] Colección ya completa (10/10) sin canjear, no se incrementa');
-      return { casillerosFinales: coleccion.casilleros, pct: 100, incrementados: 0, creado: creado, skipped: true };
-    }
-
-    // Si ya canjeó, el canje resetea a 0 (comportamiento confirmado por el cliente)
-    if (coleccion.canjeado === true) {
-      coleccion.casilleros = 0;
-      coleccion.canjeado = false;
-      coleccion.completado = false;
-      fueReset = true;
-    }
-
-    // Incrementar casilleros (cap a 10)
-    var prev = Number(coleccion.casilleros) || 0;
-    coleccion.casilleros = Math.min(10, prev + blendsChicosCount);
-    coleccion.completado = coleccion.casilleros >= 10;
-
-    // Agregar entrada al historial
-    coleccion.historial.push({
-      pedidoKey: pedidoId || '',
-      fecha: now,
-      cantidad: blendsChicosCount,
-      blends: blendNombres
-    });
-    coleccion.updated = now;
-
-    // Guardar en Firebase
-    await fbPatch(env, '/colecciones/' + key, coleccion);
-    console.log('[pedido] Colección actualizada para', tel, ':', coleccion.casilleros, '/10 (+', blendsChicosCount, ')');
-
-    var pctFinal = Math.min(100, coleccion.casilleros * 10);
-    return {
-      casillerosFinales: coleccion.casilleros,
-      pct: pctFinal,
-      incrementados: blendsChicosCount,
-      creado: creado,
-      fueReset: fueReset,
-      completado: coleccion.completado
-    };
-  } catch (e) {
-    console.warn('[pedido] incrementarColeccionCliente error:', e.message);
-    return null;
-  }
-}
-
 // === Upsert cliente (server-side) ===
 async function upsertCliente(env, cliente) {
   const tel = normalizeWhatsapp(cliente.telefono);
@@ -578,34 +458,16 @@ export async function onRequestPost({ request, env }) {
       var envioResumen = envio.gratis ? 'Gratis' : '$' + envioCosto.toLocaleString('es-CO');
       var pedidoResumen = itemsResumen + ' | Envío: ' + envioResumen;
 
-      // === Incrementar Colección Arcano del cliente con este pedido ===
-      // ETAPA Colección Arcano auto-increment: cada pedido nuevo suma automáticamente
-      // los blends chicos a la colección del cliente en Firebase. Así no dependemos
-      // de que el admin vea el pedido en el panel para que cuente.
-      var coleccionIncremento = null;
-      try {
-        coleccionIncremento = await incrementarColeccionCliente(env, itemsValidados, cliente, pedidoId);
-        console.log('[pedido] Colección incrementada:', coleccionIncremento);
-      } catch (e) {
-        console.warn('[pedido] incrementarColeccionCliente falló (no crítico):', e.message);
-      }
-
-      // === Leer Colección Arcano actualizada (para sincronizar progreso en Brevo) ===
-      // Si el incremento funcionó, usamos esos valores. Si no, leemos el estado actual.
+      // === Leer Colección Arcano del cliente (para sincronizar progreso en Brevo) ===
+      // NOTA: La colección NO se incrementa acá. Se incrementa cuando el admin
+      // marca el pedido como "entregado" en el panel (ver _contarBlendsColeccion
+      // en admin/js/db.js). Esto evita contar pedidos cancelados o no entregados.
       var coleccionData = { casilleros: 0, pct: 0, found: false };
-      if (coleccionIncremento && coleccionIncremento.casillerosFinales !== undefined) {
-        coleccionData = {
-          casilleros: coleccionIncremento.casillerosFinales,
-          pct: coleccionIncremento.pct,
-          found: true
-        };
-      } else {
-        try {
-          coleccionData = await leerColeccionCliente(env, cliente.telefono);
-          console.log('[pedido] Colección leída para', cliente.telefono + ':', coleccionData.casilleros, '/10');
-        } catch (e) {
-          console.warn('[pedido] leerColeccionCliente falló (no crítico):', e.message);
-        }
+      try {
+        coleccionData = await leerColeccionCliente(env, cliente.telefono);
+        console.log('[pedido] Colección leída para', cliente.telefono + ':', coleccionData.casilleros, '/10');
+      } catch (e) {
+        console.warn('[pedido] leerColeccionCliente falló (no crítico):', e.message);
       }
 
       // 1. Sincronizar contacto en Brevo (agregar/actualizar en lista #2)
@@ -666,7 +528,6 @@ export async function onRequestPost({ request, env }) {
       envioCosto: envioCosto,
       envioGratis: envio.gratis,
       items: itemsValidados.length,
-      coleccion: coleccionIncremento,
       brevoDebug: brevoDebug
     }), { headers: CORS_HEADERS });
 
