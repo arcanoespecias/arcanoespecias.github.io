@@ -991,15 +991,30 @@ function _descontarStockPedido(pedido) {
   }
 }
 
+/* === Normalizar whatsapp (igual que el servidor: pedido.js, cuenta.js) ===
+ * Agrega "57" a números colombianos de 10 dígitos para consistencia.
+ * Esto es CRÍTICO para que las colecciones se guarden con la misma key
+ * independientemente de dónde se creen (admin vs servidor vs rebuild).
+ */
+function _normalizeWhatsapp(phone) {
+  if (!phone) return '';
+  var digits = String(phone).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 10 && digits.indexOf('57') !== 0) digits = '57' + digits;
+  else if (digits.length === 11 && digits.indexOf('57') === 0) { /* ok */ }
+  else if (digits.length === 12 && digits.indexOf('57') === 0) { /* ok */ }
+  else if (digits.length === 13 && digits.indexOf('0057') === 0) digits = digits.slice(2);
+  else return '';
+  if (digits.indexOf('57') !== 0) return '';
+  return digits;
+}
+
 /* === Colecci\u00F3n Arcano: contar blends de un pedido (chicos Y grandes) === */
 function _contarBlendsColeccion(pedido, pedidoKey) {
   try {
     var cliente = pedido.cliente || {};
-    var whatsapp = cliente.telefono || cliente.whatsapp || '';
+    var whatsapp = _normalizeWhatsapp(cliente.telefono || cliente.whatsapp || '');
     if (!whatsapp) return;
-    // Normalizar whatsapp
-    whatsapp = whatsapp.replace(/[^0-9+]/g, '');
-    if (whatsapp.startsWith('+')) whatsapp = whatsapp.substring(1);
 
     var items = pedido.items || [];
     var blendsCount = 0;
@@ -1086,10 +1101,8 @@ function _revertirStockPedido(pedido) {
 function _revertirColeccionPedido(pedido, pedidoKey) {
   try {
     var cliente = pedido.cliente || {};
-    var whatsapp = cliente.telefono || cliente.whatsapp || '';
+    var whatsapp = _normalizeWhatsapp(cliente.telefono || cliente.whatsapp || '');
     if (!whatsapp) return;
-    whatsapp = whatsapp.replace(/[^0-9+]/g, '');
-    if (whatsapp.startsWith('+')) whatsapp = whatsapp.substring(1);
 
     var items = pedido.items || [];
     var blendsCount = 0;
