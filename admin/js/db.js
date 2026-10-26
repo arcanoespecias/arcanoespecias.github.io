@@ -939,15 +939,17 @@ function updatePedidoEstado(pedidoKey, nuevoEstado) {
       if (!pedido || pedido.stockDescontado) return;
       _descontarStockPedido(pedido);
       _pedidosRef.child(pedidoKey + '/stockDescontado').set(true);
-      // === Colecci\u00F3n Arcano: contar blends peque\u00F1os ===
+      // === Colecci\u00F3n Arcano: contar blends (chicos Y grandes) ===
       _contarBlendsColeccion(pedido, pedidoKey);
     });
   } else {
     // Si el pedido estaba entregado y vuelve a otro estado, revertir stock
+    // Y revertir la Colección Arcano (descontar los blends que se habían sumado)
     _pedidosRef.child(pedidoKey).once('value', function(snap) {
       var pedido = snap.val();
       if (!pedido || !pedido.stockDescontado) return;
       _revertirStockPedido(pedido);
+      _revertirColeccionPedido(pedido, pedidoKey);
       _pedidosRef.child(pedidoKey + '/stockDescontado').set(false);
     });
   }
@@ -1077,6 +1079,69 @@ function _revertirStockPedido(pedido) {
   }
 }
 
+/* === Revertir Colección Arcano si un pedido entregado se desmarca o elimina ===
+ * Resta los blends del pedido del casillero del cliente y elimina la entrada
+ * del historial correspondiente a ese pedidoKey.
+ */
+function _revertirColeccionPedido(pedido, pedidoKey) {
+  try {
+    var cliente = pedido.cliente || {};
+    var whatsapp = cliente.telefono || cliente.whatsapp || '';
+    if (!whatsapp) return;
+    whatsapp = whatsapp.replace(/[^0-9+]/g, '');
+    if (whatsapp.startsWith('+')) whatsapp = whatsapp.substring(1);
+
+    var items = pedido.items || [];
+    var blendsCount = 0;
+    var blendNombres = [];
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var tipo = item.tipo || 'blend';
+      var tallaOriginal = (item.talla || 'chico').toLowerCase();
+      var talla = tallaOriginal;
+      if (talla === 'small' || talla === 'pequeno' || talla === 'pequeño') talla = 'chico';
+      if (talla === 'large') talla = 'grande';
+      var qty = Number(item.qty) || Number(item.cantidad) || 0;
+
+      // Mismo criterio que _contarBlendsColeccion: chico o grande, cada uno = 1
+      if ((tipo === 'blend' || tipo === 'especia') && (talla === 'chico' || talla === 'grande') && qty > 0) {
+        blendsCount += qty;
+        if (item.nombre) blendNombres.push(item.nombre);
+      }
+    }
+
+    if (blendsCount === 0) return;
+    if (!_db.colecciones) return;
+    var col = _db.colecciones[whatsapp];
+    if (!col) return;
+
+    // Restar del casillero (mínimo 0)
+    var prev = Number(col.casilleros) || 0;
+    col.casilleros = Math.max(0, prev - blendsCount);
+    col.completado = col.casilleros >= 10;
+
+    // Eliminar la entrada del historial correspondiente a este pedido
+    col.historial = col.historial || [];
+    col.historial = col.historial.filter(function(h) {
+      return h.pedidoKey !== pedidoKey;
+    });
+    col.updated = new Date().toISOString();
+
+    if (_coleccionesRef) _coleccionesRef.child(whatsapp).set(col);
+    else _saveToFirebase();
+    _cacheLocal();
+    _notify('update', 'colecciones', whatsapp);
+    console.log('[Colección Arcano] Revertida para', whatsapp, ':', col.casilleros, '/10 (-', blendsCount, ') por pedido', pedidoKey);
+
+    // Opcional: sincronizar con Brevo (fire-and-forget)
+    // No lo hacemos acá porque no tenemos acceso al email del cliente desde el admin
+    // de forma confiable. La próxima vez que el cliente haga un pedido, se sincroniza.
+  } catch (e) {
+    console.error('[Colección Arcano] Error al revertir blends:', e);
+  }
+}
+
 function updatePedidoField(pedidoKey, field, value) {
   if (!_pedidosRef) return;
   _pedidosRef.child(pedidoKey + '/' + field).set(value);
@@ -1094,7 +1159,16 @@ function updatePedidoFields(pedidoKey, updates) {
 
 function deletePedido(pedidoKey) {
   if (!_pedidosRef) return;
-  _pedidosRef.child(pedidoKey).remove();
+  // Antes de borrar, si el pedido estaba entregado (stockDescontado=true),
+  // revertir stock Y Colección Arcano para no dejar inconsistencias.
+  _pedidosRef.child(pedidoKey).once('value', function(snap) {
+    var pedido = snap.val();
+    if (pedido && pedido.stockDescontado) {
+      _revertirStockPedido(pedido);
+      _revertirColeccionPedido(pedido, pedidoKey);
+    }
+    _pedidosRef.child(pedidoKey).remove();
+  });
 }
 
 function onDBChange(fn) { _listeners.push(fn); }
