@@ -12,22 +12,37 @@ const BREVO_SENDER_NAME = 'Arcano Especias';
 // === Agregar o actualizar contacto en Brevo + agregarlo a la lista ===
 // Si el contacto ya existe, lo actualiza (updateEnabled: true).
 // Si no tiene email, no hace nada (Brevo requiere email).
-async function syncContact(env, { email, nombre, telefono, ciudad, ultimoPedido }) {
-  console.log('[brevo] syncContact called:', { email, hasKey: !!env?.BREVO_API_KEY });
+//
+// ETAPA Colección Arcano — Se sincronizan dos atributos nuevos:
+//   COLECCION_ARCANO     → número de blends pequeños acumulados (0-10)
+//   COLECCION_ARCANO_PCT → porcentaje de progreso (0-100) para la barra del email
+// Si no se pasan, se omiten (no sobreescriben el valor existente en Brevo).
+async function syncContact(env, { email, nombre, telefono, ciudad, ultimoPedido, coleccionArcano, coleccionArcanoPct }) {
+  console.log('[brevo] syncContact called:', { email, hasKey: !!env?.BREVO_API_KEY, coleccionArcano });
   if (!email || !env?.BREVO_API_KEY) {
     console.warn('[brevo] syncContact SKIP:', { email: !!email, hasKey: !!env?.BREVO_API_KEY });
     return;
   }
 
   try {
+    const attributes = {
+      NOMBRE: nombre || '',
+      TELEFONO: telefono || '',
+      CIUDAD: ciudad || '',
+      ULTIMO_PEDIDO: ultimoPedido || new Date().toISOString()
+    };
+    // Solo agregar atributos de Colección Arcano si vienen definidos
+    // (evita sobreescribir con undefined y borrar el valor existente en Brevo)
+    if (coleccionArcano !== undefined && coleccionArcano !== null) {
+      attributes.COLECCION_ARCANO = Number(coleccionArcano) || 0;
+    }
+    if (coleccionArcanoPct !== undefined && coleccionArcanoPct !== null) {
+      attributes.COLECCION_ARCANO_PCT = Number(coleccionArcanoPct) || 0;
+    }
+
     const payload = {
       email: email,
-      attributes: {
-        NOMBRE: nombre || '',
-        TELEFONO: telefono || '',
-        CIUDAD: ciudad || '',
-        ULTIMO_PEDIDO: ultimoPedido || new Date().toISOString()
-      },
+      attributes: attributes,
       listIds: [BREVO_LIST_ID],
       updateEnabled: true
     };
@@ -44,11 +59,11 @@ async function syncContact(env, { email, nombre, telefono, ciudad, ultimoPedido 
 
     const result = await resp.json().catch(() => ({}));
     if (resp.ok) {
-      console.log('[brevo] Contacto sincronizado:', email);
+      console.log('[brevo] Contacto sincronizado:', email, 'Colección:', coleccionArcano, '/10');
     } else if (result.code === 'duplicate_parameter') {
       // El contacto ya existe y updateEnabled no funcionó — intentamos update
       console.log('[brevo] Contacto ya existe, actualizando:', email);
-      await updateContact(env, { email, nombre, telefono, ciudad });
+      await updateContact(env, { email, nombre, telefono, ciudad, ultimoPedido, coleccionArcano, coleccionArcanoPct });
     } else {
       console.warn('[brevo] Error sincronizando contacto:', result.code || result.message || resp.status);
     }
@@ -58,16 +73,22 @@ async function syncContact(env, { email, nombre, telefono, ciudad, ultimoPedido 
 }
 
 // === Actualizar contacto existente en Brevo ===
-async function updateContact(env, { email, nombre, telefono, ciudad, ultimoPedido }) {
+async function updateContact(env, { email, nombre, telefono, ciudad, ultimoPedido, coleccionArcano, coleccionArcanoPct }) {
   try {
-    const payload = {
-      attributes: {
-        NOMBRE: nombre || '',
-        TELEFONO: telefono || '',
-        CIUDAD: ciudad || '',
-        ULTIMO_PEDIDO: ultimoPedido || new Date().toISOString()
-      }
+    const attributes = {
+      NOMBRE: nombre || '',
+      TELEFONO: telefono || '',
+      CIUDAD: ciudad || '',
+      ULTIMO_PEDIDO: ultimoPedido || new Date().toISOString()
     };
+    if (coleccionArcano !== undefined && coleccionArcano !== null) {
+      attributes.COLECCION_ARCANO = Number(coleccionArcano) || 0;
+    }
+    if (coleccionArcanoPct !== undefined && coleccionArcanoPct !== null) {
+      attributes.COLECCION_ARCANO_PCT = Number(coleccionArcanoPct) || 0;
+    }
+
+    const payload = { attributes: attributes };
     const resp = await fetch(`${BREVO_API_BASE}/contacts/${encodeURIComponent(email)}`, {
       method: 'PUT',
       headers: {
@@ -77,7 +98,7 @@ async function updateContact(env, { email, nombre, telefono, ciudad, ultimoPedid
       body: JSON.stringify(payload)
     });
     if (resp.ok) {
-      console.log('[brevo] Contacto actualizado:', email);
+      console.log('[brevo] Contacto actualizado:', email, 'Colección:', coleccionArcano, '/10');
     }
   } catch (e) {
     console.warn('[brevo] updateContact error:', e.message);

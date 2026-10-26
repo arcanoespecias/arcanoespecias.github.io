@@ -325,6 +325,10 @@ function clearClienteSession() {
 /**
  * ETAPA 4 — Registra o actualiza cliente vía /api/cuenta action=registrar.
  * El servidor hace upsert con Service Account. La tienda ya no lee/escribe /clientes directo.
+ *
+ * FIX CRÍTICO: ahora el servidor también devuelve sessionToken (creado en /otpPendientes
+ * con verificado=true). Lo guardamos en localStorage para que getClientePedidos() y
+ * _mcLoadColeccion() puedan llamar a /api/cuenta action=pedidos y action=coleccion.
  */
 function registrarCliente(telefono, nombre) {
   var tel = _normalizeWhatsapp(telefono);
@@ -336,6 +340,13 @@ function registrarCliente(telefono, nombre) {
     body: JSON.stringify({ action: 'registrar', telefono: telefono, nombre: nombre.trim() })
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (!data.ok) throw new Error(data.error || 'No se pudo registrar');
+    // Guardar sessionToken en localStorage para futuras consultas
+    if (data.sessionToken) {
+      try {
+        localStorage.setItem('arcano_session_token', data.sessionToken);
+        if (data.sessionExpiry) localStorage.setItem('arcano_session_expiry', String(data.sessionExpiry));
+      } catch (e) {}
+    }
     return data.cliente;
   });
 }

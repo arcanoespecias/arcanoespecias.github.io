@@ -395,6 +395,12 @@ async function actionColeccion(env, body) {
 // === ACTION: registrar o actualizar cliente (login directo por WhatsApp) ===
 // ETAPA 4 — Migración de registrarCliente (tienda-data.js) al servidor.
 // La tienda ya no lee/escribe /clientes directo.
+//
+// FIX CRÍTICO: actionRegistrar ahora crea un sessionToken en /otpPendientes
+// con verificado=true para que el cliente pueda consultar /api/cuenta
+// action=pedidos y action=coleccion sin pasar por el flujo OTP (que fue
+// desactivado del frontend). Sin este fix, el cliente se loguea pero
+// actionPedidos/actionColeccion responden 401 'Sesión inválida'.
 async function actionRegistrar(env, body) {
   const { telefono, nombre } = body;
   if (!telefono) {
@@ -405,7 +411,27 @@ async function actionRegistrar(env, body) {
   }
   // Reutilizar upsertClienteByPhone
   const result = await upsertClienteByPhone(env, telefono, nombre.trim());
-  // Devolver datos del cliente al frontend
+
+  // === Crear sesión verificada (sessionToken) para este cliente ===
+  // Esto reemplaza el flujo OTP desactivado. El cliente queda logueado
+  // automáticamente y puede consultar /api/cuenta action=pedidos y
+  // action=coleccion durante VERIFIED_TTL_MS (30 días).
+  const now = Date.now();
+  const otpPendiente = {
+    clienteKey: result.key,
+    telefono: telefono,
+    nombre: nombre.trim(),
+    verificado: true,         // ← ya verificado, sin pasar por OTP
+    verificadoEn: now,
+    expira: now,              // timestamp base para VERIFIED_TTL_MS en _verifySession
+    creado: now,
+    registro_directo: true    // flag para distinguir de los OTP reales
+  };
+  const sessionResult = await fbPost(env, '/otpPendientes', otpPendiente);
+  const sessionToken = sessionResult.name;
+  const sessionExpiry = now + VERIFIED_TTL_MS;
+
+  // Devolver datos del cliente + sessionToken al frontend
   return {
     ok: true,
     body: {
@@ -420,6 +446,8 @@ async function actionRegistrar(env, body) {
         totalPedidos: result.cliente.totalPedidos || 0,
         creado: result.cliente.creado || ''
       },
+      sessionToken: sessionToken,
+      sessionExpiry: sessionExpiry,
       esNuevo: result.isNew
     }
   };

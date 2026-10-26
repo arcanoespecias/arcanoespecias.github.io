@@ -2048,7 +2048,7 @@ function _mcRegistrar() {
     saveClienteSession(cliente);
     _showToast('\u00A1Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
     _updateCuentaBadge();
-    _mcShowExito(cliente);
+    _mcShowHistorial(cliente);
   }).catch(function(err) {
     alert(err.message || err);
     btn.disabled = false;

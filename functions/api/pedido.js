@@ -145,6 +145,48 @@ function normalizeWhatsapp(phone) {
   return digits;
 }
 
+// === Leer Colección Arcano del cliente (para sincronizar con Brevo) ===
+// La colección se guarda en /colecciones con key = whatsapp normalizado
+// Devuelve { casilleros: Number, pct: Number } o { casilleros: 0, pct: 0 } si no existe
+async function leerColeccionCliente(env, whatsapp) {
+  const telNorm = normalizeWhatsapp(whatsapp);
+  if (!telNorm) {
+    return { casilleros: 0, pct: 0, found: false };
+  }
+
+  try {
+    const allColecciones = await fbGet(env, '/colecciones');
+    if (!allColecciones || typeof allColecciones !== 'object') {
+      return { casilleros: 0, pct: 0, found: false };
+    }
+
+    // Buscar match por teléfono normalizado (igual que actionColeccion en cuenta.js)
+    var coleccion = null;
+    var keys = Object.keys(allColecciones);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var kDigits = String(k).replace(/\D/g, '');
+      if (kDigits === telNorm || kDigits.endsWith(telNorm) || telNorm.endsWith(kDigits)) {
+        coleccion = allColecciones[k];
+        break;
+      }
+    }
+
+    if (!coleccion) {
+      return { casilleros: 0, pct: 0, found: false };
+    }
+
+    var casilleros = Number(coleccion.casilleros) || 0;
+    // Calcular porcentaje (0-100) para la barra del email
+    // 10 blends = 100%, entonces cada blend = 10%
+    var pct = Math.min(100, casilleros * 10);
+    return { casilleros: casilleros, pct: pct, found: true };
+  } catch (e) {
+    console.warn('[pedido] leerColeccionCliente error:', e.message);
+    return { casilleros: 0, pct: 0, found: false };
+  }
+}
+
 // === Upsert cliente (server-side) ===
 async function upsertCliente(env, cliente) {
   const tel = normalizeWhatsapp(cliente.telefono);
@@ -416,16 +458,31 @@ export async function onRequestPost({ request, env }) {
       var envioResumen = envio.gratis ? 'Gratis' : '$' + envioCosto.toLocaleString('es-CO');
       var pedidoResumen = itemsResumen + ' | Envío: ' + envioResumen;
 
+      // === Leer Colección Arcano del cliente (para sincronizar progreso en Brevo) ===
+      // NOTA: La colección NO se incrementa acá. Se incrementa cuando el admin
+      // marca el pedido como "entregado" en el panel (ver _contarBlendsColeccion
+      // en admin/js/db.js). Esto evita contar pedidos cancelados o no entregados.
+      var coleccionData = { casilleros: 0, pct: 0, found: false };
+      try {
+        coleccionData = await leerColeccionCliente(env, cliente.telefono);
+        console.log('[pedido] Colección leída para', cliente.telefono + ':', coleccionData.casilleros, '/10');
+      } catch (e) {
+        console.warn('[pedido] leerColeccionCliente falló (no crítico):', e.message);
+      }
+
       // 1. Sincronizar contacto en Brevo (agregar/actualizar en lista #2)
+      //    ETAPA Colección Arcano: ahora envía COLECCION_ARCANO + COLECCION_ARCANO_PCT
       try {
         await syncContact(env, {
           email: clienteEmail,
           nombre: cliente.nombre,
           telefono: cliente.telefono,
           ciudad: cliente.ciudad || ciudad,
-          ultimoPedido: now
+          ultimoPedido: now,
+          coleccionArcano: coleccionData.casilleros,
+          coleccionArcanoPct: coleccionData.pct
         });
-        brevoDebug.steps.push({ step: 'syncContact', ok: true });
+        brevoDebug.steps.push({ step: 'syncContact', ok: true, coleccionArcano: coleccionData.casilleros });
       } catch (e) {
         brevoDebug.steps.push({ step: 'syncContact', ok: false, error: e.message });
       }
