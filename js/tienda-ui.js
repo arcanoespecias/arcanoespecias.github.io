@@ -2073,16 +2073,13 @@ function _mcVerifyEmail() {
 }
 
 function _mcLoadClienteByEmail(email) {
-  // Buscar el cliente por email en el servidor
   fetch('/api/cuenta', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'find-by-email', email: email })
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data.ok && data.existe && data.cliente) {
-      // Cliente encontrado — guardar sesión con datos reales
       saveClienteSession(data.cliente);
-      // Guardar sessionToken para pedidos y colección
       if (data.sessionToken) {
         try {
           localStorage.setItem('arcano_session_token', data.sessionToken);
@@ -2094,30 +2091,74 @@ function _mcLoadClienteByEmail(email) {
       _updateCuentaBadge();
       _mcShowHistorial(data.cliente);
     } else {
-      // Cliente no encontrado por email — mostrar cuenta vacía
-      var session = {
-        id: null,
-        nombre: '',
-        telefono: '',
-        email: email.toLowerCase(),
-        loggedAt: Date.now()
-      };
-      saveClienteSession(session);
-      _showToast('Email verificado');
-      _updateCuentaBadge();
-      _mcShowHistorial(session);
+      // Cliente no encontrado por email — mostrar pantalla para vincular WhatsApp
+      _mcShowVincularWhatsApp(email);
     }
   }).catch(function(e) {
     console.warn('[Mi Cuenta] Error buscando cliente:', e.message);
-    var session = {
-      id: null,
-      nombre: '',
-      telefono: '',
-      email: email.toLowerCase(),
-      loggedAt: Date.now()
-    };
-    saveClienteSession(session);
-    _mcShowHistorial(session);
+    _mcShowVincularWhatsApp(email);
+  });
+}
+
+// Pantalla para vincular WhatsApp a un email verificado pero no encontrado en clientes
+function _mcShowVincularWhatsApp(email) {
+  var el = document.getElementById('mc-content');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="mc-login">' +
+      '<div class="mc-login-header">' +
+        '<h3>Vinculá tu cuenta</h3>' +
+        '<p class="mc-sub">No encontramos tu email en nuestros registros. Si ya compraste antes, vinculá tu WhatsApp para conectar tu cuenta.</p>' +
+      '</div>' +
+      '<div class="form-group"><label>Email verificado</label>' +
+        '<input class="form-input" value="' + esc(email) + '" disabled style="opacity:0.7">' +
+      '</div>' +
+      '<div class="form-group"><label>Tu número de WhatsApp</label>' +
+        '<input class="form-input" id="mc-vincular-tel" placeholder="3001234567" maxlength="10" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,10)">' +
+      '</div>' +
+      '<div class="form-group"><label>Tu nombre</label>' +
+        '<input class="form-input" id="mc-vincular-nombre" placeholder="Tu nombre" maxlength="40">' +
+      '</div>' +
+      '<button class="btn-primary btn-block" onclick="_mcVincularCuenta(\'' + esc(email).replace(/'/g, "\\'") + '\')" id="mc-btn-vincular">Vincular mi cuenta</button>' +
+      '<p class="mc-hint">💡 Si nunca compraste antes, hacé tu primer pedido y tu cuenta se creará automáticamente.</p>' +
+      '<button class="btn-secondary btn-block" onclick="closeMiCuenta()" style="margin-top:8px">Cerrar</button>' +
+    '</div>';
+}
+
+function _mcVincularCuenta(email) {
+  var tel = (document.getElementById('mc-vincular-tel').value || '').trim();
+  var nombre = (document.getElementById('mc-vincular-nombre').value || '').trim();
+  if (!tel) { alert('Ingresá tu número de WhatsApp'); return; }
+  if (!nombre) { alert('Ingresá tu nombre'); return; }
+
+  var btn = document.getElementById('mc-btn-vincular');
+  if (btn) { btn.disabled = true; btn.textContent = 'Vinculando...'; }
+
+  // Buscar el cliente por teléfono y vincular el email
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'vincular-email', telefono: tel, email: email, nombre: nombre })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Vincular mi cuenta'; }
+    if (data.ok && data.cliente) {
+      saveClienteSession(data.cliente);
+      if (data.sessionToken) {
+        try {
+          localStorage.setItem('arcano_session_token', data.sessionToken);
+          localStorage.setItem('arcano_session_expiry', String(data.sessionExpiry));
+          localStorage.setItem('arcano_cliente_id', data.cliente.id);
+        } catch(e) {}
+      }
+      _showToast('¡Cuenta vinculada! ¡Bienvenido ' + (data.cliente.nombre || '').split(' ')[0] + '!');
+      _updateCuentaBadge();
+      _mcShowHistorial(data.cliente);
+    } else {
+      alert(data.error || 'No se pudo vincular la cuenta');
+    }
+  }).catch(function(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Vincular mi cuenta'; }
+    alert('Error de conexión');
   });
 }
 

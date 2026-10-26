@@ -656,6 +656,104 @@ async function actionFindByEmail(env, body) {
   };
 }
 
+// === ACTION: vincular email a un cliente existente por WhatsApp ===
+async function actionVincularEmail(env, body) {
+  const { telefono, email, nombre } = body;
+  if (!telefono || !email) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Teléfono y email son obligatorios' } };
+  }
+  var emailLower = email.trim().toLowerCase();
+  var tel = normalizeWhatsapp(telefono);
+  if (!tel) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Teléfono inválido' } };
+  }
+
+  // Buscar el cliente por teléfono
+  const allClientes = await fbGet(env, '/clientes');
+  if (allClientes && typeof allClientes === 'object') {
+    var keys = Object.keys(allClientes);
+    for (var i = 0; i < keys.length; i++) {
+      var c = allClientes[keys[i]];
+      if (c && c.telNorm === tel) {
+        // Cliente encontrado — actualizar email y nombre
+        var updates = {
+          email: emailLower,
+          emailVerificado: true
+        };
+        if (nombre && nombre.trim()) {
+          updates.nombre = nombre.trim();
+        }
+        await fbPatch(env, '/clientes/' + keys[i], updates);
+        console.log('[cuenta] Email vinculado al cliente ' + keys[i] + ': ' + emailLower);
+
+        return {
+          ok: true,
+          body: {
+            ok: true,
+            existe: true,
+            cliente: {
+              id: keys[i],
+              nombre: c.nombre || nombre || '',
+              telefono: c.telefono || telefono,
+              email: emailLower,
+              ciudad: c.ciudad || '',
+              direccion: c.direccion || '',
+              totalPedidos: c.totalPedidos || 0,
+              creado: c.creado || ''
+            },
+            sessionToken: keys[i],
+            sessionExpiry: Date.now() + 30 * 24 * 60 * 60 * 1000,
+            mensaje: 'Email vinculado correctamente'
+          }
+        };
+      }
+    }
+  }
+
+  // Cliente no encontrado por teléfono — crear nuevo con email + WhatsApp
+  var now = new Date().toISOString();
+  var nuevoCliente = {
+    nombre: (nombre || '').trim(),
+    telefono: telefono,
+    telNorm: tel,
+    email: emailLower,
+    emailVerificado: true,
+    ciudad: '',
+    direccion: '',
+    creado: now,
+    ultimoLogin: now,
+    totalPedidos: 0
+  };
+  try {
+    const result = await fbPost(env, '/clientes', nuevoCliente);
+    var newKey = result.name;
+    console.log('[cuenta] Nuevo cliente creado al vincular: ' + newKey);
+    return {
+      ok: true,
+      body: {
+        ok: true,
+        existe: true,
+        cliente: {
+          id: newKey,
+          nombre: (nombre || '').trim(),
+          telefono: telefono,
+          email: emailLower,
+          ciudad: '',
+          direccion: '',
+          totalPedidos: 0,
+          creado: now
+        },
+        sessionToken: newKey,
+        sessionExpiry: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        mensaje: 'Cuenta creada y vinculada'
+      }
+    };
+  } catch (e) {
+    console.error('[cuenta] Error creando cliente:', e.message);
+    return { ok: false, status: 500, body: { ok: false, error: 'No se pudo crear la cuenta' } };
+  }
+}
+
 // === MAIN ROUTER ===
 export async function onRequestGet({ request }) {
   const url = new URL(request.url);
@@ -704,6 +802,9 @@ export async function onRequestPost({ request, env }) {
         break;
       case 'find-by-email':
         result = await actionFindByEmail(env, body);
+        break;
+      case 'vincular-email':
+        result = await actionVincularEmail(env, body);
         break;
       default:
         result = { ok: false, status: 400, body: { ok: false, error: 'Acción inválida: ' + action } };
