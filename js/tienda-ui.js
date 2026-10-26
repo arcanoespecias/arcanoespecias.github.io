@@ -2122,22 +2122,8 @@ function _mcLoadClienteByEmail(email) {
 }
 
 function _mcVerifyOTP() {
-  var tel = (document.querySelector('#mc-content [data-tel]') || {}).dataset ? document.querySelector('#mc-content [data-tel]').dataset.tel : '';
-  if (!tel) tel = (document.getElementById('mc-tel').value || '').trim();
-  var codigo = (document.getElementById('mc-otp').value || '').trim();
-  if (!codigo) { alert('Ingresa el c\u00F3digo de 6 d\u00EDgitos'); return; }
-  var btn = event.target;
-  btn.disabled = true; btn.textContent = 'Verificando...';
-  verifyClienteOTP(tel, codigo).then(function(cliente) {
-    saveClienteSession(cliente);
-    _showToast('Bienvenido ' + (cliente.nombre || 'de nuevo'));
-    _mcShowHistorial(cliente);
-    // Actualizar header si hay badge de cuenta
-    _updateCuentaBadge();
-  }).catch(function(err) {
-    alert(err.message || err);
-    btn.disabled = false; btn.textContent = 'Verificar';
-  });
+  // ETAPA email-verification: función legacy eliminada.
+  // El login ahora es por email + OTP (ver _mcVerifyEmail).
 }
 
 function _mcShowHistorial(cliente) {
