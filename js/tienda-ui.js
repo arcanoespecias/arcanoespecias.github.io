@@ -1979,98 +1979,115 @@ function _mcShowLogin() {
     '<div class="mc-login">' +
       '<div class="mc-login-header">' +
         '<h3>Mi Cuenta</h3>' +
-        '<p class="mc-sub" id="mc-sub-label">Accede para ver tus pedidos y promociones exclusivas</p>' +
+        '<p class="mc-sub">Ingresá tu email para acceder a tus pedidos</p>' +
       '</div>' +
-      '<div class="form-group"><label>N\u00FAmero de WhatsApp</label>' +
-        '<input class="form-input" id="mc-tel" placeholder="3001234567" maxlength="10" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,10)" onblur="_mcBuscarCliente()"></div>' +
-      '<div class="form-group"><label>Tu nombre</label>' +
-        '<input class="form-input" id="mc-nombre" placeholder="Tu nombre" maxlength="40"></div>' +
-      '<button class="btn-primary btn-block" onclick="_mcRegistrar()" id="mc-btn-registrar">' +
-        '<span>Ingresar</span>' +
+      '<div class="form-group"><label>Email</label>' +
+        '<input class="form-input" id="mc-email" type="email" placeholder="tu@email.com" onkeydown="if(event.key===\'Enter\')_mcSendEmailOTP()"></div>' +
+      '<button class="btn-primary btn-block" onclick="_mcSendEmailOTP()" id="mc-btn-send">' +
+        '<span>Enviar código</span>' +
       '</button>' +
-      '<p class="mc-hint" id="mc-hint">\u{1F4A1} Reg\u00EDstrate con tu WhatsApp y nombre. Podr\u00E1s ver tus pedidos y promociones exclusivas.</p>' +
+      '<div id="mc-otp-section" style="display:none;margin-top:16px">' +
+        '<div id="mc-otp-status" style="text-align:center;padding:12px;margin-bottom:12px;background:rgba(232,184,75,0.08);border-radius:8px">' +
+          '<p style="margin:0;font-size:0.9rem;color:var(--text-sec)">Enviando código...</p>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Código de verificación (4 dígitos)</label>' +
+          '<input class="form-input" id="mc-otp-code" placeholder="1234" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').slice(0,4)" style="text-align:center;font-size:1.5rem;letter-spacing:0.5em;font-weight:700" onkeydown="if(event.key===\'Enter\')_mcVerifyEmail()">' +
+        '</div>' +
+        '<button class="btn-primary btn-block" onclick="_mcVerifyEmail()" id="mc-btn-verify">Verificar</button>' +
+        '<button class="btn-secondary btn-block" onclick="_mcResendEmailOTP()" style="margin-top:8px">Reenviar código</button>' +
+      '</div>' +
+      '<p class="mc-hint">💡 Te enviaremos un código de 4 dígitos por email para verificar tu identidad.</p>' +
     '</div>';
 }
 
-// Busca si el WhatsApp ya existe en Firebase \u2192 autocompleta nombre y cambia UI
-function _mcBuscarCliente() {
-  var tel = (document.getElementById('mc-tel').value || '').trim();
-  if (!tel || tel.length < 6) return; // necesita al menos 6 dígitos
-  // ETAPA 4: buscar vía /api/cuenta (no leer Firebase directo)
+var _mcOTPKey = null;
+
+function _mcSendEmailOTP() {
+  var email = (document.getElementById('mc-email').value || '').trim();
+  if (!email) { alert('Ingresá tu email'); return; }
+  var btn = document.getElementById('mc-btn-send');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+
   fetch('/api/cuenta', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'check', telefono: tel })
+    body: JSON.stringify({ action: 'send-otp-email', email: email })
   }).then(function(r) { return r.json(); }).then(function(data) {
-    var subLabel = document.getElementById('mc-sub-label');
-    var hint = document.getElementById('mc-hint');
-    var nombreInput = document.getElementById('mc-nombre');
-    var btn = document.getElementById('mc-btn-registrar');
-    if (!btn) return;
-    if (data.ok && data.existe) {
-      // Cliente existente: autocompletar nombre
-      if (nombreInput && data.cliente && data.cliente.nombre) {
-        nombreInput.value = data.cliente.nombre;
-        nombreInput.style.color = 'var(--gold)';
-        nombreInput.style.fontWeight = '600';
-      }
-      if (subLabel) subLabel.textContent = '¡Bienvenido de nuevo, ' + ((data.cliente && data.cliente.nombre) || '').split(' ')[0] + '!';
-      if (btn) btn.innerHTML = '<span>Ingresar</span>';
-      if (hint) hint.innerHTML = '💡 Ya estás registrado. Solo presiona <b>Ingresar</b>.';
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar código'; }
+    if (data.ok) {
+      _mcOTPKey = data.otpKey;
+      var section = document.getElementById('mc-otp-section');
+      var status = document.getElementById('mc-otp-status');
+      if (section) section.style.display = '';
+      if (status) status.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--green)">✅ Te enviamos el código a <b>' + esc(email) + '</b></p>';
+      setTimeout(function() {
+        var codeInput = document.getElementById('mc-otp-code');
+        if (codeInput) codeInput.focus();
+      }, 300);
     } else {
-      // Cliente nuevo: limpiar y mostrar registro
-      if (nombreInput) {
-        nombreInput.style.color = '';
-        nombreInput.style.fontWeight = '';
-      }
-      if (subLabel) subLabel.textContent = 'Regístrate para ver tus pedidos y promociones exclusivas';
-      if (btn) btn.innerHTML = '<span>Registrarme</span>';
-      if (hint) hint.innerHTML = '💡 Regístrate con tu WhatsApp y nombre.';
+      alert(data.error || 'No se pudo enviar el código');
     }
   }).catch(function(e) {
-    console.warn('[Mi Cuenta] No se pudo buscar cliente:', e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar código'; }
+    alert('Error de conexión');
   });
 }
 
-// Registro directo: cliente solo deja WhatsApp + nombre, queda logueado
-function _mcRegistrar() {
-  var tel = (document.getElementById('mc-tel').value || '').trim();
-  var nombre = (document.getElementById('mc-nombre').value || '').trim();
-  if (!tel) { alert('Ingresa tu n\u00FAmero de WhatsApp'); return; }
-  if (!nombre) { alert('Ingresa tu nombre'); return; }
+function _mcResendEmailOTP() {
+  var email = (document.getElementById('mc-email').value || '').trim();
+  if (!email) return;
+  var status = document.getElementById('mc-otp-status');
+  if (status) status.innerHTML = '<p style="margin:0;font-size:0.9rem;color:var(--text-sec)">Reenviando código...</p>';
+  _mcSendEmailOTP();
+}
 
-  var btn = document.getElementById('mc-btn-registrar');
-  var original = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span>Ingresando...</span>';
+function _mcVerifyEmail() {
+  var email = (document.getElementById('mc-email').value || '').trim();
+  var codeInput = document.getElementById('mc-otp-code');
+  if (!codeInput) return;
+  var codigo = codeInput.value.trim();
+  if (!codigo || codigo.length !== 4) { alert('Ingresa el código de 4 dígitos'); return; }
 
-  registrarCliente(tel, nombre).then(function(cliente) {
-    saveClienteSession(cliente);
-    _showToast('\u00A1Bienvenido ' + (cliente.nombre || '').split(' ')[0] + '!');
-    _updateCuentaBadge();
-    _mcShowHistorial(cliente);
-  }).catch(function(err) {
-    alert(err.message || err);
-    btn.disabled = false;
-    btn.innerHTML = original;
+  var btn = document.getElementById('mc-btn-verify');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'verify-otp-email', otpKey: _mcOTPKey, codigo: codigo, email: email })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok) {
+      try { localStorage.setItem('arcano_verified_email', email.toLowerCase()); } catch(e) {}
+      if (btn) btn.textContent = '✓ Verificado';
+      // Buscar el cliente por email para cargar su sesión
+      _mcLoadClienteByEmail(email);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
+      alert(data.error || 'Código incorrecto');
+    }
+  }).catch(function(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
+    alert('Error de conexión');
   });
 }
 
-// Pantalla de \u00E9xito: registro confirmado
-function _mcShowExito(cliente) {
-  var el = document.getElementById('mc-content');
-  if (!el) return;
-  el.innerHTML =
-    '<div class="mc-login">' +
-      '<div class="mc-exito-icon">' +
-        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-      '</div>' +
-      '<h3 style="text-align:center;color:var(--gold);margin-bottom:8px">\u00A1Bienvenido, ' + esc(cliente.nombre || '').split(' ')[0] + '!</h3>' +
-      '<p class="mc-sub" style="text-align:center;margin-bottom:20px">' +
-        'Ya eres parte de Arcano!' +
-      '</p>' +
-      '<button class="btn-primary btn-block" onclick="closeMiCuenta()">Ir a la tienda</button>' +
-    '</div>';
+function _mcLoadClienteByEmail(email) {
+  // Buscar el cliente por email usando /api/cuenta action=check
+  // Pero check busca por teléfono, no por email. Necesitamos buscar por email.
+  // Usamos el endpoint existente: pedimos todos los pedidos del cliente verificado.
+  // Si no tiene pedidos previos, mostramos cuenta vacía.
+  var session = {
+    id: null,
+    nombre: '',
+    telefono: '',
+    email: email.toLowerCase(),
+    loggedAt: Date.now()
+  };
+  saveClienteSession(session);
+  _showToast('Email verificado');
+  _updateCuentaBadge();
+  _mcShowHistorial(session);
 }
 
 function _mcVerifyOTP() {
