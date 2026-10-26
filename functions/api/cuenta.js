@@ -607,6 +607,55 @@ async function actionVerifyOTPEmail(env, body) {
   }
 }
 
+// === ACTION: buscar cliente por email (para Mi Cuenta después de verificar OTP) ===
+async function actionFindByEmail(env, body) {
+  const { email } = body;
+  if (!email) {
+    return { ok: false, status: 400, body: { ok: false, error: 'Email obligatorio' } };
+  }
+  var emailLower = email.trim().toLowerCase();
+  const allClientes = await fbGet(env, '/clientes');
+  if (allClientes && typeof allClientes === 'object') {
+    var keys = Object.keys(allClientes);
+    for (var i = 0; i < keys.length; i++) {
+      var c = allClientes[keys[i]];
+      if (c && (c.email || '').toLowerCase() === emailLower) {
+        // Generar sessionToken usando un OTP verificado o crear uno nuevo
+        var sessionToken = keys[i]; // usar el clienteId como token temporal
+        return {
+          ok: true,
+          body: {
+            ok: true,
+            existe: true,
+            cliente: {
+              id: keys[i],
+              nombre: c.nombre || '',
+              telefono: c.telefono || '',
+              email: c.email || '',
+              ciudad: c.ciudad || '',
+              direccion: c.direccion || '',
+              totalPedidos: c.totalPedidos || 0,
+              creado: c.creado || ''
+            },
+            sessionToken: sessionToken,
+            sessionExpiry: Date.now() + 30 * 24 * 60 * 60 * 1000
+          }
+        };
+      }
+    }
+  }
+  // Cliente no encontrado por email — devolver sesión vacía
+  return {
+    ok: true,
+    body: {
+      ok: true,
+      existe: false,
+      cliente: null,
+      sessionToken: null
+    }
+  };
+}
+
 // === MAIN ROUTER ===
 export async function onRequestGet({ request }) {
   const url = new URL(request.url);
@@ -652,6 +701,9 @@ export async function onRequestPost({ request, env }) {
         break;
       case 'verify-otp-email':
         result = await actionVerifyOTPEmail(env, body);
+        break;
+      case 'find-by-email':
+        result = await actionFindByEmail(env, body);
         break;
       default:
         result = { ok: false, status: 400, body: { ok: false, error: 'Acción inválida: ' + action } };

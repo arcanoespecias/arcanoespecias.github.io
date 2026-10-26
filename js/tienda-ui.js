@@ -2073,21 +2073,52 @@ function _mcVerifyEmail() {
 }
 
 function _mcLoadClienteByEmail(email) {
-  // Buscar el cliente por email usando /api/cuenta action=check
-  // Pero check busca por teléfono, no por email. Necesitamos buscar por email.
-  // Usamos el endpoint existente: pedimos todos los pedidos del cliente verificado.
-  // Si no tiene pedidos previos, mostramos cuenta vacía.
-  var session = {
-    id: null,
-    nombre: '',
-    telefono: '',
-    email: email.toLowerCase(),
-    loggedAt: Date.now()
-  };
-  saveClienteSession(session);
-  _showToast('Email verificado');
-  _updateCuentaBadge();
-  _mcShowHistorial(session);
+  // Buscar el cliente por email en el servidor
+  fetch('/api/cuenta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'find-by-email', email: email })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok && data.existe && data.cliente) {
+      // Cliente encontrado — guardar sesión con datos reales
+      saveClienteSession(data.cliente);
+      // Guardar sessionToken para pedidos y colección
+      if (data.sessionToken) {
+        try {
+          localStorage.setItem('arcano_session_token', data.sessionToken);
+          localStorage.setItem('arcano_session_expiry', String(data.sessionExpiry));
+          localStorage.setItem('arcano_cliente_id', data.cliente.id);
+        } catch(e) {}
+      }
+      _showToast('¡Bienvenido ' + (data.cliente.nombre || '').split(' ')[0] + '!');
+      _updateCuentaBadge();
+      _mcShowHistorial(data.cliente);
+    } else {
+      // Cliente no encontrado por email — mostrar cuenta vacía
+      var session = {
+        id: null,
+        nombre: '',
+        telefono: '',
+        email: email.toLowerCase(),
+        loggedAt: Date.now()
+      };
+      saveClienteSession(session);
+      _showToast('Email verificado');
+      _updateCuentaBadge();
+      _mcShowHistorial(session);
+    }
+  }).catch(function(e) {
+    console.warn('[Mi Cuenta] Error buscando cliente:', e.message);
+    var session = {
+      id: null,
+      nombre: '',
+      telefono: '',
+      email: email.toLowerCase(),
+      loggedAt: Date.now()
+    };
+    saveClienteSession(session);
+    _mcShowHistorial(session);
+  });
 }
 
 function _mcVerifyOTP() {
