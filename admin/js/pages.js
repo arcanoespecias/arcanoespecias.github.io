@@ -7001,17 +7001,12 @@ const Pages = {
       }
 
       // Catálogo de modelos con su endpoint y formato de request/response
-      // ACTUALIZADO 2026-10: los modelos antiguos (imagen-3.0-generate-002,
-      // imagen-3.0-fast-generate-001, gemini-2.0-flash-preview-image-generation)
-      // están DEPRECADOS. Google ahora usa la familia "gemini-X-flash-image"
-      // con el endpoint generateContent estándar + responseModalities: ["TEXT","IMAGE"].
-      // Modelo principal: gemini-2.5-flash-image (plan gratuito disponible).
-      // Fallbacks: gemini-3.1-flash-image y gemini-3.1-flash-lite-image (más nuevos).
-      // Imagen 4 fue SHUT DOWN el 2026-08-17.
+      // ACTUALIZADO 2026-10: usar gemini-3.6-flash (mismo que genera recetas) con responseModalities IMAGE.
+      // Los modelos anteriores (gemini-2.5-flash-image, etc.) fallan con API keys nuevas.
       var models = [
         {
-          name: 'gemini-2.5-flash-image',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=' + apiKey,
+          name: 'gemini-3.6-flash',
+          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey,
           buildBody: function(p) {
             return {
               contents: [{ role: 'user', parts: [{ text: p }] }],
@@ -7034,28 +7029,6 @@ const Pages = {
         {
           name: 'gemini-3.1-flash-image',
           endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=' + apiKey,
-          buildBody: function(p) {
-            return {
-              contents: [{ role: 'user', parts: [{ text: p }] }],
-              generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-            };
-          },
-          extractImage: function(data) {
-            var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
-            for (var i = 0; i < parts.length; i++) {
-              if (parts[i].inlineData && parts[i].inlineData.data) {
-                return { data: parts[i].inlineData.data, mime: parts[i].inlineData.mimeType || 'image/png' };
-              }
-              if (parts[i].inline_data && parts[i].inline_data.data) {
-                return { data: parts[i].inline_data.data, mime: parts[i].inline_data.mime_type || 'image/png' };
-              }
-            }
-            return null;
-          }
-        },
-        {
-          name: 'gemini-3.1-flash-lite-image',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=' + apiKey,
           buildBody: function(p) {
             return {
               contents: [{ role: 'user', parts: [{ text: p }] }],
