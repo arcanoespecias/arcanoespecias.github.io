@@ -261,6 +261,107 @@ function renderCartDrawer() {
   }
   // Reset footer to step 1
   _cartSetFooterStep(1);
+  // ETAPA marketing: progress bar + upsell
+  _renderMarketingInCart();
+}
+
+function _renderMarketingInCart() {
+  var cfg = (typeof getTiendaConfig === 'function') ? getTiendaConfig() : {};
+  var mkConfig = cfg.marketing || {};
+  var body = document.getElementById('cart-drawer-body');
+  if (!body) return;
+  var total = getCartTotal();
+
+  // === Progress bar envio gratis ===
+  if (mkConfig.progressEnvioGratis !== false) {
+    var umbral = (cfg.configEnvio && cfg.configEnvio.montoMinimoGratis) || 60000;
+    var ciudadSel = '';
+    try { ciudadSel = (document.getElementById('o-ciudad') || {}).value || ''; } catch(e) {}
+    if (ciudadSel === '' || ciudadSel === 'Medell\u00edn') {
+      var barHtml = '';
+      if (total < umbral) {
+        var faltan = umbral - total;
+        var pct = Math.min(100, Math.round((total / umbral) * 100));
+        barHtml = '<div id="mk-progress" style="margin:12px 0;padding:12px;background:rgba(232,184,75,0.08);border-radius:8px;border:1px solid rgba(232,184,75,0.2)">' +
+          '<div style="font-size:0.82rem;color:var(--text-sec);margin-bottom:6px">Te faltan <b style="color:var(--gold)">$' + faltan.toLocaleString() + '</b> para el env\u00edo gratis</div>' +
+          '<div style="width:100%;height:6px;background:rgba(0,0,0,0.3);border-radius:3px;overflow:hidden">' +
+          '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,var(--gold),#e8c860);border-radius:3px;transition:width 0.4s ease"></div>' +
+          '</div></div>';
+      } else {
+        barHtml = '<div id="mk-progress" style="margin:12px 0;padding:10px;background:rgba(107,142,78,0.1);border-radius:8px;border:1px solid rgba(107,142,78,0.3);text-align:center">' +
+          '<span style="font-size:0.82rem;color:var(--green)">&#x2705; Ten\u00e9s env\u00edo gratis!</span></div>';
+      }
+      body.insertAdjacentHTML('beforeend', barHtml);
+    }
+  }
+
+  // === Producto sugerido (upsell) ===
+  if (mkConfig.upsellActivo !== false) {
+    var sugerido = _getUpsellProduct();
+    if (sugerido) {
+      var precio = (sugerido.precioChico > 0) ? sugerido.precioChico : sugerido.precioGrande;
+      if (precio > 0) {
+        var talla = (sugerido.precioChico > 0) ? 'chico' : 'grande';
+        var imgHtml = sugerido.imagen ? '<img src="' + sugerido.imagen + '" style="width:42px;height:42px;border-radius:6px;object-fit:cover" alt="">' : '';
+        var upsellHtml = '<div id="mk-upsell" style="margin:8px 0 12px;padding:12px;background:rgba(245,238,215,0.04);border-radius:8px;border:1px solid var(--border)">' +
+          '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Tambi\u00e9n te puede gustar</div>' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+          imgHtml +
+          '<div style="flex:1"><div style="font-size:0.88rem;font-weight:600;color:var(--text)">' + esc(sugerido.nombre) + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--text-sec)">$' + precio.toLocaleString() + '</div></div>' +
+          '<button class="btn-primary" style="padding:6px 14px;font-size:0.8rem" onclick="_addUpsellToCart(' + sugerido.id + ',\'' + (sugerido.tipo || 'blend') + '\',\'' + talla + '\')">Agregar</button>' +
+          '</div></div>';
+        body.insertAdjacentHTML('beforeend', upsellHtml);
+      }
+    }
+  }
+}
+
+function _getUpsellProduct() {
+  var cfg = (typeof getTiendaConfig === 'function') ? getTiendaConfig() : {};
+  var mkConfig = cfg.marketing || {};
+  var products = (typeof getStoreProducts === 'function') ? getStoreProducts() : [];
+  if (!products.length) return null;
+
+  var inCart = {};
+  for (var i = 0; i < cart.length; i++) { inCart[cart[i].productId] = true; }
+
+  // 1. Admin eligio producto especifico
+  if (mkConfig.upsellProductId) {
+    var upsellId = Number(mkConfig.upsellProductId);
+    for (var j = 0; j < products.length; j++) {
+      if (products[j].id === upsellId && !inCart[upsellId]) return products[j];
+    }
+  }
+
+  // 2. Fallback: mayor stock disponible que no este en carrito
+  var candidates = [];
+  for (var k = 0; k < products.length; k++) {
+    var p = products[k];
+    if (inCart[p.id]) continue;
+    var stock = (p.stockChico || 0) + (p.stockGrande || 0);
+    var disp = (p._disponibleChico || p._disponibleGrande) ? 1 : 0;
+    if (stock > 0 || disp) candidates.push({ product: p, stock: stock });
+  }
+  candidates.sort(function(a, b) { return b.stock - a.stock; });
+  return candidates.length > 0 ? candidates[0].product : null;
+}
+
+function _addUpsellToCart(productId, tipo, talla) {
+  var products = (typeof getStoreProducts === 'function') ? getStoreProducts() : [];
+  for (var i = 0; i < products.length; i++) {
+    if (products[i].id === productId) {
+      var p = products[i];
+      var t = talla || ((p.precioChico > 0) ? 'chico' : 'grande');
+      var precio = (t === 'grande') ? p.precioGrande : p.precioChico;
+      if (precio > 0) {
+        cart.push({ productId: p.id, nombre: p.nombre, tipo: p.tipo, talla: t, precio: precio, qty: 1 });
+        saveCart(); updateCartBadge(); renderCartDrawer();
+        _showToast(p.nombre + ' agregado');
+      }
+      return;
+    }
+  }
 }
 
 var _cartStep = 1;
