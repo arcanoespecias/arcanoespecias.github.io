@@ -227,11 +227,23 @@ function renderCartDrawer() {
     body.innerHTML = '<div class="empty-state" style="padding:48px 0"><p>Tu pedido esta\u0301 vac\u00EDo</p></div>';
     return;
   }
+  var products = (typeof getStoreProducts === 'function') ? getStoreProducts() : [];
   var h = '';
   for (var i = 0; i < cart.length; i++) {
     var c = cart[i];
     var tallaLabel = c.talla === 'pack' ? 'Pack' : (c.talla === 'grande' ? 'Grande' : 'Peque\u00f1o');
+    // Buscar imagen del producto
+    var imgSrc = '';
+    for (var pi = 0; pi < products.length; pi++) {
+      if (products[pi].id === c.productId && products[pi].imagen) {
+        imgSrc = products[pi].imagen;
+        break;
+      }
+    }
     h += '<div class="cart-drawer-item">';
+    if (imgSrc) {
+      h += '<img src="' + imgSrc + '" class="cart-drawer-item-img" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" alt="' + esc(c.nombre) + '">';
+    }
     h += '<div class="cart-drawer-item-info">';
     h += '<div class="cart-drawer-item-name">' + c.nombre + '</div>';
     h += '<div class="cart-drawer-item-detail">' + tallaLabel + ' \u00b7 $' + c.precio.toLocaleString() + ' c/u</div>';
