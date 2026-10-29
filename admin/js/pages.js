@@ -8018,6 +8018,58 @@ const Pages = {
     Pages._blogEditKey = null;
   },
 
+  // === Editor de FAQs ===
+  // Renderiza las filas de FAQ (pregunta + respuesta + botón eliminar)
+  _renderFaqsEditor: function(faqs) {
+    if (!faqs || !faqs.length) {
+      return '<div class="text-muted text-xs" style="padding:8px">Sin FAQs. Click en "+ Agregar FAQ" para crear la primera.</div>';
+    }
+    var h = '';
+    for (var i = 0; i < faqs.length; i++) {
+      var f = faqs[i] || {};
+      h += '<div class="be-faq-row" style="display:grid;grid-template-columns:1fr;gap:4px;padding:8px;background:var(--bg2);border-radius:6px;border:1px solid var(--border)">' +
+        '<input type="text" class="input be-faq-q" placeholder="Pregunta (ej: ¿Cómo conservar la pimienta?)" value="' + esc(f.q || '') + '" style="font-size:0.85rem">' +
+        '<textarea class="input be-faq-a" rows="2" placeholder="Respuesta..." style="font-size:0.85rem">' + esc(f.a || '') + '</textarea>' +
+        '<button type="button" class="btn btn-sm btn-red" style="justify-self:start;padding:2px 10px;font-size:0.75rem" onclick="this.closest(\'.be-faq-row\').remove()">Eliminar</button>' +
+      '</div>';
+    }
+    return h;
+  },
+
+  // Agrega una fila vacía de FAQ al contenedor
+  _addFaqRow: function() {
+    var container = document.getElementById('be-faqs-container');
+    if (!container) return;
+    // Si hay un placeholder "Sin FAQs", quitarlo
+    var placeholder = container.querySelector('.text-muted');
+    if (placeholder) placeholder.remove();
+    var row = document.createElement('div');
+    row.className = 'be-faq-row';
+    row.style.cssText = 'display:grid;grid-template-columns:1fr;gap:4px;padding:8px;background:var(--bg2);border-radius:6px;border:1px solid var(--border)';
+    row.innerHTML =
+      '<input type="text" class="input be-faq-q" placeholder="Pregunta (ej: ¿Cómo conservar la pimienta?)" value="" style="font-size:0.85rem">' +
+      '<textarea class="input be-faq-a" rows="2" placeholder="Respuesta..." style="font-size:0.85rem"></textarea>' +
+      '<button type="button" class="btn btn-sm btn-red" style="justify-self:start;padding:2px 10px;font-size:0.75rem" onclick="this.closest(\'.be-faq-row\').remove()">Eliminar</button>';
+    container.appendChild(row);
+    row.querySelector('.be-faq-q').focus();
+  },
+
+  // Lee todas las FAQs del editor y devuelve un array limpio (sin vacías)
+  _collectFaqsFromEditor: function() {
+    var container = document.getElementById('be-faqs-container');
+    if (!container) return [];
+    var rows = container.querySelectorAll('.be-faq-row');
+    var faqs = [];
+    for (var i = 0; i < rows.length; i++) {
+      var q = (rows[i].querySelector('.be-faq-q') || {}).value || '';
+      var a = (rows[i].querySelector('.be-faq-a') || {}).value || '';
+      if (q.trim() && a.trim()) {
+        faqs.push({ q: q.trim(), a: a.trim() });
+      }
+    }
+    return faqs;
+  },
+
   _renderEditor: function(articulo, title) {
     var card = document.getElementById('ba-editor-card');
     var body = document.getElementById('ba-editor-body');
@@ -8099,6 +8151,15 @@ const Pages = {
     // Indicadores SEO
     '<div class="form-group mt-8"><label>Checklist SEO</label>' +
       '<div id="be-seo-checklist" style="background:var(--bg2);border-radius:8px;padding:12px;border:1px solid var(--border);font-size:0.85rem"></div>' +
+    '</div>' +
+
+    // === Editor de FAQs ===
+    '<div class="form-group mt-8"><label>FAQs (Preguntas Frecuentes)</label>' +
+      '<p class="text-xs text-muted mb-8">Las FAQs aparecen al final del post y en el schema JSON-LD (las leen buscadores e IA). Edita el texto en tuteo (sin voseo: "puedes", "agrega", NO "podés", "agregá").</p>' +
+      '<div id="be-faqs-container" style="display:flex;flex-direction:column;gap:8px">' +
+        Pages._renderFaqsEditor(articulo.faqs || []) +
+      '</div>' +
+      '<button type="button" class="btn btn-sm btn-outline mt-8" onclick="Pages._addFaqRow()">+ Agregar FAQ</button>' +
     '</div>' +
 
     // Botones
@@ -8313,7 +8374,8 @@ const Pages = {
       imagen_url: imagen_url || null,
       fechaPublicacion: fechaPub.toISOString(),
       publicado: publicar && !esProgramado ? true : (esProgramado ? false : publicar),
-      programado: esProgramado
+      programado: esProgramado,
+      faqs: Pages._collectFaqsFromEditor()
     };
 
     if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Guardando...</span>';
