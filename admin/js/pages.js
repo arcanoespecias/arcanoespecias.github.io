@@ -7982,7 +7982,8 @@ const Pages = {
       contenido: state.fields['be-contenido'] ? state.fields['be-contenido'].value : '',
       imagen_url: state.fields['be-imagen-url'] ? state.fields['be-imagen-url'].value : '',
       fechaPublicacion: state.fields['be-fecha'] ? state.fields['be-fecha'].value : new Date().toISOString().slice(0, 16),
-      publicado: true
+      publicado: true,
+      faqs: Pages._collectFaqsFromEditor()
     }, state.title);
 
     // Restaurar posicion del cursor en el contenido (donde mas se rompe al re-render)
@@ -9519,7 +9520,8 @@ const Pages = {
         contenido: a.contenido || '',
         imagen_url: a.imagen_url || '',
         fechaPublicacion: fechaLocal,
-        publicado: a.publicado !== false
+        publicado: a.publicado !== false,
+        faqs: a.faqs || []
       }, 'Editar Articulo');
     });
   },
