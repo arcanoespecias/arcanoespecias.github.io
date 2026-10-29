@@ -7932,6 +7932,10 @@ const Pages = {
     var editorCard = document.getElementById('ba-editor-card');
     if (!editorCard || editorCard.style.display === 'none') return null;
 
+    // FIX: detectar si el editor tiene cambios sin guardar (dirty flag)
+    // Se setea en true cuando el usuario escribe en cualquier campo del editor.
+    Pages._blogEditorDirty = true;
+
     var state = {
       editKey: Pages._blogEditKey,
       title: '',
@@ -7954,6 +7958,21 @@ const Pages = {
       }
     }
 
+    // FIX: capturar las FAQs del editor (inputs .be-faq-q y textareas .be-faq-a)
+    // Antes no se capturaban, asi que al re-renderizar se perdia todo el contenido de FAQs.
+    var faqRows = editorBody.querySelectorAll('.be-faq-row');
+    if (faqRows.length) {
+      state.faqs = [];
+      for (var fi = 0; fi < faqRows.length; fi++) {
+        var qEl = faqRows[fi].querySelector('.be-faq-q');
+        var aEl = faqRows[fi].querySelector('.be-faq-a');
+        state.faqs.push({
+          q: qEl ? qEl.value : '',
+          a: aEl ? aEl.value : ''
+        });
+      }
+    }
+
     // Capturar el titulo del editor (Nuevo Articulo / Editar Articulo)
     var titleEl = document.getElementById('ba-editor-title');
     if (titleEl) state.title = titleEl.textContent;
@@ -7962,8 +7981,21 @@ const Pages = {
     var contenido = document.getElementById('be-contenido');
     if (contenido) state.contenidoScroll = contenido.scrollTop;
 
-    console.log('[blog-admin] Editor state capturado:', Object.keys(state.fields).length, 'campos');
+    console.log('[blog-admin] Editor state capturado:', Object.keys(state.fields).length, 'campos,', (state.faqs ? state.faqs.length : 0), 'FAQs');
     return state;
+  },
+
+  // FIX: retorna true si el editor de blog esta abierto con cambios sin guardar.
+  // Lo usa App.navigate() para confirmar antes de cambiar de pestaña.
+  _isBlogEditorDirty: function() {
+    var editorCard = document.getElementById('ba-editor-card');
+    if (!editorCard || editorCard.style.display === 'none') return false;
+    return Pages._blogEditorDirty === true;
+  },
+
+  // Resetea el dirty flag (llamar al guardar o cerrar el editor)
+  _clearBlogEditorDirty: function() {
+    Pages._blogEditorDirty = false;
   },
 
   // === Restaura el editor al estado capturado ===
@@ -7983,8 +8015,18 @@ const Pages = {
       imagen_url: state.fields['be-imagen-url'] ? state.fields['be-imagen-url'].value : '',
       fechaPublicacion: state.fields['be-fecha'] ? state.fields['be-fecha'].value : new Date().toISOString().slice(0, 16),
       publicado: true,
-      faqs: Pages._collectFaqsFromEditor()
+      faqs: state.faqs || []
     }, state.title);
+
+    // FIX: si el editor se restauró con FAQs, hay que inyectarlas en el contenedor
+    // porque _renderEditor ya las pintó pero si state.faqs tiene contenido distinto
+    // al que ya estaba, hay que sobreescribir. (En la mayoría de los casos ya coinciden.)
+    if (state.faqs && state.faqs.length) {
+      var container2 = document.getElementById('be-faqs-container');
+      if (container2) {
+        container2.innerHTML = Pages._renderFaqsEditor(state.faqs);
+      }
+    }
 
     // Restaurar posicion del cursor en el contenido (donde mas se rompe al re-render)
     setTimeout(function() {
@@ -8017,6 +8059,7 @@ const Pages = {
     var card = document.getElementById('ba-editor-card');
     if (card) card.style.display = 'none';
     Pages._blogEditKey = null;
+    Pages._clearBlogEditorDirty();  // FIX: reset dirty al cerrar
   },
 
   // === Editor de FAQs ===
@@ -8175,6 +8218,14 @@ const Pages = {
     card.style.display = 'block';
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     Pages._updateSEOIndicators();
+    // FIX: setear dirty flag al primer input del usuario en cualquier campo del editor.
+    // Esto permite que App.navigate() avise antes de perder cambios.
+    Pages._blogEditorDirty = false;  // arranca limpio (recién cargado)
+    var editorInputs = body.querySelectorAll('input, textarea, select');
+    for (var ei = 0; ei < editorInputs.length; ei++) {
+      editorInputs[ei].addEventListener('input', function() { Pages._blogEditorDirty = true; });
+      editorInputs[ei].addEventListener('change', function() { Pages._blogEditorDirty = true; });
+    }
   },
 
   // === Toolbar helpers ===
@@ -8339,6 +8390,7 @@ const Pages = {
     var meta = (document.getElementById('be-meta') || {}).value || '';
     var kw = (document.getElementById('be-keywords') || {}).value || '';
     var contenido = (document.getElementById('be-contenido') || {}).value || '';
+    Pages._clearBlogEditorDirty();  // FIX: reset dirty al guardar
     var fechaInput = (document.getElementById('be-fecha') || {}).value || '';
     var imagen_url = (document.getElementById('be-imagen-url') || {}).value || '';
     var statusEl = document.getElementById('be-status');

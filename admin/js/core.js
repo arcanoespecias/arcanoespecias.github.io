@@ -619,6 +619,13 @@ const App = {
   },
 
   navigate(page) {
+    // FIX: si el editor de blog esta abierto con cambios sin guardar, confirmar antes de salir.
+    // Esto previene perder contenido al cambiar de pestaña del admin.
+    if (this.currentPage !== page && typeof Pages !== 'undefined' && Pages._isBlogEditorDirty && Pages._isBlogEditorDirty()) {
+      if (!confirm('Tienes cambios sin guardar en el editor de blog.\n\n¿Seguro que quieres salir? Se perderá el contenido no guardado.')) {
+        return;  // Cancelar navegacion
+      }
+    }
     this.currentPage = page;
     // Marcar que el usuario navegó explícitamente (para que el throttle permita el render)
     if (typeof Pages !== 'undefined') {
@@ -720,3 +727,13 @@ const App = {
 };
 
 document.addEventListener('DOMContentLoaded', function() { App.init(); });
+
+// FIX: avisar antes de cerrar/refrescar la pestaña del navegador si hay cambios sin guardar.
+// Esto previene perder contenido del editor de blog al cambiar de tab del navegador.
+window.addEventListener('beforeunload', function(e) {
+  if (typeof Pages !== 'undefined' && Pages._isBlogEditorDirty && Pages._isBlogEditorDirty()) {
+    e.preventDefault();
+    e.returnValue = 'Tienes cambios sin guardar en el editor de blog. ¿Seguro que quieres salir?';
+    return e.returnValue;
+  }
+});
