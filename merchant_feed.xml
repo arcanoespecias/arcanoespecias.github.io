@@ -491,6 +491,24 @@
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
+<g:id>noche-serena</g:id>
+<g:title>Noche Serena</g:title>
+<g:description>Una infusión de perfil floral y cálido, donde la manzanilla y la lavanda crean un aroma delicado y envolvente. La melisa aporta frescura y la canela junto al anís dejan un fondo dulce y especiado, dando forma a una mezcla suave, equilibrada y nocturna.</g:description>
+<g:link>https://arcanoespecias.com/blends/noche-serena/</g:link>
+<g:image_link>https://arcanoespecias.com/img/blends/noche-serena.jpg?v=1791250262761</g:image_link>
+<g:availability>in stock</g:availability>
+<g:price>15000 COP</g:price>
+<g:brand>Arcano Especias</g:brand>
+<g:condition>new</g:condition>
+<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
+<g:product_type>Infusiones</g:product_type>
+<g:identifier_exists>FALSE</g:identifier_exists>
+<g:target_country>CO</g:target_country>
+<g:content_language>es</g:content_language>
+<g:shipping_weight>86 g</g:shipping_weight>
+<g:max_handling_time>1</g:max_handling_time>
+</item>
+<item>
 <g:id>sobremesa-arcano</g:id>
 <g:title>Sobremesa Arcano</g:title>
 <g:description>Una mezcla aromática de perfil cálido y especiado, donde el anís y el hinojo aportan un carácter dulce y ligeramente herbal. El jengibre, la canela y el cardamomo suman profundidad, creando un aroma envolvente, elegante y perfecto para cerrar la experiencia gastronómica.</g:description>
@@ -573,7 +591,7 @@
 <g:brand>Arcano Especias</g:brand>
 <g:condition>new</g:condition>
 <g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
+<g:product_type>Infusiones</g:product_type>
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
@@ -586,24 +604,6 @@
 <g:description>Una mezcla botánica de perfil cítrico y especiado, con el limón y el enebro como protagonistas. El cardamomo y el clavo aportan profundidad aromática, mientras la pimienta blanca deja un final limpio y sutilmente intenso. Fresca, elegante y de gran expresión aromática.</g:description>
 <g:link>https://arcanoespecias.com/blends/citrus-gin/</g:link>
 <g:image_link>https://arcanoespecias.com/img/blends/citrus-gin.jpg?v=1791247617160</g:image_link>
-<g:availability>in stock</g:availability>
-<g:price>15000 COP</g:price>
-<g:brand>Arcano Especias</g:brand>
-<g:condition>new</g:condition>
-<g:google_product_category>Food, Beverages &amp; Tobacco &gt; Food Items &gt; Cooking &amp; Baking Ingredients &gt; Seasonings &amp; Spices</g:google_product_category>
-<g:product_type>Cocteleria</g:product_type>
-<g:identifier_exists>FALSE</g:identifier_exists>
-<g:target_country>CO</g:target_country>
-<g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
-<g:max_handling_time>1</g:max_handling_time>
-</item>
-<item>
-<g:id>caribbean-rum</g:id>
-<g:title>Caribbean Rum</g:title>
-<g:description>Una mezcla tropical de aroma cálido y frutal, donde la canela se combina con naranja, jengibre y piña para crear un perfil dulce, especiado y expresivo. Una selección pensada para quienes disfrutan sabores tropicales con un fondo aromático y sofisticado.</g:description>
-<g:link>https://arcanoespecias.com/blends/caribbean-rum/</g:link>
-<g:image_link>https://arcanoespecias.com/img/blends/caribbean-rum.jpg?v=1791247434591</g:image_link>
 <g:availability>in stock</g:availability>
 <g:price>15000 COP</g:price>
 <g:brand>Arcano Especias</g:brand>
@@ -811,7 +811,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>166 g</g:shipping_weight>
+<g:shipping_weight>191 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -865,7 +865,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>145 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -883,7 +883,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>147 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -901,7 +901,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>149 g</g:shipping_weight>
+<g:shipping_weight>156 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -919,7 +919,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>164 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -937,7 +937,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>156 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -955,7 +955,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>132 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -991,7 +991,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>152 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -1027,7 +1027,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>148 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -1045,7 +1045,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>147 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -1081,7 +1081,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>168 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
@@ -1099,7 +1099,7 @@
 <g:identifier_exists>FALSE</g:identifier_exists>
 <g:target_country>CO</g:target_country>
 <g:content_language>es</g:content_language>
-<g:shipping_weight>86 g</g:shipping_weight>
+<g:shipping_weight>131 g</g:shipping_weight>
 <g:max_handling_time>1</g:max_handling_time>
 </item>
 <item>
