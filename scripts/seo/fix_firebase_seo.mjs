@@ -43,43 +43,76 @@ const REPO = path.resolve(__dirname, '..', '..');
 const FIREBASE_DB_URL = 'https://arcano-6788d-default-rtdb.firebaseio.com/arcano/db';
 const BACKUP_DIR = path.join(__dirname, 'backups');
 
-// Reemplazos de voseo → tuteo (orden importa: imperativos primero)
+// Reemplazos de voseo → tuteo
+// IMPORTANTE: solo convertir formas voseantes reales, preservando mayúsculas.
+// NO usar flag 'i' para los imperativos con tilde (á, é, í) → ya son voseo.
+// Las formas SIN tilde (agrega, deja, usa) son tuteo válido y NO se tocan.
+// Caso especial: "podes", "queres", "tenes" (sin tilde) son voseo escrito sin tilde
+// y se convierten; "puedes", "quieres", "tienes" no matchean.
+
+// FIX: JavaScript \b no reconoce vocales acentuadas como word chars.
+// "agregándola" contiene "agregá" entre \b boundaries falsos.
+// Usamos lookbehind/lookahead con \p{L} (Unicode letter) + flag 'u'.
+const LW = '(?<![\\p{L}])';  // left word boundary (Unicode-aware)
+const RW = '(?!\\p{L})';     // right word boundary (Unicode-aware)
+
+function preserveCase(replacement, original) {
+  // Si la palabra original empieza con mayúscula, capitalizar el reemplazo.
+  if (original && original[0] === original[0].toUpperCase() && original[0] !== original[0].toLowerCase()) {
+    return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
+}
+
+// Helper: compila un patrón con word boundaries Unicode-aware + flags 'gu' (global + case-insensitive)
+// El flag 'i' hace que "Guardá" matchee "guardá", pero NO hace que "á" matchee "a"
+// (son caracteres Unicode distintos). Así "guarda" (tuteo) NO se ve afectado.
+function wp(word) {
+  return new RegExp(LW + word + RW, 'giu');
+}
+
 const VOSEO_REPLACEMENTS = [
-  // Imperativos (pueden aparecer con tilde o sin ella)
-  [/\bdescubrí\b/gi, 'descubre'],
-  [/\bdescubri\b/gi, 'descubre'],
-  [/\bagregá\b/gi, 'agrega'],
-  [/\bagrega\b/gi, 'agrega'],  // ya es tuteo, pero normaliza
-  [/\bdejá\b/gi, 'deja'],
-  [/\busá\b/gi, 'usa'],
-  [/\bmirá\b/gi, 'mira'],
-  [/\bprobá\b/gi, 'prueba'],
-  [/\barmá\b/gi, 'arma'],
-  [/\bsumá\b/gi, 'suma'],
-  [/\bconsultá\b/gi, 'consulta'],
-  [/\bentrá\b/gi, 'entra'],
-  [/\belegí\b/gi, 'elige'],
-  [/\belegi\b/gi, 'elige'],
-  [/\bescribí\b/gi, 'escribe'],
-  [/\bescribi\b/gi, 'escribe'],
-  // Formas verbales con pronombre
-  [/\bpodés\b/gi, 'puedes'],
-  [/\bpodes\b/gi, 'puedes'],
-  [/\bquerés\b/gi, 'quieres'],
-  [/\bqueres\b/gi, 'quieres'],
-  [/\btenés\b/gi, 'tienes'],
-  [/\btenes\b/gi, 'tienes'],
-  [/\bsabés\b/gi, 'sabes'],
-  [/\bsabes\b/gi, 'sabes'],  // ya es tuteo, normaliza
-  [/\bencontrás\b/gi, 'encuentras'],
-  [/\bencontras\b/gi, 'encuentras'],
-  [/\baplicás\b/gi, 'aplicas'],
-  [/\baplicas\b/gi, 'aplicas'],  // ya tuteo, normaliza
-  [/\brecibís\b/gi, 'recibes'],
-  [/\brecibis\b/gi, 'recibes'],
-  // Pronombre "vos" → "tú" (solo como palabra independiente)
-  [/\bvos\b(?!\.)/gi, 'tú'],
-  // "contactanos" → "contáctanos" ya existe en tuteo, no cambia
+  // Imperativos voseantes (CON TILDE, obligatoria): agregá, dejá, usá, etc.
+  [wp('descubrí'), function(m) { return preserveCase('descubre', m); }],
+  [wp('agregá'), function(m) { return preserveCase('agrega', m); }],
+  [wp('dejá'), function(m) { return preserveCase('deja', m); }],
+  [wp('usá'), function(m) { return preserveCase('usa', m); }],
+  [wp('mirá'), function(m) { return preserveCase('mira', m); }],
+  [wp('probá'), function(m) { return preserveCase('prueba', m); }],
+  [wp('armá'), function(m) { return preserveCase('arma', m); }],
+  [wp('sumá'), function(m) { return preserveCase('suma', m); }],
+  [wp('consultá'), function(m) { return preserveCase('consulta', m); }],
+  [wp('entrá'), function(m) { return preserveCase('entra', m); }],
+  [wp('elegí'), function(m) { return preserveCase('elige', m); }],
+  [wp('escribí'), function(m) { return preserveCase('escribe', m); }],
+  [wp('comenzá'), function(m) { return preserveCase('comienza', m); }],
+  [wp('ajustá'), function(m) { return preserveCase('ajusta', m); }],
+  [wp('guardá'), function(m) { return preserveCase('guarda', m); }],
+  [wp('avisá'), function(m) { return preserveCase('avisa', m); }],
+  [wp('esperá'), function(m) { return preserveCase('espera', m); }],
+  [wp('verificá'), function(m) { return preserveCase('verifica', m); }],
+  [wp('seleccioná'), function(m) { return preserveCase('selecciona', m); }],
+  [wp('creá'), function(m) { return preserveCase('crea', m); }],
+  // Presente 2a persona voseante (con tilde): podés, querés, tenés, sabés, etc.
+  [wp('podés'), function(m) { return preserveCase('puedes', m); }],
+  [wp('podes'), function(m) { return preserveCase('puedes', m); }],  // voseo sin tilde
+  [wp('querés'), function(m) { return preserveCase('quieres', m); }],
+  [wp('queres'), function(m) { return preserveCase('quieres', m); }],  // voseo sin tilde
+  [wp('tenés'), function(m) { return preserveCase('tienes', m); }],
+  [wp('tenes'), function(m) { return preserveCase('tienes', m); }],  // voseo sin tilde
+  [wp('sabés'), function(m) { return preserveCase('sabes', m); }],
+  // "sabes" sin tilde es tuteo válido → NO se convierte
+  [wp('encontrás'), function(m) { return preserveCase('encuentras', m); }],
+  [wp('encontras'), function(m) { return preserveCase('encuentras', m); }],  // voseo sin tilde
+  [wp('aplicás'), function(m) { return preserveCase('aplicas', m); }],
+  // "aplicas" sin tilde es tuteo válido → NO se convierte
+  [wp('recibís'), function(m) { return preserveCase('recibes', m); }],
+  [wp('recibis'), function(m) { return preserveCase('recibes', m); }],  // voseo sin tilde
+  [wp('ajustás'), function(m) { return preserveCase('ajustas', m); }],
+  [wp('necesitás'), function(m) { return preserveCase('necesitas', m); }],
+  // "necesitas" sin tilde es tuteo → NO se convierte
+  // Pronombre "vos" → "tú" (solo como palabra independiente, no "vos." ni "vosotros")
+  [wp('vos'), function(m) { return preserveCase('tú', m); }],
 ];
 
 // Enlaces a productos inexistentes → dejar solo el texto
