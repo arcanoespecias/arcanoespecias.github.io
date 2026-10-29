@@ -5185,6 +5185,53 @@ const Pages = {
     '</div>';
     h += '</div></div>';
 
+    // === MARKETING EN CARRITO ===
+    // Configura la barra de progreso de envío gratis y el upsell (producto sugerido)
+    // que se muestran dentro del drawer del carrito en la tienda.
+    // Leído por js/tienda-ui.js → _renderMarketingInCart() usando cfg.marketing.
+    var mk = cfg.marketing || {};
+    var umbralGratis = (cfg.configEnvio && cfg.configEnvio.montoMinimoGratis) || 60000;
+    // Construir dropdown de productos para upsell (mismos que se ven en la tienda)
+    var upsellOpts = '<option value=""' + (mk.upsellProductId ? '' : ' selected') + '>Autom\u00E1tico (mayor stock disponible)</option>';
+    var prodsForUpsell = ArcanoDB.getProductosPublicados();
+    for (var up = 0; up < prodsForUpsell.length; up++) {
+      var pu = prodsForUpsell[up];
+      var tipoL = (pu._tipo === 'blend') ? 'Blend' : (pu._tipo === 'especia' ? 'Especia' : 'Producto');
+      var sel = (Number(mk.upsellProductId) === Number(pu.id)) ? ' selected' : '';
+      upsellOpts += '<option value="' + pu.id + '"' + sel + '>[' + tipoL + '] ' + esc(pu.nombre) + '</option>';
+    }
+    h += '<div class="card mt-16"><div class="card-header"><h3>\u{1F6D2} Marketing en Carrito</h3><p class="text-xs text-muted">Activa o desactiva los elementos de marketing que aparecen dentro del drawer del carrito de la tienda. Si apag\u00E1s ambos, el carrito vuelve a su m\u00EDnimo visual (solo productos + total).</p></div><div class="card-body">';
+
+    // Progress bar envío gratis
+    h += '<div class="form-group" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:8px">' +
+      '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">' +
+        '<input type="checkbox" id="mk-progress" ' + (mk.progressEnvioGratis !== false ? 'checked' : '') + '> ' +
+        '<span>Barra de progreso de env\u00EDo gratis</span>' +
+      '</label>' +
+      '<span class="text-xs text-muted" style="margin-left:auto">Umbral actual: $' + Number(umbralGratis).toLocaleString() + ' (cambia desde Env\u00EDos &gt; Configuraci\u00F3n)</span>' +
+    '</div>';
+    h += '<p class="text-xs text-muted" style="margin-top:-4px;margin-bottom:12px">Muestra "Te faltan $X para el env\u00EDo gratis" en Medell\u00EDn cuando el total est\u00E1 por debajo del umbral.</p>';
+
+    // Upsell producto sugerido
+    h += '<div class="form-group" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:8px">' +
+      '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">' +
+        '<input type="checkbox" id="mk-upsell" ' + (mk.upsellActivo !== false ? 'checked' : '') + '> ' +
+        '<span>Producto sugerido (upsell)</span>' +
+      '</label>' +
+    '</div>';
+    h += '<p class="text-xs text-muted" style="margin-top:-4px">Muestra "Tambi\u00E9n te puede gustar" debajo del carrito con un producto recomendado.</p>';
+    h += '<div class="form-group mt-12"><label>Producto sugerido</label>' +
+      '<select class="input" id="mk-upsell-product">' + upsellOpts + '</select>' +
+      '<p class="text-xs text-muted" style="margin-top:6px">Si eleg\u00EDs "Autom\u00E1tico", el sistema sugiere el producto con mayor stock que no est\u00E9 ya en el carrito del cliente.</p>' +
+    '</div>';
+
+    h += '<div class="mt-12" style="display:flex;gap:8px;align-items:center">' +
+      '<button class="btn btn-gold" onclick="Pages._guardarMarketingCarrito()">Guardar marketing</button>' +
+      '<button class="btn btn-outline" onclick="Pages._resetMarketingCarrito()">Desactivar todo</button>' +
+      '<span id="mk-status" class="text-sm text-muted ml-8"></span>' +
+    '</div>';
+    h += '</div></div>';
+
     container.innerHTML = h;
   },
 
@@ -14113,6 +14160,40 @@ Pages._removePopupImg = function() {
   if (img) img.remove();
   var btn = area.querySelector('button');
   if (btn) btn.remove();
+};
+
+/* ==================== MARKETING EN CARRITO (admin) ==================== */
+// Guarda los flags de marketing que lee js/tienda-ui.js → _renderMarketingInCart().
+// Esos flags controlan la barra de progreso de envío gratis y el upsell
+// (producto sugerido) que aparecen dentro del drawer del carrito en la tienda.
+// Estructura persistida en Firebase: arcano/db/tiendaConfig.marketing = { ... }.
+Pages._guardarMarketingCarrito = function() {
+  var progressEl = document.getElementById('mk-progress');
+  var upsellEl = document.getElementById('mk-upsell');
+  var upsellProdEl = document.getElementById('mk-upsell-product');
+  if (!progressEl || !upsellEl) {
+    toast('No se encontraron los controles de marketing', 'err');
+    return;
+  }
+  var upsellProductId = upsellProdEl ? (upsellProdEl.value || '') : '';
+  var data = {
+    progressEnvioGratis: progressEl.checked,
+    upsellActivo: upsellEl.checked,
+    upsellProductId: upsellProductId
+  };
+  ArcanoDB.saveTiendaConfig({ marketing: data });
+  var status = document.getElementById('mk-status');
+  if (status) status.innerHTML = '<span style="color:var(--green)">\u2713 Guardado</span>';
+  toast('Marketing en carrito guardado');
+  setTimeout(function() { if (status) status.innerHTML = ''; }, 3000);
+};
+
+// Desactiva ambos elementos de marketing de una sola vez.
+Pages._resetMarketingCarrito = function() {
+  if (!confirm('\u00BFApagar la barra de env\u00EDo gratis y el producto sugerido? El carrito de la tienda volver\u00E1 a su m\u00EDnimo visual.')) return;
+  ArcanoDB.saveTiendaConfig({ marketing: { progressEnvioGratis: false, upsellActivo: false, upsellProductId: '' } });
+  toast('Marketing en carrito desactivado');
+  App.renderPage('tienda');
 };
 
 /* ==================== ENV\u00CDOS (SERVIENTREGA) ==================== */
