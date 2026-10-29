@@ -85,7 +85,7 @@
       '<div class="arcano-chat-messages" id="arcano-chat-msgs"></div>' +
       '<div class="arcano-quick-replies" id="arcano-chat-quick"></div>' +
       '<div class="arcano-chat-input-wrap">' +
-        '<input type="text" class="arcano-chat-input" placeholder="Escribí tu consulta..." id="arcano-chat-input">' +
+        '<input type="text" class="arcano-chat-input" placeholder="Escribe tu consulta..." id="arcano-chat-input">' +
         '<button class="arcano-chat-send" aria-label="Enviar">' +
           '<svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>' +
         '</button>' +
@@ -251,15 +251,15 @@
 
       if (!resp.ok) {
         console.error('[chatbot] /api/chat error:', data);
-        var errMsg = 'Disculpá, tuve un problema técnico. ';
-        if (resp.status === 429) errMsg += 'Límite de consultas alcanzado. Intentá de nuevo en unos minutos. 🌿';
-        else if (resp.status === 401) errMsg += 'API key inválida. Avisale al administrador. 🌿';
-        else errMsg += 'Intentá de nuevo en un momento. 🌿';
+        var errMsg = 'Lo siento, tuve un problema técnico. ';
+        if (resp.status === 429) errMsg += 'Límite de consultas alcanzado. Intenta de nuevo en unos minutos. 🌿';
+        else if (resp.status === 401) errMsg += 'API key inválida. Avísale al administrador. 🌿';
+        else errMsg += 'Intenta de nuevo en un momento. 🌿';
         addMessage('bot', errMsg);
         return;
       }
 
-      var reply = data?.reply || data?.text || data?.choices?.[0]?.message?.content || 'Disculpá, no pude procesar tu consulta. 🌿';
+      var reply = data?.reply || data?.text || data?.choices?.[0]?.message?.content || 'Lo siento, no pude procesar tu consulta. 🌿';
       var mentionedIds = data?.productosMencionados || extractBlendIds(reply, _catalogo);
       var cleanReply = reply.replace(/\[ID:\d+\]/g, '').trim();
       addMessage('bot', cleanReply, mentionedIds);

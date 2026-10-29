@@ -250,11 +250,11 @@ export async function onRequestPost({ request, env }) {
       const errJson = JSON.parse(errText);
       const msg = errJson?.error?.message || '';
       if (geminiResp.status === 429) {
-        friendlyMsg = 'Límite de cuota de Gemini alcanzado. Esperá 1 minuto y probá de nuevo.';
+        friendlyMsg = 'Límite de cuota de Gemini alcanzado. Espera 1 minuto y prueba de nuevo.';
       } else if (msg.includes('no longer available') || msg.includes('deprecated')) {
-        friendlyMsg = 'El modelo de Gemini no está disponible. Si tu API key empieza con "AQ.", necesitás un modelo nuevo (gemini-3.x). Si empieza con "AIzaSy", usá 2.0-flash.';
+        friendlyMsg = 'El modelo de Gemini no está disponible. Si tu API key empieza con "AQ.", necesitas un modelo nuevo (gemini-3.x). Si empieza con "AIzaSy", usa 2.0-flash.';
       } else if (geminiResp.status === 400 && msg.includes('API key not valid')) {
-        friendlyMsg = 'La API key de Gemini no es válida. Verificá que esté bien copiada en el panel Chatbot IA.';
+        friendlyMsg = 'La API key de Gemini no es válida. Verifica que esté bien copiada en el panel Chatbot IA.';
       } else if (msg) {
         friendlyMsg = msg;
       }

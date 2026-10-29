@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Backups de Firebase (generados por scripts/seo/fix_firebase_seo.mjs)
+scripts/seo/backups/
+
+# Node
+node_modules/

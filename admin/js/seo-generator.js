@@ -571,7 +571,10 @@ var ArcanoSEO = (function() {
         html.push('<div class="recetas-grid">');
         for (var ri2 = 0; ri2 < recetasDelBlend.length; ri2++) {
           var rec2 = recetasDelBlend[ri2];
-          var rSlug2 = slugify(rec2.titulo);
+          // FIX SEO: usar slug_publicado si existe (preserva el archivo real en /recetas/).
+          // Antes se usaba slugify(titulo) que puede no coincidir con el archivo publicado
+          // (ej. 'piña' → 'pia' vs 'pina', 'za-atar' vs 'zaatar').
+          var rSlug2 = rec2.slug_publicado || slugify(rec2.titulo);
           var rImg2 = rec2.imagen_url || '';
           if (rImg2.indexOf('data:') === 0) rImg2 = '';
           if (rImg2.indexOf('logo.png') >= 0) rImg2 = '';
@@ -628,9 +631,11 @@ var ArcanoSEO = (function() {
     var urlImagen = imagen;
 
     // Buscar blends que contienen esta especia (links internos!)
+    // FIX SEO: filtrar enTienda=true (no enlazar blends ocultos desde las páginas de especias).
     var blendsQueContienen = [];
     for (var i = 0; i < allBlends.length; i++) {
       var b = allBlends[i];
+      if (!b || b.enTienda === false) continue;  // no enlazar ocultos
       var ings = b.ingredientes || [];
       for (var j = 0; j < ings.length; j++) {
         var ing = ings[j];
@@ -651,12 +656,12 @@ var ArcanoSEO = (function() {
       {
         q: '\u00BFC\u00F3mo usar ' + nombre + ' en la cocina?',
         a: usoList.length > 0
-          ? nombre + ' se usa en: ' + usoList.join(', ') + '. Pod\u00E9s agregarlo a tus preparaciones en peque\u00F1as cantidades e ir ajustando seg\u00FAn tu gusto.'
-          : nombre + ' es una especia vers\u00E1til que se puede usar en diversas preparaciones. Comenz\u00E1 con peque\u00F1as cantidades y ajust\u00E1 seg\u00FAn tu gusto personal.'
+          ? nombre + ' se usa en: ' + usoList.join(', ') + '. Puedes agregarlo a tus preparaciones en peque\u00F1as cantidades e ir ajustando seg\u00FAn tu gusto.'
+          : nombre + ' es una especia vers\u00E1til que se puede usar en diversas preparaciones. Comienza con peque\u00F1as cantidades y ajusta seg\u00FAn tu gusto personal.'
       },
       {
         q: '\u00BFC\u00F3mo comprar ' + nombre + ' en Colombia?',
-        a: 'Pod\u00E9s comprar ' + nombre + ' directamente en nuestra tienda online arcanoespecias.com con env\u00EDos a toda Colombia. Aceptamos Nequi, Bancolombia, Daviplata y pago contra entrega en Medell\u00EDn.'
+        a: 'Puedes comprar ' + nombre + ' directamente en nuestra tienda online arcanoespecias.com con env\u00EDos a toda Colombia. Aceptamos Nequi, Bancolombia, Daviplata y pago contra entrega en Medell\u00EDn.'
       }
     ];
     if (blendsQueContienen.length > 0) {
@@ -870,8 +875,20 @@ var ArcanoSEO = (function() {
     return html.join('\n');
   }
 
-  /* === Generar página de categoría /blends-para/<cat>/index.html === */
+  /* === Generar página de categoría /blends-para/<cat>/index.html ===
+   * FIX SEO: filtra enTienda=true (no enlazar productos ocultos) y usa
+   * /especias/<slug>/ para especias, /blends/<slug>/ para blends.
+   */
+  function linkPathFor(product) {
+    // Devuelve '/blends/<slug>/' o '/especias/<slug>/' según el tipo de producto.
+    var slug = product._slug || slugify(product.nombre);
+    return product._tipo === 'especia' ? '/especias/' + slug + '/' : '/blends/' + slug + '/';
+  }
+
   function categoryPageHtml(catSlug, products, allProducts) {
+    // FIX: filtrar productos ocultos (enTienda=false) de las páginas de categoría.
+    // Antes se enlazaban productos ocultos, generando enlaces a páginas con noindex.
+    products = (products || []).filter(function(p) { return p && p.enTienda !== false; });
     var label = CATEGORIA_LABELS[catSlug] || catSlug.replace(/-/g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();});
     var intro = CATEGORIA_INTROS[catSlug] || 'Blends artesanales de Arcano Especias.';
     var urlCanonical = BASE_URL + '/blends-para/' + catSlug + '/';
@@ -897,13 +914,14 @@ var ArcanoSEO = (function() {
     for (var i = 0; i < products.length; i++) {
       var b = products[i];
       var slug = b._slug || slugify(b.nombre);
+      var pLink = linkPathFor(b);  // /blends/ o /especias/ según tipo
       var precioChico = Number(b.precioChico) || 0;
       var precioGrande = Number(b.precioGrande) || 0;
       // Cada Product DEBE tener offers (Google requiere offers, review o aggregateRating)
       var productObj = {
         '@type': 'Product',
         name: b.nombre,
-        url: BASE_URL + '/blends/' + slug + '/',
+        url: BASE_URL + pLink,
         image: publicImageUrlFor(b, slug),
         brand: {'@type': 'Brand', name: 'Arcano Especias'}
       };
@@ -914,7 +932,7 @@ var ArcanoSEO = (function() {
           priceCurrency: 'COP',
           price: String(precioChico > 0 ? precioChico : precioGrande),
           availability: availabilitySchema(b),
-          url: BASE_URL + '/blends/' + slug + '/'
+          url: BASE_URL + pLink
         };
       }
       itemList.itemListElement.push({
@@ -980,12 +998,13 @@ var ArcanoSEO = (function() {
     for (var i = 0; i < products.length; i++) {
       var b = products[i];
       var slug = b._slug || slugify(b.nombre);
+      var pLink2 = linkPathFor(b);  // /blends/ o /especias/ según tipo
       var nombre = b.nombre || '';
       var imagen = publicImageUrlFor(b, slug);
       var precioChico = Number(b.precioChico) || 0;
       var categoria = b.categoria || '';
 
-      html.push('<a href="' + BASE_URL + '/blends/' + slug + '/" class="card">');
+      html.push('<a href="' + BASE_URL + pLink2 + '" class="card">');
       html.push('<img src="' + esc(imagen) + '" alt="Blend de especias ' + esc(nombre) + '" loading="lazy">');
       html.push('<div class="info">');
       html.push('<div class="name">' + esc(nombre) + '</div>');
@@ -1026,6 +1045,9 @@ var ArcanoSEO = (function() {
     html.push('<meta property="og:title" content="' + esc(title) + '">');
     html.push('<meta property="og:description" content="' + esc(metaDesc) + '">');
     html.push('<meta property="og:url" content="' + esc(urlCanonical) + '">');
+    html.push('<meta property="og:image" content="' + BASE_URL + '/icons/arcano-logo.webp">');
+    html.push('<meta property="og:locale" content="es_CO">');
+    html.push('<meta property="og:site_name" content="Arcano Especias">');
     html.push('<meta name="robots" content="index, follow, max-image-preview:large">');
     html.push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media=\'all\'">');
     html.push('<link rel="icon" type="image/png" href="' + BASE_URL + '/icons/favicon-32.png">');
@@ -1043,7 +1065,7 @@ var ArcanoSEO = (function() {
     html.push('</style></head><body><div class="c">');
     html.push('<nav class="bc"><a href="' + BASE_URL + '/">Inicio</a> › <span>Blends para</span></nav>');
     html.push('<h1>Blends para cada uso</h1>');
-    html.push('<p class="intro">Encontrá el blend perfecto según lo que vas a cocinar. Cada categoría agrupa mezclas pensadas para un uso específico.</p>');
+    html.push('<p class="intro">Encuentra el blend perfecto según lo que vas a cocinar. Cada categoría agrupa mezclas pensadas para un uso específico.</p>');
     html.push('<div class="grid">');
     for (var i = 0; i < allCats.length; i++) {
       var cat = allCats[i];
@@ -1228,7 +1250,18 @@ var ArcanoSEO = (function() {
         if (!esp || !esp.nombre) continue;
         var espSlug = slugify(esp.nombre);
         if (!espSlug) continue;
-        addSitemapUrl(BASE_URL + '/especias/' + espSlug + '/', today);
+        // FIX SEO: lastmod real por especia (imagenUpdatedAt > creado > hoy).
+        // Antes se usaba today para todas, generando 84 de 133 URLs con la misma fecha.
+        var espLastmod = today;
+        if (esp.imagenUpdatedAt) {
+          try {
+            var ed = new Date(Number(esp.imagenUpdatedAt));
+            if (!isNaN(ed.getTime())) espLastmod = ed.toISOString().substring(0, 10);
+          } catch (e) {}
+        } else if (esp.creado && typeof esp.creado === 'string') {
+          espLastmod = esp.creado.substring(0, 10);
+        }
+        addSitemapUrl(BASE_URL + '/especias/' + espSlug + '/', espLastmod);
       }
     }
 
@@ -1536,6 +1569,9 @@ var ArcanoSEO = (function() {
     var categoryPages = [];
     for (var cat in catToProducts) if (catToProducts.hasOwnProperty(cat)) {
       var prods = catToProducts[cat];
+      // FIX: filtrar ocultos ANTES de contar y generar la página.
+      // Antes se contaban todos (incluidos ocultos) y se pasaban a categoryPageHtml.
+      prods = prods.filter(function(p) { return p && p.enTienda !== false; });
       if (prods.length < 3) continue;
       prods.sort(function(a, b) { return (a.nombre||'').localeCompare(b.nombre||''); });
       catsWithCounts.push([cat, prods.length]);
@@ -1565,7 +1601,7 @@ var ArcanoSEO = (function() {
       especiaPages.push({path: 'especias/' + espSlug + '/index.html', content: espHtml});
     }
     // Generar índice /especias/index.html — solo especias con enTienda=true
-    var especiasIndexHtml = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Especias Artesanales — Catálogo | Arcano Especias</title><meta name="description" content="Catálogo completo de especias artesanales de Arcano Especias. Especias 100% naturales seleccionadas de cada rincón del mundo. Envíos a toda Colombia."><link rel="canonical" href="' + BASE_URL + '/especias/"><meta name="robots" content="index, follow"><style>body{font-family:Georgia,serif;background:#1b0b07;color:#f0e6d3;line-height:1.7;margin:0;padding:0}.wrap{max-width:960px;margin:0 auto;padding:24px 20px}h1{color:#c9a84c;font-size:2rem}p{color:#d4c4a8}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px}.card{background:#2d1a10;border:1px solid #3d2a1c;border-radius:8px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}.card:hover{transform:translateY(-2px);border-color:#c9a84c}.card img{width:100%;aspect-ratio:1;object-fit:cover}.card .name{padding:8px 12px;font-weight:600;font-size:0.9rem}.footer{margin-top:48px;text-align:center;color:#6b5a42;font-size:0.85rem}.footer a{color:#c9a84c}</style></head><body><div class="wrap"><h1>Especias Artesanales</h1><p>Catálogo completo de especias 100% naturales de Arcano Especias. Seleccionadas de cada rincón del mundo para llevar sabores únicos a tu cocina.</p><div class="grid">';
+    var especiasIndexHtml = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Especias Artesanales — Catálogo | Arcano Especias</title><meta name="description" content="Catálogo completo de especias artesanales de Arcano Especias. Especias 100% naturales seleccionadas de cada rincón del mundo. Envíos a toda Colombia."><link rel="canonical" href="' + BASE_URL + '/especias/"><meta property="og:type" content="website"><meta property="og:title" content="Especias Artesanales — Catálogo | Arcano Especias"><meta property="og:description" content="Catálogo completo de especias artesanales de Arcano Especias. 100% naturales. Envíos a toda Colombia."><meta property="og:url" content="' + BASE_URL + '/especias/"><meta property="og:image" content="' + BASE_URL + '/icons/arcano-logo.webp"><meta property="og:locale" content="es_CO"><meta property="og:site_name" content="Arcano Especias"><meta name="robots" content="index, follow"><style>body{font-family:Georgia,serif;background:#1b0b07;color:#f0e6d3;line-height:1.7;margin:0;padding:0}.wrap{max-width:960px;margin:0 auto;padding:24px 20px}h1{color:#c9a84c;font-size:2rem}p{color:#d4c4a8}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px}.card{background:#2d1a10;border:1px solid #3d2a1c;border-radius:8px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}.card:hover{transform:translateY(-2px);border-color:#c9a84c}.card img{width:100%;aspect-ratio:1;object-fit:cover}.card .name{padding:8px 12px;font-weight:600;font-size:0.9rem}.footer{margin-top:48px;text-align:center;color:#6b5a42;font-size:0.85rem}.footer a{color:#c9a84c}</style></head><body><div class="wrap"><h1>Especias Artesanales</h1><p>Catálogo completo de especias 100% naturales de Arcano Especias. Seleccionadas de cada rincón del mundo para llevar sabores únicos a tu cocina.</p><div class="grid">';
     for (var ei2 = 0; ei2 < especiasArr.length; ei2++) {
       var esp2 = especiasArr[ei2];
       if (!esp2 || !esp2.nombre) continue;

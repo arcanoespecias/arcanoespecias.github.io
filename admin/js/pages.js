@@ -2537,7 +2537,7 @@ const Pages = {
           '<div class="form-group" style="margin:0"><label>Frascos pequenos</label><input type="number" class="input" id="f-prod-cant-chico" value="0" min="0" placeholder="0"></div>' +
           '<div class="form-group" style="margin:0"><label>Frascos grandes</label><input type="number" class="input" id="f-prod-cant-grande" value="0" min="0" placeholder="0"></div>' +
         '</div>' +
-        '<p class="text-xs text-muted mb-8">Carga cuantos frascos de cada talla queres producir. Dejando un campo en 0 se omite esa talla.</p>' +
+        '<p class="text-xs text-muted mb-8">Carga cuántos frascos de cada talla quieres producir. Dejando un campo en 0 se omite esa talla.</p>' +
         '<div id="f-prod-preview"></div>' +
       '</div><div class="modal-footer">' +
         '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>' +
@@ -4442,7 +4442,7 @@ const Pages = {
       if (faltantesPedido.length > 0) {
         h += '<div class="mt-12" style="padding:16px;border:2px solid var(--red);background:rgba(180,40,40,0.08);border-radius:8px">';
         h += '<h4 style="color:var(--red);margin:0 0 8px">⚠ URGENTE — Faltantes de Stock</h4>';
-        h += '<p class="text-sm" style="margin:0 0 12px">Los siguientes productos NO tienen stock disponible. Necesitás producirlos para completar este pedido.</p>';
+        h += '<p class="text-sm" style="margin:0 0 12px">Los siguientes productos NO tienen stock disponible. Necesitas producirlos para completar este pedido.</p>';
         h += '<div class="table-wrap"><table class="table"><thead><tr><th>Producto</th><th>Cant.</th><th>Talla</th><th>Stock actual</th><th>¿Producible?</th><th>Insumos faltantes</th></tr></thead><tbody>';
         for (var fp = 0; fp < faltantesPedido.length; fp++) {
           var falt = faltantesPedido[fp];
@@ -11749,7 +11749,7 @@ const Pages = {
       h += '<button class="btn btn-outline" style="border-color:var(--red);color:var(--red)" onclick="Pages._testClearVentas()">Borrar Todas las Ventas</button>';
       h += '<button class="btn btn-red" onclick="Pages._testNuclearReset()">RESET NUCLEAR - Borrar Todo</button>';
     } else {
-      h += '<p class="text-muted text-xs" style="grid-column:1/-1;padding:8px">⚠️ Los botones destructivos (Borrar Ventas, Reset Nuclear) están ocultos en producción. Para activarlos, agregá <code>?debug=1</code> a la URL.</p>';
+      h += '<p class="text-muted text-xs" style="grid-column:1/-1;padding:8px">⚠️ Los botones destructivos (Borrar Ventas, Reset Nuclear) están ocultos en producción. Para activarlos, agrega <code>?debug=1</code> a la URL.</p>';
     }
     h += '</div></div></div>';
 
@@ -16435,7 +16435,7 @@ Pages._renderConfigSeguimiento = function() {
 
   // Plantillas de mensajes
   h += '<h4 class="mb-8">Plantillas de Mensajes</h4>';
-  h += '<p class="text-xs text-muted mb-8">Usá <code>{nombre}</code> para el nombre del cliente, <code>{total}</code> para el monto del pedido, <code>{items}</code> para el listado de productos.</p>';
+  h += '<p class="text-xs text-muted mb-8">Usa <code>{nombre}</code> para el nombre del cliente, <code>{total}</code> para el monto del pedido, <code>{items}</code> para el listado de productos.</p>';
 
   var tipos = [
     { key: 'bienvenida', label: '🌱 Bienvenida' },

@@ -928,8 +928,8 @@ function _renderDetail(products, idx) {
     var configTalla = p.configTalla || 'chico';
     var configPrice = p.precio || 0;
     html += '<div class="detail-config-pack">';
-    html += '<div class="detail-ingredients-label">Elegí ' + blendCount + ' blends para tu pack</div>';
-    html += '<p class="text-xs text-muted" style="margin-bottom:12px">Seleccioná ' + blendCount + ' blends. Talla: ' + (configTalla === 'grande' ? 'Grande (80g)' : 'Pequeño (30g)') + '</p>';
+    html += '<div class="detail-ingredients-label">Elige ' + blendCount + ' blends para tu pack</div>';
+    html += '<p class="text-xs text-muted" style="margin-bottom:12px">Selecciona ' + blendCount + ' blends. Talla: ' + (configTalla === 'grande' ? 'Grande (80g)' : 'Pequeño (30g)') + '</p>';
     html += '<div id="config-blend-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px">';
     for (var cb = 0; cb < allBlends.length; cb++) {
       var bld = allBlends[cb];
@@ -1136,8 +1136,8 @@ function _updateDetailContent(overlay, products, idx) {
     var configTalla2 = p.configTalla || 'chico';
     var configPrice2 = p.precio || 0;
     html += '<div class="detail-config-pack">';
-    html += '<div class="detail-ingredients-label">Elegí ' + blendCount2 + ' blends para tu pack</div>';
-    html += '<p class="text-xs text-muted" style="margin-bottom:12px">Seleccioná ' + blendCount2 + ' blends. Talla: ' + (configTalla2 === 'grande' ? 'Grande (80g)' : 'Pequeño (30g)') + '</p>';
+    html += '<div class="detail-ingredients-label">Elige ' + blendCount2 + ' blends para tu pack</div>';
+    html += '<p class="text-xs text-muted" style="margin-bottom:12px">Selecciona ' + blendCount2 + ' blends. Talla: ' + (configTalla2 === 'grande' ? 'Grande (80g)' : 'Pequeño (30g)') + '</p>';
     html += '<div id="config-blend-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding:4px">';
     for (var cb2 = 0; cb2 < allBlends2.length; cb2++) {
       var bld2 = allBlends2[cb2];
