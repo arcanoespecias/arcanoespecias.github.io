@@ -971,11 +971,35 @@ function _descontarStockPedido(pedido) {
         var collection = tipo === 'blend' ? _db.blends : _db.especias;
         var prod = collection ? collection[productId] : null;
         if (!prod) continue;
-        // Descontar stockChico o stockGrande seg\u00FAn la talla
-        if (talla === 'grande') {
-          prod.stockGrande = Math.max(0, (Number(prod.stockGrande) || 0) - qty);
+        // Descontar stockChico o stockGrande según la talla
+        var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
+        var stockAdmin = Number(prod[frascoKey]) || 0;
+        if (stockAdmin >= qty) {
+          // Hay suficiente stock en admin
+          prod[frascoKey] = Math.max(0, stockAdmin - qty);
         } else {
-          prod.stockChico = Math.max(0, (Number(prod.stockChico) || 0) - qty);
+          // FIX: no hay stock suficiente en admin, descontar lo que haya y el resto de PDVs
+          var cantidadRestante = qty - stockAdmin;
+          prod[frascoKey] = 0;
+          // Buscar stock en PDVs y descontar de ahí
+          var stockKey = tipo + '_' + productId + '_' + talla;
+          var pdvs = _db.puntosDeVenta || {};
+          for (var pdvId in pdvs) {
+            if (!pdvs.hasOwnProperty(pdvId)) continue;
+            var pdv = pdvs[pdvId];
+            if (!pdv || !pdv.stock) continue;
+            var stkPdv = Number(pdv.stock[stockKey]) || 0;
+            if (stkPdv > 0 && cantidadRestante > 0) {
+              var descontar = Math.min(stkPdv, cantidadRestante);
+              pdv.stock[stockKey] = stkPdv - descontar;
+              cantidadRestante -= descontar;
+              _notify('update', 'puntosDeVenta', pdvId);
+            }
+            if (cantidadRestante <= 0) break;
+          }
+          if (cantidadRestante > 0) {
+            console.warn('[DB] Stock insuficiente para ' + item.nombre + ' (' + talla + '): faltan ' + cantidadRestante + ' unidades (ni en admin ni en PDVs)');
+          }
         }
       } else if (tipo === 'pack') {
         if (_db.packs && _db.packs[productId]) {
@@ -2567,12 +2591,17 @@ function getTiendaProductos() {
     if (!e || !e.enTienda) continue;
     var dispChicoE = puedeProducirse('especia', e.id, 'chico');
     var dispGrandeE = puedeProducirse('especia', e.id, 'grande');
+    // FIX: stock total = admin + PDVs (para que la tienda no muestre agotado si hay stock en un PDV)
+    var stockTotalChicoE = getStockTotalProducto('especia', e.id, 'chico');
+    var stockTotalGrandeE = getStockTotalProducto('especia', e.id, 'grande');
     products.push({
       id: e.id, nombre: e.nombre, tipo: 'especia', categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
       precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
-      stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0,
-      _disponibleChico: dispChicoE.disponible, _disponibleGrande: dispGrandeE.disponible,
+      stockChico: stockTotalChicoE.total, stockGrande: stockTotalGrandeE.total,  // FIX: stock total
+      _stockAdminChico: stockTotalChicoE.admin, _stockAdminGrande: stockTotalGrandeE.admin,  // stock solo admin (para referencia)
+      _disponibleChico: dispChicoE.disponible || stockTotalChicoE.total > 0,  // FIX: disponible si hay stock total
+      _disponibleGrande: dispGrandeE.disponible || stockTotalGrandeE.total > 0,
       _producibleChico: dispChicoE.producible, _producibleGrande: dispGrandeE.producible,
       region: '', uso: e.uso || ''
     });
@@ -2583,12 +2612,17 @@ function getTiendaProductos() {
     if (!b || !b.enTienda) continue;
     var dispChicoB = puedeProducirse('blend', b.id, 'chico');
     var dispGrandeB = puedeProducirse('blend', b.id, 'grande');
+    // FIX: stock total = admin + PDVs
+    var stockTotalChicoB = getStockTotalProducto('blend', b.id, 'chico');
+    var stockTotalGrandeB = getStockTotalProducto('blend', b.id, 'grande');
     products.push({
       id: b.id, nombre: b.nombre, tipo: 'blend', categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
-      stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
-      _disponibleChico: dispChicoB.disponible, _disponibleGrande: dispGrandeB.disponible,
+      stockChico: stockTotalChicoB.total, stockGrande: stockTotalGrandeB.total,  // FIX: stock total
+      _stockAdminChico: stockTotalChicoB.admin, _stockAdminGrande: stockTotalGrandeB.admin,
+      _disponibleChico: dispChicoB.disponible || stockTotalChicoB.total > 0,
+      _disponibleGrande: dispGrandeB.disponible || stockTotalGrandeB.total > 0,
       _producibleChico: dispChicoB.producible, _producibleGrande: dispGrandeB.producible,
       region: b.region || '', uso: b.uso || ''
     });
@@ -3003,6 +3037,65 @@ function compressImage(file, maxW, quality, cb) {
 function getPuntosDeVenta() {
   _ensureStructure();
   return _filterValid(Object.values(_db.puntosDeVenta || {})).sort(function(a, b) { return (b.creado || '').localeCompare(a.creado || ''); });
+}
+
+/* === STOCK TOTAL: admin + todos los PDVs ===
+ * Cuando el admin mueve stock a un PDV, ese stock deja de estar en
+ * producto.stockChico/stockGrande y pasa a pdv.stock[stockKey].
+ * La tienda online debe considerar el stock TOTAL (admin + PDVs) para
+ * no mostrar productos como "agotados" cuando en realidad hay stock
+ * en un punto de venta físico.
+ *
+ * stockKey = tipo + '_' + productoId + '_' + talla  (ej: "blend_5_chico")
+ */
+
+// Devuelve el stock total de un producto (admin + todos los PDVs) para una talla.
+// tipo: 'blend' | 'especia' | 'pack'
+function getStockTotalProducto(tipo, productoId, talla) {
+  _ensureStructure();
+  var stockAdmin = 0;
+  var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
+
+  if (tipo === 'pack') {
+    var pack = _db.packs ? _db.packs[productoId] : null;
+    stockAdmin = pack ? (Number(pack.stock) || 0) : 0;
+  } else {
+    var collection = tipo === 'blend' ? _db.blends : _db.especias;
+    var prod = collection ? collection[productoId] : null;
+    stockAdmin = prod ? (Number(prod[frascoKey]) || 0) : 0;
+  }
+
+  // Sumar stock en todos los PDVs
+  var stockPDVs = 0;
+  var pdvs = _db.puntosDeVenta || {};
+  var stockKey = tipo + '_' + productoId + '_' + talla;
+  for (var pdvId in pdvs) {
+    if (!pdvs.hasOwnProperty(pdvId)) continue;
+    var pdv = pdvs[pdvId];
+    if (!pdv || !pdv.stock) continue;
+    stockPDVs += Number(pdv.stock[stockKey]) || 0;
+  }
+
+  return { total: stockAdmin + stockPDVs, admin: stockAdmin, pdvs: stockPDVs };
+}
+
+// Devuelve la lista de PDVs que tienen stock de un producto+talla.
+// [{ pdvId, nombre, stock }] — útil para que el admin sepa dónde está el stock.
+function getStockEnPDVs(tipo, productoId, talla) {
+  _ensureStructure();
+  var result = [];
+  var pdvs = _db.puntosDeVenta || {};
+  var stockKey = tipo + '_' + productoId + '_' + talla;
+  for (var pdvId in pdvs) {
+    if (!pdvs.hasOwnProperty(pdvId)) continue;
+    var pdv = pdvs[pdvId];
+    if (!pdv || !pdv.stock) continue;
+    var stk = Number(pdv.stock[stockKey]) || 0;
+    if (stk > 0) {
+      result.push({ pdvId: pdvId, nombre: pdv.nombre || 'PDV ' + pdvId, stock: stk });
+    }
+  }
+  return result;
 }
 
 function getPuntoDeVenta(id) {

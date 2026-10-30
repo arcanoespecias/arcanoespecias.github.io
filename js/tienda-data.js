@@ -18,7 +18,9 @@ function initTienda() {
     firebase.initializeApp(FIREBASE_CONFIG);
     // Only load what the store needs: especias, blends, packs, tiendaConfig
     // ETAPA 4 paso 4: stock* se piden vía /api/disponibilidad (ver _loadStockFromAPI)
-    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
+    // FIX: cargar puntosDeVenta para que la tienda considere stock en PDVs
+    // (si el admin movió stock a un PDV, la tienda no debe mostrar el producto como agotado)
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'puntosDeVenta'];
     var loaded = 0;
     _sDb = {};
 
@@ -584,6 +586,33 @@ function _fixImageUrl(url, updatedAt) {
   return fixed;
 }
 
+/* === STOCK TOTAL: admin + PDVs (FIX para que la tienda no muestre agotado) ===
+ * Cuando el admin mueve stock a un PDV, ese stock pasa de producto.stockChico
+ * a pdv.stock[stockKey]. La tienda debe considerar el stock TOTAL para no
+ * mostrar productos como agotados cuando hay stock en un punto de venta físico.
+ *
+ * stockKey = tipo + '_' + productoId + '_' + talla  (ej: "blend_5_chico")
+ */
+function _getStockTotalProducto(tipo, productoId, talla) {
+  var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
+  // Stock admin (del producto en la DB principal)
+  var collection = (tipo === 'blend') ? _sDb.blends : (tipo === 'especia' ? _sDb.especias : _sDb.packs);
+  var prod = collection ? collection[productoId] : null;
+  var stockAdmin = prod ? (Number(prod[frascoKey]) || Number(prod.stock) || 0) : 0;
+
+  // Sumar stock en todos los PDVs
+  var stockPDVs = 0;
+  var pdvs = (_sDb.puntosDeVenta) || {};
+  var stockKey = tipo + '_' + productoId + '_' + talla;
+  for (var pdvId in pdvs) {
+    if (!pdvs.hasOwnProperty(pdvId)) continue;
+    var pdv = pdvs[pdvId];
+    if (!pdv || !pdv.stock) continue;
+    stockPDVs += Number(pdv.stock[stockKey]) || 0;
+  }
+  return stockAdmin + stockPDVs;
+}
+
 function getStoreProducts() {
   if (!_sDb) return [];
   var products = [];
@@ -599,14 +628,17 @@ function getStoreProducts() {
     // Calcular disponibilidad ampliada (stock + posibilidad de producción)
     var dispChico = _disponibilidadProducto('especia', e, 'chico');
     var dispGrande = _disponibilidadProducto('especia', e, 'grande');
+    // FIX: stock total = admin + PDVs (para que la tienda no muestre agotado si hay stock en un PDV)
+    var stockTotalChicoE = _getStockTotalProducto('especia', e.id, 'chico');
+    var stockTotalGrandeE = _getStockTotalProducto('especia', e.id, 'grande');
     products.push({
       id: eId, tipo: 'especia', _origId: e.id,
       nombre: e.nombre, categoria: e.categoria || 'Comidas', categorias: e.categorias || [e.categoria || 'Comidas'],
       precioChico: Number(e.precioTiendaChico) || Number(e.precioChico) || 0,
       precioGrande: Number(e.precioTiendaGrande) || Number(e.precioGrande) || 0,
-      stockChico: e.stockChico || 0, stockGrande: e.stockGrande || 0, stockPala: e.stockBolsa || 0, enBlend: e.enBlend !== false,
-      _disponibleChico: dispChico.disponible,
-      _disponibleGrande: dispGrande.disponible,
+      stockChico: stockTotalChicoE, stockGrande: stockTotalGrandeE, stockPala: e.stockBolsa || 0, enBlend: e.enBlend !== false,
+      _disponibleChico: dispChico.disponible || stockTotalChicoE > 0,
+      _disponibleGrande: dispGrande.disponible || stockTotalGrandeE > 0,
       _producibleChico: dispChico.producible,
       _producibleGrande: dispGrande.producible,
       region: '', uso: e.uso || '', descripcion: e.descripcion || '', imagen: _fixImageUrl(e.imagen, eUpdated), tags: e.tags || []
@@ -623,14 +655,17 @@ function getStoreProducts() {
     if (isNaN(bId)) bId = b.id;
     var dispChicoB = _disponibilidadProducto('blend', b, 'chico');
     var dispGrandeB = _disponibilidadProducto('blend', b, 'grande');
+    // FIX: stock total = admin + PDVs
+    var stockTotalChicoB = _getStockTotalProducto('blend', b.id, 'chico');
+    var stockTotalGrandeB = _getStockTotalProducto('blend', b.id, 'grande');
     products.push({
       id: bId, tipo: 'blend', _origId: b.id,
       nombre: b.nombre, categoria: b.categoria || 'Comidas', categorias: b.categorias || [b.categoria || 'Comidas'],
       precioChico: Number(b.precioTiendaChico) || Number(b.precioChico) || 0,
       precioGrande: Number(b.precioTiendaGrande) || Number(b.precioGrande) || 0,
-      stockChico: b.stockChico || 0, stockGrande: b.stockGrande || 0,
-      _disponibleChico: dispChicoB.disponible,
-      _disponibleGrande: dispGrandeB.disponible,
+      stockChico: stockTotalChicoB, stockGrande: stockTotalGrandeB,
+      _disponibleChico: dispChicoB.disponible || stockTotalChicoB > 0,
+      _disponibleGrande: dispGrandeB.disponible || stockTotalGrandeB > 0,
       _producibleChico: dispChicoB.producible,
       _producibleGrande: dispGrandeB.producible,
       region: b.region || '', uso: b.uso || '', descripcion: b.descripcion || '', imagen: _fixImageUrl(b.imagen, bUpdated), tags: b.tags || [],
