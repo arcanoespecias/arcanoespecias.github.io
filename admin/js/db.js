@@ -4777,6 +4777,7 @@ window.ArcanoDB = {
   getPuntosDeVenta: getPuntosDeVenta, getPuntoDeVenta: getPuntoDeVenta,
   savePuntoDeVenta: savePuntoDeVenta, deletePuntoDeVenta: deletePuntoDeVenta,
   moverStockAPDV: moverStockAPDV, devolverStockDePDV: devolverStockDePDV, devolverCostalDePDV: devolverCostalDePDV,
+  getStockTotalProducto: getStockTotalProducto, getStockEnPDVs: getStockEnPDVs,
   getPDVVentas: getPDVVentas, getPDVStats: getPDVStats, savePDVVenta: savePDVVenta,
   getPacks: getPacks, getPack: getPack, savePack: savePack, deletePack: deletePack, producirPack: producirPack,
   getCostales: getCostales, getCostal: getCostal, saveCostal: saveCostal, deleteCostal: deleteCostal, consumirCostal: consumirCostal, moverCostalAPDV: moverCostalAPDV, savePDVVentaPala: savePDVVentaPala,
