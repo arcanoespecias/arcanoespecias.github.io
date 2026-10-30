@@ -4432,28 +4432,35 @@ const Pages = {
         var tallaItem = it.talla === 'grande' ? 'grande' : 'chico';
         var stInfo = ArcanoDB.getStockTotalProducto ? ArcanoDB.getStockTotalProducto(tipoItem, idItem, tallaItem) : null;
         var stAdmin = stInfo ? stInfo.admin : 0;
-        var stPDVs = stInfo ? stInfo.pdvs : 0;
         var stTotal = stInfo ? stInfo.total : 0;
         var qtyItem = Number(it.qty) || 1;
+        // Obtener lista de PDVs con stock (para mostrar nombres)
+        var pdvsConStock = ArcanoDB.getStockEnPDVs ? ArcanoDB.getStockEnPDVs(tipoItem, idItem, tallaItem) : [];
+        // Construir HTML del desglose
         if (stTotal >= qtyItem) {
-          // Hay stock suficiente — mostrar dónde
-          if (stAdmin >= qtyItem) {
-            // Stock en admin es suficiente
-            stockUbicacionHtml = '<span class="text-green fw7" title="Stock en bodega admin">' + stAdmin + ' en bodega</span>';
-          } else if (stAdmin > 0) {
-            // Stock parcial en admin + resto en PDVs
-            var pdvsConStock = ArcanoDB.getStockEnPDVs ? ArcanoDB.getStockEnPDVs(tipoItem, idItem, tallaItem) : [];
-            var pdvTxt = pdvsConStock.map(function(p) { return p.stock + ' en ' + p.nombre; }).join(', ');
-            stockUbicacionHtml = '<span class="text-yellow fw7" title="Stock parcial en bodega + PDVs">' + stAdmin + ' bodega + ' + pdvTxt + '</span>';
-          } else {
-            // Todo el stock está en PDVs
-            var pdvsConStock2 = ArcanoDB.getStockEnPDVs ? ArcanoDB.getStockEnPDVs(tipoItem, idItem, tallaItem) : [];
-            var pdvTxt2 = pdvsConStock2.map(function(p) { return p.stock + ' en ' + p.nombre; }).join('<br>');
-            stockUbicacionHtml = '<span class="text-yellow fw7" title="Stock solo en PDVs">⚠ 0 en bodega<br>' + pdvTxt2 + '</span>';
+          // Hay stock suficiente
+          var colorClass = (stAdmin >= qtyItem) ? 'text-green' : 'text-yellow';
+          stockUbicacionHtml = '<div style="line-height:1.5"><span class="fw7 ' + colorClass + ' title="Stock en bodega admin">Bodega: ' + stAdmin + '</span>';
+          if (pdvsConStock.length > 0) {
+            stockUbicacionHtml += '<br><span class="text-muted" style="font-size:0.72rem">PDVs:</span>';
+            for (var pi = 0; pi < pdvsConStock.length; pi++) {
+              stockUbicacionHtml += '<br><span style="color:var(--gold);font-size:0.75rem">• ' + esc(pdvsConStock[pi].nombre) + ': ' + pdvsConStock[pi].stock + '</span>';
+            }
           }
+          stockUbicacionHtml += '</div>';
         } else {
-          // No hay stock suficiente en ningún lado
-          stockUbicacionHtml = '<span class="text-red fw7" title="Sin stock suficiente">⚠ ' + stTotal + ' / ' + qtyItem + '</span>';
+          // No hay stock suficiente — mostrar desglose completo con alerta
+          stockUbicacionHtml = '<div style="line-height:1.5"><span class="text-red fw7" title="Sin stock suficiente">⚠ Total: ' + stTotal + ' / ' + qtyItem + '</span>';
+          stockUbicacionHtml += '<br><span class="text-muted" style="font-size:0.72rem">Bodega: ' + stAdmin + '</span>';
+          if (pdvsConStock.length > 0) {
+            stockUbicacionHtml += '<br><span class="text-muted" style="font-size:0.72rem">PDVs:</span>';
+            for (var pi2 = 0; pi2 < pdvsConStock.length; pi2++) {
+              stockUbicacionHtml += '<br><span style="color:var(--gold);font-size:0.75rem">• ' + esc(pdvsConStock[pi2].nombre) + ': ' + pdvsConStock[pi2].stock + '</span>';
+            }
+          } else {
+            stockUbicacionHtml += '<br><span class="text-red" style="font-size:0.72rem">• Sin stock en PDVs</span>';
+          }
+          stockUbicacionHtml += '</div>';
         }
       } else if (it.tipo === 'pack') {
         var pkStock = ArcanoDB.getPack ? ArcanoDB.getPack(Number(it.productId)) : null;
@@ -4464,7 +4471,7 @@ const Pages = {
           stockUbicacionHtml = '<span class="text-red fw7">⚠ ' + pkStk + ' / ' + (Number(it.qty) || 1) + '</span>';
         }
       }
-      h += '<tr><td class="fw7">' + (it.nombre || '?') + '</td><td>' + tallaLabel + '</td><td>' + (it.qty || 0) + '</td><td>$' + (it.precio || 0).toLocaleString() + '</td><td class="fw7">$' + (it.subtotal || 0).toLocaleString() + '</td><td style="font-size:0.78rem;line-height:1.4">' + stockUbicacionHtml + '</td></tr>';
+      h += '<tr><td class="fw7">' + (it.nombre || '?') + '</td><td>' + tallaLabel + '</td><td>' + (it.qty || 0) + '</td><td>$' + (it.precio || 0).toLocaleString() + '</td><td class="fw7">$' + (it.subtotal || 0).toLocaleString() + '</td><td style="font-size:0.78rem">' + stockUbicacionHtml + '</td></tr>';
       if (it.tipo === 'custom-blend' && it.customBlend) {
         var cb = it.customBlend;
         h += '<tr><td colspan="6" style="padding:4px 12px 8px 32px;border-bottom:1px solid var(--border)">';

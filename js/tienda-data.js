@@ -18,15 +18,17 @@ function initTienda() {
     firebase.initializeApp(FIREBASE_CONFIG);
     // Only load what the store needs: especias, blends, packs, tiendaConfig
     // ETAPA 4 paso 4: stock* se piden vía /api/disponibilidad (ver _loadStockFromAPI)
-    // FIX: cargar puntosDeVenta para que la tienda considere stock en PDVs
-    // (si el admin movió stock a un PDV, la tienda no debe mostrar el producto como agotado)
-    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig', 'puntosDeVenta'];
+    // FIX: cargar stock de PDVs vía /api/pdv-stock (reglas auth.uid admin bloquean
+    // lectura directa de puntosDeVenta desde la tienda pública).
+    var neededPaths = ['especias', 'blends', 'packs', 'tiendaConfig'];
     var loaded = 0;
     _sDb = {};
 
     // ETAPA 4: precargar /api/disponibilidad inmediatamente (en paralelo con Firebase)
     // para que el stock llegue lo antes posible y no retrase el render del catálogo.
     _loadStockFromAPI();
+    // FIX: precargar stock de PDVs vía API (paralelo)
+    _loadPdvStockFromAPI();
 
     // === CACHE LOCAL: cargar datos cacheados instant\u00E1neamente ===
     var CACHE_KEY = 'arcano_tienda_cache';
@@ -116,6 +118,28 @@ function _loadStockFromAPI() {
     _notifyListeners();
   }).catch(function(e) {
     console.warn('[Tienda] Error cargando disponibilidad:', e.message);
+  });
+}
+
+// FIX: Carga el stock consolidado de PDVs vía /api/pdv-stock.
+// Las reglas de Firebase bloquean la lectura directa de puntosDeVenta
+// desde la tienda pública (requieren auth.uid admin). Este endpoint
+// lee con el service account admin y devuelve el stock consolidado.
+var _pdvStockLoaded = false;
+function _loadPdvStockFromAPI() {
+  if (_pdvStockLoaded) return;
+  _pdvStockLoaded = true;
+  fetch('/api/pdv-stock').then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || !data.ok) {
+      console.warn('[Tienda] No se pudo cargar stock de PDVs — la tienda solo verá stock de bodega');
+      _sDb.pdvStockPorProducto = {};  // vacío para que no falle nada
+      return;
+    }
+    _sDb.pdvStockPorProducto = data.stockPorProducto || {};
+    _notifyListeners();
+  }).catch(function(e) {
+    console.warn('[Tienda] Error cargando stock de PDVs:', e.message);
+    _sDb.pdvStockPorProducto = {};
   });
 }
 
@@ -592,6 +616,9 @@ function _fixImageUrl(url, updatedAt) {
  * mostrar productos como agotados cuando hay stock en un punto de venta físico.
  *
  * stockKey = tipo + '_' + productoId + '_' + talla  (ej: "blend_5_chico")
+ *
+ * El stock de PDVs se obtiene vía /api/pdv-stock (consolidado) porque las
+ * reglas de Firebase bloquean la lectura directa de puntosDeVenta.
  */
 function _getStockTotalProducto(tipo, productoId, talla) {
   var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
@@ -600,16 +627,12 @@ function _getStockTotalProducto(tipo, productoId, talla) {
   var prod = collection ? collection[productoId] : null;
   var stockAdmin = prod ? (Number(prod[frascoKey]) || Number(prod.stock) || 0) : 0;
 
-  // Sumar stock en todos los PDVs
+  // Stock en PDVs (del consolidado cargado vía /api/pdv-stock)
   var stockPDVs = 0;
-  var pdvs = (_sDb.puntosDeVenta) || {};
+  var pdvStockPorProducto = (_sDb && _sDb.pdvStockPorProducto) || {};
   var stockKey = tipo + '_' + productoId + '_' + talla;
-  for (var pdvId in pdvs) {
-    if (!pdvs.hasOwnProperty(pdvId)) continue;
-    var pdv = pdvs[pdvId];
-    if (!pdv || !pdv.stock) continue;
-    stockPDVs += Number(pdv.stock[stockKey]) || 0;
-  }
+  stockPDVs = Number(pdvStockPorProducto[stockKey]) || 0;
+
   return stockAdmin + stockPDVs;
 }
 
