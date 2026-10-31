@@ -7374,13 +7374,54 @@ const Pages = {
           });
         })
         .catch(function(err) {
-          console.error('[Recetas] Error generando imagen:', err);
-          // El banner ya se mostró dentro de intentarCon cuando se agotaron los modelos.
-          // Si el error es otro (ej. Firebase update falló), mostrarlo también.
-          if (statusEl && err.message.indexOf('Todos los modelos fallaron') < 0) {
-            statusEl.innerHTML = '<span style="color:var(--red)">Error imagen: ' + (err.message || err) + '</span>';
-          }
+          console.error('[Recetas] Error generando imagen con Gemini:', err);
+          // FIX: si Gemini falló (429 cuota agotada u otro error), intentar con
+          // Cloudflare Workers AI vía /api/generar-imagen (fallback gratuito).
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Gemini falló. Intentando con Cloudflare Workers AI...</span>';
+          Pages._generarImagenConCloudflare(key, r, prompt, statusEl).catch(function(cfErr) {
+            console.error('[Recetas] Error con Cloudflare Workers AI:', cfErr);
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--red)">Error imagen: ' + (cfErr.message || cfErr) + '</span>';
+            // Mostrar banner de error persistente
+            Pages._showImagenErrorBanner(key, r, 'Gemini: ' + (err.message || err) + ' | Cloudflare: ' + (cfErr.message || cfErr));
+          });
         });
+    });
+  },
+
+  // FIX: genera imagen con Cloudflare Workers AI (flux-1-schnell) como fallback
+  // gratuito cuando Gemini da 429 (cuota agotada).
+  // Requiere env.CF_ACCOUNT_ID y env.CF_API_TOKEN configurados en Cloudflare Pages.
+  _generarImagenConCloudflare: function(key, r, prompt, statusEl) {
+    return new Promise(function(resolve, reject) {
+      fetch('/api/generar-imagen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt, width: 1024, height: 768 })
+      })
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (!data || !data.ok) {
+          throw new Error(data?.error || 'Error desconocido en /api/generar-imagen');
+        }
+        // data.image es un data URI (data:image/jpeg;base64,...)
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Imagen generada con Workers AI. Subiendo a GitHub...</span>';
+        var slug = r.slug_publicado || Pages._titleToSlug(r.titulo) || ('receta-img-' + Date.now());
+        return Pages._uploadRecetaImageToGitHub(data.image, slug).then(function(url) {
+          return firebase.database().ref('arcano/db/recetas/' + key).update({
+            imagen_url: url,
+            imagen_error: null
+          }).then(function() {
+            return url;
+          });
+        }).then(function(url) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">Imagen generada con Workers AI y guardada ✓</span>';
+          Pages._loadRecetasAdmin();
+          r.imagen_url = url;
+          Pages._publishRecipeSEO(r);
+          resolve(url);
+        });
+      })
+      .catch(function(e) { reject(e); });
     });
   },
 
