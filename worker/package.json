@@ -1,0 +1,14 @@
+{
+  "name": "arcano-automation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "trigger-test": "wrangler dev --test-scheduled"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
