@@ -6,7 +6,7 @@
 // Sube a GitHub con env.GITHUB_TOKEN.
 // Envía email con Brevo.
 
-import { fbAdminGet, fbAdminPost, hasServiceAccount } from './firebase-admin.js';
+import { fbAdminGet, fbAdminPost, fbAdminPut, hasServiceAccount } from './firebase-admin.js';
 import { uploadToGitHub, uploadImage } from './github.js';
 
 const BASE_URL = 'https://arcanoespecias.com';
@@ -125,16 +125,81 @@ async function loadExistingBlog(env) {
 
 // ============ ESTADO DE ROTACIÓN ============
 
-async function getAutomationState(env) {
-  const state = await fbAdminGet(env, '/arcano/db/automation');
-  return state || {
-    recetas: { ultimaCategoria: null, ultimaFecha: null, contadorSemana: 0 },
-    blog: { ultimaCategoria: null, ultimaFecha: null }
+// Estado "vacío" / inicial con TODOS los campos que el sistema usa.
+// Lo usamos siempre que el estado guardado esté corrupto o incompleto.
+function defaultState() {
+  return {
+    recetas: {
+      ultimaCategoria: null,
+      ultimaFecha: null,
+      contadorSemana: 0,
+      // Rotación estricta de productos: índice dentro de cada categoría
+      // del último producto destacado usado. La próxima vez seguimos
+      // desde el siguiente índice, NO random.
+      ultimoProductoIdx: { Comida: -1, Infusiones: -1, Cocteleria: -1 },
+      // Lista plana de "últimos productos usados" (cualquier categoría)
+      // para evitar repetir blends en recetas consecutivas.
+      ultimosProductosUsados: []
+    },
+    blog: {
+      ultimaCategoria: null,
+      ultimaFecha: null
+    }
   };
 }
 
+async function getAutomationState(env) {
+  const raw = await fbAdminGet(env, '/arcano/db/automation');
+  if (!raw) return defaultState();
+
+  // CASO LEGACY: si antes se guardaba con fbAdminPost (que agrega un child
+  // con clave auto-generada), el nodo se ve como:
+  //   { "-Lx9abc": {recetas, blog}, "-Lx9abd": {recetas, blog} }
+  // En ese caso tomamos el último child (mayor fecha) y lo usamos como
+  // estado base; el próximo updateAutomationState lo normaliza con PUT.
+  let state = raw;
+  const looksLikeLegacy = raw && typeof raw === 'object' && !Array.isArray(raw)
+    && !raw.recetas && !raw.blog
+    && Object.values(raw).some(v => v && typeof v === 'object' && (v.recetas || v.blog));
+  if (looksLikeLegacy) {
+    const children = Object.entries(raw)
+      .filter(([, v]) => v && typeof v === 'object' && (v.recetas || v.blog))
+      .map(([k, v]) => ({ k, v, fecha: (v.recetas && v.recetas.ultimaFecha) || (v.blog && v.blog.ultimaFecha) || '' }))
+      .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    if (children.length > 0) {
+      state = children[0].v;
+    }
+  }
+
+  // Merge con defaults para asegurar que TODO lo que el código va a leer
+  // esté definido (evita TypeError: Cannot read properties of undefined).
+  const base = defaultState();
+  if (state && typeof state === 'object' && !Array.isArray(state)) {
+    if (state.recetas && typeof state.recetas === 'object') {
+      base.recetas = {
+        ...base.recetas,
+        ...state.recetas,
+        ultimoProductoIdx: {
+          ...base.recetas.ultimoProductoIdx,
+          ...(state.recetas.ultimoProductoIdx || {})
+        },
+        ultimosProductosUsados: Array.isArray(state.recetas.ultimosProductosUsados)
+          ? state.recetas.ultimosProductosUsados
+          : []
+      };
+    }
+    if (state.blog && typeof state.blog === 'object') {
+      base.blog = { ...base.blog, ...state.blog };
+    }
+  }
+  return base;
+}
+
 async function updateAutomationState(env, newState) {
-  await fbAdminPost(env, '/arcano/db/automation', newState);
+  // PUT reemplaza TODO el nodo /arcano/db/automation.
+  // Antes usábamos POST, lo cual agregaba un child nuevo cada vez
+  // y rompía la próxima lectura (state.recetas quedaba undefined).
+  await fbAdminPut(env, '/arcano/db/automation', newState);
 }
 
 // Rotación de categorías para recetas: Comidas, Infusiones, Coctelería
@@ -195,19 +260,36 @@ async function generateRecipe(env, opts) {
   const existingTitles = existing.slice(-20).map(r => r.titulo).join(', ');
   log.push(`Recetas existentes: ${existing.length} (no repetir últimas 20)`);
 
-  // 3b. Rotación de productos: elegir un producto destacado que no se haya usado recientemente
+  // 3b. Rotación ESTRICTA de productos (no random).
+  // El sistema guarda en el estado `ultimoProductoIdx[categoria]` el índice
+  // del último producto destacado usado DENTRO del catálogo ordenado de
+  // esa categoría. Cada vez que se genera una receta, avanzamos al
+  // siguiente índice, así nunca usamos siempre el mismo blend.
   const recentProducts = new Set();
   existing.slice(-10).forEach(r => {
     (r.productos_usados || []).forEach(p => recentProducts.add(p));
   });
   log.push(`Productos usados en últimas 10 recetas: ${Array.from(recentProducts).join(', ') || 'ninguno'}`);
 
-  const availableProducts = catProducts.filter(p => !recentProducts.has(p.nombre));
-  const pool = availableProducts.length > 0 ? availableProducts : catProducts;
-  const chosenProduct = pool[Math.floor(Math.random() * pool.length)];
+  // Orden determinista por nombre: así el índice guardado en el estado
+  // apunta siempre al mismo producto aunque el catálogo crezca o mute.
+  const orderedCat = catProducts.slice().sort((a, b) =>
+    (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' })
+  );
+  const pool = orderedCat.length > 0 ? orderedCat : catProducts;
+
+  let lastIdx = -1;
+  if (state.recetas.ultimoProductoIdx && typeof state.recetas.ultimoProductoIdx === 'object') {
+    lastIdx = Number(state.recetas.ultimoProductoIdx[categoria]);
+    if (!Number.isFinite(lastIdx)) lastIdx = -1;
+  }
+  const nextIdx = pool.length > 0 ? (lastIdx + 1) % pool.length : -1;
+  const chosenProduct = nextIdx >= 0 ? pool[nextIdx] : null;
   const highlightProduct = chosenProduct ? chosenProduct.nombre : '';
   if (chosenProduct) {
-    log.push(`Producto destacado para esta receta: ${highlightProduct} (${chosenProduct.tipo})`);
+    log.push(`Producto destacado: ${highlightProduct} (${chosenProduct.tipo}) [índice ${nextIdx}/${pool.length} en ${categoria}]`);
+  } else {
+    log.push('AVISO: sin productos disponibles en el catálogo para esta categoría');
   }
 
   const productContext = (catProducts.length ? catProducts : products).slice(0, 30).map(p => {
@@ -255,7 +337,20 @@ async function generateRecipe(env, opts) {
   }
   receta.slug_publicado = slugify(receta.titulo);
   receta.fecha = new Date().toISOString().substring(0, 10);
-  receta.categoria = receta.categoria || categoria;
+  // NORMALIZAR categoria: la tienda filtra por 'Comida' | 'Infusiones' | 'Cocteleria'
+  // (singular, sin acento). Si Gemini devolvió otra cosa (p.ej. 'Comidas', 'Coctelería',
+  // 'Postres'), forzamos la categoria rotada para que SÍ aparezca en la tienda.
+  if (!RECETA_CATEGORIAS.includes(receta.categoria)) {
+    log.push(`Normalizando categoria: "${receta.categoria}" → "${categoria}"`);
+    receta.categoria = categoria;
+  }
+  // Garantizar productos_usados (array) — si Gemini no devolvió ninguno, usar el destacado.
+  if (!Array.isArray(receta.productos_usados) || receta.productos_usados.length === 0) {
+    receta.productos_usados = highlightProduct ? [highlightProduct] : [];
+  } else if (highlightProduct && receta.productos_usados[0] !== highlightProduct) {
+    // Asegurar que el destacado sea el primer elemento (lo exige el prompt).
+    receta.productos_usados = [highlightProduct, ...receta.productos_usados.filter(p => p !== highlightProduct)];
+  }
 
   // 7. Dry-run: parar aquí
   if (dryRun) {
@@ -294,11 +389,39 @@ async function generateRecipe(env, opts) {
   await uploadToGitHub(env, htmlPath, html, `automation: receta ${receta.titulo}`, false);
   log.push(`HTML subido: ${htmlPath}`);
 
+  // 11b. Regenerar el ÍNDICE /recetas/index.html con la nueva receta incluida.
+  // Sin esto, las recetas generadas automáticamente aparecen en el admin y en
+  // /recetas/<slug>.html pero NO en el listado público estático.
+  try {
+    log.push('Regenerando índice /recetas/index.html...');
+    const allRecipes = await loadExistingRecipes(env);
+    const indexHtml = generateRecipesIndexHTML(allRecipes);
+    await uploadToGitHub(env, 'recetas/index.html', indexHtml, `automation: índice recetas (agregada ${receta.titulo})`, false);
+    log.push('Índice /recetas/index.html actualizado');
+  } catch (e) {
+    // No es crítico: la receta individual ya está publicada.
+    log.push(`AVISO: no se pudo regenerar el índice: ${e.message}`);
+  }
+
   // 12. Actualizar estado
+  // Preservamos ultimoProductoIdx (rotación estricta) y actualizamos el
+  // índice de la categoria actual al nextIdx que acabamos de usar.
+  const nuevoIdxMap = {
+    ...(state.recetas.ultimoProductoIdx || {}),
+    [categoria]: nextIdx
+  };
+  // Mantener un historial circular de los últimos 15 productos usados
+  // (todos los nombres mencionados en productos_usados, no solo el destacado).
+  const ultimosUsados = Array.isArray(state.recetas.ultimosProductosUsados) ? state.recetas.ultimosProductosUsados : [];
+  const productosDeEstaReceta = Array.isArray(receta.productos_usados) ? receta.productos_usados : [];
+  const nuevoHistorial = [...ultimosUsados, ...productosDeEstaReceta].slice(-15);
+
   state.recetas = {
     ultimaCategoria: categoria,
     ultimaFecha: receta.fecha,
-    contadorSemana: (state.recetas.contadorSemana || 0) + 1
+    contadorSemana: (state.recetas.contadorSemana || 0) + 1,
+    ultimoProductoIdx: nuevoIdxMap,
+    ultimosProductosUsados: nuevoHistorial
   };
   await updateAutomationState(env, state);
 
@@ -495,6 +618,115 @@ ${img ? `<img class="hero" src="${escHtml(img)}" alt="${titulo}" loading="lazy">
 </html>`;
 }
 
+// ============ ÍNDICE /recetas/index.html ============
+
+// Genera el HTML estático del listado público de recetas.
+// Lo llama generateRecipe() cada vez que se crea una nueva receta, así el
+// índice público siempre incluye las recetas nuevas (no solo las que estaban
+// cuando se generó el sitio estático manualmente).
+//
+// Categorías EXACTAS con las que filtra la tienda (tienda-ui.js):
+//   Comida, Infusiones, Cocteleria
+// Pero el encabezado de cada sección usa el plural/acento legible.
+function generateRecipesIndexHTML(allRecipes) {
+  // Normalizar categorias y deduplicar por slug_publicado.
+  const seen = new Set();
+  const valid = [];
+  for (const r of allRecipes || []) {
+    if (!r || !r.titulo) continue;
+    const slug = r.slug_publicado || slugify(r.titulo);
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    let cat = r.categoria;
+    if (!RECETA_CATEGORIAS.includes(cat)) cat = RECETA_CATEGORIAS[0];
+    valid.push({
+      titulo: r.titulo,
+      slug,
+      descripcion: r.descripcion || '',
+      imagen_url: r.imagen_url || '',
+      categoria: cat
+    });
+  }
+  // Ordenar alfabéticamente dentro de cada sección.
+  valid.sort((a, b) => (a.titulo || '').localeCompare(b.titulo || '', 'es', { sensitivity: 'base' }));
+
+  const SECCIONES = [
+    { cat: 'Comida',      titulo: 'Comidas' },
+    { cat: 'Infusiones',  titulo: 'Infusiones' },
+    { cat: 'Cocteleria',  titulo: 'Coctelería' }
+  ];
+
+  const seccionesHtml = SECCIONES.map(sec => {
+    const items = valid.filter(r => r.categoria === sec.cat);
+    if (items.length === 0) return ''; // sección vacía: no renderizar
+    const cards = items.map(r => {
+      const img = r.imagen_url || (BASE_URL + '/icons/logo.png');
+      const desc = escHtml((r.descripcion || '').substring(0, 120));
+      const titulo = escHtml(r.titulo);
+      return `<a href="${BASE_URL}/recetas/${encodeURIComponent(r.slug)}" class="recipe">
+<img src="${escHtml(img)}" alt="${titulo}" loading="lazy">
+<div class="body"><h3>${titulo}</h3><p>${desc}</p></div>
+</a>`;
+    }).join('\n');
+    return `<div class="cat-section"><h2>${sec.titulo} (${items.length})</h2><div class="grid">
+${cards}
+</div></div>`;
+  }).filter(s => s.length > 0).join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recetas con Especias y Blends | Arcano Especias</title>
+<meta name="description" content="Recetas con especias y blends artesanales de Arcano Especias. Cocina, infusiones y coctelería con sabores del mundo. Aprende a usar cada blend en preparaciones reales.">
+<link rel="canonical" href="${BASE_URL}/recetas/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Recetas con Especias y Blends | Arcano Especias">
+<meta property="og:description" content="Cocina, infusiones y coctelería con especias artesanales. Aprende a usar cada blend en preparaciones reales.">
+<meta property="og:url" content="${BASE_URL}/recetas/">
+<meta property="og:image" content="${BASE_URL}/icons/logo.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px}
+header{text-align:center;padding:32px 0 24px;border-bottom:1px solid #3d2a1c}
+header h1{color:#c9a84c;font-size:2.2rem;margin-bottom:8px}
+header p{color:#a08b6e;font-size:1rem;max-width:600px;margin:0 auto}
+.cat-section{margin-top:32px}
+.cat-section h2{color:#c9a84c;font-size:1.4rem;border-bottom:1px solid #3d2a1c;padding-bottom:8px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.recipe{background:#2d1a10;border:1px solid #3d2a1c;border-radius:10px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}
+.recipe:hover{transform:translateY(-2px);border-color:#c9a84c}
+.recipe img{width:100%;aspect-ratio:16/10;object-fit:cover;background:#1b0b07}
+.recipe .body{padding:12px 16px}
+.recipe h3{font-size:0.95rem;color:#c9a84c;margin-bottom:4px;line-height:1.3}
+.recipe p{font-size:0.8rem;color:#a08b6e;line-height:1.4}
+.breadcrumbs{font-size:0.85rem;color:#a08b6e;margin-bottom:16px}
+.breadcrumbs a{color:#c9a84c;text-decoration:none}
+.footer{margin-top:48px;padding-top:24px;border-top:1px solid #3d2a1c;text-align:center;color:#6b5a42;font-size:0.85rem}
+.footer a{color:#c9a84c}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="breadcrumbs"><a href="${BASE_URL}/">Inicio</a> › Recetas</div>
+<header>
+<h1>Recetas con Especias</h1>
+<p>Cocina, infusiones y coctelería con especias y blends artesanales de Arcano Especias. Aprende a usar cada blend en preparaciones reales.</p>
+</header>
+${seccionesHtml}
+<div class="footer">
+<p><a href="${BASE_URL}/">← Volver a Arcano Especias</a></p>
+<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · <a href="${BASE_URL}/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="${BASE_URL}/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>
+</div>
+</div>
+</body>
+</html>`;
+}
+
 // ============ EMAILS ============
 
 async function sendRecipeEmail(env, receta) {
@@ -580,6 +812,9 @@ export {
   loadExistingBlog,
   nextRecipeCategory,
   nextBlogTema,
+  generateRecipeHTML,
+  generateRecipesIndexHTML,
+  defaultState,
   RECETA_CATEGORIAS,
   BLOG_TEMAS
 };

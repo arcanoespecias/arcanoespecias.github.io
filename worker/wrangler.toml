@@ -1,18 +1,10 @@
 name = "arcano-automation"
 main = "index.js"
 compatibility_date = "2024-09-25"
-account_id = "TU_ACCOUNT_ID"  # Reemplazar con tu Account ID de Cloudflare
+account_id = "322a490d4d822d206c38626d5dce97f6"
 
 # Cron triggers (hora UTC, America/Bogota = UTC-5)
 # Recetas: Lun, Mié, Vie a las 9am BOT = 14:00 UTC
 # Blog: Domingos a las 9am BOT = 14:00 UTC
-[[triggers]]
-crons = [
-  "0 14 * * 1,3,5",   # Recetas: Lun, Mié, Vie 9am BOT
-  "0 14 * * 0"        # Blog: Domingos 9am BOT
-]
-
-# Variables de entorno (configurar en Cloudflare Dashboard o con wrangler secret)
-[vars]
-# ARCANO_ADMIN_TOKEN debe configurarse como secret (no hardcodeado):
-#   wrangler secret put ARCANO_ADMIN_TOKEN
+[triggers]
+crons = ["0 14 * * 1,3,5", "0 14 * * 7"]

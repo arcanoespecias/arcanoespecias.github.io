@@ -195,6 +195,29 @@ async function fbAdminPatch(env, dbPath, body) {
   return r.json();
 }
 
+async function fbAdminPut(env, dbPath, body) {
+  // PUT reemplaza TODO el nodo en dbPath. A diferencia de POST (que agrega
+  // un child con clave auto-generada) y PATCH (que mergea keys), PUT sobrescribe
+  // el nodo completo. Es lo que queremos para guardar estado de automatización.
+  const token = await getAccessToken(env);
+  const sa = _loadServiceAccount(env);
+  const baseUrl = sa.databaseURL || `https://${sa.project_id}-default-rtdb.firebaseio.com`;
+  const url = baseUrl + dbPath + '.json';
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error('Firebase PUT failed: ' + r.status + ' ' + text);
+  }
+  return r.json();
+}
+
 async function fbAdminDelete(env, dbPath) {
   const token = await getAccessToken(env);
   const sa = _loadServiceAccount(env);
@@ -221,6 +244,7 @@ export {
   fbAdminGet,
   fbAdminPost,
   fbAdminPatch,
+  fbAdminPut,
   fbAdminDelete,
   hasServiceAccount
 };
