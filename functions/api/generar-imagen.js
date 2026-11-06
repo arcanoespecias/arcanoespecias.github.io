@@ -57,10 +57,9 @@ export async function onRequestPost({ request, env }) {
     }
 
     // Dimensiones (default 1024x768 para formato horizontal de recetas)
-    const width = Math.min(1024, body.width || 1024);
-    const height = Math.min(768, body.height || 768);
-
     // Llamar a Workers AI
+    // IMPORTANTE: flux-1-schnell NO acepta width/height — genera 1024x1024 por defecto.
+    // Enviar width/height causa HTTP 400 (Bad Request).
     const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${MODEL}`;
     console.log('[generar-imagen] Llamando Workers AI:', MODEL);
 
@@ -71,9 +70,8 @@ export async function onRequestPost({ request, env }) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        prompt: prompt,
-        width: width,
-        height: height
+        prompt: prompt
+        // NO enviar width/height — flux-1-schnell no los soporta (default 1024x1024)
       })
     });
 
@@ -85,6 +83,9 @@ export async function onRequestPost({ request, env }) {
         errMsg = 'Cuota de Workers AI agotada (10,000 neuronas/día). Reintentar mañana.';
       } else if (aiResp.status === 401 || aiResp.status === 403) {
         errMsg = 'CF_API_TOKEN inválido o sin permisos de Workers AI.';
+      } else if (aiResp.status === 400) {
+        // Incluir el cuerpo del error para diagnóstico
+        errMsg = 'Error de Workers AI (HTTP 400): ' + errText.substring(0, 300);
       }
       return new Response(JSON.stringify({
         ok: false,
@@ -116,7 +117,7 @@ export async function onRequestPost({ request, env }) {
       image: dataUri,
       mime: 'image/jpeg',
       model: MODEL,
-      size: width + 'x' + height
+      size: '1024x1024'
     }), { headers: CORS_HEADERS });
 
   } catch (e) {
