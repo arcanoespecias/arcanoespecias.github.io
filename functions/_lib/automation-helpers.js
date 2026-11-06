@@ -138,7 +138,7 @@ async function updateAutomationState(env, newState) {
 }
 
 // Rotación de categorías para recetas: Comidas, Infusiones, Coctelería
-const RECETA_CATEGORIAS = ['Comidas', 'Infusiones', 'Coctelería'];
+const RECETA_CATEGORIAS = ['Comida', 'Infusiones', 'Cocteleria'];
 
 function nextRecipeCategory(state) {
   const ult = state?.recetas?.ultimaCategoria;
@@ -184,17 +184,36 @@ async function generateRecipe(env, opts) {
   const products = await loadCatalog(env);
   const catProducts = products.filter(p => {
     // Productos que aplican a esta categoría
-    if (categoria === 'Coctelería') return /coctel|gin|ron|whisky|mojito|vodka|rum|citrus/i.test(p.uso + ' ' + p.nombre);
+    if (categoria === 'Cocteleria') return /coctel|gin|ron|whisky|mojito|vodka|rum|citrus/i.test(p.uso + ' ' + p.nombre);
     if (categoria === 'Infusiones') return /infusion|te|chai|golden|wellness|respirar|sueños/i.test(p.uso + ' ' + p.nombre);
     return true; // Comidas: todos aplican
   });
-  const productContext = (catProducts.length ? catProducts : products).slice(0, 30).map(p => `- ${p.nombre} (${p.uso || 'uso general'})`).join('\n');
   log.push(`Productos en catálogo (${catProducts.length} filtrados, ${products.length} total)`);
 
-  // 3. Recetas existentes (para no repetir)
+  // 3. Recetas existentes (para no repetir) + rotación de productos
   const existing = await loadExistingRecipes(env);
   const existingTitles = existing.slice(-20).map(r => r.titulo).join(', ');
   log.push(`Recetas existentes: ${existing.length} (no repetir últimas 20)`);
+
+  // 3b. Rotación de productos: elegir un producto destacado que no se haya usado recientemente
+  const recentProducts = new Set();
+  existing.slice(-10).forEach(r => {
+    (r.productos_usados || []).forEach(p => recentProducts.add(p));
+  });
+  log.push(`Productos usados en últimas 10 recetas: ${Array.from(recentProducts).join(', ') || 'ninguno'}`);
+
+  const availableProducts = catProducts.filter(p => !recentProducts.has(p.nombre));
+  const pool = availableProducts.length > 0 ? availableProducts : catProducts;
+  const chosenProduct = pool[Math.floor(Math.random() * pool.length)];
+  const highlightProduct = chosenProduct ? chosenProduct.nombre : '';
+  if (chosenProduct) {
+    log.push(`Producto destacado para esta receta: ${highlightProduct} (${chosenProduct.tipo})`);
+  }
+
+  const productContext = (catProducts.length ? catProducts : products).slice(0, 30).map(p => {
+    const marker = (chosenProduct && p.nombre === chosenProduct.nombre) ? ' ← PRODUCTO DESTACADO' : '';
+    return `- ${p.nombre} (${p.uso || 'uso general'})${marker}`;
+  }).join('\n');
 
   // 4. Prompt (basado en pages.js:7687)
   const prompt = 'Eres un chef creativo experto en especias de la marca Arcano Especias.\n\n' +
@@ -211,7 +230,8 @@ async function generateRecipe(env, opts) {
     '7. La receta debe ser ORIGINAL, diferente a las existentes.\n' +
     '8. EXPRESION: ESPAÑOL NEUTRO. Sin voseo, sin argentismos, sin "vos". Usar "tú" y "tienes".\n' +
     'RECETAS YA EXISTENTES (NO repetir): ' + existingTitles + '\n\n' +
-    'Crea una receta de ' + categoria + '.\n\n' +
+    `Crea una receta de ${categoria} que use como ingrediente principal el producto: ${highlightProduct}.\n` +
+    `Esta receta debe destacar el sabor de ${highlightProduct} como protagonista.\n\n` +
     'Responde SOLO con JSON valido (sin markdown, sin backticks) con esta estructura:\n' +
     '{"titulo": "...", "descripcion": "... (2-3 oraciones)", "categoria": "' + categoria + '", ' +
     '"dificultad": "Facil" o "Media" o "Dificil", ' +
@@ -219,7 +239,9 @@ async function generateRecipe(env, opts) {
     '"productos_usados": ["Nombre Exacto del Producto del Catalogo"], ' +
     '"ingredientes": ["1 cucharadita de Nombre Exacto del Producto", "200g de proteina", ...], ' +
     '"pasos": ["Paso 1: ...", "Paso 2: ...", ...], ' +
-    '"imagen_prompt": "professional food photography of the finished dish, overhead angle, natural light, on a rustic wooden table, no text, no letters, no words, vibrant colors, appetizing"}';
+    '"imagen_prompt": "professional food photography of the finished dish, overhead angle, natural light, on a rustic wooden table, no text, no letters, no words, vibrant colors, appetizing"}\n\n' +
+    `RECORDATORIO FINAL: productos_usados[] DEBE contener exactamente "${highlightProduct}" como primer elemento. ` +
+    'Puedes agregar otros productos del catalogo si encajan, pero el protagonista debe ser el destacado.';
 
   // 5. Llamar Gemini
   log.push('Llamando a Gemini (gemini-3.6-flash)...');
