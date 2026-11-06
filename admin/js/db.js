@@ -3053,6 +3053,9 @@ function getPuntosDeVenta() {
 // tipo: 'blend' | 'especia' | 'pack'
 function getStockTotalProducto(tipo, productoId, talla) {
   _ensureStructure();
+  // FIX: asegurar que productoId sea Number para que el stockKey coincida
+  // con el que genera moverStockAPDV (que usa Number(inp.dataset.id)).
+  productoId = Number(productoId) || productoId;
   var stockAdmin = 0;
   var frascoKey = talla === 'grande' ? 'stockGrande' : 'stockChico';
 
@@ -3069,12 +3072,16 @@ function getStockTotalProducto(tipo, productoId, talla) {
   var stockPDVs = 0;
   var pdvs = _db.puntosDeVenta || {};
   var stockKey = tipo + '_' + productoId + '_' + talla;
+  var pdvCount = 0;
   for (var pdvId in pdvs) {
     if (!pdvs.hasOwnProperty(pdvId)) continue;
+    pdvCount++;
     var pdv = pdvs[pdvId];
     if (!pdv || !pdv.stock) continue;
-    stockPDVs += Number(pdv.stock[stockKey]) || 0;
+    var stk = Number(pdv.stock[stockKey]) || 0;
+    stockPDVs += stk;
   }
+  console.log('[getStockTotalProducto]', { tipo: tipo, productoId: productoId, talla: talla, stockKey: stockKey, stockAdmin: stockAdmin, stockPDVs: stockPDVs, pdvCount: pdvCount, hasPuntosDeVenta: !!_db.puntosDeVenta });
 
   return { total: stockAdmin + stockPDVs, admin: stockAdmin, pdvs: stockPDVs };
 }
@@ -3083,6 +3090,8 @@ function getStockTotalProducto(tipo, productoId, talla) {
 // [{ pdvId, nombre, stock }] — útil para que el admin sepa dónde está el stock.
 function getStockEnPDVs(tipo, productoId, talla) {
   _ensureStructure();
+  // FIX: asegurar que productoId sea Number para que el stockKey coincida
+  productoId = Number(productoId) || productoId;
   var result = [];
   var pdvs = _db.puntosDeVenta || {};
   var stockKey = tipo + '_' + productoId + '_' + talla;
@@ -3095,6 +3104,7 @@ function getStockEnPDVs(tipo, productoId, talla) {
       result.push({ pdvId: pdvId, nombre: pdv.nombre || 'PDV ' + pdvId, stock: stk });
     }
   }
+  console.log('[getStockEnPDVs]', { tipo: tipo, productoId: productoId, talla: talla, stockKey: stockKey, found: result.length, result: result });
   return result;
 }
 
