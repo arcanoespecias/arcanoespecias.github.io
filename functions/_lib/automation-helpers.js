@@ -29,18 +29,29 @@ async function getGeminiKey(env) {
   return null;
 }
 
-async function callGemini(env, prompt, maxTokens) {
+async function callGemini(env, prompt, maxTokens, opts) {
   const apiKey = await getGeminiKey(env);
   if (!apiKey) throw new Error('No hay API key de Gemini. Configura GEMINI_API_KEY en env o guárdala en Firebase.');
+
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.8,
+      maxOutputTokens: maxTokens || 4000
+    }
+  };
+
+  // Modo JSON: Gemini devuelve JSON válido sin markdown overhead ni prose
+  // alrededor. Más eficiente en tokens y más confiable.
+  if (opts?.json) {
+    body.generationConfig.responseMimeType = 'application/json';
+  }
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey;
   const resp = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.8, maxOutputTokens: maxTokens || 4000 }
-    })
+    body: JSON.stringify(body)
   });
 
   if (!resp.ok) {
@@ -49,8 +60,18 @@ async function callGemini(env, prompt, maxTokens) {
   }
 
   const data = await resp.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.[0]?.text?.trim();
   if (!text) throw new Error('Gemini no devolvió texto');
+
+  // Detectar truncamiento: si finishReason es MAX_TOKENS, el JSON va a estar
+  // cortado a mitad de palabra y va a fallar el parse. Mejor tirar error claro
+  // para que el caller pueda reintentar con más tokens o un prompt más corto.
+  const finishReason = candidate?.finishReason;
+  if (finishReason === 'MAX_TOKENS') {
+    throw new Error(`Gemini truncó la respuesta (finishReason=MAX_TOKENS, maxOutputTokens=${maxTokens || 4000}). Subí maxTokens o reducí el tamaño del contenido pedido.`);
+  }
+
   return text;
 }
 
@@ -62,7 +83,12 @@ function extractJSON(text) {
   try { return JSON.parse(s); }
   catch (e) {
     try { return JSON.parse(s.replace(/'/g, '"')); }
-    catch (e2) { throw new Error('JSON inválido: ' + s.slice(0, 150)); }
+    // Mostrar más del texto para diagnóstico: dónde se cortó el JSON.
+    // Antes solo mostrábamos 150 chars, lo que no servía para ver si estaba truncado.
+    catch (e2) {
+      const tail = s.length > 200 ? '...' + s.substring(s.length - 200) : s;
+      throw new Error('JSON inválido (longitud=' + s.length + '). Inicio: "' + s.slice(0, 80) + '". Final: "' + tail + '"');
+    }
   }
 }
 
@@ -363,7 +389,7 @@ async function generateRecipe(env, opts) {
 
   // 5. Llamar Gemini
   log.push('Llamando a Gemini (gemini-3.6-flash)...');
-  const text = await callGemini(env, prompt, 4000);
+  const text = await callGemini(env, prompt, 4000, { json: true });
   const receta = extractJSON(text);
   log.push(`Receta generada: "${receta.titulo}"`);
 
@@ -540,8 +566,10 @@ async function generateBlog(env, opts) {
     '"imagen_prompt": "visual description in english for AI image generation, 1 sentence, overhead angle, natural light, no text"}';
 
   // 5. Llamar Gemini
-  log.push('Llamando a Gemini...');
-  const text = await callGemini(env, prompt, 8000);
+  log.push('Llamando a Gemini (gemini-3.6-flash, modo JSON, 16384 tokens)...');
+  // maxTokens=16384 (en vez de 8000) porque el blog pide 1200-1800 palabras
+  // de contenido HTML + JSON overhead, lo que excede 8k tokens fácilmente.
+  const text = await callGemini(env, prompt, 16384, { json: true });
   const articulo = extractJSON(text);
   log.push(`Artículo generado: "${articulo.titulo}"`);
 
