@@ -87,4 +87,35 @@ async function uploadImage(env, slug, dataUri, subdir) {
   return { url, path, mime: parsed.mime };
 }
 
-export { uploadToGitHub, uploadImage, parseDataUri };
+// Descarga el contenido (UTF-8) y el sha de un archivo del repo.
+// Devuelve { content, sha } o null si no existe.
+// Útil para modificar archivos existentes (p.ej. sitemap.xml) preservando el sha.
+async function downloadFromGitHub(env, path) {
+  if (!env?.GITHUB_TOKEN) {
+    throw new Error('GITHUB_TOKEN no configurado en env vars de Cloudflare');
+  }
+  const resp = await fetch(`${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`, {
+    headers: {
+      'Authorization': 'token ' + env.GITHUB_TOKEN,
+      'Accept': 'application/vnd.github.v3+json',
+      'User-Agent': 'Arcano-Automation'
+    }
+  });
+  if (resp.status === 404) return null;
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error(`GitHub download failed (${resp.status}): ${t.substring(0, 200)}`);
+  }
+  const data = await resp.json();
+  // El contenido viene como base64
+  let content;
+  try {
+    const b64 = (data.content || '').replace(/\n/g, '');
+    content = decodeURIComponent(escape(atob(b64)));
+  } catch (e) {
+    content = atob((data.content || '').replace(/\n/g, ''));
+  }
+  return { content, sha: data.sha };
+}
+
+export { uploadToGitHub, uploadImage, parseDataUri, downloadFromGitHub };

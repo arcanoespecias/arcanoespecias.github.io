@@ -7,7 +7,7 @@
 // Envía email con Brevo.
 
 import { fbAdminGet, fbAdminPost, fbAdminPut, hasServiceAccount } from './firebase-admin.js';
-import { uploadToGitHub, uploadImage } from './github.js';
+import { uploadToGitHub, uploadImage, downloadFromGitHub } from './github.js';
 
 const BASE_URL = 'https://arcanoespecias.com';
 const ADMIN_EMAIL = 'hola@arcanoespecias.com';
@@ -403,6 +403,21 @@ async function generateRecipe(env, opts) {
     log.push(`AVISO: no se pudo regenerar el índice: ${e.message}`);
   }
 
+  // 11c. Agregar la URL de la receta nueva a sitemap.xml (sin regenerar todo).
+  // Idempotente y defensivo: si la URL ya existe o algo falla, no rompe nada.
+  try {
+    const recetaUrl = `${BASE_URL}/recetas/${receta.slug_publicado}`;
+    const sm = await appendToSitemap(env, recetaUrl, receta.fecha);
+    if (sm.alreadyExists) {
+      log.push(`Sitemap: URL ya presente (skip)`);
+    } else {
+      log.push(`Sitemap: URL agregada (${sm.totalUrls} URLs totales)`);
+    }
+  } catch (e) {
+    // No es crítico: la receta ya está publicada y enlazada desde el índice.
+    log.push(`AVISO: no se pudo actualizar sitemap.xml: ${e.message}`);
+  }
+
   // 12. Actualizar estado
   // Preservamos ultimoProductoIdx (rotación estricta) y actualizamos el
   // índice de la categoria actual al nextIdx que acabamos de usar.
@@ -727,6 +742,93 @@ ${seccionesHtml}
 </html>`;
 }
 
+// ============ SITEMAP APPEND ============
+
+// Agrega una URL nueva a sitemap.xml sin regenerar todo el archivo.
+// SEGURIDAD:
+//  - Lee el sitemap actual de GitHub.
+//  - Si la URL ya existe → no hace nada (idempotente).
+//  - Si no existe → la inserta ANTES del </urlset>.
+//  - Valida que el XML resultante tenga exactamente un </urlset> al final
+//    y que el número de <url> haya crecido en 1 (no rompió nada).
+//  - Si cualquier validación falla → NO sube nada y devuelve error.
+//
+// Formato de cada entrada (igual al que ya usa el sitemap actual):
+//   <url><loc>https://arcanoespecias.com/recetas/slug</loc><lastmod>YYYY-MM-DD</lastmod></url>
+async function appendToSitemap(env, locUrl, lastmod) {
+  const sitemapPath = 'sitemap.xml';
+  const today = lastmod || new Date().toISOString().substring(0, 10);
+
+  // 1. Leer sitemap actual
+  const existing = await downloadFromGitHub(env, sitemapPath);
+  if (!existing || !existing.content) {
+    throw new Error('sitemap.xml no encontrado en el repo');
+  }
+  let xml = existing.content;
+  const sha = existing.sha;
+
+  // 2. Idempotente: si la URL ya está, no hacer nada
+  const escapedUrl = locUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const urlAlreadyExists = new RegExp(
+    '<url>\\s*<loc>' + escapedUrl + '(?:</loc>|/</loc>)'
+  ).test(xml);
+  if (urlAlreadyExists) {
+    return { alreadyExists: true };
+  }
+
+  // 3. Validar que el XML actual tiene estructura esperada
+  //    (un solo </urlset> al final)
+  const closeCount = (xml.match(/<\/urlset>/g) || []).length;
+  if (closeCount !== 1) {
+    throw new Error(`sitemap.xml inválido: ${closeCount} etiquetas </urlset> (esperaba 1)`);
+  }
+  const openCount = (xml.match(/<urlset[^>]*>/g) || []).length;
+  if (openCount !== 1) {
+    throw new Error(`sitemap.xml inválido: ${openCount} etiquetas <urlset> (esperaba 1)`);
+  }
+  const urlCountBefore = (xml.match(/<url>/g) || []).length;
+
+  // 4. Insertar la nueva entrada justo antes de </urlset>
+  //    Buscamos el último </url> antes de </urlset> para insertar después.
+  const newEntry = `<url><loc>${escXml(locUrl)}</loc><lastmod>${today}</lastmod></url>`;
+  const closeIdx = xml.lastIndexOf('</urlset>');
+  if (closeIdx < 0) throw new Error('No se encontró </urlset> en sitemap.xml');
+
+  // Insertar con salto de línea antes de </urlset>
+  let newXml = xml.substring(0, closeIdx);
+  // Asegurar que termina con salto de línea
+  if (!newXml.endsWith('\n')) newXml += '\n';
+  newXml += newEntry + '\n';
+  newXml += xml.substring(closeIdx);
+
+  // 5. Validar el resultado
+  const urlCountAfter = (newXml.match(/<url>/g) || []).length;
+  if (urlCountAfter !== urlCountBefore + 1) {
+    throw new Error(`Validación falló: esperaba ${urlCountBefore + 1} <url>, hay ${urlCountAfter}`);
+  }
+  const newCloseCount = (newXml.match(/<\/urlset>/g) || []).length;
+  if (newCloseCount !== 1) {
+    throw new Error(`sitemap.xml resultante inválido: ${newCloseCount} </urlset>`);
+  }
+
+  // 6. Subir (con sha para que GitHub lo trate como update del archivo)
+  //    uploadToGitHub se encarga de obtener el sha también, pero ya lo tenemos,
+  //    así que lo pasamos para ahorrar una llamada. Para eso reusamos uploadToGitHub
+  //    que ya valida el sha internamente.
+  await uploadToGitHub(env, sitemapPath, newXml, `automation: sitemap +${locUrl}`, false);
+
+  return { alreadyExists: false, added: true, totalUrls: urlCountAfter };
+}
+
+function escXml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;')
+    .replace(/"/g, '&quot;');
+}
+
 // ============ EMAILS ============
 
 async function sendRecipeEmail(env, receta) {
@@ -814,6 +916,7 @@ export {
   nextBlogTema,
   generateRecipeHTML,
   generateRecipesIndexHTML,
+  appendToSitemap,
   defaultState,
   RECETA_CATEGORIAS,
   BLOG_TEMAS
