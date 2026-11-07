@@ -143,7 +143,11 @@ function defaultState() {
     },
     blog: {
       ultimaCategoria: null,
-      ultimaFecha: null
+      ultimaFecha: null,
+      // Índice de la última especia usada (rotación en BLOG_ESPECIAS)
+      ultimaEspeciaIdx: -1,
+      // Lista de los últimos títulos generados (para evitar duplicados)
+      ultimosTitulos: []
     }
   };
 }
@@ -189,7 +193,13 @@ async function getAutomationState(env) {
       };
     }
     if (state.blog && typeof state.blog === 'object') {
-      base.blog = { ...base.blog, ...state.blog };
+      base.blog = {
+        ...base.blog,
+        ...state.blog,
+        ultimosTitulos: Array.isArray(state.blog.ultimosTitulos)
+          ? state.blog.ultimosTitulos
+          : []
+      };
     }
   }
   return base;
@@ -212,26 +222,52 @@ function nextRecipeCategory(state) {
   return RECETA_CATEGORIAS[(idx + 1) % RECETA_CATEGORIAS.length];
 }
 
-// Rotación de temas para blog (historia/curiosidades de especias)
-const BLOG_TEMAS = [
-  { tema: 'historia de una especia específica', especia: 'pimienta negra' },
-  { tema: 'origen y ruta comercial histórica', especia: 'canela' },
-  { tema: 'curiosidades y alquimia molecular', especia: 'cúrcuma' },
-  { tema: 'ciencia oculta y beneficios', especia: 'jengibre' },
-  { tema: 'historia y conquista del mundo', especia: 'ají/capsaicina' },
-  { tema: 'epica odisea y monasterios', especia: 'pimentón' },
-  { tema: 'brevaje sagrado y origen oscuro', especia: 'cacao' },
-  { tema: 'acertijo molecular y aroma', especia: 'comino' },
-  { tema: 'oro negro y fascinante historia', especia: 'pimienta' },
-  { tema: 'fuego ilusorio y paladar humano', especia: 'ají' }
+// Rotación de categorías para blog.
+// Cada categoría tiene una "consigna" que se le pasa a Gemini como dirección
+// temática. Rotamos en círculo para no repetir tipo de artículo consecutivo.
+// IMPORTANTE: deben coincidir con las categorías que maneja el admin del blog
+// (admin/js/pages.js: blog categorias) y la tienda.
+const BLOG_CATEGORIAS = [
+  { categoria: 'Historia',     consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias.' },
+  { categoria: 'Curiosidades', consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas.' },
+  { categoria: 'Ciencia',     consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares.' },
+  { categoria: 'Beneficios',  consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural.' },
+  { categoria: 'Cocina',     consigna: 'Enfócate en uso culinario: cómo combinar la especia, con qué ingredientes casa, técnicas de uso, errores comunes, maridajes, cocina internacional y regional.' }
+];
+
+// Lista de especias base que el sistema va rotando dentro de cada categoría,
+// para que cada artículo sea sobre una especia diferente y no se repita.
+// Se van rotando: si la última vez fue "pimienta negra", ahora es "canela",
+// luego "cúrcuma", etc.
+const BLOG_ESPECIAS = [
+  'pimienta negra', 'canela', 'cúrcuma', 'jengibre', 'ají/capsaicina',
+  'pimentón', 'cacao', 'comino', 'cardamomo', 'clavo', 'nuez moscada',
+  'azafrán', 'comino negro', 'fenogreco', 'sumac', 'zaatar', 'baharat',
+  'ras el hanout', 'garam masala', 'curry'
 ];
 
 function nextBlogTema(state) {
-  const ult = state?.blog?.ultimaCategoria;
-  if (!ult) return BLOG_TEMAS[0];
-  const idx = BLOG_TEMAS.findIndex(t => t.especia === ult);
-  if (idx < 0) return BLOG_TEMAS[0];
-  return BLOG_TEMAS[(idx + 1) % BLOG_TEMAS.length];
+  const ultCat = state?.blog?.ultimaCategoria;
+  const ultEspIdx = Number.isFinite(Number(state?.blog?.ultimaEspeciaIdx))
+    ? Number(state.blog.ultimaEspeciaIdx)
+    : -1;
+  // Avanzar categoría
+  let catIdx = 0;
+  if (ultCat) {
+    const found = BLOG_CATEGORIAS.findIndex(c => c.categoria === ultCat);
+    if (found >= 0) catIdx = (found + 1) % BLOG_CATEGORIAS.length;
+  }
+  const categoria = BLOG_CATEGORIAS[catIdx];
+  // Avanzar especia (rotación independiente de la categoría)
+  const espIdx = (ultEspIdx + 1) % BLOG_ESPECIAS.length;
+  const especia = BLOG_ESPECIAS[espIdx];
+  return {
+    categoria: categoria.categoria,
+    consigna: categoria.consigna,
+    especia,
+    espIdx,
+    catIdx
+  };
 }
 
 // ============ GENERAR RECETA ============
@@ -448,53 +484,60 @@ async function generateRecipe(env, opts) {
   return { receta, log, url: `${BASE_URL}/recetas/${receta.slug_publicado}` };
 }
 
-// ============ GENERAR BLOG (borrador + email) ============
+// ============ GENERAR BLOG (auto-publicado) ============
 
 async function generateBlog(env, opts) {
   const dryRun = opts?.dryRun;
   const log = [];
 
-  // 1. Estado + tema
+  // 1. Estado + tema (categoría + especia rotadas)
   const state = await getAutomationState(env);
   const tema = nextBlogTema(state);
-  log.push(`Tema rotación: ${tema.tema} — ${tema.especia} (anterior: ${state.blog.ultimaCategoria || 'ninguno'})`);
+  log.push(`Categoría rotación: ${tema.categoria} (anterior: ${state.blog.ultimaCategoria || 'ninguna'})`);
+  log.push(`Especia rotación: ${tema.especia} [índice ${tema.espIdx}/${BLOG_ESPECIAS.length}]`);
 
-  // 2. Catálogo (para enlazar blends)
+  // 2. Catálogo (para enlazar blends en el contenido)
   const products = await loadCatalog(env);
   const productContext = products.slice(0, 30).map(p => `- [ID:${p.id}] ${p.nombre} - ${p.uso || ''}`).join('\n');
 
-  // 3. Blog existente
+  // 3. Blog existente (para no repetir títulos)
   const existing = await loadExistingBlog(env);
   const existingTitles = existing.slice(-15).map(p => p.titulo).join(', ');
   log.push(`Blog existente: ${existing.length} posts`);
 
-  // 4. Prompt (historia/curiosidades de especias)
+  // 4. Prompt dinámico por categoría
   const prompt = 'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias (tienda colombiana online).\n' +
     'Escribes en ESPAÑOL NEUTRO INTERNACIONAL (no voseo, no "vos"). Usas "tú" y "tienes".\n' +
-    'Tono: narrativo, cercano, didáctico.\n\n' +
-    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos para enlazar):\n' + productContext + '\n\n' +
+    'Tono: narrativo, cercano, didáctico, experto pero accesible.\n\n' +
+    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos cuando enlaces):\n' + productContext + '\n\n' +
     '=== INSTRUCCION DE KEYWORDS ===\n' +
     '1. Identifica 5-8 keywords del mercado de especias online en Colombia.\n' +
     '2. Integra las keywords de forma SUTIL y NATURAL en el contenido.\n' +
     '3. NUNCA repitas una keyword más de 2 veces.\n\n' +
     '=== ESTRUCTURA OBLIGATORIA ===\n' +
-    'El contenido HTML debe tener: <p> introductorio, 3-4 <h2> subtítulos, párrafos de 3-4 oraciones, ' +
-    'un <blockquote> con frase destacada, y cierre con "Para llevar a tu cocina".\n' +
+    'El contenido HTML debe tener: <p> introductorio (2-3 oraciones), 3-4 <h2> subtítulos, ' +
+    'párrafos de 3-4 oraciones, un <blockquote> con frase destacada, ' +
+    'y cierre con un <h2>Para llevar a tu cocina</h2> que menciona 1-2 blends relacionados.\n' +
     'TOTAL: entre 1200 y 1800 palabras.\n\n' +
     '=== REGLAS DE ESTILO ===\n' +
-    '1. ESPAÑOL NEUTRO. Sin voseo, sin argentismos.\n' +
-    '2. Título ≤ 60 caracteres.\n' +
-    '3. Descripción meta ≤ 155 caracteres.\n' +
-    '4. Cada vez que menciones un blend, envuélvelo: <a href="#" onclick="openDetail(ID);return false">Nombre Exacto</a>\n' +
-    '5. Sin emojis.\n' +
-    '6. Contenido original, no repetir existentes.\n\n' +
-    'ARTICULOS YA EXISTENTES (NO repetir): ' + existingTitles + '\n\n' +
-    `Tema: ${tema.tema} sobre ${tema.especia}. Enfócate en historia, curiosidades, origen, ruta comercial, anécdotas históricas. NO es una receta.\n\n` +
-    'Responde SOLO con JSON valido:\n' +
-    '{"titulo": "...", "subtitulo": "... (100-160 chars)", "categoria": "Historia", ' +
+    '1. ESPAÑOL NEUTRO. Sin voseo, sin argentismos. Sin "conocé", "aprendé", "probá" → usa "conoce", "aprende", "prueba".\n' +
+    '2. Título ≤ 60 caracteres, llamativo, con la especia o temática.\n' +
+    '3. Descripción meta ≤ 155 caracteres (para SEO).\n' +
+    '4. NO envuelvas menciones de blends en <a> (el sistema lo hace automáticamente después).\n' +
+    '5. Sin emojis. Sin markdown. Sin backticks.\n' +
+    '6. Contenido original, NO repetir los existentes.\n' +
+    '7. NO uses placeholders tipo [...]. Toda la información debe estar completa.\n\n' +
+    'ARTICULOS YA EXISTENTES (NO repetir títulos ni enfoques): ' + existingTitles + '\n\n' +
+    `CATEGORIA: ${tema.categoria}\n` +
+    `${tema.consigna}\n\n` +
+    `ESPECIA PRINCIPAL: ${tema.especia}\n` +
+    `El artículo debe girar en torno a ${tema.especia}. Es el protagonista. ` +
+    `Aparece en el título, en la introducción, en al menos 2 subtítulos y en el cierre.\n\n` +
+    'Responde SOLO con JSON valido (sin markdown, sin backticks):\n' +
+    '{"titulo": "...", "subtitulo": "... (100-160 chars)", "categoria": "' + tema.categoria + '", ' +
     '"descripcion_meta": "... (150-155 chars SEO)", "keywords": ["k1","k2"], ' +
-    '"tiempoLectura": "X min", "contenido": "<p>...</p><h2>...</h2>...", ' +
-    '"imagen_prompt": "visual description in english for AI image generation, 1 sentence"}';
+    '"tiempoLectura": "X min", "contenido": "<p>...</p><h2>...</h2><p>...</p>...", ' +
+    '"imagen_prompt": "visual description in english for AI image generation, 1 sentence, overhead angle, natural light, no text"}';
 
   // 5. Llamar Gemini
   log.push('Llamando a Gemini...');
@@ -508,9 +551,9 @@ async function generateBlog(env, opts) {
   }
   articulo.slug_publicado = slugify(articulo.titulo);
   articulo.fecha = new Date().toISOString().substring(0, 10);
-  articulo.publicado = false;  // BORRADOR — el admin carga imagen y publica
+  articulo.publicado = true;       // AUTO-PUBLICADO (no más borrador)
   articulo.programado = false;
-  articulo.categoria = articulo.categoria || 'Historia';
+  articulo.categoria = tema.categoria;  // Forzar la categoría rotada
 
   // Calcular tiempoLectura si no vino
   if (!articulo.tiempoLectura) {
@@ -518,33 +561,182 @@ async function generateBlog(env, opts) {
     articulo.tiempoLectura = Math.max(1, Math.round(palabras / 200)) + ' min';
   }
 
-  // 7. Dry-run: parar
+  // 7. POST-PROCESAMIENTO: envolver menciones de blends con openDetail(ID)
+  //    Gemini NO debería haberlo hecho solo (lo pedimos en el prompt), pero
+  //    reforzamos aquí para garantizar que los enlaces estén bien formados.
+  const productosParaEnlazar = products.slice();  // copia
+  const linkResult = linkBlendMentions(articulo.contenido, productosParaEnlazar);
+  articulo.contenido = linkResult.html;
+  log.push(`Enlaces a blends insertados: ${linkResult.linksInserted} (${linkResult.productosEnlazados.join(', ') || 'ninguno'})`);
+
+  // 8. Dry-run: parar aquí
   if (dryRun) {
     return { articulo, log, dryRun: true };
   }
 
-  // 8. Guardar en Firebase como borrador
-  log.push('Guardando artículo como borrador en Firebase...');
-  await fbAdminPost(env, '/arcano/db/blog', articulo);
-  log.push('Artículo guardado (publicado=false)');
+  // 9. Generar imagen con Workers AI
+  log.push('Generando imagen con Workers AI...');
+  const imgResp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: articulo.imagen_prompt || `professional photography of ${tema.especia} on rustic wooden surface, overhead angle, natural light, no text, no letters, vibrant colors`,
+      width: 1024, height: 768
+    })
+  });
+  const imgData = await imgResp.json();
+  if (!imgData.ok) throw new Error('Error generando imagen: ' + (imgData.error || 'desconocido'));
+  log.push('Imagen generada OK');
 
-  // 9. Actualizar estado
+  // 10. Subir imagen a GitHub
+  log.push('Subiendo imagen a GitHub...');
+  const { url: imageUrl } = await uploadImage(env, articulo.slug_publicado, imgData.image, 'blog');
+  articulo.imagen_url = imageUrl;
+  log.push(`Imagen subida: ${imageUrl}`);
+
+  // 11. Guardar en Firebase (publicado=true)
+  log.push('Guardando artículo en Firebase (publicado=true)...');
+  await fbAdminPost(env, '/arcano/db/blog', articulo);
+  log.push('Artículo guardado');
+
+  // 12. Generar HTML SEO + subir a GitHub
+  log.push('Generando HTML SEO...');
+  const html = generateBlogHTML(articulo, imageUrl, tema.especia);
+  const htmlPath = `blog/${articulo.slug_publicado}.html`;
+  await uploadToGitHub(env, htmlPath, html, `automation: blog ${articulo.titulo}`, false);
+  log.push(`HTML subido: ${htmlPath}`);
+
+  // 12b. Regenerar el ÍNDICE /blog/index.html con el artículo nuevo incluido
+  try {
+    log.push('Regenerando índice /blog/index.html...');
+    const allPosts = await loadExistingBlog(env);
+    const indexHtml = generateBlogIndexHTML(allPosts);
+    await uploadToGitHub(env, 'blog/index.html', indexHtml, `automation: índice blog (agregado ${articulo.titulo})`, false);
+    log.push('Índice /blog/index.html actualizado');
+  } catch (e) {
+    log.push(`AVISO: no se pudo regenerar el índice del blog: ${e.message}`);
+  }
+
+  // 12c. Append al sitemap.xml
+  try {
+    const blogUrl = `${BASE_URL}/blog/${articulo.slug_publicado}`;
+    const sm = await appendToSitemap(env, blogUrl, articulo.fecha);
+    if (sm.alreadyExists) {
+      log.push(`Sitemap: URL ya presente (skip)`);
+    } else {
+      log.push(`Sitemap: URL agregada (${sm.totalUrls} URLs totales)`);
+    }
+  } catch (e) {
+    log.push(`AVISO: no se pudo actualizar sitemap.xml: ${e.message}`);
+  }
+
+  // 13. Actualizar estado (categoría + especia + títulos)
+  const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
   state.blog = {
-    ultimaCategoria: tema.especia,
-    ultimaFecha: articulo.fecha
+    ultimaCategoria: tema.categoria,
+    ultimaFecha: articulo.fecha,
+    ultimaEspeciaIdx: tema.espIdx,
+    ultimosTitulos: [...ultimosTitulos, articulo.titulo].slice(-20)
   };
   await updateAutomationState(env, state);
 
-  // 10. Email al admin (avisar que hay borrador para revisar)
+  // 14. Email al admin (con vista previa pública)
   log.push('Enviando email al admin...');
-  await sendBlogDraftEmail(env, articulo);
+  await sendBlogPublishedEmail(env, articulo, tema.especia);
   log.push('Email enviado');
 
   return {
     articulo,
     log,
-    adminUrl: `${BASE_URL}/admin/#blog`,
-    previewUrl: `${BASE_URL}/admin/`  // el admin entra y edita
+    url: `${BASE_URL}/blog/${articulo.slug_publicado}`
+  };
+}
+
+// ============ POST-PROCESAMIENTO DE ENLACES A BLENDS ============
+
+// Toma el contenido HTML del artículo y envuelve cada mención de un blend
+// del catálogo con <a href="#" onclick="openDetail(ID);return false">Nombre</a>.
+//
+// SEGURIDAD:
+//  - NO duplica enlaces que ya estén envueltos (respeta los <a> existentes).
+//  - Solo envuelve menciones que aparezcan como texto SUELTO (no dentro de tags).
+//  - Ordena los productos por longitud DESC para que "Caribe Costeño" se enlace
+//    antes que "Caribe" (si existiera), evitando overlapping matches.
+//  - NO procesa dentro de <a>...</a>, <code>, <pre>.
+function linkBlendMentions(html, products) {
+  if (!html || !products || products.length === 0) {
+    return { html: html || '', linksInserted: 0, productosEnlazados: [] };
+  }
+
+  // Construir lista de [nombre, id] ordenada por longitud DESC
+  const candidatos = products
+    .filter(p => p && p.nombre && p.id != null)
+    .map(p => ({ nombre: p.nombre, id: p.id }))
+    .sort((a, b) => b.nombre.length - a.nombre.length);
+
+  if (candidatos.length === 0) {
+    return { html, linksInserted: 0, productosEnlazados: [] };
+  }
+
+  // Tokenizar el HTML en: texto + tags, para no tocar el interior de los tags
+  // ni el contenido entre <a>...</a>, <code>...</code>, <pre>...</pre>.
+  const tokens = html.split(/(<[^>]+>)/g);
+  const enlacesInsertados = new Set();
+  let linksInserted = 0;
+
+  // Estados: dentro de qué tag estamos (para no tocar)
+  let inAnchor = false;
+  let inCode = false;
+  let inPre = false;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (!tok) continue;
+
+    // ¿Es un tag?
+    if (tok.startsWith('<')) {
+      const lower = tok.toLowerCase();
+      // Apertura
+      if (/^<a[>\s]/.test(lower)) inAnchor = true;
+      else if (/^<code[>\s]/.test(lower)) inCode = true;
+      else if (/^<pre[>\s]/.test(lower)) inPre = true;
+      // Cierre
+      else if (/^<\/a[>\s]/.test(lower)) inAnchor = false;
+      else if (/^<\/code[>\s]/.test(lower)) inCode = false;
+      else if (/^<\/pre[>\s]/.test(lower)) inPre = false;
+      continue;  // no modificar tags
+    }
+
+    // ¿Estamos en una zona protegida?
+    if (inAnchor || inCode || inPre) continue;
+
+    // Es texto: aplicar regex para cada producto
+    let text = tok;
+    for (const prod of candidatos) {
+      const escapedName = prod.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Buscar el nombre como palabra completa (no dentro de otra palabra)
+      // y que NO esté precedido por una comilla doble (para no re-enlazar texto
+      // dentro de un href existente, por las dudas).
+      const re = new RegExp(
+        '(^|[^\\w"\'>])(' + escapedName + ')(?=$|[^\\w"\'<])',
+        'g'
+      );
+      text = text.replace(re, (full, before, name) => {
+        // Si el match ya está dentro de un <a> en el texto original, el estado
+        // inAnchor ya lo debería haber filtrado. Pero por las dudas, verificamos
+        // que el "before" no sea el cierre de un href: no debería ocurrir.
+        enlacesInsertados.add(prod.nombre);
+        linksInserted++;
+        return `${before}<a href="#" onclick="openDetail(${prod.id});return false">${name}</a>`;
+      });
+    }
+    tokens[i] = text;
+  }
+
+  return {
+    html: tokens.join(''),
+    linksInserted,
+    productosEnlazados: Array.from(enlacesInsertados)
   };
 }
 
@@ -742,6 +934,230 @@ ${seccionesHtml}
 </html>`;
 }
 
+// ============ HTML SEO DE BLOG (artículo individual) ============
+
+function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
+  const slug = articulo.slug_publicado;
+  const url = `${BASE_URL}/blog/${slug}`;
+  const titulo = escHtml(articulo.titulo);
+  const descripcion = escHtml(articulo.descripcion_meta || articulo.subtitulo || '');
+  const img = imageUrl || '';
+
+  // Schema.org Article
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: articulo.titulo,
+    description: articulo.descripcion_meta || articulo.subtitulo || '',
+    image: img,
+    datePublished: articulo.fecha,
+    dateModified: articulo.fecha,
+    author: { '@type': 'Organization', name: 'Arcano Especias', url: BASE_URL },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Arcano Especias',
+      logo: { '@type': 'ImageObject', url: BASE_URL + '/icons/arcano-logo.webp' }
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    articleSection: articulo.categoria || 'Blog',
+    keywords: (articulo.keywords || []).join(', ')
+  };
+  const bc = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: BASE_URL + '/blog/' },
+      { '@type': 'ListItem', position: 3, name: articulo.titulo, item: url }
+    ]
+  };
+
+  // El contenido viene como HTML desde Gemini + los enlaces a blends que
+  // insertamos con linkBlendMentions(). Sanitizamos:
+  //  - Quitar <script> y <style> (no deberían venir, por las dudas).
+  //  - Quitar atributos on* que no sean nuestros openDetail (Gemini podría
+  //    haber metido onclick propios en versiones anteriores).
+  //  - Conservar nuestros <a onclick="openDetail(ID);return false">.
+  const contenidoFinal = String(articulo.contenido || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, (m) => {
+      // Conservar solo los onclick que contengan openDetail
+      return /onclick\s*=\s*".*openDetail/.test(m) ? m : '';
+    });
+
+  const keywordsStr = (articulo.keywords || []).join(', ');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${titulo} — Arcano Especias</title>
+<meta name="description" content="${descripcion.substring(0, 155)}">
+<link rel="canonical" href="${url}">
+<meta name="keywords" content="${escHtml(keywordsStr)}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${titulo}">
+<meta property="og:description" content="${descripcion}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${img}">
+<meta property="og:locale" content="es_CO">
+<meta property="og:site_name" content="Arcano Especias">
+<meta property="article:published_time" content="${articulo.fecha}">
+<meta property="article:section" content="${escHtml(articulo.categoria || 'Blog')}">
+<meta property="article:tag" content="${escHtml(keywordsStr)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${titulo}">
+<meta name="twitter:description" content="${descripcion}">
+<meta name="twitter:image" content="${img}">
+<script type="application/ld+json">${JSON.stringify(schema)}</script>
+<script type="application/ld+json">${JSON.stringify(bc)}</script>
+<style>
+body{margin:0;padding:0;font-family:Georgia,"Times New Roman",serif;background:#1b0b07;color:#f0e6d3;line-height:1.8}
+.container{max-width:760px;margin:0 auto;padding:24px 18px}
+a{color:#c9a84c;text-decoration:none}a:hover{text-decoration:underline}
+.back{display:inline-block;margin-bottom:24px;padding:8px 16px;border:1px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:.85rem}.back:hover{background:#c9a84c;color:#1b0b07;text-decoration:none}
+.header-meta{color:#a08b6e;font-size:.8rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+h1{font-size:2rem;color:#c9a84c;margin:0 0 12px;line-height:1.25;font-weight:700}
+.subtitulo{color:#a08b6e;font-size:1.05rem;margin-bottom:20px;font-style:italic;line-height:1.5}
+.meta{color:#a08b6e;font-size:.85rem;margin-bottom:28px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding-bottom:14px;border-bottom:1px solid #3d2a1c}
+.meta .badge{display:inline-block;padding:3px 12px;border-radius:14px;font-size:.75rem;font-weight:600;background:#2d5a27;color:#8fce80}
+img.hero{width:100%;border-radius:8px;margin-bottom:28px;max-height:420px;object-fit:cover}
+.content{font-size:1.02rem}
+.content h2{color:#c9a84c;margin-top:36px;margin-bottom:14px;font-size:1.35rem;font-weight:700}
+.content h3{color:#c9a84c;margin-top:24px;margin-bottom:10px;font-size:1.1rem}
+.content p{margin-bottom:18px}
+.content ul,.content ol{margin-bottom:18px;padding-left:28px}
+.content li{margin-bottom:6px}
+.content blockquote{border-left:4px solid #c9a84c;padding:14px 20px;margin:24px 0;background:#2d1a10;border-radius:0 8px 8px 0;font-style:italic;color:#f0e6d3}
+.content blockquote p{margin:0}
+.keywords-row{margin-top:32px;padding-top:18px;border-top:1px solid #2d1a10;font-size:.8rem;color:#a08b6e}.keywords-row strong{color:#c9a84c}
+.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="${BASE_URL}/blog/" class="back">&larr; Volver al Blog</a>
+<div class="header-meta">${escHtml(articulo.categoria || 'Blog')}${especiaPrincipal ? ' · ' + escHtml(especiaPrincipal) : ''}</div>
+<h1>${titulo}</h1>
+${articulo.subtitulo ? `<div class="subtitulo">${escHtml(articulo.subtitulo)}</div>` : ''}
+<div class="meta">
+${articulo.fecha ? `<span>${escHtml(articulo.fecha)}</span>` : ''}
+${articulo.tiempoLectura ? `<span>${escHtml(articulo.tiempoLectura)}</span>` : ''}
+<span class="badge">${escHtml(articulo.categoria || 'Blog')}</span>
+</div>
+${img ? `<img class="hero" src="${escHtml(img)}" alt="${titulo}" loading="lazy">` : ''}
+<div class="content">
+${contenidoFinal}
+</div>
+${keywordsStr ? `<div class="keywords-row"><strong>Keywords:</strong> ${escHtml(keywordsStr)}</div>` : ''}
+<div class="footer">
+<p><a href="${BASE_URL}/blog/">← Volver al Blog</a> · <a href="${BASE_URL}/">Ir a la tienda</a></p>
+<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · <a href="${BASE_URL}/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="${BASE_URL}/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>
+</div>
+</div>
+</body>
+</html>`;
+}
+
+// ============ ÍNDICE /blog/index.html ============
+
+// Genera el HTML estático del listado público del blog.
+// Solo muestra posts publicados (publicado !== false o sin el campo = legacy).
+function generateBlogIndexHTML(allPosts) {
+  // Filtrar publicados + deduplicar por slug
+  const seen = new Set();
+  const valid = [];
+  for (const p of allPosts || []) {
+    if (!p || !p.titulo) continue;
+    // Filtro: pausado o no publicado (a menos que sea legacy sin el campo)
+    if (p.pausado === true) continue;
+    if (p.publicado === false) continue;
+    const slug = p.slug_publicado || slugify(p.titulo);
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    valid.push({
+      titulo: p.titulo,
+      slug,
+      subtitulo: p.subtitulo || p.descripcion_meta || '',
+      descripcion_meta: p.descripcion_meta || p.subtitulo || '',
+      imagen_url: p.imagen_url || '',
+      categoria: p.categoria || 'Blog',
+      fecha: p.fecha || ''
+    });
+  }
+  // Ordenar por fecha DESC (más nuevos primero)
+  valid.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+  const cards = valid.map(p => {
+    const img = p.imagen_url || (BASE_URL + '/icons/logo.png');
+    const desc = escHtml((p.descripcion_meta || p.subtitulo || '').substring(0, 140));
+    const titulo = escHtml(p.titulo);
+    const cat = escHtml(p.categoria);
+    return `<a href="${BASE_URL}/blog/${encodeURIComponent(p.slug)}" class="post">
+<img src="${escHtml(img)}" alt="${titulo}" loading="lazy">
+<div class="body"><div class="cat-badge">${cat}</div><h2>${titulo}</h2><p>${desc}</p></div>
+</a>`;
+  }).join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog de Especias y Blends | Arcano Especias</title>
+<meta name="description" content="Blog de Arcano Especias: historias, beneficios, curiosidades y orígenes de las especias del mundo. Guías para cocinar, infusiones y coctelería con especias artesanales.">
+<link rel="canonical" href="${BASE_URL}/blog/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blog de Especias y Blends | Arcano Especias">
+<meta property="og:description" content="Historias, beneficios, curiosidades y orígenes de las especias del mundo. Guías para cocinar con especias artesanales.">
+<meta property="og:url" content="${BASE_URL}/blog/">
+<meta property="og:image" content="${BASE_URL}/icons/logo.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,"Times New Roman",serif;background:#1b0b07;color:#f0e6d3;line-height:1.7}
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px}
+header{text-align:center;padding:32px 0 24px;border-bottom:1px solid #3d2a1c}
+header h1{color:#c9a84c;font-size:2.2rem;margin-bottom:8px}
+header p{color:#a08b6e;font-size:1rem;max-width:600px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:32px}
+.post{background:#2d1a10;border:1px solid #3d2a1c;border-radius:12px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}
+.post:hover{transform:translateY(-3px);border-color:#c9a84c}
+.post img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#1b0b07}
+.post .body{padding:16px 20px}
+.post .cat-badge{display:inline-block;background:#2d5a27;color:#8fce80;padding:2px 10px;border-radius:10px;font-size:.7rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.post h2{font-size:1.05rem;color:#c9a84c;margin-bottom:8px;line-height:1.3}
+.post p{font-size:.85rem;color:#a08b6e;line-height:1.5}
+.breadcrumbs{font-size:0.85rem;color:#a08b6e;margin-bottom:16px}
+.breadcrumbs a{color:#c9a84c;text-decoration:none}
+.breadcrumbs a:hover{text-decoration:underline}
+.footer{margin-top:48px;padding-top:24px;border-top:1px solid #3d2a1c;text-align:center;color:#6b5a42;font-size:0.85rem}
+.footer a{color:#c9a84c}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="breadcrumbs"><a href="${BASE_URL}/">Inicio</a> › Blog</div>
+<header>
+<h1>Blog de Especias</h1>
+<p>Historias, beneficios, curiosidades y orígenes de las especias del mundo. Guías para cocinar, infusiones y coctelería con especias artesanales.</p>
+</header>
+<div class="grid">
+${cards}
+</div>
+<div class="footer">
+<p><a href="${BASE_URL}/">← Volver a Arcano Especias</a></p>
+<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · Envíos a toda Colombia · <a href="${BASE_URL}/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="${BASE_URL}/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>
+</div>
+</div>
+</body>
+</html>`;
+}
+
 // ============ SITEMAP APPEND ============
 
 // Agrega una URL nueva a sitemap.xml sin regenerar todo el archivo.
@@ -852,26 +1268,32 @@ async function sendRecipeEmail(env, receta) {
   await sendRawEmail(env, ADMIN_EMAIL, subject, htmlContent);
 }
 
-async function sendBlogDraftEmail(env, articulo) {
-  const adminUrl = `${BASE_URL}/admin/`;
-  const subject = `Borrador de blog listo para revisar: ${articulo.titulo}`;
+async function sendBlogPublishedEmail(env, articulo, especiaPrincipal) {
+  const postUrl = `${BASE_URL}/blog/${articulo.slug_publicado}`;
+  const subject = `Nuevo artículo de blog publicado: ${articulo.titulo}`;
   const htmlContent = `
 <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;background:#1b0b07;color:#f0e6d3;padding:24px">
   <div style="text-align:center;margin-bottom:24px">
     <img src="${BASE_URL}/icons/arcano-logo.webp" alt="Arcano Especias" style="max-width:120px">
   </div>
-  <h1 style="color:#c9a84c;font-size:1.5rem;margin:0 0 16px">Nuevo artículo de blog (borrador)</h1>
+  <h1 style="color:#c9a84c;font-size:1.5rem;margin:0 0 16px">Nuevo artículo de blog publicado automáticamente</h1>
   <p style="font-size:1.1rem;margin:0 0 8px"><strong>${escHtml(articulo.titulo)}</strong></p>
-  <p style="color:#a08b6e;margin:0 0 16px">${escHtml(articulo.categoria || 'Historia')} · ${escHtml(articulo.tiempoLectura || '')}</p>
-  <p style="margin:0 0 16px">${escHtml(articulo.subtitulo || articulo.descripcion_meta || '')}</p>
+  <p style="color:#a08b6e;margin:0 0 16px">
+    ${escHtml(articulo.categoria || 'Blog')} ·
+    ${especiaPrincipal ? 'Especia: ' + escHtml(especiaPrincipal) + ' · ' : ''}
+    ${escHtml(articulo.tiempoLectura || '')}
+  </p>
+  <p style="margin:0 0 16px">${escHtml(articulo.descripcion_meta || articulo.subtitulo || '')}</p>
+  ${articulo.imagen_url ? `<img src="${escHtml(articulo.imagen_url)}" alt="${escHtml(articulo.titulo)}" style="width:100%;border-radius:8px;margin:16px 0">` : ''}
   <div style="background:#2d1a10;padding:16px;border-radius:8px;margin:16px 0">
     <p style="margin:0 0 12px;color:#a08b6e;font-size:0.85rem">Keywords: ${escHtml((articulo.keywords || []).join(', '))}</p>
-    <p style="margin:0;color:#a08b6e;font-size:0.85rem">Descripción meta: ${escHtml(articulo.descripcion_meta || '')}</p>
+    <p style="margin:0;color:#a08b6e;font-size:0.85rem">URL pública: <a href="${postUrl}" style="color:#c9a84c">${postUrl}</a></p>
   </div>
-  <p style="margin:0 0 24px">El artículo está guardado como <strong>borrador</strong> en el admin. Necesita que cargues la imagen y lo publiques.</p>
-  <a href="${adminUrl}" style="display:inline-block;background:#c9a84c;color:#1b0b07;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Ir al admin para editar</a>
+  <p style="margin:0 0 24px">El artículo ya está <strong>publicado</strong> en el blog. URL individual, índice /blog/ y sitemap.xml ya están actualizados.</p>
+  <a href="${postUrl}" style="display:inline-block;background:#c9a84c;color:#1b0b07;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Ver artículo publicado</a>
+  <a href="${BASE_URL}/admin/#blog" style="display:inline-block;background:#2d5a27;color:#8fce80;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;margin-left:8px">Ir al admin (editar)</a>
   <hr style="border:none;border-top:1px solid #2d1a10;margin:32px 0">
-  <p style="font-size:0.8rem;color:#6b5a42">Este artículo fue generado automáticamente por el sistema de automatización de Arcano Especias.</p>
+  <p style="font-size:0.8rem;color:#6b5a42">Este artículo fue generado y publicado automáticamente por el sistema de automatización de Arcano Especias.</p>
 </div>`;
 
   await sendRawEmail(env, ADMIN_EMAIL, subject, htmlContent);
@@ -916,8 +1338,13 @@ export {
   nextBlogTema,
   generateRecipeHTML,
   generateRecipesIndexHTML,
+  generateBlogHTML,
+  generateBlogIndexHTML,
+  linkBlendMentions,
   appendToSitemap,
   defaultState,
+  slugify,
   RECETA_CATEGORIAS,
-  BLOG_TEMAS
+  BLOG_CATEGORIAS,
+  BLOG_ESPECIAS
 };

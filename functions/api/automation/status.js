@@ -3,7 +3,7 @@
 // Solo lectura, no requiere auth (info de estado, no sensible).
 
 import { hasServiceAccount } from '../../_lib/firebase-admin.js';
-import { getAutomationState, loadExistingRecipes, loadExistingBlog, RECETA_CATEGORIAS, BLOG_TEMAS } from '../../_lib/automation-helpers.js';
+import { getAutomationState, loadExistingRecipes, loadExistingBlog, RECETA_CATEGORIAS, BLOG_CATEGORIAS, BLOG_ESPECIAS } from '../../_lib/automation-helpers.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -27,9 +27,18 @@ export async function onRequestGet({ env }) {
       ? RECETA_CATEGORIAS[(RECETA_CATEGORIAS.indexOf(state.recetas.ultimaCategoria) + 1) % RECETA_CATEGORIAS.length]
       : RECETA_CATEGORIAS[0];
 
+    // Próxima categoría y especia de blog (rotación independiente)
     const blogState = state?.blog?.ultimaCategoria;
-    const blogIdx = BLOG_TEMAS.findIndex(t => t.especia === blogState);
-    const nextBlog = blogIdx >= 0 ? BLOG_TEMAS[(blogIdx + 1) % BLOG_TEMAS.length] : BLOG_TEMAS[0];
+    let nextBlogCatIdx = 0;
+    if (blogState) {
+      const found = BLOG_CATEGORIAS.findIndex(c => c.categoria === blogState);
+      if (found >= 0) nextBlogCatIdx = (found + 1) % BLOG_CATEGORIAS.length;
+    }
+    const nextBlogCat = BLOG_CATEGORIAS[nextBlogCatIdx];
+    const ultEspIdx = Number.isFinite(Number(state?.blog?.ultimaEspeciaIdx))
+      ? Number(state.blog.ultimaEspeciaIdx) : -1;
+    const nextEspIdx = (ultEspIdx + 1) % BLOG_ESPECIAS.length;
+    const nextBlogEspecia = BLOG_ESPECIAS[nextEspIdx];
 
     return new Response(JSON.stringify({
       ok: true,
@@ -43,9 +52,14 @@ export async function onRequestGet({ env }) {
       blog: {
         total: blogPosts.length,
         ultimaCategoria: state?.blog?.ultimaCategoria || null,
+        ultimaEspeciaIdx: ultEspIdx,
+        ultimaEspecia: ultEspIdx >= 0 ? BLOG_ESPECIAS[ultEspIdx] : null,
         ultimaFecha: state?.blog?.ultimaFecha || null,
-        proximoTema: nextBlog
+        proximaCategoria: nextBlogCat ? nextBlogCat.categoria : null,
+        proximaEspecia: nextBlogEspecia
       },
+      categoriasBlog: BLOG_CATEGORIAS.map(c => c.categoria),
+      especiasBlog: BLOG_ESPECIAS,
       schedule: {
         recetas: 'Lunes, Miércoles, Viernes a las 09:00 America/Bogota',
         blog: 'Domingos a las 09:00 America/Bogota'
