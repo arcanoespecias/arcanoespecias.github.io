@@ -8993,10 +8993,56 @@ const Pages = {
         } else {
           toast('Articulo publicado correctamente', 'ok');
           Pages._loadBlogAdmin();
-          // Generar SEO HTML estatico
+          // Generar SEO HTML estatico (HTML individual del articulo)
           Pages._publishBlogSEO(a);
+          // Llamar al endpoint server-side que ademas de generar el HTML
+          // individual (ya lo hace _publishBlogSEO arriba), regenera el
+          // indice /blog/index.html y agrega la URL al sitemap.xml.
+          // El endpoint es idempotente: si ya esta todo hecho, no rompe nada.
+          Pages._callPublishBlogEndpoint(key);
         }
       });
+    });
+  },
+
+  // Llama a /api/automation/publish-blog para que el backend regenere el
+  // indice /blog/index.html + sitemap.xml. Necesita el ARCANO_ADMIN_TOKEN.
+  // Si no está guardado en localStorage, lo pide una sola vez con prompt().
+  _callPublishBlogEndpoint: function(key) {
+    var token = (window.localStorage && localStorage.getItem('arcano_admin_token')) || '';
+    if (!token) {
+      token = prompt('Para publicar en el índice /blog/ y en el sitemap automáticamente, ingresá el ARCANO_ADMIN_TOKEN (se guardará para no pedirlo más):') || '';
+      if (!token) {
+        console.warn('[publish-blog] Sin token: no se actualiza índice ni sitemap automáticamente. El HTML individual del artículo ya se subió.');
+        toast('Artículo publicado en Firebase, pero no se actualizó el índice /blog/ ni el sitemap. Para automatizarlo, configurá el token.', 'warn');
+        return;
+      }
+      localStorage.setItem('arcano_admin_token', token.trim());
+    }
+    fetch('/api/automation/publish-blog', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token.trim()
+      },
+      body: JSON.stringify({ key: key })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) {
+        console.log('[publish-blog] OK:', data.url);
+        toast('Artículo publicado en índice y sitemap ✓', 'ok');
+      } else {
+        console.warn('[publish-blog] Error:', data.error);
+        // Si el token no funciona, lo borramos para que vuelva a pedirlo
+        if (data.error && /No autorizado/i.test(data.error)) {
+          localStorage.removeItem('arcano_admin_token');
+          toast('Token inválido. Volvé a intentarlo para reingresarlo.', 'warn');
+        } else {
+          toast('Aviso: el artículo se publicó pero el backend falló al actualizar índice/sitemap: ' + (data.error || 'desconocido'), 'warn');
+        }
+      }
+    }).catch(function(e) {
+      console.warn('[publish-blog] Exception:', e);
+      toast('Aviso: no se pudo contactar al backend para actualizar índice/sitemap', 'warn');
     });
   },
 

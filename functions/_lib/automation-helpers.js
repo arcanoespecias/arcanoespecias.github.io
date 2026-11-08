@@ -6,7 +6,7 @@
 // Sube a GitHub con env.GITHUB_TOKEN.
 // Envía email con Brevo.
 
-import { fbAdminGet, fbAdminPost, fbAdminPut, hasServiceAccount } from './firebase-admin.js';
+import { fbAdminGet, fbAdminPost, fbAdminPatch, fbAdminPut, hasServiceAccount } from './firebase-admin.js';
 import { uploadToGitHub, uploadImage, downloadFromGitHub } from './github.js';
 
 const BASE_URL = 'https://arcanoespecias.com';
@@ -579,9 +579,10 @@ async function generateBlog(env, opts) {
   }
   articulo.slug_publicado = slugify(articulo.titulo);
   articulo.fecha = new Date().toISOString().substring(0, 10);
-  articulo.publicado = true;       // AUTO-PUBLICADO (no más borrador)
+  articulo.publicado = false;       // BORRADOR — el admin aprueba desde el panel
   articulo.programado = false;
   articulo.categoria = tema.categoria;  // Forzar la categoría rotada
+  articulo.especia_principal = tema.especia;  // Guardar para usar al publicar
 
   // Calcular tiempoLectura si no vino
   if (!articulo.tiempoLectura) {
@@ -622,41 +623,16 @@ async function generateBlog(env, opts) {
   articulo.imagen_url = imageUrl;
   log.push(`Imagen subida: ${imageUrl}`);
 
-  // 11. Guardar en Firebase (publicado=true)
-  log.push('Guardando artículo en Firebase (publicado=true)...');
-  await fbAdminPost(env, '/arcano/db/blog', articulo);
-  log.push('Artículo guardado');
+  // 11. Guardar en Firebase como BORRADOR (publicado=false)
+  log.push('Guardando artículo en Firebase (publicado=false, borrador pendiente de aprobación)...');
+  const fbResult = await fbAdminPost(env, '/arcano/db/blog', articulo);
+  articulo._key = fbResult?.name || null;  // Firebase devuelve { name: "-Lx9..." }
+  log.push(`Artículo guardado (key=${articulo._key || 'n/a'})`);
 
-  // 12. Generar HTML SEO + subir a GitHub
-  log.push('Generando HTML SEO...');
-  const html = generateBlogHTML(articulo, imageUrl, tema.especia);
-  const htmlPath = `blog/${articulo.slug_publicado}.html`;
-  await uploadToGitHub(env, htmlPath, html, `automation: blog ${articulo.titulo}`, false);
-  log.push(`HTML subido: ${htmlPath}`);
-
-  // 12b. Regenerar el ÍNDICE /blog/index.html con el artículo nuevo incluido
-  try {
-    log.push('Regenerando índice /blog/index.html...');
-    const allPosts = await loadExistingBlog(env);
-    const indexHtml = generateBlogIndexHTML(allPosts);
-    await uploadToGitHub(env, 'blog/index.html', indexHtml, `automation: índice blog (agregado ${articulo.titulo})`, false);
-    log.push('Índice /blog/index.html actualizado');
-  } catch (e) {
-    log.push(`AVISO: no se pudo regenerar el índice del blog: ${e.message}`);
-  }
-
-  // 12c. Append al sitemap.xml
-  try {
-    const blogUrl = `${BASE_URL}/blog/${articulo.slug_publicado}`;
-    const sm = await appendToSitemap(env, blogUrl, articulo.fecha);
-    if (sm.alreadyExists) {
-      log.push(`Sitemap: URL ya presente (skip)`);
-    } else {
-      log.push(`Sitemap: URL agregada (${sm.totalUrls} URLs totales)`);
-    }
-  } catch (e) {
-    log.push(`AVISO: no se pudo actualizar sitemap.xml: ${e.message}`);
-  }
+  // 12. NO subir HTML individual, NO regenerar índice, NO append al sitemap.
+  //     Todo eso lo hace el endpoint /api/automation/publish-blog cuando el
+  //     admin aprueba el artículo. Mientras tanto, el borrador solo existe en
+  //     Firebase y se ve en el admin (con botón "Aprobar y publicar").
 
   // 13. Actualizar estado (categoría + especia + títulos)
   const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
@@ -668,15 +644,95 @@ async function generateBlog(env, opts) {
   };
   await updateAutomationState(env, state);
 
-  // 14. Email al admin (con vista previa pública)
-  log.push('Enviando email al admin...');
-  await sendBlogPublishedEmail(env, articulo, tema.especia);
+  // 14. Email al admin: avisar que hay un borrador pendiente de aprobación
+  log.push('Enviando email al admin (borrador pendiente)...');
+  await sendBlogDraftEmail(env, articulo);
   log.push('Email enviado');
 
   return {
     articulo,
     log,
-    url: `${BASE_URL}/blog/${articulo.slug_publicado}`
+    adminUrl: `${BASE_URL}/admin/#blog`,
+    pendingApproval: true
+  };
+}
+
+// ============ PUBLICAR BLOG (lo llama el admin al aprobar) ============
+
+// Publica un artículo de blog que estaba como borrador:
+//   1. Lo busca en Firebase por _key o por slug
+//   2. Marca publicado=true
+//   3. Genera HTML SEO individual + sube a GitHub
+//   4. Regenera /blog/index.html
+//   5. Append al sitemap.xml
+//   6. Devuelve la URL pública
+//
+// Es idempotente: si el artículo ya estaba publicado, no falla, solo omite
+// los pasos que ya están hechos (HTML ya subido, etc.).
+async function publishBlogPost(env, opts) {
+  const log = [];
+  const keyOrSlug = opts?.key || opts?.slug;
+  if (!keyOrSlug) throw new Error('Se requiere key o slug');
+
+  // 1. Buscar el artículo en Firebase
+  const allPosts = await loadExistingBlog(env);
+  let articulo = null;
+  if (opts?.key) {
+    articulo = allPosts.find(p => p._key === opts.key);
+  }
+  if (!articulo && opts?.slug) {
+    articulo = allPosts.find(p => (p.slug_publicado || slugify(p.titulo)) === opts.slug);
+  }
+  if (!articulo) throw new Error('Artículo no encontrado: ' + keyOrSlug);
+
+  log.push(`Publicando: "${articulo.titulo}" (key=${articulo._key || 'n/a'})`);
+
+  // 2. Marcar publicado=true en Firebase (PATCH solo ese nodo)
+  if (articulo._key) {
+    await fbAdminPatch(env, '/arcano/db/blog/' + articulo._key, { publicado: true });
+    log.push('Firebase: publicado=true');
+  } else {
+    log.push('AVISO: sin _key, no se pudo actualizar Firebase. El HTML se subirá igual.');
+  }
+  articulo.publicado = true;
+
+  // 3. Generar HTML SEO + subir a GitHub
+  log.push('Generando HTML SEO...');
+  const html = generateBlogHTML(articulo, articulo.imagen_url, articulo.especia_principal);
+  const htmlPath = `blog/${articulo.slug_publicado || slugify(articulo.titulo)}.html`;
+  await uploadToGitHub(env, htmlPath, html, `admin: publicar blog ${articulo.titulo}`, false);
+  log.push(`HTML subido: ${htmlPath}`);
+
+  // 4. Regenerar el ÍNDICE /blog/index.html
+  try {
+    log.push('Regenerando índice /blog/index.html...');
+    const fresh = await loadExistingBlog(env);
+    const indexHtml = generateBlogIndexHTML(fresh);
+    await uploadToGitHub(env, 'blog/index.html', indexHtml, `admin: índice blog (publicado ${articulo.titulo})`, false);
+    log.push('Índice /blog/index.html actualizado');
+  } catch (e) {
+    log.push(`AVISO: no se pudo regenerar el índice del blog: ${e.message}`);
+  }
+
+  // 5. Append al sitemap.xml
+  try {
+    const slug = articulo.slug_publicado || slugify(articulo.titulo);
+    const blogUrl = `${BASE_URL}/blog/${slug}`;
+    const sm = await appendToSitemap(env, blogUrl, articulo.fecha);
+    if (sm.alreadyExists) {
+      log.push('Sitemap: URL ya presente (skip)');
+    } else {
+      log.push(`Sitemap: URL agregada (${sm.totalUrls} URLs totales)`);
+    }
+  } catch (e) {
+    log.push(`AVISO: no se pudo actualizar sitemap.xml: ${e.message}`);
+  }
+
+  const slug = articulo.slug_publicado || slugify(articulo.titulo);
+  return {
+    articulo,
+    log,
+    url: `${BASE_URL}/blog/${slug}`
   };
 }
 
@@ -1296,32 +1352,31 @@ async function sendRecipeEmail(env, receta) {
   await sendRawEmail(env, ADMIN_EMAIL, subject, htmlContent);
 }
 
-async function sendBlogPublishedEmail(env, articulo, especiaPrincipal) {
-  const postUrl = `${BASE_URL}/blog/${articulo.slug_publicado}`;
-  const subject = `Nuevo artículo de blog publicado: ${articulo.titulo}`;
+async function sendBlogDraftEmail(env, articulo) {
+  const adminUrl = `${BASE_URL}/admin/#blog`;
+  const subject = `Borrador de blog pendiente de aprobación: ${articulo.titulo}`;
   const htmlContent = `
 <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;background:#1b0b07;color:#f0e6d3;padding:24px">
   <div style="text-align:center;margin-bottom:24px">
     <img src="${BASE_URL}/icons/arcano-logo.webp" alt="Arcano Especias" style="max-width:120px">
   </div>
-  <h1 style="color:#c9a84c;font-size:1.5rem;margin:0 0 16px">Nuevo artículo de blog publicado automáticamente</h1>
+  <h1 style="color:#c9a84c;font-size:1.5rem;margin:0 0 16px">Nuevo artículo de blog (pendiente de aprobación)</h1>
   <p style="font-size:1.1rem;margin:0 0 8px"><strong>${escHtml(articulo.titulo)}</strong></p>
   <p style="color:#a08b6e;margin:0 0 16px">
     ${escHtml(articulo.categoria || 'Blog')} ·
-    ${especiaPrincipal ? 'Especia: ' + escHtml(especiaPrincipal) + ' · ' : ''}
+    ${articulo.especia_principal ? 'Especia: ' + escHtml(articulo.especia_principal) + ' · ' : ''}
     ${escHtml(articulo.tiempoLectura || '')}
   </p>
   <p style="margin:0 0 16px">${escHtml(articulo.descripcion_meta || articulo.subtitulo || '')}</p>
   ${articulo.imagen_url ? `<img src="${escHtml(articulo.imagen_url)}" alt="${escHtml(articulo.titulo)}" style="width:100%;border-radius:8px;margin:16px 0">` : ''}
   <div style="background:#2d1a10;padding:16px;border-radius:8px;margin:16px 0">
     <p style="margin:0 0 12px;color:#a08b6e;font-size:0.85rem">Keywords: ${escHtml((articulo.keywords || []).join(', '))}</p>
-    <p style="margin:0;color:#a08b6e;font-size:0.85rem">URL pública: <a href="${postUrl}" style="color:#c9a84c">${postUrl}</a></p>
+    <p style="margin:0;color:#a08b6e;font-size:0.85rem">Estado: <strong style="color:#c9a84c">BORRADOR</strong> — pendiente de aprobación</p>
   </div>
-  <p style="margin:0 0 24px">El artículo ya está <strong>publicado</strong> en el blog. URL individual, índice /blog/ y sitemap.xml ya están actualizados.</p>
-  <a href="${postUrl}" style="display:inline-block;background:#c9a84c;color:#1b0b07;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Ver artículo publicado</a>
-  <a href="${BASE_URL}/admin/#blog" style="display:inline-block;background:#2d5a27;color:#8fce80;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;margin-left:8px">Ir al admin (editar)</a>
+  <p style="margin:0 0 24px">El artículo está listo para revisar. Entrá al admin, editalo si querés y después pulsá <strong>"Aprobar y publicar"</strong>. Recién ahí se sube el HTML público, se actualiza el índice /blog/ y se agrega al sitemap.</p>
+  <a href="${adminUrl}" style="display:inline-block;background:#c9a84c;color:#1b0b07;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Ir al admin para aprobar</a>
   <hr style="border:none;border-top:1px solid #2d1a10;margin:32px 0">
-  <p style="font-size:0.8rem;color:#6b5a42">Este artículo fue generado y publicado automáticamente por el sistema de automatización de Arcano Especias.</p>
+  <p style="font-size:0.8rem;color:#6b5a42">Este artículo fue generado automáticamente por el sistema de automatización de Arcano Especias.</p>
 </div>`;
 
   await sendRawEmail(env, ADMIN_EMAIL, subject, htmlContent);
@@ -1357,6 +1412,7 @@ async function sendRawEmail(env, toEmail, subject, htmlContent) {
 export {
   generateRecipe,
   generateBlog,
+  publishBlogPost,
   getAutomationState,
   updateAutomationState,
   loadCatalog,
