@@ -1854,8 +1854,41 @@ function openBlogPost(key) {
     h += '<button class="blog-back-btn" style="margin-top:32px" onclick="renderBlogList()">&larr; Volver al Blog</button>';
     h += '</div>';
     detail.innerHTML = h;
+    // Aplicar colores de la categoría al contenedor (carga diferida del CSS)
+    _applyBlogCategoryStyle(detail, post.categoria);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+}
+
+// Aplica el CSS de la categoría del blog al contenedor del detalle.
+// Lo carga una sola vez desde /api/automation/blog-styles y lo cachea en
+// localStorage (sin expiración, es CSS fijo por versión del deploy).
+var _blogStylesCache = null;
+function _applyBlogCategoryStyle(container, categoria) {
+  if (!categoria || !container) return;
+  var catClass = (categoria || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  container.classList.add('blog-cat-' + catClass);
+
+  if (_blogStylesCache) {
+    _injectBlogStyles(_blogStylesCache);
+    return;
+  }
+  // Cargar una sola vez el CSS de todas las categorías
+  fetch('/api/automation/blog-styles').then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok && data.css) {
+      _blogStylesCache = data.css;
+      _injectBlogStyles(data.css);
+    }
+  }).catch(function(e) {
+    console.warn('No se pudo cargar el CSS de categorías del blog:', e);
+  });
+}
+function _injectBlogStyles(css) {
+  if (document.getElementById('arcano-blog-styles')) return;
+  var s = document.createElement('style');
+  s.id = 'arcano-blog-styles';
+  s.textContent = css;
+  document.head.appendChild(s);
 }
 function compartirBlog(key) {
   onBlogReady(function(posts) {

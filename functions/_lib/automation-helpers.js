@@ -272,6 +272,176 @@ const BLOG_ESPECIAS = [
   'ras el hanout', 'garam masala', 'curry'
 ];
 
+// ============ PLANTILLAS DE DISEÑO POR CATEGORÍA ============
+//
+// Cada categoría de blog tiene su "look" propio:
+//   - Paleta de colores (fondo, texto primario, acento, badge)
+//   - Tipografía (heading y body)
+//   - Decoración (pattern sutil de fondo, border, etc.)
+//
+// El CSS es FIJO en el código (no lo genera Gemini). Gemini solo genera
+// contenido HTML semántico (p, h2, h3, blockquote, ul/ol, etc.) y el CSS
+// de la categoría correspondiente se inyecta al publicar. Esto garantiza
+// consistencia visual: todos los artículos de "Historia" se ven iguales
+// sin importar qué devuelva Gemini.
+//
+// Las 5 categorías tienen paletas MUY distintas entre sí, todas con
+// fondos claros (legibles,的现代SEO) y acentos que las diferencian.
+const BLOG_TEMPLATES = {
+  Historia: {
+    nombre: 'Historia',
+    descripcion: 'Pergamino antiguo',
+    // Paleta: tonos tierra, marrón cuero, dorado
+    bg: '#f4ecd8',           // crema envejecido (pergamino)
+    bgAccent: '#e8dcc0',     // crema más oscuro para destacar
+    textPrimary: '#3a2a1a',  // marrón oscuro tipo tinta
+    textSecondary: '#7a6a52',
+    accent: '#c9a84c',       // dorado Arcano
+    accentSoft: '#e8d5a3',
+    badgeBg: '#3a2a1a',
+    badgeText: '#f4ecd8',
+    headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
+    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(58,42,26,.65) 0%, rgba(201,168,76,.35) 100%)'
+  },
+  Curiosidades: {
+    nombre: 'Curiosidades',
+    descripcion: 'Magazine divertido',
+    // Paleta: naranja vibrante + cyan
+    bg: '#fff8f0',
+    bgAccent: '#ffe8d6',
+    textPrimary: '#2d1b0e',
+    textSecondary: '#7a5a3a',
+    accent: '#e85d04',       // naranja vibrante
+    accentSoft: '#fbb47a',
+    badgeBg: '#e85d04',
+    badgeText: '#fff8f0',
+    headingFont: '"Poppins", "Montserrat", system-ui, sans-serif',
+    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(232,93,4,.55) 0%, rgba(0,180,216,.35) 100%)'
+  },
+  Ciencia: {
+    nombre: 'Ciencia',
+    descripcion: 'Laboratorio botánico',
+    // Paleta: verde botánico + azul eléctrico
+    bg: '#f0f4f0',
+    bgAccent: '#e0eae0',
+    textPrimary: '#1a2d1f',
+    textSecondary: '#4a5d52',
+    accent: '#2d5a3d',       // verde botánico
+    accentSoft: '#7ab594',
+    badgeBg: '#0077b6',      // azul eléctrico (diferenciador)
+    badgeText: '#f0f4f0',
+    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
+    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(45,90,61,.6) 0%, rgba(0,119,182,.35) 100%)'
+  },
+  Beneficios: {
+    nombre: 'Beneficios',
+    descripcion: 'Bienestar natural',
+    // Paleta: verde menta suave + rosa terracota
+    bg: '#f5f0e8',
+    bgAccent: '#e8f0e4',
+    textPrimary: '#2a3d2e',
+    textSecondary: '#6b7d6e',
+    accent: '#52b788',       // verde menta
+    accentSoft: '#95d5b2',
+    badgeBg: '#e07a5f',      // rosa terracota (diferenciador)
+    badgeText: '#f5f0e8',
+    headingFont: '"Mulish", "Source Sans Pro", system-ui, sans-serif',
+    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(82,183,136,.45) 0%, rgba(224,122,95,.35) 100%)'
+  },
+  Cocina: {
+    nombre: 'Cocina',
+    descripcion: 'Cocina rústica',
+    // Paleta: rojo terracota + mostaza
+    bg: '#fdf6e3',
+    bgAccent: '#f5e6c8',
+    textPrimary: '#3a1f1a',
+    textSecondary: '#7a524a',
+    accent: '#c1432e',       // rojo terracota
+    accentSoft: '#e07560',
+    badgeBg: '#d4a017',      // mostaza (diferenciador)
+    badgeText: '#3a1f1a',
+    headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
+    bodyFont: 'Merriweather, "Lora", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(193,67,46,.55) 0%, rgba(212,160,23,.35) 100%)'
+  }
+};
+
+// Devuelve el template de una categoría. Si no existe, usa Historia como fallback.
+function getBlogTemplate(categoria) {
+  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historia;
+}
+
+// Genera el CSS completo de un artículo según su categoría.
+// Se inyecta en el <style> del HTML individual /blog/<slug>.html.
+function generateBlogCSS(t) {
+  return `
+body{margin:0;padding:0;background:${t.bg};color:${t.textPrimary};font-family:${t.bodyFont};line-height:1.8;font-size:17px}
+.container{max-width:760px;margin:0 auto;padding:0 18px 48px}
+a{color:${t.accent};text-decoration:none;border-bottom:1px solid ${t.accentSoft};transition:border-color .15s}a:hover{border-color:${t.accent}}
+.back{display:inline-block;margin:24px 0 16px;padding:8px 16px;border:1px solid ${t.accent};border-radius:4px;color:${t.accent};font-size:.85rem;border-bottom:1px solid ${t.accent}}.back:hover{background:${t.accent};color:${t.bg};text-decoration:none}
+.header-meta{font-family:${t.headingFont};color:${t.textSecondary};font-size:.78rem;margin-bottom:6px;text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+h1{font-family:${t.headingFont};font-size:2.4rem;color:${t.textPrimary};margin:0 0 12px;line-height:1.2;font-weight:700;letter-spacing:-.01em}
+.subtitulo{font-family:${t.bodyFont};color:${t.textSecondary};font-size:1.15rem;margin:0 0 28px;font-style:italic;line-height:1.5;border-left:3px solid ${t.accent};padding-left:16px}
+.meta{color:${t.textSecondary};font-size:.85rem;margin-bottom:28px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding-bottom:18px;border-bottom:1px solid ${t.bgAccent}}
+.meta .badge{display:inline-block;padding:4px 14px;border-radius:14px;font-size:.72rem;font-weight:700;background:${t.badgeBg};color:${t.badgeText};text-transform:uppercase;letter-spacing:.08em}
+img.hero{width:100%;border-radius:8px;margin-bottom:32px;max-height:440px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.content{font-size:1.05rem}
+.content > p:first-child::first-letter{font-family:${t.headingFont};font-size:3.5rem;float:left;line-height:.85;padding:6px 10px 0 0;color:${t.accent};font-weight:700}
+.content h2{font-family:${t.headingFont};color:${t.textPrimary};margin-top:42px;margin-bottom:14px;font-size:1.6rem;font-weight:700;border-bottom:2px solid ${t.accentSoft};padding-bottom:6px;display:inline-block}
+.content h3{font-family:${t.headingFont};color:${t.textPrimary};margin-top:28px;margin-bottom:10px;font-size:1.2rem;font-weight:600}
+.content p{margin-bottom:20px}
+.content ul,.content ol{margin-bottom:20px;padding-left:32px}
+.content li{margin-bottom:8px}
+.content ul li::marker{color:${t.accent}}
+.content blockquote{border-left:4px solid ${t.accent};padding:18px 24px;margin:32px 0;background:${t.bgAccent};border-radius:0 8px 8px 0;font-style:italic;color:${t.textPrimary};font-size:1.1rem;font-family:${t.bodyFont}}
+.content blockquote p{margin:0}
+.content a.blend-link{color:${t.accent};font-weight:600;background:${t.bgAccent};padding:1px 6px;border-radius:3px;border-bottom:none}.content a.blend-link:hover{background:${t.accent};color:${t.bg}}
+.keywords-row{margin-top:40px;padding:18px 0 0;border-top:1px solid ${t.bgAccent};font-size:.82rem;color:${t.textSecondary}}.keywords-row strong{color:${t.accent};font-family:${t.headingFont};letter-spacing:.05em}
+.footer{text-align:center;margin-top:64px;padding-top:24px;border-top:2px solid ${t.bgAccent};color:${t.textSecondary};font-size:.82rem;font-family:${t.bodyFont}}
+.footer a{color:${t.accent};border-bottom:none}
+@media(max-width:640px){
+  .container{padding:0 14px 32px}
+  h1{font-size:1.8rem}
+  .content > p:first-child::first-letter{font-size:2.8rem}
+  .content h2{font-size:1.35rem}
+  .meta{flex-direction:column;align-items:flex-start;gap:6px}
+}
+`;
+}
+
+// CSS compacto (solo colores esenciales) para inyectar en el modal de la tienda.
+// Es una versión reducida del CSS completo, suficiente para teñir el modal
+// con los colores de la categoría.
+function generateBlogCSSCompact(t) {
+  return `
+.arcano-blog-modal{--bg:${t.bg};--bg-accent:${t.bgAccent};--text:${t.textPrimary};--text-secondary:${t.textSecondary};--accent:${t.accent};--accent-soft:${t.accentSoft};--badge-bg:${t.badgeBg};--badge-text:${t.badgeText};--heading:${t.headingFont};--body:${t.bodyFont}}
+`;
+}
+
+// Devuelve el CSS que necesitan las cards del índice /blog/ para mostrar
+// el color de cada categoría. Se inlinea una sola vez en el index.
+function generateBlogIndexCategoryColors() {
+  let css = '';
+  for (const cat in BLOG_TEMPLATES) {
+    const t = BLOG_TEMPLATES[cat];
+    const slug = cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    css += `.post.cat-${slug}{border-top:4px solid ${t.accent};}\n`;
+    css += `.post.cat-${slug} .cat-badge{background:${t.badgeBg};color:${t.badgeText};}\n`;
+    css += `.post.cat-${slug} h2{color:${t.textPrimary};}\n`;
+    css += `.post.cat-${slug}:hover{border-color:${t.accent};border-top-color:${t.accent};}\n`;
+  }
+  return css;
+}
+
+// Slug de categoría para usar como clase CSS
+function catToClass(categoria) {
+  return String(categoria || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 function nextBlogTema(state) {
   const ultCat = state?.blog?.ultimaCategoria;
   const ultEspIdx = Number.isFinite(Number(state?.blog?.ultimaEspeciaIdx))
@@ -532,27 +702,40 @@ async function generateBlog(env, opts) {
   log.push(`Blog existente: ${existing.length} posts`);
 
   // 4. Prompt dinámico por categoría
+  //    El CSS se inyecta después (generateBlogCSS) según la categoría.
+  //    Gemini solo genera HTML semántico (p, h2, h3, blockquote, ul/ol).
+  //    NO debe incluir <style>, classes CSS, ni atributos inline.
   const prompt = 'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias (tienda colombiana online).\n' +
     'Escribes en ESPAÑOL NEUTRO INTERNACIONAL (no voseo, no "vos"). Usas "tú" y "tienes".\n' +
     'Tono: narrativo, cercano, didáctico, experto pero accesible.\n\n' +
-    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos cuando enlaces):\n' + productContext + '\n\n' +
+    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos cuando menciones):\n' + productContext + '\n\n' +
     '=== INSTRUCCION DE KEYWORDS ===\n' +
     '1. Identifica 5-8 keywords del mercado de especias online en Colombia.\n' +
     '2. Integra las keywords de forma SUTIL y NATURAL en el contenido.\n' +
     '3. NUNCA repitas una keyword más de 2 veces.\n\n' +
-    '=== ESTRUCTURA OBLIGATORIA ===\n' +
-    'El contenido HTML debe tener: <p> introductorio (2-3 oraciones), 3-4 <h2> subtítulos, ' +
-    'párrafos de 3-4 oraciones, un <blockquote> con frase destacada, ' +
-    'y cierre con un <h2>Para llevar a tu cocina</h2> que menciona 1-2 blends relacionados.\n' +
+    '=== ESTRUCTURA HTML OBLIGATORIA ===\n' +
+    'El campo "contenido" debe ser HTML semántico PURO. SOLO se permiten estos tags:\n' +
+    '  <p>  <h2>  <h3>  <blockquote>  <ul>  <ol>  <li>  <strong>  <em>\n' +
+    'ESTRUCTURA:\n' +
+    '  - <p> introductorio (2-3 oraciones) al inicio\n' +
+    '  - 3-4 <h2> subtítulos con el contenido desarrollado debajo\n' +
+    '  - 1 <blockquote> con una frase destacada o cita interesante\n' +
+    '  - 1-2 <ul> o <ol> con listas útiles\n' +
+    '  - Cierre con <h2>Para llevar a tu cocina</h2> que menciona 1-2 blends del catálogo\n' +
     'TOTAL: entre 1200 y 1800 palabras.\n\n' +
+    '=== REGLAS CRÍTICAS DE HTML ===\n' +
+    '1. NO incluyas <style>, <script>, <div>, <span>, <section>, <article>, <header>, <footer>.\n' +
+    '2. NO agregues clases CSS ni atributos style="". El diseño visual lo maneja el sistema automáticamente según la categoría.\n' +
+    '3. NO envuelvas menciones de blends en <a>. El sistema lo hace automáticamente después con openDetail(ID).\n' +
+    '4. NO uses IDs en los tags. Solo HTML semántico puro.\n' +
+    '5. Cierra todos los tags correctamente. Ej: <p>texto</p>, no <p>texto.\n\n' +
     '=== REGLAS DE ESTILO ===\n' +
     '1. ESPAÑOL NEUTRO. Sin voseo, sin argentismos. Sin "conocé", "aprendé", "probá" → usa "conoce", "aprende", "prueba".\n' +
     '2. Título ≤ 60 caracteres, llamativo, con la especia o temática.\n' +
     '3. Descripción meta ≤ 155 caracteres (para SEO).\n' +
-    '4. NO envuelvas menciones de blends en <a> (el sistema lo hace automáticamente después).\n' +
-    '5. Sin emojis. Sin markdown. Sin backticks.\n' +
-    '6. Contenido original, NO repetir los existentes.\n' +
-    '7. NO uses placeholders tipo [...]. Toda la información debe estar completa.\n\n' +
+    '4. Sin emojis. Sin markdown. Sin backticks.\n' +
+    '5. Contenido original, NO repetir los existentes.\n' +
+    '6. NO uses placeholders tipo [...]. Toda la información debe estar completa.\n\n' +
     'ARTICULOS YA EXISTENTES (NO repetir títulos ni enfoques): ' + existingTitles + '\n\n' +
     `CATEGORIA: ${tema.categoria}\n` +
     `${tema.consigna}\n\n` +
@@ -1026,6 +1209,8 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
   const titulo = escHtml(articulo.titulo);
   const descripcion = escHtml(articulo.descripcion_meta || articulo.subtitulo || '');
   const img = imageUrl || '';
+  const categoria = articulo.categoria || 'Historia';
+  const t = getBlogTemplate(categoria);
 
   // Schema.org Article
   const schema = {
@@ -1043,7 +1228,7 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
       logo: { '@type': 'ImageObject', url: BASE_URL + '/icons/arcano-logo.webp' }
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-    articleSection: articulo.categoria || 'Blog',
+    articleSection: categoria,
     keywords: (articulo.keywords || []).join(', ')
   };
   const bc = {
@@ -1057,20 +1242,32 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
   };
 
   // El contenido viene como HTML desde Gemini + los enlaces a blends que
-  // insertamos con linkBlendMentions(). Sanitizamos:
-  //  - Quitar <script> y <style> (no deberían venir, por las dudas).
-  //  - Quitar atributos on* que no sean nuestros openDetail (Gemini podría
-  //    haber metido onclick propios en versiones anteriores).
+  // insertamos con linkBlendMentions(). Sanitizamos agresivamente:
+  //  - Quitar <script>, <style>, <iframe>, etc. (no deberían venir).
+  //  - Quitar tags no semánticos que Gemini podría meter: <div>, <span>,
+  //    <section>, <article>, <header>, <footer> — preservando su contenido.
+  //  - Quitar atributos on* que no sean nuestros openDetail.
+  //  - Quitar atributos class="", id="", style="".
   //  - Conservar nuestros <a onclick="openDetail(ID);return false">.
+  // El CSS de la categoría se inyecta aparte (generateBlogCSS), Gemini no
+  // tiene control sobre el diseño visual.
   const contenidoFinal = String(articulo.contenido || '')
+    // 1. Quitar scripts/styles/objects por completo
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<object[\s\S]*?<\/object>/gi, '')
+    // 2. Unwrap tags no semánticos (preservar el contenido, quitar el tag)
+    .replace(/<\/?(?:div|span|section|article|header|footer|main|aside|figure|figcaption)[^>]*>/gi, '')
+    // 3. Quitar atributos class="", id="", style="" de cualquier tag
+    .replace(/\s(?:class|id|style)\s*=\s*"[^"]*"/gi, '')
+    // 4. Quitar atributos on* (excepto nuestros openDetail)
     .replace(/\son\w+\s*=\s*"[^"]*"/gi, (m) => {
-      // Conservar solo los onclick que contengan openDetail
       return /onclick\s*=\s*".*openDetail/.test(m) ? m : '';
     });
 
   const keywordsStr = (articulo.keywords || []).join(', ');
+  const catClass = catToClass(categoria);
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -1082,6 +1279,7 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <link rel="canonical" href="${url}">
 <meta name="keywords" content="${escHtml(keywordsStr)}">
 <meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="${t.accent}">
 <meta property="og:type" content="article">
 <meta property="og:title" content="${titulo}">
 <meta property="og:description" content="${descripcion}">
@@ -1090,7 +1288,7 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <meta property="og:locale" content="es_CO">
 <meta property="og:site_name" content="Arcano Especias">
 <meta property="article:published_time" content="${articulo.fecha}">
-<meta property="article:section" content="${escHtml(articulo.categoria || 'Blog')}">
+<meta property="article:section" content="${escHtml(categoria)}">
 <meta property="article:tag" content="${escHtml(keywordsStr)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${titulo}">
@@ -1098,39 +1296,24 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <meta name="twitter:image" content="${img}">
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
 <script type="application/ld+json">${JSON.stringify(bc)}</script>
+<!-- Fuentes Google -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Merriweather:wght@400;700&family=Poppins:wght@600;700&family=Inter:wght@400;500&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:wght@400;600&family=Mulish:wght@600;700&family=Lora:wght@400;700&family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
 <style>
-body{margin:0;padding:0;font-family:Georgia,"Times New Roman",serif;background:#1b0b07;color:#f0e6d3;line-height:1.8}
-.container{max-width:760px;margin:0 auto;padding:24px 18px}
-a{color:#c9a84c;text-decoration:none}a:hover{text-decoration:underline}
-.back{display:inline-block;margin-bottom:24px;padding:8px 16px;border:1px solid #c9a84c;border-radius:6px;color:#c9a84c;font-size:.85rem}.back:hover{background:#c9a84c;color:#1b0b07;text-decoration:none}
-.header-meta{color:#a08b6e;font-size:.8rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
-h1{font-size:2rem;color:#c9a84c;margin:0 0 12px;line-height:1.25;font-weight:700}
-.subtitulo{color:#a08b6e;font-size:1.05rem;margin-bottom:20px;font-style:italic;line-height:1.5}
-.meta{color:#a08b6e;font-size:.85rem;margin-bottom:28px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding-bottom:14px;border-bottom:1px solid #3d2a1c}
-.meta .badge{display:inline-block;padding:3px 12px;border-radius:14px;font-size:.75rem;font-weight:600;background:#2d5a27;color:#8fce80}
-img.hero{width:100%;border-radius:8px;margin-bottom:28px;max-height:420px;object-fit:cover}
-.content{font-size:1.02rem}
-.content h2{color:#c9a84c;margin-top:36px;margin-bottom:14px;font-size:1.35rem;font-weight:700}
-.content h3{color:#c9a84c;margin-top:24px;margin-bottom:10px;font-size:1.1rem}
-.content p{margin-bottom:18px}
-.content ul,.content ol{margin-bottom:18px;padding-left:28px}
-.content li{margin-bottom:6px}
-.content blockquote{border-left:4px solid #c9a84c;padding:14px 20px;margin:24px 0;background:#2d1a10;border-radius:0 8px 8px 0;font-style:italic;color:#f0e6d3}
-.content blockquote p{margin:0}
-.keywords-row{margin-top:32px;padding-top:18px;border-top:1px solid #2d1a10;font-size:.8rem;color:#a08b6e}.keywords-row strong{color:#c9a84c}
-.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid #2d1a10;color:#6b5a42;font-size:.8rem}
+${generateBlogCSS(t)}
 </style>
 </head>
-<body>
+<body class="blog-cat-${catClass}">
 <div class="container">
 <a href="${BASE_URL}/blog/" class="back">&larr; Volver al Blog</a>
-<div class="header-meta">${escHtml(articulo.categoria || 'Blog')}${especiaPrincipal ? ' · ' + escHtml(especiaPrincipal) : ''}</div>
+<div class="header-meta">${escHtml(categoria)}${especiaPrincipal ? ' · ' + escHtml(especiaPrincipal) : ''}</div>
 <h1>${titulo}</h1>
 ${articulo.subtitulo ? `<div class="subtitulo">${escHtml(articulo.subtitulo)}</div>` : ''}
 <div class="meta">
 ${articulo.fecha ? `<span>${escHtml(articulo.fecha)}</span>` : ''}
 ${articulo.tiempoLectura ? `<span>${escHtml(articulo.tiempoLectura)}</span>` : ''}
-<span class="badge">${escHtml(articulo.categoria || 'Blog')}</span>
+<span class="badge">${escHtml(categoria)}</span>
 </div>
 ${img ? `<img class="hero" src="${escHtml(img)}" alt="${titulo}" loading="lazy">` : ''}
 <div class="content">
@@ -1139,7 +1322,7 @@ ${contenidoFinal}
 ${keywordsStr ? `<div class="keywords-row"><strong>Keywords:</strong> ${escHtml(keywordsStr)}</div>` : ''}
 <div class="footer">
 <p><a href="${BASE_URL}/blog/">← Volver al Blog</a> · <a href="${BASE_URL}/">Ir a la tienda</a></p>
-<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · <a href="${BASE_URL}/politica-envios/" style="color:#6b5a42">Envíos</a> · <a href="${BASE_URL}/politica-devoluciones/" style="color:#6b5a42">Devoluciones</a></p>
+<p style="margin-top:8px">Arcano Especias — Especias y Blends artesanales del mundo · <a href="${BASE_URL}/politica-envios/">Envíos</a> · <a href="${BASE_URL}/politica-devoluciones/">Devoluciones</a></p>
 </div>
 </div>
 </body>
@@ -1180,7 +1363,8 @@ function generateBlogIndexHTML(allPosts) {
     const desc = escHtml((p.descripcion_meta || p.subtitulo || '').substring(0, 140));
     const titulo = escHtml(p.titulo);
     const cat = escHtml(p.categoria);
-    return `<a href="${BASE_URL}/blog/${encodeURIComponent(p.slug)}" class="post">
+    const catCls = catToClass(p.categoria);
+    return `<a href="${BASE_URL}/blog/${encodeURIComponent(p.slug)}" class="post cat-${catCls}">
 <img src="${escHtml(img)}" alt="${titulo}" loading="lazy">
 <div class="body"><div class="cat-badge">${cat}</div><h2>${titulo}</h2><p>${desc}</p></div>
 </a>`;
@@ -1208,11 +1392,11 @@ header{text-align:center;padding:32px 0 24px;border-bottom:1px solid #3d2a1c}
 header h1{color:#c9a84c;font-size:2.2rem;margin-bottom:8px}
 header p{color:#a08b6e;font-size:1rem;max-width:600px;margin:0 auto}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:32px}
-.post{background:#2d1a10;border:1px solid #3d2a1c;border-radius:12px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s}
+.post{background:#2d1a10;border:1px solid #3d2a1c;border-radius:12px;overflow:hidden;text-decoration:none;color:#f0e6d3;transition:transform .2s,border-color .2s;border-top:4px solid #3d2a1c}
 .post:hover{transform:translateY(-3px);border-color:#c9a84c}
 .post img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#1b0b07}
 .post .body{padding:16px 20px}
-.post .cat-badge{display:inline-block;background:#2d5a27;color:#8fce80;padding:2px 10px;border-radius:10px;font-size:.7rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.post .cat-badge{display:inline-block;background:#2d5a27;color:#8fce80;padding:2px 10px;border-radius:10px;font-size:.7rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
 .post h2{font-size:1.05rem;color:#c9a84c;margin-bottom:8px;line-height:1.3}
 .post p{font-size:.85rem;color:#a08b6e;line-height:1.5}
 .breadcrumbs{font-size:0.85rem;color:#a08b6e;margin-bottom:16px}
@@ -1221,6 +1405,8 @@ header p{color:#a08b6e;font-size:1rem;max-width:600px;margin:0 auto}
 .footer{margin-top:48px;padding-top:24px;border-top:1px solid #3d2a1c;text-align:center;color:#6b5a42;font-size:0.85rem}
 .footer a{color:#c9a84c}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
+/* Colores por categoría */
+${generateBlogIndexCategoryColors()}
 </style>
 </head>
 <body>
@@ -1424,11 +1610,17 @@ export {
   generateRecipesIndexHTML,
   generateBlogHTML,
   generateBlogIndexHTML,
+  generateBlogCSS,
+  generateBlogCSSCompact,
+  generateBlogIndexCategoryColors,
+  getBlogTemplate,
+  catToClass,
   linkBlendMentions,
   appendToSitemap,
   defaultState,
   slugify,
   RECETA_CATEGORIAS,
   BLOG_CATEGORIAS,
-  BLOG_ESPECIAS
+  BLOG_ESPECIAS,
+  BLOG_TEMPLATES
 };
