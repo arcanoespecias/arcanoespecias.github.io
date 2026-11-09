@@ -249,16 +249,15 @@ function nextRecipeCategory(state) {
 }
 
 // Rotación de categorías para blog.
-// Cada categoría tiene una "consigna" que se le pasa a Gemini como dirección
-// temática. Rotamos en círculo para no repetir tipo de artículo consecutivo.
-// IMPORTANTE: deben coincidir con las categorías que maneja el admin del blog
-// (admin/js/pages.js: blog categorias) y la tienda.
+// IMPORTANTE: deben coincidir EXACTAMENTE con las categorías que maneja el
+// admin del blog (admin/js/pages.js → renderBlogAdmin): 
+//   Historias, Beneficios, Investigaciones, Curiosidades, Origenes
 const BLOG_CATEGORIAS = [
-  { categoria: 'Historia',     consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias.' },
-  { categoria: 'Curiosidades', consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas.' },
-  { categoria: 'Ciencia',     consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares.' },
-  { categoria: 'Beneficios',  consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural.' },
-  { categoria: 'Cocina',     consigna: 'Enfócate en uso culinario: cómo combinar la especia, con qué ingredientes casa, técnicas de uso, errores comunes, maridajes, cocina internacional y regional.' }
+  { categoria: 'Historias',       consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias. Transmitir descubrimiento, tradición y relatos fascinantes.' },
+  { categoria: 'Beneficios',     consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural. Transmitir bienestar, naturaleza y conocimiento. Evitar representaciones médicas.' },
+  { categoria: 'Investigaciones', consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares. Transmitir rigor, investigación y conocimiento. Evitar apariencia de laboratorio farmacéutico genérico.' },
+  { categoria: 'Curiosidades',   consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas. Despertar curiosidad inmediatamente.' },
+  { categoria: 'Origenes',       consigna: 'Enfócate en origen y procedencia geográfica: rutas comerciales, regiones productoras, elementos culturales del lugar de origen, patrimonio gastronómico. Transmitir autenticidad, procedencia y patrimonio gastronómico.' }
 ];
 
 // Lista de especias base que el sistema va rotando dentro de cada categoría,
@@ -282,14 +281,14 @@ const BLOG_ESPECIAS = [
 // El CSS es FIJO en el código (no lo genera Gemini). Gemini solo genera
 // contenido HTML semántico (p, h2, h3, blockquote, ul/ol, etc.) y el CSS
 // de la categoría correspondiente se inyecta al publicar. Esto garantiza
-// consistencia visual: todos los artículos de "Historia" se ven iguales
+// consistencia visual: todos los artículos de "Historias" se ven iguales
 // sin importar qué devuelva Gemini.
 //
 // Las 5 categorías tienen paletas MUY distintas entre sí, todas con
-// fondos claros (legibles,的现代SEO) y acentos que las diferencian.
+// fondos claros (legibles, SEO-friendly) y acentos que las diferencian.
 const BLOG_TEMPLATES = {
-  Historia: {
-    nombre: 'Historia',
+  Historias: {
+    nombre: 'Historias',
     descripcion: 'Pergamino antiguo',
     // Paleta: tonos tierra, marrón cuero, dorado
     bg: '#f4ecd8',           // crema envejecido (pergamino)
@@ -301,40 +300,7 @@ const BLOG_TEMPLATES = {
     badgeBg: '#3a2a1a',
     badgeText: '#f4ecd8',
     headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(58,42,26,.65) 0%, rgba(201,168,76,.35) 100%)'
-  },
-  Curiosidades: {
-    nombre: 'Curiosidades',
-    descripcion: 'Magazine divertido',
-    // Paleta: naranja vibrante + cyan
-    bg: '#fff8f0',
-    bgAccent: '#ffe8d6',
-    textPrimary: '#2d1b0e',
-    textSecondary: '#7a5a3a',
-    accent: '#e85d04',       // naranja vibrante
-    accentSoft: '#fbb47a',
-    badgeBg: '#e85d04',
-    badgeText: '#fff8f0',
-    headingFont: '"Poppins", "Montserrat", system-ui, sans-serif',
-    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(232,93,4,.55) 0%, rgba(0,180,216,.35) 100%)'
-  },
-  Ciencia: {
-    nombre: 'Ciencia',
-    descripcion: 'Laboratorio botánico',
-    // Paleta: verde botánico + azul eléctrico
-    bg: '#f0f4f0',
-    bgAccent: '#e0eae0',
-    textPrimary: '#1a2d1f',
-    textSecondary: '#4a5d52',
-    accent: '#2d5a3d',       // verde botánico
-    accentSoft: '#7ab594',
-    badgeBg: '#0077b6',      // azul eléctrico (diferenciador)
-    badgeText: '#f0f4f0',
-    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
-    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(45,90,61,.6) 0%, rgba(0,119,182,.35) 100%)'
+    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif'
   },
   Beneficios: {
     nombre: 'Beneficios',
@@ -349,13 +315,42 @@ const BLOG_TEMPLATES = {
     badgeBg: '#e07a5f',      // rosa terracota (diferenciador)
     badgeText: '#f5f0e8',
     headingFont: '"Mulish", "Source Sans Pro", system-ui, sans-serif',
-    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(82,183,136,.45) 0%, rgba(224,122,95,.35) 100%)'
+    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif'
   },
-  Cocina: {
-    nombre: 'Cocina',
-    descripcion: 'Cocina rústica',
-    // Paleta: rojo terracota + mostaza
+  Investigaciones: {
+    nombre: 'Investigaciones',
+    descripcion: 'Laboratorio botánico',
+    // Paleta: verde botánico + azul eléctrico
+    bg: '#f0f4f0',
+    bgAccent: '#e0eae0',
+    textPrimary: '#1a2d1f',
+    textSecondary: '#4a5d52',
+    accent: '#2d5a3d',       // verde botánico
+    accentSoft: '#7ab594',
+    badgeBg: '#0077b6',      // azul eléctrico (diferenciador)
+    badgeText: '#f0f4f0',
+    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
+    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif'
+  },
+  Curiosidades: {
+    nombre: 'Curiosidades',
+    descripcion: 'Magazine divertido',
+    // Paleta: naranja vibrante + cyan
+    bg: '#fff8f0',
+    bgAccent: '#ffe8d6',
+    textPrimary: '#2d1b0e',
+    textSecondary: '#7a5a3a',
+    accent: '#e85d04',       // naranja vibrante
+    accentSoft: '#fbb47a',
+    badgeBg: '#e85d04',
+    badgeText: '#fff8f0',
+    headingFont: '"Poppins", "Montserrat", system-ui, sans-serif',
+    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif'
+  },
+  Origenes: {
+    nombre: 'Origenes',
+    descripcion: 'Exploración geográfica',
+    // Paleta: terracota + mostaza (tierras lejanas)
     bg: '#fdf6e3',
     bgAccent: '#f5e6c8',
     textPrimary: '#3a1f1a',
@@ -365,14 +360,13 @@ const BLOG_TEMPLATES = {
     badgeBg: '#d4a017',      // mostaza (diferenciador)
     badgeText: '#3a1f1a',
     headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-    bodyFont: 'Merriweather, "Lora", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(193,67,46,.55) 0%, rgba(212,160,23,.35) 100%)'
+    bodyFont: 'Merriweather, "Lora", Georgia, serif'
   }
 };
 
-// Devuelve el template de una categoría. Si no existe, usa Historia como fallback.
+// Devuelve el template de una categoría. Si no existe, usa Historias como fallback.
 function getBlogTemplate(categoria) {
-  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historia;
+  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historias;
 }
 
 // Genera el CSS completo de un artículo según su categoría.
@@ -440,6 +434,156 @@ function generateBlogIndexCategoryColors() {
 // Slug de categoría para usar como clase CSS
 function catToClass(categoria) {
   return String(categoria || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// ============ BRIEF DE IMAGEN EDITORIAL POR CATEGORÍA ============
+//
+// Brief maestro para generar las portadas del blog Arcano.
+// Sistema de identidad visual consistente: cada portada debe pertenecer a la
+// MISMA colección editorial, sin crear 5 estilos diferentes.
+//
+// Estructura del brief:
+//   - base: formato + paleta cromática oficial + sistema tipográfico + composición
+//   - <categoría>: solo adapta la DIRECCIÓN de la fotografía, NO cambia el
+//     sistema tipográfico ni la paleta.
+//
+// IMPORTANTE: Gemini debe LEER el contenido del artículo que acaba de generar
+// y crear un imagen_prompt ESPECÍFICO que:
+//   1. Aplique este brief editorial completo.
+//   2. Use los ingredientes/elementos ESPECÍFICOS del artículo (no genéricos).
+//   3. Use el título y subtítulo EXACTOS del artículo.
+const BLOG_IMAGE_BRIEF = {
+  base: `Create a premium editorial gastronomic magazine cover for ARCANO brand. ALL covers must follow EXACTLY the same visual identity system, typography, color palette and art direction. The result must look like part of the same international luxury gastronomic magazine collection. DO NOT create different styles. Create covers that belong to the same editorial collection.
+
+FORMAT:
+- Horizontal orientation, 16:9 aspect ratio, target resolution 1200x630 pixels.
+- A single integrated photographic composition. NO collages, grids or panels.
+- Optimized for blog and social media.
+
+OFFICIAL COLOR PALETTE (use EXCLUSIVELY these colors as reference):
+- Charcoal black: #11100E (must DOMINATE the composition)
+- Editorial ivory: #F4EFE6 (used for main titles)
+- Primary gold: #D99B27 (elegance, exclusivity, NOT excessively bright metallic)
+- Secondary gold: #C99736 (complementary gold)
+- Warm white: #E9E3D9 (for subtitles)
+- Deep coffee: #392619 (deep browns for backgrounds/accents)
+- Natural spice colors can complement but NEVER break the chromatic identity.
+
+TYPOGRAPHY SYSTEM (MANDATORY — must look identical on every cover):
+
+A. BRAND NAME: ARCANO
+- Always uppercase: ARCANO
+- Geometric thin elegant sans serif (Montserrat Light, Gotham Light or Helvetica Neue Light reference)
+- Wide letter spacing
+- Editorial ivory color #F4EFE6
+- Small, discreet, sophisticated size
+- Location: TOP LEFT zone
+- Below the brand name: a SHORT HORIZONTAL GOLD LINE
+- Do not modify the name, do not add symbols, do not invent logos.
+
+B. MAIN TITLE
+- High-contrast editorial serif typography (Cormorant Garamond, Playfair Display or Didot reference)
+- Elegant, refined, personality letters
+- Large protagonist size
+- Main color: editorial ivory #F4EFE6
+- Left alignment
+- Preferably 1 to 3 lines depending on title length
+- Compact balanced line spacing
+
+C. HIGHLIGHTED WORDS
+- Select 1 or 2 important words from the title
+- Write them in ITALIC
+- Use gold #D99B27
+- Keep the rest of the title in ivory
+- DO NOT highlight all words
+- The contrast must look natural, elegant, balanced
+- This typographic treatment must recall a luxury gastronomic magazine
+
+D. SUBTITLE
+- Modern sans serif typography (Montserrat, Helvetica Neue or similar reference)
+- Regular weight
+- Color: warm white #E9E3D9
+- Size considerably smaller than the title
+- Located below the title
+- Maximum 2 lines
+- Excellent legibility
+
+E. DECORATIVE ELEMENTS
+- Use ONLY: thin horizontal gold lines, small discreet geometric details when necessary, minimalist separators
+- NO excessive ornaments
+
+LAYOUT AND COMPOSITION (must remain consistent):
+
+LEFT ZONE (text area):
+- ARCANO brand name at the top
+- Horizontal gold line below the brand
+- Large main title
+- 1-2 highlighted words in italic gold
+- Subtitle below the title
+- Small horizontal gold detail to close the composition
+- Sufficient negative space and dark background to guarantee legibility
+
+RIGHT ZONE (photography area):
+- Main article photograph
+- Ingredients, spices, objects or cultural elements related to the content
+- Cinematic lighting
+- Depth of field
+- Rich and attractive visual composition
+- The photography must integrate with the background, avoiding artificial divisions between text and image
+
+PHOTOGRAPHIC DIRECTION:
+- Hyperrealistic photography
+- Professional advertising quality
+- Warm cinematic lighting
+- Deep controlled shadows
+- Natural detailed textures
+- Professional depth of field
+- Contrasts between black, gold and natural tones
+- Carefully selected gastronomic elements
+- AVOID generic stock images, childish illustrations, artificial renders, overloaded compositions
+
+TEXT RULES (use ONLY the texts supplied by the agent):
+- BRAND: ARCANO
+- CATEGORY: [article category]
+- TITLE: [EXACT title of the article]
+- SUBTITLE: [provided subtitle]
+- DO NOT invent titles, modify words, correct, reinterpret, add promotional phrases, translate, add additional texts
+- Strictly respect Spanish accents and spelling
+- DO NOT duplicate words, deform letters, substitute characters
+- If title is too long, adapt size and distribution without modifying content
+
+RESTRICTIONS:
+- NO handwritten, futuristic, or 3D fonts
+- NO multicolor gradients, neon colors, predominantly white backgrounds
+- NO frames, cards, decorative icons, watermarks, invented logos
+- NO additional texts
+
+FINAL RESULT:
+- A single horizontal ARCANO cover
+- Exactly the described editorial identity: dark background, cinematic gastronomic photography, serif titles in ivory, highlighted words in italic gold, sans serif subtitles, ARCANO brand in spaced letters
+- Each publication must have a DIFFERENT photograph, but ALL must look designed by the same art director and belong to the same gastronomic magazine
+- ABSOLUTE PRIORITY: BRAND CONSISTENCY, TYPOGRAPHIC ELEGANCE, LEGIBILITY, PHOTOGRAPHIC QUALITY`,
+
+  Historias: `CATEGORY DIRECTION (only adapts photography, NOT typography): HISTORIAS — Historical and narrative aesthetic.
+Incorporate antique books, old maps, compasses, navigation instruments, cultural objects and the spices that the article is about. Convey storytelling, tradition and discovery. The visual mood should evoke a vintage apothecary or a 19th century botanical expedition.`,
+
+  Beneficios: `CATEGORY DIRECTION (only adapts photography, NOT typography): BENEFICIOS — Botanical and sensorial aesthetic.
+Use roots, leaves, flowers, fresh spices and botanical ingredients. Convey nature, wellness and knowledge. AVOID medical visual claims (no pills, no pharmacy look, no clinical white). The mood should be calm, organic, spa-like.`,
+
+  Investigaciones: `CATEGORY DIRECTION (only adapts photography, NOT typography): INVESTIGACIONES — Scientific and editorial aesthetic.
+Incorporate glassware, microscopy, lab elements, botanical samples and the spices. Convey rigor, research and knowledge. AVOID generic pharmaceutical lab appearance (no sterile white lab, no pills). The mood should be editorial scientific journal, dark and moody with golden highlights.`,
+
+  Curiosidades: `CATEGORY DIRECTION (only adapts photography, NOT typography): CURIOSIDADES — Dynamic and surprising aesthetic.
+Use macro photography, suspended spice particles, spices in motion, textures and unusual perspectives. Awaken curiosity and interest immediately. Dynamic composition with frozen motion, particles floating, dramatic angles.`,
+
+  Origenes: `CATEGORY DIRECTION (only adapts photography, NOT typography): ORIGENES — Geographic and cultural exploration aesthetic.
+Incorporate old maps, trade routes, compasses, cultural elements and representative spices of each region. Convey provenance, exploration and gastronomic heritage. The mood should evoke a 16th century spice trade expedition.`
+};
+
+// Devuelve el brief completo (base + categoría) para una categoría dada.
+function getBlogImageBrief(categoria) {
+  const cat = BLOG_IMAGE_BRIEF[categoria] || BLOG_IMAGE_BRIEF.Historias;
+  return BLOG_IMAGE_BRIEF.base + '\n\n' + cat;
 }
 
 function nextBlogTema(state) {
@@ -742,11 +886,28 @@ async function generateBlog(env, opts) {
     `ESPECIA PRINCIPAL: ${tema.especia}\n` +
     `El artículo debe girar en torno a ${tema.especia}. Es el protagonista. ` +
     `Aparece en el título, en la introducción, en al menos 2 subtítulos y en el cierre.\n\n` +
+    '=== FAQs OBLIGATORIAS ===\n' +
+    'Generá 3 a 5 preguntas frecuentes relacionadas al artículo, con respuestas concretas de 1-3 oraciones cada una.\n' +
+    'Las preguntas deben ser las que un usuario real buscaría en Google (orientadas a SEO + intención de búsqueda).\n' +
+    'Ejemplos buenos: "¿Cuánto dura la pimienta negra molida?", "¿Cómo conservar la pimienta negra fresca?", "¿La pimienta negra tiene cafeína?"\n' +
+    'Ejemplos malos: "¿Qué es la pimienta?" (muy genérico), "¿Te gusta la pimienta?" (opinión)\n\n' +
+    '=== IMAGEN_PROMPT (CRÍTICO — leer el artículo) ===\n' +
+    'Después de escribir el artículo, LEÉ su contenido completo (título, subtítulo, especia protagonista, keywords, ideas centrales) y generá un "imagen_prompt" ESPECÍFICO para este artículo.\n' +
+    'NO uses un prompt genérico. La imagen debe ilustrar visualmente el tema específico del artículo, con ingredientes/elementos que se mencionen en el contenido.\n' +
+    'El imagen_prompt va a alimentar un modelo de generación de imágenes (flux-1-schnell), por lo que debe ser en INGLÉS, descriptivo y específico.\n' +
+    'Aplica este BRIEF EDITORIAL (debes respetarlo en el imagen_prompt que generes):\n\n' +
+    getBlogImageBrief(tema.categoria) + '\n\n' +
+    'IMPORTANTE: el imagen_prompt que generes debe ser UNA FRASE LARGA (3-6 oraciones) que:\n' +
+    '1. Mencione ingredientes/elementos ESPECÍFICOS del artículo (no genéricos).\n' +
+    '2. Aplique el brief editorial Arcano (fondo oscuro, dorado, cinematográfico, 35% izquierda limpio).\n' +
+    '3. Sea específico de la categoría ' + tema.categoria + '.\n' +
+    '4. Termine SIEMPRE con "no text, no letters, no watermark, no logos".\n\n' +
     'Responde SOLO con JSON valido (sin markdown, sin backticks):\n' +
     '{"titulo": "...", "subtitulo": "... (100-160 chars)", "categoria": "' + tema.categoria + '", ' +
     '"descripcion_meta": "... (150-155 chars SEO)", "keywords": ["k1","k2"], ' +
     '"tiempoLectura": "X min", "contenido": "<p>...</p><h2>...</h2><p>...</p>...", ' +
-    '"imagen_prompt": "visual description in english for AI image generation, 1 sentence, overhead angle, natural light, no text"}';
+    '"faqs": [{"q": "pregunta 1", "a": "respuesta 1"}, {"q": "pregunta 2", "a": "respuesta 2"}, ...], ' +
+    '"imagen_prompt": "specific english description for THIS article applying the brief above, ends with no text, no letters, no watermark"}';
 
   // 5. Llamar Gemini
   log.push('Llamando a Gemini (gemini-3.6-flash, modo JSON, 16384 tokens)...');
@@ -766,6 +927,18 @@ async function generateBlog(env, opts) {
   articulo.programado = false;
   articulo.categoria = tema.categoria;  // Forzar la categoría rotada
   articulo.especia_principal = tema.especia;  // Guardar para usar al publicar
+
+  // 6b. Normalizar FAQs: asegurar array válido con {q, a}
+  if (!Array.isArray(articulo.faqs) || articulo.faqs.length === 0) {
+    articulo.faqs = [];
+    log.push('AVISO: Gemini no devolvió faqs, se generan vacías');
+  } else {
+    articulo.faqs = articulo.faqs
+      .filter(f => f && f.q && f.a)
+      .slice(0, 6)  // máximo 6 FAQs
+      .map(f => ({ q: String(f.q).trim(), a: String(f.a).trim() }));
+    log.push(`FAQs generadas: ${articulo.faqs.length}`);
+  }
 
   // Calcular tiempoLectura si no vino
   if (!articulo.tiempoLectura) {
@@ -792,7 +965,9 @@ async function generateBlog(env, opts) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      prompt: articulo.imagen_prompt || `professional photography of ${tema.especia} on rustic wooden surface, overhead angle, natural light, no text, no letters, vibrant colors`,
+      // Si por alguna razón Gemini no devolvió imagen_prompt, usar el brief
+      // completo de la categoría como fallback (no un prompt genérico).
+      prompt: articulo.imagen_prompt || getBlogImageBrief(tema.categoria),
       width: 1024, height: 768
     })
   });
@@ -1241,6 +1416,18 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
     ]
   };
 
+  // FAQ Schema JSON-LD — solo si hay FAQs (Google los usa para rich snippets)
+  const faqs = Array.isArray(articulo.faqs) ? articulo.faqs.filter(f => f && f.q && f.a) : [];
+  const faqSchema = faqs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a }
+    }))
+  } : null;
+
   // El contenido viene como HTML desde Gemini + los enlaces a blends que
   // insertamos con linkBlendMentions(). Sanitizamos agresivamente:
   //  - Quitar <script>, <style>, <iframe>, etc. (no deberían venir).
@@ -1296,12 +1483,18 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <meta name="twitter:image" content="${img}">
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
 <script type="application/ld+json">${JSON.stringify(bc)}</script>
+${faqSchema ? `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>` : ''}
 <!-- Fuentes Google -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Merriweather:wght@400;700&family=Poppins:wght@600;700&family=Inter:wght@400;500&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:wght@400;600&family=Mulish:wght@600;700&family=Lora:wght@400;700&family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
 <style>
 ${generateBlogCSS(t)}
+.faq-section{margin-top:48px;padding-top:32px;border-top:2px solid ${t.bgAccent}}
+.faq-section h2{font-family:${t.headingFont};color:${t.textPrimary};font-size:1.6rem;margin-bottom:20px;font-weight:700}
+.faq-item{margin-bottom:18px;padding:16px 20px;background:${t.bgAccent};border-radius:8px;border-left:3px solid ${t.accent}}
+.faq-item h3{font-family:${t.headingFont};color:${t.textPrimary};font-size:1.05rem;margin:0 0 8px;font-weight:600}
+.faq-item p{margin:0;color:${t.textPrimary};font-size:.95rem;line-height:1.6}
 </style>
 </head>
 <body class="blog-cat-${catClass}">
@@ -1319,6 +1512,13 @@ ${img ? `<img class="hero" src="${escHtml(img)}" alt="${titulo}" loading="lazy">
 <div class="content">
 ${contenidoFinal}
 </div>
+${faqs.length > 0 ? `<section class="faq-section">
+<h2>Preguntas frecuentes</h2>
+${faqs.map(f => `<div class="faq-item">
+<h3>${escHtml(f.q)}</h3>
+<p>${escHtml(f.a)}</p>
+</div>`).join('')}
+</section>` : ''}
 ${keywordsStr ? `<div class="keywords-row"><strong>Keywords:</strong> ${escHtml(keywordsStr)}</div>` : ''}
 <div class="footer">
 <p><a href="${BASE_URL}/blog/">← Volver al Blog</a> · <a href="${BASE_URL}/">Ir a la tienda</a></p>
@@ -1614,6 +1814,7 @@ export {
   generateBlogCSSCompact,
   generateBlogIndexCategoryColors,
   getBlogTemplate,
+  getBlogImageBrief,
   catToClass,
   linkBlendMentions,
   appendToSitemap,
@@ -1622,5 +1823,6 @@ export {
   RECETA_CATEGORIAS,
   BLOG_CATEGORIAS,
   BLOG_ESPECIAS,
-  BLOG_TEMPLATES
+  BLOG_TEMPLATES,
+  BLOG_IMAGE_BRIEF
 };
