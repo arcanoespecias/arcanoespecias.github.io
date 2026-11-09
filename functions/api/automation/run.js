@@ -38,7 +38,7 @@ export async function onRequestGet({ request, env }) {
   });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, ctx }) {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
   }
@@ -71,9 +71,9 @@ export async function onRequestPost({ request, env }) {
 
     let result;
     if (task === 'recetas') {
-      result = await generateRecipe(env, { dryRun });
+      result = await generateRecipe(env, { dryRun, ctx });
     } else {
-      result = await generateBlog(env, { dryRun });
+      result = await generateBlog(env, { dryRun, ctx });
     }
 
     console.log(`[automation] Task ${task} completada. Log:`, result.log);

@@ -884,20 +884,21 @@ async function generateRecipe(env, opts) {
 
 async function generateBlog(env, opts) {
   const dryRun = opts?.dryRun;
+  const ctx = opts?.ctx;  // Cloudflare context para ctx.waitUntil (fire-and-forget)
   const log = [];
 
-  // 1. Estado + tema (categoría + especia rotadas)
-  const state = await getAutomationState(env);
+  // 1. Estado + catálogo + blog existente EN PARALELO (3 lecturas simultáneas)
+  log.push('Cargando estado, catálogo y blog existente en paralelo...');
+  const [state, products, existing] = await Promise.all([
+    getAutomationState(env),
+    loadCatalog(env),
+    loadExistingBlog(env)
+  ]);
   const tema = nextBlogTema(state);
   log.push(`Categoría rotación: ${tema.categoria} (anterior: ${state.blog.ultimaCategoria || 'ninguna'})`);
   log.push(`Especia rotación: ${tema.especia} [índice ${tema.espIdx}/${BLOG_ESPECIAS.length}]`);
 
-  // 2. Catálogo (para enlazar blends en el contenido)
-  const products = await loadCatalog(env);
   const productContext = products.slice(0, 30).map(p => `- [ID:${p.id}] ${p.nombre} - ${p.uso || ''}`).join('\n');
-
-  // 3. Blog existente (para no repetir títulos)
-  const existing = await loadExistingBlog(env);
   const existingTitles = existing.slice(-15).map(p => p.titulo).join(', ');
   log.push(`Blog existente: ${existing.length} posts`);
 
@@ -1032,37 +1033,59 @@ async function generateBlog(env, opts) {
   if (!imgData.ok) throw new Error('Error generando imagen: ' + (imgData.error || 'desconocido'));
   log.push('Imagen generada OK');
 
-  // 10. Subir imagen a GitHub
-  log.push('Subiendo imagen a GitHub...');
-  const { url: imageUrl } = await uploadImage(env, articulo.slug_publicado, imgData.image, 'blog');
-  articulo.imagen_url = imageUrl;
-  log.push(`Imagen subida: ${imageUrl}`);
+  // 10-13. Subir imagen + guardar en Firebase + actualizar estado EN PARALELO
+  //       (no dependen entre sí, así que los corremos simultáneamente para
+  //       reducir el tiempo total y evitar timeout de Cloudflare 524).
+  log.push('Subiendo imagen a GitHub + guardando en Firebase + actualizando estado (en paralelo)...');
 
-  // 11. Guardar en Firebase como BORRADOR (publicado=false)
-  log.push('Guardando artículo en Firebase (publicado=false, borrador pendiente de aprobación)...');
-  const fbResult = await fbAdminPost(env, '/arcano/db/blog', articulo);
-  articulo._key = fbResult?.name || null;  // Firebase devuelve { name: "-Lx9..." }
-  log.push(`Artículo guardado (key=${articulo._key || 'n/a'})`);
+  const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
+  const newState = {
+    ...state,
+    blog: {
+      ultimaCategoria: tema.categoria,
+      ultimaFecha: articulo.fecha,
+      ultimaEspeciaIdx: tema.espIdx,
+      ultimosTitulos: [...ultimosTitulos, articulo.titulo].slice(-20)
+    }
+  };
+
+  const [uploadResult, fbResult] = await Promise.all([
+    // 10. Subir imagen a GitHub
+    uploadImage(env, articulo.slug_publicado, imgData.image, 'blog'),
+    // 11. Guardar en Firebase como BORRADOR (publicado=false)
+    fbAdminPost(env, '/arcano/db/blog', articulo),
+    // 13. Actualizar estado (categoría + especia + títulos)
+    updateAutomationState(env, newState)
+  ]);
+
+  articulo.imagen_url = uploadResult.url;
+  articulo._key = fbResult?.name || null;
+  log.push(`Imagen subida: ${uploadResult.url}`);
+  log.push(`Artículo guardado en Firebase (key=${articulo._key || 'n/a'}, publicado=false)`);
+  log.push('Estado de rotación actualizado');
 
   // 12. NO subir HTML individual, NO regenerar índice, NO append al sitemap.
   //     Todo eso lo hace el endpoint /api/automation/publish-blog cuando el
   //     admin aprueba el artículo. Mientras tanto, el borrador solo existe en
   //     Firebase y se ve en el admin (con botón "Aprobar y publicar").
 
-  // 13. Actualizar estado (categoría + especia + títulos)
-  const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
-  state.blog = {
-    ultimaCategoria: tema.categoria,
-    ultimaFecha: articulo.fecha,
-    ultimaEspeciaIdx: tema.espIdx,
-    ultimosTitulos: [...ultimosTitulos, articulo.titulo].slice(-20)
-  };
-  await updateAutomationState(env, state);
-
-  // 14. Email al admin: avisar que hay un borrador pendiente de aprobación
-  log.push('Enviando email al admin (borrador pendiente)...');
-  await sendBlogDraftEmail(env, articulo);
-  log.push('Email enviado');
+  // 14. Email al admin: fire-and-forget con ctx.waitUntil (no bloquea respuesta)
+  //     Si ctx no está disponible (ej: dry-run manual o llamada directa),
+  //     esperamos sync. Si ctx está, lo mandamos en background.
+  if (ctx?.waitUntil) {
+    ctx.waitUntil(sendBlogDraftEmail(env, articulo).catch(e => {
+      console.warn('[automation] Email falló (background):', e.message);
+    }));
+    log.push('Email encolado en background (no bloquea respuesta)');
+  } else {
+    log.push('Enviando email al admin (sync)...');
+    try {
+      await sendBlogDraftEmail(env, articulo);
+      log.push('Email enviado');
+    } catch (e) {
+      log.push(`AVISO: email falló: ${e.message}`);
+    }
+  }
 
   return {
     articulo,
