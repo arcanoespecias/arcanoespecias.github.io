@@ -30,11 +30,21 @@ async function getGeminiKey(env) {
 }
 
 // Modelos Gemini en orden de preferencia (primario → fallback).
-// Si el primario da 503 (alta demanda) o 429 (rate limit), probamos el siguiente.
+// Si el primario da 503 (alta demanda), 429 (rate limit) o 404 (modelo
+// deprecado/no disponible), probamos el siguiente.
+//
+// Lista actualizada según recomendación de Google (Nov 2026):
+//   - gemini-3.8-flash: último modelo flash recomendado
+//   - gemini-3.6-flash: versión anterior (aún funciona)
+//   - gemini-2.0-flash: legacy, siempre disponible como última opción
+//
+// NOTA: gemini-2.5-flash fue deprecado — Google devuelve 404 con mensaje
+// "no longer available to new users. Please update your code to use
+// models/gemini-3.8-flash". Por eso lo sacamos de la lista.
 const GEMINI_MODELS = [
-  'gemini-3.6-flash',     // Primario: más capaz para tareas largas
-  'gemini-2.5-flash',     // Fallback 1: casi tan capaz, más disponible
-  'gemini-2.0-flash'      // Fallback 2: última opción, siempre disponible
+  'gemini-3.8-flash',     // Primario: último modelo flash recomendado por Google
+  'gemini-3.6-flash',     // Fallback 1: versión anterior, sigue funcionando
+  'gemini-2.0-flash'      // Fallback 2: legacy, siempre disponible
 ];
 
 // Llamada interna a un modelo específico de Gemini.
@@ -105,9 +115,14 @@ async function callGemini(env, prompt, maxTokens, opts) {
       return result.text;
     } catch (e) {
       lastError = e;
-      // 503 = alta demanda del modelo, 429 = rate limit, 500/502/504 = server errors
-      // → son recuperables probando otro modelo.
-      const recoverable = [429, 500, 502, 503, 504].includes(e.status);
+      // Errores recuperables (probar siguiente modelo):
+      //   404 = modelo deprecado/no disponible (ej: gemini-2.5-flash fue removido)
+      //   429 = rate limit
+      //   500/502/503/504 = server errors temporales (alta demanda, overload)
+      // Errores NO recuperables (se propagan inmediatamente):
+      //   400 = bad request (prompt inválido) — no tiene sentido reintentar
+      //   401/403 = auth problem — no tiene sentido reintentar
+      const recoverable = [404, 429, 500, 502, 503, 504].includes(e.status);
       if (!recoverable) throw e;
       // Si fue recuperable, seguimos al siguiente modelo
       console.warn(`[gemini] Modelo ${model} falló (${e.status}), probando fallback...`);
