@@ -33,16 +33,24 @@ async function getGeminiKey(env) {
 // Si el primario da 503 (alta demanda), 429 (rate limit) o 404 (modelo
 // deprecado/no disponible), probamos el siguiente.
 //
-// Lista actualizada con los modelos flash ESTABLES vigentes (Nov 2026):
-//   - gemini-3.8-flash: último flash estable
-//   - gemini-3.6-flash: versión anterior estable
-//   - gemini-2.5-flash: stable, alta disponibilidad
+// Lista AMPLIADA con TODOS los modelos flash estables vigentes (Nov 2026):
+//   - gemini-3.8-flash: último flash estable (primario)
+//   - gemini-3.7-flash: fallback 1
+//   - gemini-3.6-flash: fallback 2
+//   - gemini-3.5-flash: fallback 3
+//   - gemini-flash-latest: alias que Google mantiene apuntando al último
+//     flash disponible. Última opción confiable.
 //
-// NOTA: gemini-2.0-flash fue deprecado por Google. Lo sacamos de la lista.
+// NOTA: gemini-2.5-flash y gemini-2.0-flash fueron deprecados por Google
+// (devuelven 404 aunque aparezcan en list-models). Los sacamos de la lista.
+// Cuando Google tiene picos de demanda, varios flash estables se saturan
+// a la vez, por eso conviene tener 5 opciones en la lista.
 const GEMINI_MODELS = [
-  'gemini-3.8-flash',     // Primario: último flash estable
-  'gemini-3.6-flash',     // Fallback 1: versión anterior estable
-  'gemini-2.5-flash'      // Fallback 2: stable, alta disponibilidad
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-flash-latest'
 ];
 
 // Llamada interna a un modelo específico de Gemini.
