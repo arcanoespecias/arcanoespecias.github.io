@@ -29,6 +29,48 @@ async function getGeminiKey(env) {
   return null;
 }
 
+// Modelos Gemini en orden de preferencia (primario → fallback).
+// Si el primario da 503 (alta demanda) o 429 (rate limit), probamos el siguiente.
+const GEMINI_MODELS = [
+  'gemini-3.6-flash',     // Primario: más capaz para tareas largas
+  'gemini-2.5-flash',     // Fallback 1: casi tan capaz, más disponible
+  'gemini-2.0-flash'      // Fallback 2: última opción, siempre disponible
+];
+
+// Llamada interna a un modelo específico de Gemini.
+// Devuelve { text, finishReason, model } o tira error con el status.
+async function _callGeminiModel(model, apiKey, body) {
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    let errMsg = 'error desconocido';
+    try {
+      const err = await resp.json();
+      errMsg = err?.error?.message || errMsg;
+    } catch (e) { /* ignore */ }
+    const error = new Error(`Gemini ${resp.status}: ${errMsg}`);
+    error.status = resp.status;
+    error.model = model;
+    throw error;
+  }
+
+  const data = await resp.json();
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.[0]?.text?.trim();
+  if (!text) throw new Error('Gemini no devolvió texto (modelo: ' + model + ')');
+
+  return {
+    text,
+    finishReason: candidate?.finishReason,
+    model
+  };
+}
+
 async function callGemini(env, prompt, maxTokens, opts) {
   const apiKey = await getGeminiKey(env);
   if (!apiKey) throw new Error('No hay API key de Gemini. Configura GEMINI_API_KEY en env o guárdala en Firebase.');
@@ -47,32 +89,33 @@ async function callGemini(env, prompt, maxTokens, opts) {
     body.generationConfig.responseMimeType = 'application/json';
   }
 
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey;
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
+  // Probar modelos en orden. Si el primario da 503 (alta demanda) o 429
+  // (rate limit), caemos al siguiente. Otros errores (400, 500) se propagan.
+  let lastError = null;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const result = await _callGeminiModel(model, apiKey, body);
 
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(`Gemini ${resp.status}: ${err?.error?.message || 'error desconocido'}`);
+      // Detectar truncamiento: si finishReason es MAX_TOKENS, el JSON va a estar
+      // cortado a mitad de palabra y va a fallar el parse.
+      if (result.finishReason === 'MAX_TOKENS') {
+        throw new Error(`Gemini truncó la respuesta (finishReason=MAX_TOKENS, maxOutputTokens=${maxTokens || 4000}, modelo=${model}). Subí maxTokens o reducí el tamaño del contenido pedido.`);
+      }
+
+      return result.text;
+    } catch (e) {
+      lastError = e;
+      // 503 = alta demanda del modelo, 429 = rate limit, 500/502/504 = server errors
+      // → son recuperables probando otro modelo.
+      const recoverable = [429, 500, 502, 503, 504].includes(e.status);
+      if (!recoverable) throw e;
+      // Si fue recuperable, seguimos al siguiente modelo
+      console.warn(`[gemini] Modelo ${model} falló (${e.status}), probando fallback...`);
+    }
   }
 
-  const data = await resp.json();
-  const candidate = data?.candidates?.[0];
-  const text = candidate?.content?.parts?.[0]?.text?.trim();
-  if (!text) throw new Error('Gemini no devolvió texto');
-
-  // Detectar truncamiento: si finishReason es MAX_TOKENS, el JSON va a estar
-  // cortado a mitad de palabra y va a fallar el parse. Mejor tirar error claro
-  // para que el caller pueda reintentar con más tokens o un prompt más corto.
-  const finishReason = candidate?.finishReason;
-  if (finishReason === 'MAX_TOKENS') {
-    throw new Error(`Gemini truncó la respuesta (finishReason=MAX_TOKENS, maxOutputTokens=${maxTokens || 4000}). Subí maxTokens o reducí el tamaño del contenido pedido.`);
-  }
-
-  return text;
+  // Si llegamos acá, todos los modelos fallaron con errores recuperables.
+  throw new Error(`Todos los modelos de Gemini fallaron (503/429). Último error: ${lastError?.message || 'desconocido'}. Intentá de nuevo en unos minutos.`);
 }
 
 function extractJSON(text) {
@@ -862,11 +905,11 @@ async function generateBlog(env, opts) {
     '  <p>  <h2>  <h3>  <blockquote>  <ul>  <ol>  <li>  <strong>  <em>\n' +
     'ESTRUCTURA:\n' +
     '  - <p> introductorio (2-3 oraciones) al inicio\n' +
-    '  - 3-4 <h2> subtítulos con el contenido desarrollado debajo\n' +
+    '  - 2-3 <h2> subtítulos con el contenido desarrollado debajo\n' +
     '  - 1 <blockquote> con una frase destacada o cita interesante\n' +
-    '  - 1-2 <ul> o <ol> con listas útiles\n' +
+    '  - Opcional: 1 <ul> o <ol> con lista útil\n' +
     '  - Cierre con <h2>Para llevar a tu cocina</h2> que menciona 1-2 blends del catálogo\n' +
-    'TOTAL: entre 1200 y 1800 palabras.\n\n' +
+    'TOTAL: entre 600 y 800 palabras.\n\n' +
     '=== REGLAS CRÍTICAS DE HTML ===\n' +
     '1. NO incluyas <style>, <script>, <div>, <span>, <section>, <article>, <header>, <footer>.\n' +
     '2. NO agregues clases CSS ni atributos style="". El diseño visual lo maneja el sistema automáticamente según la categoría.\n' +
@@ -910,10 +953,11 @@ async function generateBlog(env, opts) {
     '"imagen_prompt": "specific english description for THIS article applying the brief above, ends with no text, no letters, no watermark"}';
 
   // 5. Llamar Gemini
-  log.push('Llamando a Gemini (gemini-3.6-flash, modo JSON, 16384 tokens)...');
-  // maxTokens=16384 (en vez de 8000) porque el blog pide 1200-1800 palabras
-  // de contenido HTML + JSON overhead, lo que excede 8k tokens fácilmente.
-  const text = await callGemini(env, prompt, 16384, { json: true });
+  log.push('Llamando a Gemini (gemini-3.6-flash, modo JSON, 8192 tokens)...');
+  // maxTokens=8192 suficiente para 600-800 palabras de contenido HTML + JSON
+  // overhead (FAQs, keywords, imagen_prompt). Con fallback automático a
+  // gemini-2.5-flash si el 3.6 da 503 (alta demanda).
+  const text = await callGemini(env, prompt, 8192, { json: true });
   const articulo = extractJSON(text);
   log.push(`Artículo generado: "${articulo.titulo}"`);
 
