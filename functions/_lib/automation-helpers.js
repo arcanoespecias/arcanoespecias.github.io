@@ -29,6 +29,91 @@ async function getGeminiKey(env) {
   return null;
 }
 
+// ============ Z.AI IMAGE API ============
+//
+// Genera una imagen usando el endpoint de Z.ai (z-ai-web-dev-sdk compatible).
+// Z.ai responde en 2-5s vs 10-15s de Cloudflare Workers AI, y tiene mejor
+// calidad para composiciones complejas (mejor respeta la consigna de
+// "zona izquierda limpia" del brief editorial).
+//
+// Autenticación: usa ZAI_TOKEN (JWT) + ZAI_BASE_URL configurados en env vars.
+// Si no están configurados, cae al fallback de Workers AI.
+//
+// Devuelve: { ok, image: dataUri } donde dataUri es
+// "data:image/png;base64,..." listo para subir a GitHub.
+async function callZaiImage(env, prompt, opts) {
+  if (!env?.ZAI_TOKEN || !env?.ZAI_BASE_URL) {
+    throw new Error('ZAI_TOKEN o ZAI_BASE_URL no configurados');
+  }
+
+  const url = env.ZAI_BASE_URL + '/images/generations';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer Z.ai',  // valor placeholder, el real va en X-Token
+    'X-Z-AI-From': 'Z',
+    'X-Token': env.ZAI_TOKEN
+  };
+  if (env.ZAI_CHAT_ID) headers['X-Chat-Id'] = env.ZAI_CHAT_ID;
+  if (env.ZAI_USER_ID) headers['X-User-Id'] = env.ZAI_USER_ID;
+
+  // Tamaños soportados por Z.ai image generation:
+  // 1024x1024, 768x1344, 864x1152, 1344x768, 1152x864, 1440x720, 720x1440
+  // Para el blog usamos 1344x768 (16:9 landscape, ideal para portada horizontal).
+  const body = {
+    prompt: prompt,
+    size: opts?.size || '1344x768'
+  };
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    const error = new Error(`Z.ai image ${resp.status}: ${errText.substring(0, 200)}`);
+    error.status = resp.status;
+    throw error;
+  }
+
+  const data = await resp.json();
+  // El SDK devuelve: { data: [{ base64: "..." }] }
+  const base64 = data?.data?.[0]?.base64;
+  if (!base64) throw new Error('Z.ai no devolvió imagen (sin base64)');
+
+  return {
+    ok: true,
+    image: 'data:image/png;base64,' + base64
+  };
+}
+
+// Genera una imagen para el blog, con fallback:
+//   1. Z.ai (primario, mejor calidad y más rápido)
+//   2. Cloudflare Workers AI (fallback, vía /api/generar-imagen)
+// Devuelve { ok, image: dataUri, source: 'zai' | 'workers-ai' }
+async function generateImageForBlog(env, prompt) {
+  // 1. Intentar con Z.ai primero
+  if (env?.ZAI_TOKEN && env?.ZAI_BASE_URL) {
+    try {
+      const result = await callZaiImage(env, prompt);
+      return { ...result, source: 'zai' };
+    } catch (e) {
+      console.warn('[image] Z.ai falló:', e.message, '— cayendo a Workers AI');
+    }
+  }
+
+  // 2. Fallback: Cloudflare Workers AI (flux-1-schnell)
+  const imgResp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, width: 1024, height: 768 })
+  });
+  const imgData = await imgResp.json();
+  if (!imgData.ok) throw new Error('Error generando imagen (Workers AI): ' + (imgData.error || 'desconocido'));
+  return { ok: true, image: imgData.image, source: 'workers-ai' };
+}
+
 // Modelos Gemini en orden de preferencia (primario → fallback).
 // Si el primario da 503 (alta demanda), 429 (rate limit) o 404 (modelo
 // deprecado/no disponible), probamos el siguiente.
@@ -504,144 +589,84 @@ function catToClass(categoria) {
 //
 // Brief maestro para generar las portadas del blog Arcano.
 // Sistema de identidad visual consistente: cada portada debe pertenecer a la
-// MISMA colección editorial, sin crear 5 estilos diferentes.
+// MISMA colección editorial.
 //
-// Estructura del brief:
-//   - base: formato + paleta cromática oficial + sistema tipográfico + composición
-//   - <categoría>: solo adapta la DIRECCIÓN de la fotografía, NO cambia el
-//     sistema tipográfico ni la paleta.
+// IMPORTANTE: la imagen generada es 100% FOTOGRÁFICA SIN TEXTO.
+// El texto (ARCANO + título + cursiva dorada + subtítulo) se compone
+// DESPUÉS por HTML/CSS encima de la imagen, garantizando:
+//   - Cero letras deformadas
+//   - Tipografía consistente (Playfair Display + Montserrat)
+//   - SEO (H1 como texto real)
+//   - Responsive + accesibilidad
 //
-// IMPORTANTE: Gemini debe LEER el contenido del artículo que acaba de generar
-// y crear un imagen_prompt ESPECÍFICO que:
-//   1. Aplique este brief editorial completo.
-//   2. Use los ingredientes/elementos ESPECÍFICOS del artículo (no genéricos).
-//   3. Use el título y subtítulo EXACTOS del artículo.
+// El prompt debe producir una imagen con la zona izquierda 100% limpia
+// (solo fondo charcoal) para que el texto se renderice encima con
+// máxima legibilidad.
 const BLOG_IMAGE_BRIEF = {
-  base: `Create a premium editorial gastronomic magazine cover for ARCANO brand. ALL covers must follow EXACTLY the same visual identity system, typography, color palette and art direction. The result must look like part of the same international luxury gastronomic magazine collection. DO NOT create different styles. Create covers that belong to the same editorial collection.
+  base: `Cinematic gastronomic photograph. Composition split in two zones, separated by smooth natural light falloff (NOT a hard line):
 
-FORMAT:
-- Horizontal orientation, 16:9 aspect ratio, target resolution 1200x630 pixels.
-- A single integrated photographic composition. NO collages, grids or panels.
-- Optimized for blog and social media.
+LEFT 35% OF THE IMAGE (the first 470 pixels from the left edge):
+- COMPLETELY EMPTY dark charcoal #11100E background.
+- NO objects of any kind. NO spices, NO props, NO ingredients, NO decorations.
+- NO text, NO letters, NO words, NO numbers, NO labels.
+- Just smooth dark charcoal with subtle stone texture, barely visible.
+- This zone must be 100% clean — it will receive text overlay later.
+- Think of it as a 'negative space' for typography.
 
-OFFICIAL COLOR PALETTE (use EXCLUSIVELY these colors as reference):
-- Charcoal black: #11100E (must DOMINATE the composition)
-- Editorial ivory: #F4EFE6 (used for main titles)
-- Primary gold: #D99B27 (elegance, exclusivity, NOT excessively bright metallic)
-- Secondary gold: #C99736 (complementary gold)
-- Warm white: #E9E3D9 (for subtitles)
-- Deep coffee: #392619 (deep browns for backgrounds/accents)
+RIGHT 65% OF THE IMAGE (the remaining 874 pixels):
+- Hyperrealistic photograph of the article's main subject (spice/ingredient).
+- Professional advertising quality, depth of field, sharp focus on the main subject.
+- Warm cinematic directional lighting from the upper right.
+- Deep controlled shadows extending leftward (but stopping before the clean left zone).
+- Gold reflections and accents (#D99B27) for elegance, NOT bright metallic.
+
+TRANSITION ZONE (between 35% and 45% of the image width):
+- Smooth gradient from the dark empty left to the rich photographic right.
+- Natural light falloff, looks like the photo fades into darkness.
+- DO NOT put any objects in this transition zone either — let it be smooth gradient.
+
+OFFICIAL COLOR PALETTE (use EXCLUSIVELY):
+- Charcoal black #11100E (must DOMINATE composition, especially in the left zone)
+- Deep coffee #392619 (subtle accents)
+- Primary gold #D99B27 (reflections, accents, NOT bright metallic)
+- Secondary gold #C99736
 - Natural spice colors can complement but NEVER break the chromatic identity.
-
-TYPOGRAPHY SYSTEM (MANDATORY — must look identical on every cover):
-
-A. BRAND NAME: ARCANO
-- Always uppercase: ARCANO
-- Geometric thin elegant sans serif (Montserrat Light, Gotham Light or Helvetica Neue Light reference)
-- Wide letter spacing
-- Editorial ivory color #F4EFE6
-- Small, discreet, sophisticated size
-- Location: TOP LEFT zone
-- Below the brand name: a SHORT HORIZONTAL GOLD LINE
-- Do not modify the name, do not add symbols, do not invent logos.
-
-B. MAIN TITLE
-- High-contrast editorial serif typography (Cormorant Garamond, Playfair Display or Didot reference)
-- Elegant, refined, personality letters
-- Large protagonist size
-- Main color: editorial ivory #F4EFE6
-- Left alignment
-- Preferably 1 to 3 lines depending on title length
-- Compact balanced line spacing
-
-C. HIGHLIGHTED WORDS
-- Select 1 or 2 important words from the title
-- Write them in ITALIC
-- Use gold #D99B27
-- Keep the rest of the title in ivory
-- DO NOT highlight all words
-- The contrast must look natural, elegant, balanced
-- This typographic treatment must recall a luxury gastronomic magazine
-
-D. SUBTITLE
-- Modern sans serif typography (Montserrat, Helvetica Neue or similar reference)
-- Regular weight
-- Color: warm white #E9E3D9
-- Size considerably smaller than the title
-- Located below the title
-- Maximum 2 lines
-- Excellent legibility
-
-E. DECORATIVE ELEMENTS
-- Use ONLY: thin horizontal gold lines, small discreet geometric details when necessary, minimalist separators
-- NO excessive ornaments
-
-LAYOUT AND COMPOSITION (must remain consistent):
-
-LEFT ZONE (text area):
-- ARCANO brand name at the top
-- Horizontal gold line below the brand
-- Large main title
-- 1-2 highlighted words in italic gold
-- Subtitle below the title
-- Small horizontal gold detail to close the composition
-- Sufficient negative space and dark background to guarantee legibility
-
-RIGHT ZONE (photography area):
-- Main article photograph
-- Ingredients, spices, objects or cultural elements related to the content
-- Cinematic lighting
-- Depth of field
-- Rich and attractive visual composition
-- The photography must integrate with the background, avoiding artificial divisions between text and image
 
 PHOTOGRAPHIC DIRECTION:
 - Hyperrealistic photography
 - Professional advertising quality
-- Warm cinematic lighting
+- Warm cinematic directional lighting
 - Deep controlled shadows
 - Natural detailed textures
 - Professional depth of field
-- Contrasts between black, gold and natural tones
-- Carefully selected gastronomic elements
+- Elegant contrasts between charcoal, gold and natural spice tones
 - AVOID generic stock images, childish illustrations, artificial renders, overloaded compositions
 
-TEXT RULES (use ONLY the texts supplied by the agent):
-- BRAND: ARCANO
-- CATEGORY: [article category]
-- TITLE: [EXACT title of the article]
-- SUBTITLE: [provided subtitle]
-- DO NOT invent titles, modify words, correct, reinterpret, add promotional phrases, translate, add additional texts
-- Strictly respect Spanish accents and spelling
-- DO NOT duplicate words, deform letters, substitute characters
-- If title is too long, adapt size and distribution without modifying content
+ABSOLUTE RESTRICTIONS:
+- NO text, NO letters, NO words, NO numbers, NO typography of any kind anywhere in the image
+- NO logos, NO watermarks, NO labels, NO frames, NO borders
+- NO handwritten or 3D fonts
+- NO multicolor gradients, NO neon colors, NO predominantly white backgrounds
+- The image must be EXCLUSIVELY photographic
+- The LEFT 35% must be visually clean and 100% empty of objects
+- DO NOT place any objects, props, ingredients or decorations in the left 35%
 
-RESTRICTIONS:
-- NO handwritten, futuristic, or 3D fonts
-- NO multicolor gradients, neon colors, predominantly white backgrounds
-- NO frames, cards, decorative icons, watermarks, invented logos
-- NO additional texts
+FINAL RESULT: A luxury gastronomic magazine cover photograph with a clean dark left zone ready for elegant typography overlay. Hyperrealistic, cinematic, sophisticated.`,
 
-FINAL RESULT:
-- A single horizontal ARCANO cover
-- Exactly the described editorial identity: dark background, cinematic gastronomic photography, serif titles in ivory, highlighted words in italic gold, sans serif subtitles, ARCANO brand in spaced letters
-- Each publication must have a DIFFERENT photograph, but ALL must look designed by the same art director and belong to the same gastronomic magazine
-- ABSOLUTE PRIORITY: BRAND CONSISTENCY, TYPOGRAPHIC ELEGANCE, LEGIBILITY, PHOTOGRAPHIC QUALITY`,
+  Historias: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): HISTORIAS — Historical and narrative aesthetic.
+The RIGHT ZONE subject should incorporate antique books, old maps, compasses, navigation instruments, cultural objects and the spices that the article is about. Convey storytelling, tradition and discovery. The visual mood should evoke a vintage apothecary or a 19th century botanical expedition.`,
 
-  Historias: `CATEGORY DIRECTION (only adapts photography, NOT typography): HISTORIAS — Historical and narrative aesthetic.
-Incorporate antique books, old maps, compasses, navigation instruments, cultural objects and the spices that the article is about. Convey storytelling, tradition and discovery. The visual mood should evoke a vintage apothecary or a 19th century botanical expedition.`,
+  Beneficios: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): BENEFICIOS — Botanical and sensorial aesthetic.
+The RIGHT ZONE subject should use roots, leaves, flowers, fresh spices and botanical ingredients. Convey nature, wellness and knowledge. AVOID medical visual claims (no pills, no pharmacy look, no clinical white). The mood should be calm, organic, spa-like.`,
 
-  Beneficios: `CATEGORY DIRECTION (only adapts photography, NOT typography): BENEFICIOS — Botanical and sensorial aesthetic.
-Use roots, leaves, flowers, fresh spices and botanical ingredients. Convey nature, wellness and knowledge. AVOID medical visual claims (no pills, no pharmacy look, no clinical white). The mood should be calm, organic, spa-like.`,
+  Investigaciones: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): INVESTIGACIONES — Scientific and editorial aesthetic.
+The RIGHT ZONE subject should incorporate glassware, microscopy, lab elements, botanical samples and the spices. Convey rigor, research and knowledge. AVOID generic pharmaceutical lab appearance (no sterile white lab, no pills). The mood should be editorial scientific journal, dark and moody with golden highlights.`,
 
-  Investigaciones: `CATEGORY DIRECTION (only adapts photography, NOT typography): INVESTIGACIONES — Scientific and editorial aesthetic.
-Incorporate glassware, microscopy, lab elements, botanical samples and the spices. Convey rigor, research and knowledge. AVOID generic pharmaceutical lab appearance (no sterile white lab, no pills). The mood should be editorial scientific journal, dark and moody with golden highlights.`,
+  Curiosidades: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): CURIOSIDADES — Dynamic and surprising aesthetic.
+The RIGHT ZONE subject should use macro photography, suspended spice particles, spices in motion, textures and unusual perspectives. Awaken curiosity and interest immediately. Dynamic composition with frozen motion, particles floating, dramatic angles.`,
 
-  Curiosidades: `CATEGORY DIRECTION (only adapts photography, NOT typography): CURIOSIDADES — Dynamic and surprising aesthetic.
-Use macro photography, suspended spice particles, spices in motion, textures and unusual perspectives. Awaken curiosity and interest immediately. Dynamic composition with frozen motion, particles floating, dramatic angles.`,
-
-  Origenes: `CATEGORY DIRECTION (only adapts photography, NOT typography): ORIGENES — Geographic and cultural exploration aesthetic.
-Incorporate old maps, trade routes, compasses, cultural elements and representative spices of each region. Convey provenance, exploration and gastronomic heritage. The mood should evoke a 16th century spice trade expedition.`
+  Origenes: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): ORIGENES — Geographic and cultural exploration aesthetic.
+The RIGHT ZONE subject should incorporate old maps, trade routes, compasses, cultural elements and representative spices of each region. Convey provenance, exploration and gastronomic heritage. The mood should evoke a 16th century spice trade expedition.`
 };
 
 // Devuelve el brief completo (base + categoría) para una categoría dada.
@@ -1025,21 +1050,17 @@ async function generateBlog(env, opts) {
     return { articulo, log, dryRun: true };
   }
 
-  // 9. Generar imagen con Workers AI
-  log.push('Generando imagen con Workers AI...');
-  const imgResp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      // Si por alguna razón Gemini no devolvió imagen_prompt, usar el brief
-      // completo de la categoría como fallback (no un prompt genérico).
-      prompt: articulo.imagen_prompt || getBlogImageBrief(tema.categoria),
-      width: 1024, height: 768
-    })
-  });
-  const imgData = await imgResp.json();
-  if (!imgData.ok) throw new Error('Error generando imagen: ' + (imgData.error || 'desconocido'));
-  log.push('Imagen generada OK');
+  // 9. Generar imagen con Z.ai (fallback Workers AI)
+  //    Usamos generateImageForBlog que prueba Z.ai primero y cae a Workers AI
+  //    si Z.ai no está configurado o falla.
+  log.push('Generando imagen con Z.ai (fallback Workers AI)...');
+  const imgResult = await generateImageForBlog(
+    env,
+    articulo.imagen_prompt || getBlogImageBrief(tema.categoria)
+  );
+  if (!imgResult.ok) throw new Error('Error generando imagen: ' + (imgResult.error || 'desconocido'));
+  log.push(`Imagen generada OK (fuente: ${imgResult.source})`);
+  const imgData = { image: imgResult.image };
 
   // 10-13. Subir imagen + guardar en Firebase + actualizar estado EN PARALELO
   //       (no dependen entre sí, así que los corremos simultáneamente para
@@ -1544,6 +1565,20 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
   const keywordsStr = (articulo.keywords || []).join(', ');
   const catClass = catToClass(categoria);
 
+  // Construir el título con palabras destacadas en cursiva dorada.
+  // Tomamos las 2 palabras más largas del título (más significativas) y las
+  // envolvemos en <em> que el CSS pinta de dorado #D99B27 con cursiva.
+  const titleWords = (articulo.titulo || '').split(/\s+/).filter(w => w.length >= 5);
+  const italicWords = titleWords
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 2)
+    .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  let titleHTML = titulo;
+  for (const word of italicWords) {
+    const re = new RegExp('\\b(' + word + ')\\b');
+    titleHTML = titleHTML.replace(re, '<em>$1</em>');
+  }
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1554,7 +1589,7 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <link rel="canonical" href="${url}">
 <meta name="keywords" content="${escHtml(keywordsStr)}">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="theme-color" content="${t.accent}">
+<meta name="theme-color" content="#11100E">
 <meta property="og:type" content="article">
 <meta property="og:title" content="${titulo}">
 <meta property="og:description" content="${descripcion}">
@@ -1575,7 +1610,7 @@ ${faqSchema ? `<script type="application/ld+json">${JSON.stringify(faqSchema)}</
 <!-- Fuentes Google -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Merriweather:wght@400;700&family=Poppins:wght@600;700&family=Inter:wght@400;500&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:wght@400;600&family=Mulish:wght@600;700&family=Lora:wght@400;700&family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:wght@200;300;400;500;600;700&family=Merriweather:wght@400;700&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:wght@400;600&family=Mulish:wght@600;700&family=Lora:wght@400;700&family=Source+Serif+Pro:wght@400;700&family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
 ${generateBlogCSS(t)}
 .faq-section{margin-top:48px;padding-top:32px;border-top:2px solid ${t.bgAccent}}
@@ -1583,20 +1618,60 @@ ${generateBlogCSS(t)}
 .faq-item{margin-bottom:18px;padding:16px 20px;background:${t.bgAccent};border-radius:8px;border-left:3px solid ${t.accent}}
 .faq-item h3{font-family:${t.headingFont};color:${t.textPrimary};font-size:1.05rem;margin:0 0 8px;font-weight:600}
 .faq-item p{margin:0;color:${t.textPrimary};font-size:.95rem;line-height:1.6}
+
+/* === HERO COMPUESTO: imagen de fondo + texto encima === */
+.hero-cover{position:relative;width:100%;max-width:1200px;margin:0 -18px 32px;aspect-ratio:16/9;overflow:hidden;background:#11100E}
+.hero-cover-img{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-position:center right;background-repeat:no-repeat;z-index:1}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(17,16,14,0.92) 0%,rgba(17,16,14,0.85) 18%,rgba(17,16,14,0.55) 35%,rgba(17,16,14,0.20) 50%,rgba(17,16,14,0) 65%);z-index:2;pointer-events:none}
+.hero-text{position:absolute;top:0;left:0;width:50%;height:100%;padding:36px 24px 32px 36px;display:flex;flex-direction:column;z-index:3;color:#F4EFE6}
+.hero-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.hero-brand-name{font-family:'Montserrat',sans-serif;font-weight:300;font-size:14px;letter-spacing:0.5em;color:#F4EFE6;text-transform:uppercase;margin-right:-0.5em}
+.hero-brand-line{width:32px;height:1.5px;background:#D99B27;flex-shrink:0}
+.hero-cat{font-family:'Montserrat',sans-serif;font-weight:500;font-size:10px;letter-spacing:0.35em;color:#D99B27;text-transform:uppercase;margin-bottom:18px;opacity:0.85}
+.hero-title{font-family:'Playfair Display',serif;font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.02em;color:#F4EFE6;margin:0 0 16px;text-shadow:0 2px 12px rgba(0,0,0,0.6)}
+.hero-title em{font-style:italic;color:#D99B27;font-weight:600}
+.hero-sub{font-family:'Montserrat',sans-serif;font-weight:400;font-size:13px;line-height:1.5;color:#E9E3D9;margin:0 0 16px;max-width:340px;opacity:0.92}
+.hero-bottom{display:flex;align-items:center;gap:10px;margin-top:auto}
+.hero-bottom-line{width:24px;height:1px;background:#D99B27;opacity:0.7}
+.hero-bottom-text{font-family:'Montserrat',sans-serif;font-weight:300;font-size:9px;letter-spacing:0.4em;color:#C99736;text-transform:uppercase;opacity:0.8}
+@media(max-width:680px){
+  .hero-cover{margin:0 -14px 24px}
+  .hero-text{width:75%;padding:24px 18px 22px 22px}
+  .hero-title{font-size:28px}
+  .hero-sub{font-size:12px;max-width:240px}
+  .hero-brand-name{font-size:12px;letter-spacing:0.4em}
+  .hero-cat{font-size:9px;margin-bottom:14px}
+  .hero-overlay{background:linear-gradient(180deg,rgba(17,16,14,0.92) 0%,rgba(17,16,14,0.75) 50%,rgba(17,16,14,0.4) 100%)}
+}
 </style>
 </head>
 <body class="blog-cat-${catClass}">
 <div class="container">
 <a href="${BASE_URL}/blog/" class="back">&larr; Volver al Blog</a>
-<div class="header-meta">${escHtml(categoria)}${especiaPrincipal ? ' · ' + escHtml(especiaPrincipal) : ''}</div>
-<h1>${titulo}</h1>
-${articulo.subtitulo ? `<div class="subtitulo">${escHtml(articulo.subtitulo)}</div>` : ''}
+
+${img ? `<div class="hero-cover" role="img" aria-label="${titulo}">
+  <div class="hero-cover-img" style="background-image:url('${escHtml(img)}')"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-text">
+    <div class="hero-brand">
+      <div class="hero-brand-name">ARCANO</div>
+      <div class="hero-brand-line"></div>
+    </div>
+    <div class="hero-cat">${escHtml(categoria)}</div>
+    <h1 class="hero-title">${titleHTML}</h1>
+    ${articulo.subtitulo ? `<p class="hero-sub">${escHtml(articulo.subtitulo)}</p>` : ''}
+    <div class="hero-bottom">
+      <div class="hero-bottom-line"></div>
+      <div class="hero-bottom-text">ESPECIAS &amp; BLENDS</div>
+    </div>
+  </div>
+</div>` : `<h1>${titleHTML}</h1>`}
+
 <div class="meta">
 ${articulo.fecha ? `<span>${escHtml(articulo.fecha)}</span>` : ''}
 ${articulo.tiempoLectura ? `<span>${escHtml(articulo.tiempoLectura)}</span>` : ''}
 <span class="badge">${escHtml(categoria)}</span>
 </div>
-${img ? `<img class="hero" src="${escHtml(img)}" alt="${titulo}" loading="lazy">` : ''}
 <div class="content">
 ${contenidoFinal}
 </div>
