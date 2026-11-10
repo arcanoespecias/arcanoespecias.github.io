@@ -88,6 +88,89 @@ async function callZaiImage(env, prompt, opts) {
   };
 }
 
+// ============ Z.AI CHAT API (para generar texto del blog) ============
+//
+// Reemplaza a Gemini para generación de texto. Ventajas:
+//   - Latencia 0.5-2s vs Gemini 10-30s (o 503 saturado)
+//   - 99.9% disponibilidad (servicio propio de Z.ai)
+//   - Modelo GLM-4-Plus (capaz para tareas de redacción)
+//   - Sin timeouts de Cloudflare Pages (el flujo cabe en 100s)
+//
+// Autenticación: ZAI_TOKEN (JWT) + ZAI_BASE_URL en env vars.
+// Fallback: si Z.ai falla, cae a Gemini (callGemini).
+//
+// Devuelve: { text, source: 'zai' | 'gemini' }
+async function callZaiChat(env, prompt, opts) {
+  if (!env?.ZAI_TOKEN || !env?.ZAI_BASE_URL) {
+    throw new Error('ZAI_TOKEN o ZAI_BASE_URL no configurados');
+  }
+
+  const url = env.ZAI_BASE_URL + '/chat/completions';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer Z.ai',
+    'X-Z-AI-From': 'Z',
+    'X-Token': env.ZAI_TOKEN
+  };
+  if (env.ZAI_CHAT_ID) headers['X-Chat-Id'] = env.ZAI_CHAT_ID;
+  if (env.ZAI_USER_ID) headers['X-User-Id'] = env.ZAI_USER_ID;
+
+  // Z.ai usa el formato OpenAI chat completions
+  // Nota: Z.ai NO soporta responseMimeType application/json nativamente como
+  // Gemini. Pero como le pedimos en el prompt que devuelva SOLO JSON válido,
+  // suele cumplir. Sanitizamos después con extractJSON.
+  const body = {
+    messages: [
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    stream: false,
+    thinking: { type: 'disabled' },
+    temperature: 0.8,
+    max_tokens: opts?.maxTokens || 8192
+  };
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    const error = new Error(`Z.ai chat ${resp.status}: ${errText.substring(0, 200)}`);
+    error.status = resp.status;
+    throw error;
+  }
+
+  const data = await resp.json();
+  // Formato OpenAI: { choices: [{ message: { content: "..." } }] }
+  const text = data?.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error('Z.ai no devolvió texto (sin content)');
+
+  return { text, source: 'zai' };
+}
+
+// Genera texto para el blog (Z.ai primario, Gemini fallback).
+// Devuelve { text, source: 'zai' | 'gemini' }.
+async function generateBlogText(env, prompt, opts) {
+  // 1. Intentar con Z.ai primero (siempre más rápido y disponible)
+  if (env?.ZAI_TOKEN && env?.ZAI_BASE_URL) {
+    try {
+      const result = await callZaiChat(env, prompt, opts);
+      return result;
+    } catch (e) {
+      console.warn('[chat] Z.ai falló:', e.message, '— cayendo a Gemini');
+    }
+  }
+
+  // 2. Fallback: Gemini (5 modelos flash con fallback automático)
+  const text = await callGemini(env, prompt, opts?.maxTokens || 8192, { json: true });
+  return { text, source: 'gemini' };
+}
+
 // Genera una imagen para el blog, con fallback:
 //   1. Z.ai (primario, mejor calidad y más rápido)
 //   2. Cloudflare Workers AI (fallback, vía /api/generar-imagen)
@@ -999,13 +1082,13 @@ async function generateBlog(env, opts) {
     '"faqs": [{"q": "pregunta 1", "a": "respuesta 1"}, {"q": "pregunta 2", "a": "respuesta 2"}, ...], ' +
     '"imagen_prompt": "specific english description for THIS article applying the brief above, ends with no text, no letters, no watermark"}';
 
-  // 5. Llamar Gemini
-  log.push('Llamando a Gemini (gemini-3.6-flash, modo JSON, 8192 tokens)...');
-  // maxTokens=8192 suficiente para 600-800 palabras de contenido HTML + JSON
-  // overhead (FAQs, keywords, imagen_prompt). Con fallback automático a
-  // gemini-2.5-flash si el 3.6 da 503 (alta demanda).
-  const text = await callGemini(env, prompt, 8192, { json: true });
-  const articulo = extractJSON(text);
+  // 5. Llamar Z.ai (fallback Gemini)
+  //    Z.ai primario: 0.5-2s, 99.9% disponible. Gemini fallback: 5 modelos flash.
+  //    Genera el texto completo del artículo en formato JSON.
+  log.push('Llamando a Z.ai (GLM-4-Plus, fallback Gemini)...');
+  const textResult = await generateBlogText(env, prompt, { maxTokens: 8192 });
+  log.push(`Texto generado (fuente: ${textResult.source})`);
+  const articulo = extractJSON(textResult.text);
   log.push(`Artículo generado: "${articulo.titulo}"`);
 
   // 6. Validar
