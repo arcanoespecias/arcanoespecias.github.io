@@ -1085,9 +1085,11 @@ async function generateBlog(env, opts) {
   // 5. Llamar Z.ai (fallback Gemini)
   //    Z.ai primario: 0.5-2s, 99.9% disponible. Gemini fallback: 5 modelos flash.
   //    Genera el texto completo del artículo en formato JSON.
-  log.push('Llamando a Z.ai (GLM-4-Plus, fallback Gemini)...');
+  const t0 = Date.now();
+  log.push(`[${t0}] Llamando a Z.ai (GLM-4-Plus, fallback Gemini)...`);
   const textResult = await generateBlogText(env, prompt, { maxTokens: 8192 });
-  log.push(`Texto generado (fuente: ${textResult.source})`);
+  const t1 = Date.now();
+  log.push(`[${t1}] Texto generado (fuente: ${textResult.source}) en ${t1 - t0}ms`);
   const articulo = extractJSON(textResult.text);
   log.push(`Artículo generado: "${articulo.titulo}"`);
 
@@ -1136,19 +1138,22 @@ async function generateBlog(env, opts) {
   // 9. Generar imagen con Z.ai (fallback Workers AI)
   //    Usamos generateImageForBlog que prueba Z.ai primero y cae a Workers AI
   //    si Z.ai no está configurado o falla.
-  log.push('Generando imagen con Z.ai (fallback Workers AI)...');
+  const t2 = Date.now();
+  log.push(`[${t2}] Generando imagen con Z.ai (fallback Workers AI)...`);
   const imgResult = await generateImageForBlog(
     env,
     articulo.imagen_prompt || getBlogImageBrief(tema.categoria)
   );
+  const t3 = Date.now();
   if (!imgResult.ok) throw new Error('Error generando imagen: ' + (imgResult.error || 'desconocido'));
-  log.push(`Imagen generada OK (fuente: ${imgResult.source})`);
+  log.push(`[${t3}] Imagen generada OK (fuente: ${imgResult.source}) en ${t3 - t2}ms`);
   const imgData = { image: imgResult.image };
 
   // 10-13. Subir imagen + guardar en Firebase + actualizar estado EN PARALELO
   //       (no dependen entre sí, así que los corremos simultáneamente para
   //       reducir el tiempo total y evitar timeout de Cloudflare 524).
-  log.push('Subiendo imagen a GitHub + guardando en Firebase + actualizando estado (en paralelo)...');
+  const t4 = Date.now();
+  log.push(`[${t4}] Subiendo imagen + Firebase + estado (en paralelo)...`);
 
   const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
   const newState = {
@@ -1172,9 +1177,10 @@ async function generateBlog(env, opts) {
 
   articulo.imagen_url = uploadResult.url;
   articulo._key = fbResult?.name || null;
-  log.push(`Imagen subida: ${uploadResult.url}`);
-  log.push(`Artículo guardado en Firebase (key=${articulo._key || 'n/a'}, publicado=false)`);
-  log.push('Estado de rotación actualizado');
+  const t5 = Date.now();
+  log.push(`[${t5}] Imagen subida: ${uploadResult.url}`);
+  log.push(`[${t5}] Artículo guardado en Firebase (key=${articulo._key || 'n/a'}, publicado=false)`);
+  log.push(`[${t5}] Estado de rotación actualizado. Paralelo tomó ${t5 - t4}ms`);
 
   // 12. NO subir HTML individual, NO regenerar índice, NO append al sitemap.
   //     Todo eso lo hace el endpoint /api/automation/publish-blog cuando el
