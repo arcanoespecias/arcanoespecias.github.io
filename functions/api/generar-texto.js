@@ -96,23 +96,48 @@ export async function onRequestPost({ request, env }) {
     }
 
     const data = await aiResp.json();
-    if (!data.success || !data.result || !data.result.response) {
-      console.error('[generar-texto] Respuesta inesperada:', JSON.stringify(data).substring(0, 300));
+    // Cloudflare Workers AI puede devolver la respuesta en varios formatos:
+    //   - data.result.response (string) ← formato normal
+    //   - data.result.response (objeto con .role/.content) ← algunos modelos
+    //   - data.result.message.content ← formato chat
+    //   - data.response ← formato legacy
+    // Vamos a extraer el texto de cualquiera de estos.
+    let text = '';
+    if (data?.result?.response) {
+      const r = data.result.response;
+      if (typeof r === 'string') {
+        text = r;
+      } else if (r?.content) {
+        text = typeof r.content === 'string' ? r.content : JSON.stringify(r.content);
+      } else if (Array.isArray(r)) {
+        // Algunos modelos devuelven un array de messages
+        text = r.map(m => m.content || '').join('\n');
+      } else {
+        text = JSON.stringify(r);
+      }
+    } else if (data?.result?.message?.content) {
+      text = data.result.message.content;
+    } else if (data?.response) {
+      text = typeof data.response === 'string' ? data.response : JSON.stringify(data.response);
+    } else {
+      console.error('[generar-texto] Respuesta inesperada:', JSON.stringify(data).substring(0, 500));
       return new Response(JSON.stringify({
         ok: false,
-        error: 'Respuesta de Workers AI sin texto',
-        details: JSON.stringify(data).substring(0, 500)
+        error: 'Respuesta de Workers AI sin texto reconocible',
+        details: JSON.stringify(data).substring(0, 800)
       }), { status: 500, headers: CORS_HEADERS });
     }
 
-    const text = data.result.response;
-    console.log('[generar-texto] Texto generado OK (' + text.length + ' chars)');
+    // Asegurar que text sea string
+    if (typeof text !== 'string') text = String(text || '');
+
+    console.log('[generar-texto] Texto generado OK (' + text.length + ' chars, primeros 100: "' + text.substring(0, 100) + '")');
 
     return new Response(JSON.stringify({
       ok: true,
       text: text,
       model: MODEL,
-      tokens_used: data.result.usage
+      tokens_used: data?.result?.usage || null
     }), { headers: CORS_HEADERS });
 
   } catch (e) {
