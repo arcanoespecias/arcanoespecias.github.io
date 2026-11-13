@@ -29,37 +29,12 @@ async function getGeminiKey(env) {
   return null;
 }
 
-// ============ Z.AI IMAGE API (vía Cloudflare Workers AI) ============
+// ============ Z.AI IMAGE API (eliminada) ============
 //
-// Genera una imagen usando Cloudflare Workers AI (flux-1-schnell).
-// El API interna de Z.ai (internal-api.z.ai) NO es accesible desde
-// Cloudflare Pages (error 530/1016), así que usamos el endpoint
-// /api/generar-imagen que ya existe y usa CF_ACCOUNT_ID + CF_API_TOKEN.
-//
-// Devuelve: { ok, image: dataUri } donde dataUri es
-// "data:image/jpeg;base64,..." listo para subir a GitHub.
-async function callZaiImage(env, prompt, opts) {
-  const resp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt })
-  });
-
-  if (!resp.ok) {
-    const errText = await resp.text();
-    const error = new Error(`Workers AI image ${resp.status}: ${errText.substring(0, 200)}`);
-    error.status = resp.status;
-    throw error;
-  }
-
-  const data = await resp.json();
-  if (!data.ok) throw new Error('Workers AI no devolvió imagen: ' + (data.error || 'desconocido'));
-
-  return {
-    ok: true,
-    image: data.image
-  };
-}
+// Antes generábamos imágenes con Z.ai/Workers AI automáticamente. Pero la
+// calidad era variable y el admin prefiere subirlas manualmente.
+// Si en el futuro se quiere volver a generar automático, el endpoint
+// /api/generar-imagen sigue existiendo y se puede llamar desde el admin.
 
 // ============ Z.AI CHAT API (vía Cloudflare Workers AI) ============
 //
@@ -122,31 +97,7 @@ async function generateBlogText(env, prompt, opts) {
   return { text, source: 'gemini' };
 }
 
-// Genera una imagen para el blog, con fallback:
-//   1. Z.ai (primario, mejor calidad y más rápido)
-//   2. Cloudflare Workers AI (fallback, vía /api/generar-imagen)
-// Devuelve { ok, image: dataUri, source: 'zai' | 'workers-ai' }
-async function generateImageForBlog(env, prompt) {
-  // 1. Intentar con Z.ai primero
-  if (env?.ZAI_TOKEN && env?.ZAI_BASE_URL) {
-    try {
-      const result = await callZaiImage(env, prompt);
-      return { ...result, source: 'zai' };
-    } catch (e) {
-      console.warn('[image] Z.ai falló:', e.message, '— cayendo a Workers AI');
-    }
-  }
-
-  // 2. Fallback: Cloudflare Workers AI (flux-1-schnell)
-  const imgResp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, width: 1024, height: 768 })
-  });
-  const imgData = await imgResp.json();
-  if (!imgData.ok) throw new Error('Error generando imagen (Workers AI): ' + (imgData.error || 'desconocido'));
-  return { ok: true, image: imgData.image, source: 'workers-ai' };
-}
+// (generateImageForBlog eliminado — el admin sube las imágenes manualmente)
 
 // Modelos Gemini en orden de preferencia (primario → fallback).
 // Si el primario da 503 (alta demanda), 429 (rate limit) o 404 (modelo
@@ -1089,25 +1040,26 @@ async function generateBlog(env, opts) {
     return { articulo, log, dryRun: true };
   }
 
-  // 9. Generar imagen con Z.ai (fallback Workers AI)
-  //    Usamos generateImageForBlog que prueba Z.ai primero y cae a Workers AI
-  //    si Z.ai no está configurado o falla.
-  const t2 = Date.now();
-  log.push(`[${t2}] Generando imagen con Z.ai (fallback Workers AI)...`);
-  const imgResult = await generateImageForBlog(
-    env,
-    articulo.imagen_prompt || getBlogImageBrief(tema.categoria)
-  );
-  const t3 = Date.now();
-  if (!imgResult.ok) throw new Error('Error generando imagen: ' + (imgResult.error || 'desconocido'));
-  log.push(`[${t3}] Imagen generada OK (fuente: ${imgResult.source}) en ${t3 - t2}ms`);
-  const imgData = { image: imgResult.image };
+  // 9. NO generar imagen — el admin la sube manualmente desde el panel
+  //    después de aprobar el borrador. El flujo queda:
+  //      1. Sistema genera el texto (Llama 3.1 8B)
+  //      2. Sistema guarda en Firebase como borrador (sin imagen_url)
+  //      3. Email al admin: "Hay un borrador pendiente, subir imagen y publicar"
+  //      4. Admin entra al panel, edita si quiere, sube imagen, pulsa Publicar
+  //    Ventajas:
+  //      - Control total del admin sobre la imagen
+  //      - Sin timeout (no hay llamada a Workers AI que tarde 30-70s)
+  //      - Sin dependencia de APIs externas para imágenes
+  //    El campo articulo.imagen_prompt queda guardado en Firebase para que
+  //    el admin lo vea en el panel y lo use si quiere generarlo por otro lado.
+  articulo.imagen_url = '';  // vacío — el admin la sube después
+  log.push('Sin imagen automática — el admin la sube manualmente');
+  log.push(`imagen_prompt guardado en Firebase: "${(articulo.imagen_prompt || '').substring(0, 80)}..."`);
 
-  // 10-13. Subir imagen + guardar en Firebase + actualizar estado EN PARALELO
-  //       (no dependen entre sí, así que los corremos simultáneamente para
-  //       reducir el tiempo total y evitar timeout de Cloudflare 524).
+  // 10-11. Guardar en Firebase + actualizar estado EN PARALELO
+  //       (no hay imagen que subir a GitHub, así que solo son 2 operaciones)
   const t4 = Date.now();
-  log.push(`[${t4}] Subiendo imagen + Firebase + estado (en paralelo)...`);
+  log.push(`[${t4}] Guardando en Firebase + actualizando estado (en paralelo)...`);
 
   const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
   const newState = {
@@ -1120,26 +1072,21 @@ async function generateBlog(env, opts) {
     }
   };
 
-  const [uploadResult, fbResult] = await Promise.all([
-    // 10. Subir imagen a GitHub
-    uploadImage(env, articulo.slug_publicado, imgData.image, 'blog'),
-    // 11. Guardar en Firebase como BORRADOR (publicado=false)
+  const [fbResult] = await Promise.all([
+    // 11. Guardar en Firebase como BORRADOR (publicado=false, sin imagen)
     fbAdminPost(env, '/arcano/db/blog', articulo),
     // 13. Actualizar estado (categoría + especia + títulos)
     updateAutomationState(env, newState)
   ]);
 
-  articulo.imagen_url = uploadResult.url;
   articulo._key = fbResult?.name || null;
   const t5 = Date.now();
-  log.push(`[${t5}] Imagen subida: ${uploadResult.url}`);
-  log.push(`[${t5}] Artículo guardado en Firebase (key=${articulo._key || 'n/a'}, publicado=false)`);
+  log.push(`[${t5}] Artículo guardado en Firebase (key=${articulo._key || 'n/a'}, publicado=false, sin imagen)`);
   log.push(`[${t5}] Estado de rotación actualizado. Paralelo tomó ${t5 - t4}ms`);
 
   // 12. NO subir HTML individual, NO regenerar índice, NO append al sitemap.
   //     Todo eso lo hace el endpoint /api/automation/publish-blog cuando el
-  //     admin aprueba el artículo. Mientras tanto, el borrador solo existe en
-  //     Firebase y se ve en el admin (con botón "Aprobar y publicar").
+  //     admin aprueba el artículo (después de subir la imagen).
 
   // 14. Email al admin: fire-and-forget con ctx.waitUntil (no bloquea respuesta)
   //     Si ctx no está disponible (ej: dry-run manual o llamada directa),
