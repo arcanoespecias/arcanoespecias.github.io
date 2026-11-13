@@ -401,12 +401,67 @@ const BLOG_CATEGORIAS = [
 // para que cada artículo sea sobre una especia diferente y no se repita.
 // Se van rotando: si la última vez fue "pimienta negra", ahora es "canela",
 // luego "cúrcuma", etc.
+// Lista de especias base que el sistema va rotando dentro de cada categoría.
+// IMPORTANTE: cada especia tiene que tener un match en el catálogo de la tienda,
+// así el artículo siempre tiene un enlace al producto correcto.
+// Si una especia no está en el catálogo, NO la incluimos acá (sino el artículo
+// quedaría sin enlace relevante a la tienda).
+//
+// El match se hace con BLOG_ESPECIA_ALIASES (más abajo) que mapea el nombre
+// de rotación al nombre EXACTO del catálogo.
 const BLOG_ESPECIAS = [
-  'pimienta negra', 'canela', 'cúrcuma', 'jengibre', 'ají/capsaicina',
-  'pimentón', 'cacao', 'comino', 'cardamomo', 'clavo', 'nuez moscada',
-  'azafrán', 'comino negro', 'fenogreco', 'sumac', 'zaatar', 'baharat',
-  'ras el hanout', 'garam masala', 'curry'
+  'pimienta negra',
+  'canela',
+  'cúrcuma',
+  'jengibre',
+  'ají',
+  'pimentón',
+  'cardamomo',
+  'clavo',
+  'fenogreco',
+  'mostaza',
+  'ajo',
+  'hinojo',
+  'coreandro'
 ];
+
+// Mapa de especia (rotación del blog) → nombre EXACTO del producto en el
+// catálogo de Firebase. Esto es necesario porque:
+//   - El blog rota "pimentón" pero el catálogo tiene "Paprika"
+//   - El blog rota "ají" pero el catálogo tiene "Ají Andino" (es un blend)
+//   - El blog rota "pimienta negra" pero el catálogo tiene 2 productos
+//     ("Pimienta Negra en Bayas" y "Pimienta Negra molida")
+//
+// IMPORTANTE: TODAS las especias en BLOG_ESPECIAS tienen que tener un alias
+// acá (no null), sino el sistema no va a saber qué producto enlazar.
+const BLOG_ESPECIA_ALIASES = {
+  'pimienta negra': 'Pimienta Negra en Bayas',  // ID 45 (preferimos la en bayas)
+  'canela':          'Canela',                    // ID 6
+  'cúrcuma':         'Cúrcuma',                   // ID 13
+  'jengibre':        'Jengibre',                  // ID 18
+  'ají':             'Ají Andino',                // ID 11 (blend)
+  'pimentón':        'Paprika',                   // ID 42 (en inglés pero es pimentón)
+  'cardamomo':       'Cardamomo',                 // ID 7
+  'clavo':           'Clavo',                     // ID 10
+  'fenogreco':       'Fenogreco',                 // ID 46
+  'mostaza':         'Mostaza',                   // ID 28
+  'ajo':             'Ajo',                       // ID 1
+  'hinojo':          'Hinojo',                    // ID 17
+  'coreandro':       'Coreandro'                  // ID 56
+};
+
+// Devuelve el producto del catálogo que corresponde a la especia de rotación.
+// Usa BLOG_ESPECIA_ALIASES para mapear el nombre de rotación al nombre del catálogo.
+// Devuelve null si la especia no tiene match.
+function findProductoForEspecia(especiaRotacion, products) {
+  const alias = BLOG_ESPECIA_ALIASES[especiaRotacion];
+  if (!alias) return null;
+  // Buscar por nombre exacto (case-insensitive, sin acentos)
+  const normalize = s => String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const aliasNorm = normalize(alias);
+  return products.find(p => normalize(p.nombre) === aliasNorm) || null;
+}
 
 // ============ PLANTILLAS DE DISEÑO POR CATEGORÍA ============
 //
@@ -923,20 +978,18 @@ async function generateBlog(env, opts) {
   const existingTitles = existing.slice(-15).map(p => p.titulo).join(', ');
   log.push(`Blog existente: ${existing.length} posts`);
 
-  // Buscar si la especia principal del artículo existe en el catálogo por nombre.
-  // Si existe, lo usamos como "blend obligatorio" para que el artículo lo mencione.
-  // Esto garantiza que siempre haya al menos 1 enlace a la tienda.
-  // Ej: si el artículo es sobre "pimentón" pero en el catálogo se llama "Paprika",
-  // no vamos a encontrar el match. Por eso forzamos al modelo a usar el nombre exacto.
-  const especiaLower = tema.especia.toLowerCase();
-  const productoEspecia = products.find(p =>
-    p.nombre.toLowerCase().includes(especiaLower) ||
-    especiaLower.includes(p.nombre.toLowerCase().split(' ')[0])
-  );
+  // Buscar el producto del catálogo que corresponde a la especia del artículo.
+  // Usamos BLOG_ESPECIA_ALIASES para mapear el nombre de rotación al nombre
+  // EXACTO del catálogo. Esto garantiza que el enlace siempre vaya al producto
+  // correcto, incluso cuando el nombre no coincide literalmente.
+  // Ej: 'pimentón' → 'Paprika' (en inglés en el catálogo)
+  //     'ají' → 'Ají Andino' (es un blend)
+  //     'pimienta negra' → 'Pimienta Negra en Bayas' (preferimos la en bayas)
+  const productoEspecia = findProductoForEspecia(tema.especia, products);
   if (productoEspecia) {
-    log.push(`Producto de la especia principal encontrado: "${productoEspecia.nombre}" (ID ${productoEspecia.id})`);
+    log.push(`Producto de la especia principal: "${productoEspecia.nombre}" (ID ${productoEspecia.id}) — enlace garantizado`);
   } else {
-    log.push(`AVISO: la especia "${tema.especia}" no está en el catálogo. El artículo puede no tener enlaces a la tienda.`);
+    log.push(`AVISO: la especia "${tema.especia}" no tiene producto en catálogo. Se usará fallback.`);
   }
 
   // 4. Prompt dinámico por categoría
@@ -964,10 +1017,14 @@ async function generateBlog(env, opts) {
     '=== REGLA CRÍTICA: MENCIÓN DE BLENDS DEL CATÁLOGO ===\n' +
     'En el cierre "Para llevar a tu cocina" DEBES mencionar al menos 1 producto del catálogo de arriba,\n' +
     'USANDO SU NOMBRE EXACTO tal como aparece en la lista.\n' +
-    'Por ejemplo: "Te recomendamos probar nuestro Paprika en tus próximos adobos" (nombre exacto del catálogo).\n' +
-    (productoEspecia ? `Para este artículo, te sugiero mencionar especialmente: "${productoEspecia.nombre}" (ID ${productoEspecia.id}).\n` : '') +
-    'NO inventes nombres de productos que no estén en el catálogo de arriba.\n' +
-    'NO uses sinónimos (si el catálogo dice "Paprika", no escribas "Pimentón" en el texto — usa "Paprika" exacto).\n\n' +
+    (productoEspecia
+      ? `OBLIGATORIO: el artículo es sobre "${tema.especia}". En el cierre "Para llevar a tu cocina"\n` +
+        `DEBES mencionar EXACTAMENTE el producto "${productoEspecia.nombre}" (ID ${productoEspecia.id}) del catálogo de arriba.\n` +
+        `Ejemplo: "Te recomendamos probar nuestro ${productoEspecia.nombre} en tus próximos adobos".\n` +
+        `NO menciones otro producto distinto de "${productoEspecia.nombre}" en el cierre.\n` +
+        `NO uses sinónimos: si el catálogo dice "${productoEspecia.nombre}", escribe "${productoEspecia.nombre}" EXACTO en el texto.\n\n`
+      : 'NO inventes nombres de productos que no estén en el catálogo de arriba.\n' +
+        'NO uses sinónimos (si el catálogo dice "Paprika", no escribas "Pimentón" en el texto — usa "Paprika" exacto).\n\n') +
     '=== REGLAS CRÍTICAS DE HTML ===\n' +
     '1. NO incluyas <style>, <script>, <div>, <span>, <section>, <article>, <header>, <footer>.\n' +
     '2. NO agregues clases CSS ni atributos style="". El diseño visual lo maneja el sistema automáticamente según la categoría.\n' +
@@ -1058,23 +1115,40 @@ async function generateBlog(env, opts) {
   articulo.contenido = linkResult.html;
   log.push(`Enlaces a blends insertados: ${linkResult.linksInserted} (${linkResult.productosEnlazados.join(', ') || 'ninguno'})`);
 
-  // 7b. FALLBACK: si después del post-procesamiento no hay NINGÚN enlace a
-  //     la tienda, inyectamos manualmente al final del contenido un enlace
-  //     al producto de la especia protagonista (si existe en el catálogo).
-  //     Esto garantiza que SIEMPRE haya al menos 1 CTA a la tienda.
-  if (linkResult.linksInserted === 0 && productoEspecia) {
-    const enlaceInyectado = `<h2>Para llevar a tu cocina</h2><p>Si te interesa explorar el sabor de ${tema.especia} en tus preparaciones, te recomendamos probar nuestro <a href="#" onclick="openDetail(${productoEspecia.id});return false">${productoEspecia.nombre}</a>, disponible en nuestra tienda online con envíos a toda Colombia.</p>`;
-    // Quitar el cierre "Para llevar a tu cocina" que pudo haber escrito el modelo
-    // (sin enlaces), y agregar el nuestro con enlace.
-    articulo.contenido = articulo.contenido.replace(
-      /<h2>Para llevar a tu cocina<\/h2>[^<]*(?:<[^>]+>[^<]*<\/[^>]+>[^<]*)*/i,
-      enlaceInyectado
-    );
-    // Si no había cierre, lo agregamos al final
-    if (!articulo.contenido.includes('Para llevar a tu cocina')) {
-      articulo.contenido += enlaceInyectado;
+  // 7b. VALIDACIÓN DE ENLACES: si el artículo tiene enlaces a productos del
+  //     catálogo pero NO incluyen el producto de la especia principal,
+  //     reemplazamos el cierre "Para llevar a tu cocina" por uno que SÍ
+  //     enlaza al producto correcto.
+  //
+  //     Ej: si el artículo es sobre "cacao" pero el modelo enlazó a
+  //     "Chimichurri Argentino" (no tiene nada que ver), reemplazamos el
+  //     cierre por uno que enlaza al producto de cacao correcto.
+  //
+  //     Si la especia no tiene producto en catálogo (productoEspecia=null),
+  //     dejamos los enlaces que el modelo haya puesto.
+  if (productoEspecia) {
+    const productoCorrectoEnlazado = linkResult.productosEnlazados.includes(productoEspecia.nombre);
+
+    if (!productoCorrectoEnlazado) {
+      // El producto de la especia principal NO está enlazado.
+      // Reemplazamos el cierre "Para llevar a tu cocina" por uno que SÍ lo enlaza.
+      const enlaceCorrecto = `<h2>Para llevar a tu cocina</h2><p>Si te interesa explorar el sabor de ${tema.especia} en tus preparaciones, te recomendamos probar nuestro <a href="#" onclick="openDetail(${productoEspecia.id});return false">${productoEspecia.nombre}</a>, disponible en nuestra tienda online con envíos a toda Colombia.</p>`;
+
+      // Quitar cualquier enlace a productos que NO sea el de la especia principal
+      // en el cierre "Para llevar a tu cocina". El regex busca el cierre completo
+      // y lo reemplaza por el nuestro.
+      const regexCierre = /<h2>Para llevar a tu cocina<\/h2>[\s\S]*?(?=<h2|$)/i;
+      if (regexCierre.test(articulo.contenido)) {
+        articulo.contenido = articulo.contenido.replace(regexCierre, enlaceCorrecto);
+        log.push(`Cierre reemplazado: enlace a ${linkResult.productosEnlazados.join(', ')} → "${productoEspecia.nombre}" (producto de la especia principal)`);
+      } else {
+        // No había cierre, lo agregamos al final
+        articulo.contenido += enlaceCorrecto;
+        log.push(`Cierre agregado al final con enlace a "${productoEspecia.nombre}" (producto de la especia principal)`);
+      }
+    } else {
+      log.push(`Producto de la especia principal ya enlazado correctamente: "${productoEspecia.nombre}"`);
     }
-    log.push(`Enlace inyectado manualmente a "${productoEspecia.nombre}" (ID ${productoEspecia.id}) — fallback por falta de enlaces automáticos`);
   }
 
   // 8. Dry-run: parar aquí
