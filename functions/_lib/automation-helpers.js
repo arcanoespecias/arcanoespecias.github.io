@@ -923,6 +923,22 @@ async function generateBlog(env, opts) {
   const existingTitles = existing.slice(-15).map(p => p.titulo).join(', ');
   log.push(`Blog existente: ${existing.length} posts`);
 
+  // Buscar si la especia principal del artículo existe en el catálogo por nombre.
+  // Si existe, lo usamos como "blend obligatorio" para que el artículo lo mencione.
+  // Esto garantiza que siempre haya al menos 1 enlace a la tienda.
+  // Ej: si el artículo es sobre "pimentón" pero en el catálogo se llama "Paprika",
+  // no vamos a encontrar el match. Por eso forzamos al modelo a usar el nombre exacto.
+  const especiaLower = tema.especia.toLowerCase();
+  const productoEspecia = products.find(p =>
+    p.nombre.toLowerCase().includes(especiaLower) ||
+    especiaLower.includes(p.nombre.toLowerCase().split(' ')[0])
+  );
+  if (productoEspecia) {
+    log.push(`Producto de la especia principal encontrado: "${productoEspecia.nombre}" (ID ${productoEspecia.id})`);
+  } else {
+    log.push(`AVISO: la especia "${tema.especia}" no está en el catálogo. El artículo puede no tener enlaces a la tienda.`);
+  }
+
   // 4. Prompt dinámico por categoría
   //    El CSS se inyecta después (generateBlogCSS) según la categoría.
   //    Gemini solo genera HTML semántico (p, h2, h3, blockquote, ul/ol).
@@ -930,7 +946,7 @@ async function generateBlog(env, opts) {
   const prompt = 'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias (tienda colombiana online).\n' +
     'Escribes en ESPAÑOL NEUTRO INTERNACIONAL (no voseo, no "vos"). Usas "tú" y "tienes".\n' +
     'Tono: narrativo, cercano, didáctico, experto pero accesible.\n\n' +
-    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos cuando menciones):\n' + productContext + '\n\n' +
+    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres EXACTOS cuando menciones un producto):\n' + productContext + '\n\n' +
     '=== INSTRUCCION DE KEYWORDS ===\n' +
     '1. Identifica 5-8 keywords del mercado de especias online en Colombia.\n' +
     '2. Integra las keywords de forma SUTIL y NATURAL en el contenido.\n' +
@@ -943,8 +959,15 @@ async function generateBlog(env, opts) {
     '  - 2-3 <h2> subtítulos con el contenido desarrollado debajo\n' +
     '  - 1 <blockquote> con una frase destacada o cita interesante\n' +
     '  - Opcional: 1 <ul> o <ol> con lista útil\n' +
-    '  - Cierre con <h2>Para llevar a tu cocina</h2> que menciona 1-2 blends del catálogo\n' +
+    '  - Cierre OBLIGATORIO con <h2>Para llevar a tu cocina</h2>\n' +
     'TOTAL: entre 600 y 800 palabras.\n\n' +
+    '=== REGLA CRÍTICA: MENCIÓN DE BLENDS DEL CATÁLOGO ===\n' +
+    'En el cierre "Para llevar a tu cocina" DEBES mencionar al menos 1 producto del catálogo de arriba,\n' +
+    'USANDO SU NOMBRE EXACTO tal como aparece en la lista.\n' +
+    'Por ejemplo: "Te recomendamos probar nuestro Paprika en tus próximos adobos" (nombre exacto del catálogo).\n' +
+    (productoEspecia ? `Para este artículo, te sugiero mencionar especialmente: "${productoEspecia.nombre}" (ID ${productoEspecia.id}).\n` : '') +
+    'NO inventes nombres de productos que no estén en el catálogo de arriba.\n' +
+    'NO uses sinónimos (si el catálogo dice "Paprika", no escribas "Pimentón" en el texto — usa "Paprika" exacto).\n\n' +
     '=== REGLAS CRÍTICAS DE HTML ===\n' +
     '1. NO incluyas <style>, <script>, <div>, <span>, <section>, <article>, <header>, <footer>.\n' +
     '2. NO agregues clases CSS ni atributos style="". El diseño visual lo maneja el sistema automáticamente según la categoría.\n' +
@@ -1034,6 +1057,25 @@ async function generateBlog(env, opts) {
   const linkResult = linkBlendMentions(articulo.contenido, productosParaEnlazar);
   articulo.contenido = linkResult.html;
   log.push(`Enlaces a blends insertados: ${linkResult.linksInserted} (${linkResult.productosEnlazados.join(', ') || 'ninguno'})`);
+
+  // 7b. FALLBACK: si después del post-procesamiento no hay NINGÚN enlace a
+  //     la tienda, inyectamos manualmente al final del contenido un enlace
+  //     al producto de la especia protagonista (si existe en el catálogo).
+  //     Esto garantiza que SIEMPRE haya al menos 1 CTA a la tienda.
+  if (linkResult.linksInserted === 0 && productoEspecia) {
+    const enlaceInyectado = `<h2>Para llevar a tu cocina</h2><p>Si te interesa explorar el sabor de ${tema.especia} en tus preparaciones, te recomendamos probar nuestro <a href="#" onclick="openDetail(${productoEspecia.id});return false">${productoEspecia.nombre}</a>, disponible en nuestra tienda online con envíos a toda Colombia.</p>`;
+    // Quitar el cierre "Para llevar a tu cocina" que pudo haber escrito el modelo
+    // (sin enlaces), y agregar el nuestro con enlace.
+    articulo.contenido = articulo.contenido.replace(
+      /<h2>Para llevar a tu cocina<\/h2>[^<]*(?:<[^>]+>[^<]*<\/[^>]+>[^<]*)*/i,
+      enlaceInyectado
+    );
+    // Si no había cierre, lo agregamos al final
+    if (!articulo.contenido.includes('Para llevar a tu cocina')) {
+      articulo.contenido += enlaceInyectado;
+    }
+    log.push(`Enlace inyectado manualmente a "${productoEspecia.nombre}" (ID ${productoEspecia.id}) — fallback por falta de enlaces automáticos`);
+  }
 
   // 8. Dry-run: parar aquí
   if (dryRun) {
