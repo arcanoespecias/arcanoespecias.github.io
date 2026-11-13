@@ -29,128 +29,79 @@ async function getGeminiKey(env) {
   return null;
 }
 
-// ============ Z.AI IMAGE API ============
+// ============ Z.AI IMAGE API (vía Cloudflare Workers AI) ============
 //
-// Genera una imagen usando el endpoint de Z.ai (z-ai-web-dev-sdk compatible).
-// Z.ai responde en 2-5s vs 10-15s de Cloudflare Workers AI, y tiene mejor
-// calidad para composiciones complejas (mejor respeta la consigna de
-// "zona izquierda limpia" del brief editorial).
-//
-// Autenticación: usa ZAI_TOKEN (JWT) + ZAI_BASE_URL configurados en env vars.
-// Si no están configurados, cae al fallback de Workers AI.
+// Genera una imagen usando Cloudflare Workers AI (flux-1-schnell).
+// El API interna de Z.ai (internal-api.z.ai) NO es accesible desde
+// Cloudflare Pages (error 530/1016), así que usamos el endpoint
+// /api/generar-imagen que ya existe y usa CF_ACCOUNT_ID + CF_API_TOKEN.
 //
 // Devuelve: { ok, image: dataUri } donde dataUri es
-// "data:image/png;base64,..." listo para subir a GitHub.
+// "data:image/jpeg;base64,..." listo para subir a GitHub.
 async function callZaiImage(env, prompt, opts) {
-  if (!env?.ZAI_TOKEN || !env?.ZAI_BASE_URL) {
-    throw new Error('ZAI_TOKEN o ZAI_BASE_URL no configurados');
-  }
-
-  const url = env.ZAI_BASE_URL + '/images/generations';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer Z.ai',  // valor placeholder, el real va en X-Token
-    'X-Z-AI-From': 'Z',
-    'X-Token': env.ZAI_TOKEN
-  };
-  if (env.ZAI_CHAT_ID) headers['X-Chat-Id'] = env.ZAI_CHAT_ID;
-  if (env.ZAI_USER_ID) headers['X-User-Id'] = env.ZAI_USER_ID;
-
-  // Tamaños soportados por Z.ai image generation:
-  // 1024x1024, 768x1344, 864x1152, 1344x768, 1152x864, 1440x720, 720x1440
-  // Para el blog usamos 1344x768 (16:9 landscape, ideal para portada horizontal).
-  const body = {
-    prompt: prompt,
-    size: opts?.size || '1344x768'
-  };
-
-  const resp = await fetch(url, {
+  const resp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
     method: 'POST',
-    headers,
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
   });
 
   if (!resp.ok) {
     const errText = await resp.text();
-    const error = new Error(`Z.ai image ${resp.status}: ${errText.substring(0, 200)}`);
+    const error = new Error(`Workers AI image ${resp.status}: ${errText.substring(0, 200)}`);
     error.status = resp.status;
     throw error;
   }
 
   const data = await resp.json();
-  // El SDK devuelve: { data: [{ base64: "..." }] }
-  const base64 = data?.data?.[0]?.base64;
-  if (!base64) throw new Error('Z.ai no devolvió imagen (sin base64)');
+  if (!data.ok) throw new Error('Workers AI no devolvió imagen: ' + (data.error || 'desconocido'));
 
   return {
     ok: true,
-    image: 'data:image/png;base64,' + base64
+    image: data.image
   };
 }
 
-// ============ Z.AI CHAT API (para generar texto del blog) ============
+// ============ Z.AI CHAT API (vía Cloudflare Workers AI) ============
 //
-// Reemplaza a Gemini para generación de texto. Ventajas:
-//   - Latencia 0.5-2s vs Gemini 10-30s (o 503 saturado)
-//   - 99.9% disponibilidad (servicio propio de Z.ai)
-//   - Modelo GLM-4-Plus (capaz para tareas de redacción)
-//   - Sin timeouts de Cloudflare Pages (el flujo cabe en 100s)
+// Genera texto para el blog usando Cloudflare Workers AI (Llama 3.1 8B).
 //
-// Autenticación: ZAI_TOKEN (JWT) + ZAI_BASE_URL en env vars.
-// Fallback: si Z.ai falla, cae a Gemini (callGemini).
+// IMPORTANTE: el API interna de Z.ai (internal-api.z.ai) NO es accesible
+// públicamente desde Cloudflare Pages Functions (devuelve Cloudflare 530
+// con error 1016 "Origin DNS error"). Es un endpoint interno del sandbox.
 //
-// Devuelve: { text, source: 'zai' | 'gemini' }
+// Por eso usamos Cloudflare Workers AI como proveedor de texto:
+//   - Modelo: @cf/meta/llama-3.1-8b-instruct (rápido, bueno para español)
+//   - Latencia: 3-8s vs Gemini 10-30s (o 503 saturado)
+//   - Gratuito: 10,000 neuronas/día plan free (suficiente para 5-10 blog/día)
+//   - Siempre disponible (no como Gemini que se satura)
+//
+// Fallback: si Workers AI falla, cae a Gemini (5 modelos flash).
+//
+// Devuelve: { text, source: 'cf-workers-ai' | 'gemini' }
 async function callZaiChat(env, prompt, opts) {
-  if (!env?.ZAI_TOKEN || !env?.ZAI_BASE_URL) {
-    throw new Error('ZAI_TOKEN o ZAI_BASE_URL no configurados');
-  }
-
-  const url = env.ZAI_BASE_URL + '/chat/completions';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer Z.ai',
-    'X-Z-AI-From': 'Z',
-    'X-Token': env.ZAI_TOKEN
-  };
-  if (env.ZAI_CHAT_ID) headers['X-Chat-Id'] = env.ZAI_CHAT_ID;
-  if (env.ZAI_USER_ID) headers['X-User-Id'] = env.ZAI_USER_ID;
-
-  // Z.ai usa el formato OpenAI chat completions
-  // Nota: Z.ai NO soporta responseMimeType application/json nativamente como
-  // Gemini. Pero como le pedimos en el prompt que devuelva SOLO JSON válido,
-  // suele cumplir. Sanitizamos después con extractJSON.
-  const body = {
-    messages: [
-      {
-        role: 'user',
-        content: prompt
-      }
-    ],
-    stream: false,
-    thinking: { type: 'disabled' },
-    temperature: 0.8,
-    max_tokens: opts?.maxTokens || 8192
-  };
-
-  const resp = await fetch(url, {
+  // Llamar al endpoint /api/generar-texto (que usa CF_ACCOUNT_ID + CF_API_TOKEN
+  // configurados en Cloudflare Pages).
+  const resp = await fetch('https://arcanoespecias.com/api/generar-texto', {
     method: 'POST',
-    headers,
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: prompt,
+      max_tokens: opts?.maxTokens || 8192,
+      temperature: 0.8
+    })
   });
 
   if (!resp.ok) {
     const errText = await resp.text();
-    const error = new Error(`Z.ai chat ${resp.status}: ${errText.substring(0, 200)}`);
+    const error = new Error(`Cloudflare Workers AI ${resp.status}: ${errText.substring(0, 200)}`);
     error.status = resp.status;
     throw error;
   }
 
   const data = await resp.json();
-  // Formato OpenAI: { choices: [{ message: { content: "..." } }] }
-  const text = data?.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error('Z.ai no devolvió texto (sin content)');
+  if (!data.ok) throw new Error('Workers AI no devolvió texto: ' + (data.error || 'desconocido'));
 
-  return { text, source: 'zai' };
+  return { text: data.text, source: 'cf-workers-ai' };
 }
 
 // Genera texto para el blog (Z.ai primario, Gemini fallback).
