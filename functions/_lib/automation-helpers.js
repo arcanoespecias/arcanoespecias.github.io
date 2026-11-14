@@ -29,134 +29,6 @@ async function getGeminiKey(env) {
   return null;
 }
 
-// ============ Z.AI IMAGE API (eliminada) ============
-//
-// Antes generábamos imágenes con Z.ai/Workers AI automáticamente. Pero la
-// calidad era variable y el admin prefiere subirlas manualmente.
-// Si en el futuro se quiere volver a generar automático, el endpoint
-// /api/generar-imagen sigue existiendo y se puede llamar desde el admin.
-
-// ============ Z.AI CHAT API (vía Cloudflare Workers AI) ============
-//
-// Genera texto para el blog usando Cloudflare Workers AI (Llama 3.1 8B).
-//
-// IMPORTANTE: el API interna de Z.ai (internal-api.z.ai) NO es accesible
-// públicamente desde Cloudflare Pages Functions (devuelve Cloudflare 530
-// con error 1016 "Origin DNS error"). Es un endpoint interno del sandbox.
-//
-// Por eso usamos Cloudflare Workers AI como proveedor de texto:
-//   - Modelo: @cf/meta/llama-3.1-8b-instruct (rápido, bueno para español)
-//   - Latencia: 3-8s vs Gemini 10-30s (o 503 saturado)
-//   - Gratuito: 10,000 neuronas/día plan free (suficiente para 5-10 blog/día)
-//   - Siempre disponible (no como Gemini que se satura)
-//
-// Fallback: si Workers AI falla, cae a Gemini (5 modelos flash).
-//
-// Devuelve: { text, source: 'cf-workers-ai' | 'gemini' }
-async function callZaiChat(env, prompt, opts) {
-  // Llamar al endpoint /api/generar-texto (que usa CF_ACCOUNT_ID + CF_API_TOKEN
-  // configurados en Cloudflare Pages).
-  const resp = await fetch('https://arcanoespecias.com/api/generar-texto', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      prompt: prompt,
-      max_tokens: opts?.maxTokens || 8192,
-      temperature: 0.8
-    })
-  });
-
-  if (!resp.ok) {
-    const errText = await resp.text();
-    const error = new Error(`Cloudflare Workers AI ${resp.status}: ${errText.substring(0, 200)}`);
-    error.status = resp.status;
-    throw error;
-  }
-
-  const data = await resp.json();
-  if (!data.ok) throw new Error('Workers AI no devolvió texto: ' + (data.error || 'desconocido'));
-
-  return { text: data.text, source: 'cf-workers-ai' };
-}
-
-// Genera texto para el blog (Z.ai primario, Gemini fallback).
-// Devuelve { text, source: 'zai' | 'gemini' }.
-async function generateBlogText(env, prompt, opts) {
-  // 1. Intentar con Z.ai primero (siempre más rápido y disponible)
-  if (env?.ZAI_TOKEN && env?.ZAI_BASE_URL) {
-    try {
-      const result = await callZaiChat(env, prompt, opts);
-      return result;
-    } catch (e) {
-      console.warn('[chat] Z.ai falló:', e.message, '— cayendo a Gemini');
-    }
-  }
-
-  // 2. Fallback: Gemini (5 modelos flash con fallback automático)
-  const text = await callGemini(env, prompt, opts?.maxTokens || 8192, { json: true });
-  return { text, source: 'gemini' };
-}
-
-// (generateImageForBlog eliminado — el admin sube las imágenes manualmente)
-
-// Modelos Gemini en orden de preferencia (primario → fallback).
-// Si el primario da 503 (alta demanda), 429 (rate limit) o 404 (modelo
-// deprecado/no disponible), probamos el siguiente.
-//
-// Lista AMPLIADA con TODOS los modelos flash estables vigentes (Nov 2026):
-//   - gemini-3.8-flash: último flash estable (primario)
-//   - gemini-3.7-flash: fallback 1
-//   - gemini-3.6-flash: fallback 2
-//   - gemini-3.5-flash: fallback 3
-//   - gemini-flash-latest: alias que Google mantiene apuntando al último
-//     flash disponible. Última opción confiable.
-//
-// NOTA: gemini-2.5-flash y gemini-2.0-flash fueron deprecados por Google
-// (devuelven 404 aunque aparezcan en list-models). Los sacamos de la lista.
-// Cuando Google tiene picos de demanda, varios flash estables se saturan
-// a la vez, por eso conviene tener 5 opciones en la lista.
-const GEMINI_MODELS = [
-  'gemini-3.8-flash',
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-flash-latest'
-];
-
-// Llamada interna a un modelo específico de Gemini.
-// Devuelve { text, finishReason, model } o tira error con el status.
-async function _callGeminiModel(model, apiKey, body) {
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  if (!resp.ok) {
-    let errMsg = 'error desconocido';
-    try {
-      const err = await resp.json();
-      errMsg = err?.error?.message || errMsg;
-    } catch (e) { /* ignore */ }
-    const error = new Error(`Gemini ${resp.status}: ${errMsg}`);
-    error.status = resp.status;
-    error.model = model;
-    throw error;
-  }
-
-  const data = await resp.json();
-  const candidate = data?.candidates?.[0];
-  const text = candidate?.content?.parts?.[0]?.text?.trim();
-  if (!text) throw new Error('Gemini no devolvió texto (modelo: ' + model + ')');
-
-  return {
-    text,
-    finishReason: candidate?.finishReason,
-    model
-  };
-}
-
 async function callGemini(env, prompt, maxTokens, opts) {
   const apiKey = await getGeminiKey(env);
   if (!apiKey) throw new Error('No hay API key de Gemini. Configura GEMINI_API_KEY en env o guárdala en Firebase.');
@@ -175,53 +47,44 @@ async function callGemini(env, prompt, maxTokens, opts) {
     body.generationConfig.responseMimeType = 'application/json';
   }
 
-  // Probar modelos en orden. Si el primario da 503 (alta demanda) o 429
-  // (rate limit), caemos al siguiente. Otros errores (400, 500) se propagan.
-  let lastError = null;
-  for (const model of GEMINI_MODELS) {
-    try {
-      const result = await _callGeminiModel(model, apiKey, body);
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' + apiKey;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
 
-      // Detectar truncamiento: si finishReason es MAX_TOKENS, el JSON va a estar
-      // cortado a mitad de palabra y va a fallar el parse.
-      if (result.finishReason === 'MAX_TOKENS') {
-        throw new Error(`Gemini truncó la respuesta (finishReason=MAX_TOKENS, maxOutputTokens=${maxTokens || 4000}, modelo=${model}). Subí maxTokens o reducí el tamaño del contenido pedido.`);
-      }
-
-      return result.text;
-    } catch (e) {
-      lastError = e;
-      // Errores recuperables (probar siguiente modelo):
-      //   404 = modelo deprecado/no disponible (ej: gemini-2.5-flash fue removido)
-      //   429 = rate limit
-      //   500/502/503/504 = server errors temporales (alta demanda, overload)
-      // Errores NO recuperables (se propagan inmediatamente):
-      //   400 = bad request (prompt inválido) — no tiene sentido reintentar
-      //   401/403 = auth problem — no tiene sentido reintentar
-      const recoverable = [404, 429, 500, 502, 503, 504].includes(e.status);
-      if (!recoverable) throw e;
-      // Si fue recuperable, seguimos al siguiente modelo
-      console.warn(`[gemini] Modelo ${model} falló (${e.status}), probando fallback...`);
-    }
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(`Gemini ${resp.status}: ${err?.error?.message || 'error desconocido'}`);
   }
 
-  // Si llegamos acá, todos los modelos fallaron con errores recuperables.
-  throw new Error(`Todos los modelos de Gemini fallaron (503/429). Último error: ${lastError?.message || 'desconocido'}. Intentá de nuevo en unos minutos.`);
+  const data = await resp.json();
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.[0]?.text?.trim();
+  if (!text) throw new Error('Gemini no devolvió texto');
+
+  // Detectar truncamiento: si finishReason es MAX_TOKENS, el JSON va a estar
+  // cortado a mitad de palabra y va a fallar el parse. Mejor tirar error claro
+  // para que el caller pueda reintentar con más tokens o un prompt más corto.
+  const finishReason = candidate?.finishReason;
+  if (finishReason === 'MAX_TOKENS') {
+    throw new Error(`Gemini truncó la respuesta (finishReason=MAX_TOKENS, maxOutputTokens=${maxTokens || 4000}). Subí maxTokens o reducí el tamaño del contenido pedido.`);
+  }
+
+  return text;
 }
 
 function extractJSON(text) {
-  // Defensivo: asegurar que sea string. Si viene undefined/null/object,
-  // lo convertimos a string para que no explote indexOf.
-  if (text === undefined || text === null) {
-    throw new Error('JSON inválido: texto vacío (undefined/null)');
-  }
-  let s = typeof text === 'string' ? text : JSON.stringify(text);
+  let s = text;
   const js = s.indexOf('{');
   const je = s.lastIndexOf('}');
   if (js !== -1 && je > js) s = s.substring(js, je + 1);
   try { return JSON.parse(s); }
   catch (e) {
     try { return JSON.parse(s.replace(/'/g, '"')); }
+    // Mostrar más del texto para diagnóstico: dónde se cortó el JSON.
+    // Antes solo mostrábamos 150 chars, lo que no servía para ver si estaba truncado.
     catch (e2) {
       const tail = s.length > 200 ? '...' + s.substring(s.length - 200) : s;
       throw new Error('JSON inválido (longitud=' + s.length + '). Inicio: "' + s.slice(0, 80) + '". Final: "' + tail + '"');
@@ -386,82 +249,28 @@ function nextRecipeCategory(state) {
 }
 
 // Rotación de categorías para blog.
-// IMPORTANTE: deben coincidir EXACTAMENTE con las categorías que maneja el
-// admin del blog (admin/js/pages.js → renderBlogAdmin): 
-//   Historias, Beneficios, Investigaciones, Curiosidades, Origenes
+// Cada categoría tiene una "consigna" que se le pasa a Gemini como dirección
+// temática. Rotamos en círculo para no repetir tipo de artículo consecutivo.
+// IMPORTANTE: deben coincidir con las categorías que maneja el admin del blog
+// (admin/js/pages.js: blog categorias) y la tienda.
 const BLOG_CATEGORIAS = [
-  { categoria: 'Historias',       consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias. Transmitir descubrimiento, tradición y relatos fascinantes.' },
-  { categoria: 'Beneficios',     consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural. Transmitir bienestar, naturaleza y conocimiento. Evitar representaciones médicas.' },
-  { categoria: 'Investigaciones', consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares. Transmitir rigor, investigación y conocimiento. Evitar apariencia de laboratorio farmacéutico genérico.' },
-  { categoria: 'Curiosidades',   consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas. Despertar curiosidad inmediatamente.' },
-  { categoria: 'Origenes',       consigna: 'Enfócate en origen y procedencia geográfica: rutas comerciales, regiones productoras, elementos culturales del lugar de origen, patrimonio gastronómico. Transmitir autenticidad, procedencia y patrimonio gastronómico.' }
+  { categoria: 'Historia',     consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias.' },
+  { categoria: 'Curiosidades', consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas.' },
+  { categoria: 'Ciencia',     consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares.' },
+  { categoria: 'Beneficios',  consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural.' },
+  { categoria: 'Cocina',     consigna: 'Enfócate en uso culinario: cómo combinar la especia, con qué ingredientes casa, técnicas de uso, errores comunes, maridajes, cocina internacional y regional.' }
 ];
 
 // Lista de especias base que el sistema va rotando dentro de cada categoría,
 // para que cada artículo sea sobre una especia diferente y no se repita.
 // Se van rotando: si la última vez fue "pimienta negra", ahora es "canela",
 // luego "cúrcuma", etc.
-// Lista de especias base que el sistema va rotando dentro de cada categoría.
-// IMPORTANTE: cada especia tiene que tener un match en el catálogo de la tienda,
-// así el artículo siempre tiene un enlace al producto correcto.
-// Si una especia no está en el catálogo, NO la incluimos acá (sino el artículo
-// quedaría sin enlace relevante a la tienda).
-//
-// El match se hace con BLOG_ESPECIA_ALIASES (más abajo) que mapea el nombre
-// de rotación al nombre EXACTO del catálogo.
 const BLOG_ESPECIAS = [
-  'pimienta negra',
-  'canela',
-  'cúrcuma',
-  'jengibre',
-  'ají',
-  'pimentón',
-  'cardamomo',
-  'clavo',
-  'fenogreco',
-  'mostaza',
-  'ajo',
-  'hinojo',
-  'coreandro'
+  'pimienta negra', 'canela', 'cúrcuma', 'jengibre', 'ají/capsaicina',
+  'pimentón', 'cacao', 'comino', 'cardamomo', 'clavo', 'nuez moscada',
+  'azafrán', 'comino negro', 'fenogreco', 'sumac', 'zaatar', 'baharat',
+  'ras el hanout', 'garam masala', 'curry'
 ];
-
-// Mapa de especia (rotación del blog) → nombre EXACTO del producto en el
-// catálogo de Firebase. Esto es necesario porque:
-//   - El blog rota "pimentón" pero el catálogo tiene "Paprika"
-//   - El blog rota "ají" pero el catálogo tiene "Ají Andino" (es un blend)
-//   - El blog rota "pimienta negra" pero el catálogo tiene 2 productos
-//     ("Pimienta Negra en Bayas" y "Pimienta Negra molida")
-//
-// IMPORTANTE: TODAS las especias en BLOG_ESPECIAS tienen que tener un alias
-// acá (no null), sino el sistema no va a saber qué producto enlazar.
-const BLOG_ESPECIA_ALIASES = {
-  'pimienta negra': 'Pimienta Negra en Bayas',  // ID 45 (preferimos la en bayas)
-  'canela':          'Canela',                    // ID 6
-  'cúrcuma':         'Cúrcuma',                   // ID 13
-  'jengibre':        'Jengibre',                  // ID 18
-  'ají':             'Ají Andino',                // ID 11 (blend)
-  'pimentón':        'Paprika',                   // ID 42 (en inglés pero es pimentón)
-  'cardamomo':       'Cardamomo',                 // ID 7
-  'clavo':           'Clavo',                     // ID 10
-  'fenogreco':       'Fenogreco',                 // ID 46
-  'mostaza':         'Mostaza',                   // ID 28
-  'ajo':             'Ajo',                       // ID 1
-  'hinojo':          'Hinojo',                    // ID 17
-  'coreandro':       'Coreandro'                  // ID 56
-};
-
-// Devuelve el producto del catálogo que corresponde a la especia de rotación.
-// Usa BLOG_ESPECIA_ALIASES para mapear el nombre de rotación al nombre del catálogo.
-// Devuelve null si la especia no tiene match.
-function findProductoForEspecia(especiaRotacion, products) {
-  const alias = BLOG_ESPECIA_ALIASES[especiaRotacion];
-  if (!alias) return null;
-  // Buscar por nombre exacto (case-insensitive, sin acentos)
-  const normalize = s => String(s || '').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-  const aliasNorm = normalize(alias);
-  return products.find(p => normalize(p.nombre) === aliasNorm) || null;
-}
 
 // ============ PLANTILLAS DE DISEÑO POR CATEGORÍA ============
 //
@@ -473,14 +282,14 @@ function findProductoForEspecia(especiaRotacion, products) {
 // El CSS es FIJO en el código (no lo genera Gemini). Gemini solo genera
 // contenido HTML semántico (p, h2, h3, blockquote, ul/ol, etc.) y el CSS
 // de la categoría correspondiente se inyecta al publicar. Esto garantiza
-// consistencia visual: todos los artículos de "Historias" se ven iguales
+// consistencia visual: todos los artículos de "Historia" se ven iguales
 // sin importar qué devuelva Gemini.
 //
 // Las 5 categorías tienen paletas MUY distintas entre sí, todas con
-// fondos claros (legibles, SEO-friendly) y acentos que las diferencian.
+// fondos claros (legibles,的现代SEO) y acentos que las diferencian.
 const BLOG_TEMPLATES = {
-  Historias: {
-    nombre: 'Historias',
+  Historia: {
+    nombre: 'Historia',
     descripcion: 'Pergamino antiguo',
     // Paleta: tonos tierra, marrón cuero, dorado
     bg: '#f4ecd8',           // crema envejecido (pergamino)
@@ -492,37 +301,8 @@ const BLOG_TEMPLATES = {
     badgeBg: '#3a2a1a',
     badgeText: '#f4ecd8',
     headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif'
-  },
-  Beneficios: {
-    nombre: 'Beneficios',
-    descripcion: 'Bienestar natural',
-    // Paleta: verde menta suave + rosa terracota
-    bg: '#f5f0e8',
-    bgAccent: '#e8f0e4',
-    textPrimary: '#2a3d2e',
-    textSecondary: '#6b7d6e',
-    accent: '#52b788',       // verde menta
-    accentSoft: '#95d5b2',
-    badgeBg: '#e07a5f',      // rosa terracota (diferenciador)
-    badgeText: '#f5f0e8',
-    headingFont: '"Mulish", "Source Sans Pro", system-ui, sans-serif',
-    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif'
-  },
-  Investigaciones: {
-    nombre: 'Investigaciones',
-    descripcion: 'Laboratorio botánico',
-    // Paleta: verde botánico + azul eléctrico
-    bg: '#f0f4f0',
-    bgAccent: '#e0eae0',
-    textPrimary: '#1a2d1f',
-    textSecondary: '#4a5d52',
-    accent: '#2d5a3d',       // verde botánico
-    accentSoft: '#7ab594',
-    badgeBg: '#0077b6',      // azul eléctrico (diferenciador)
-    badgeText: '#f0f4f0',
-    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
-    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif'
+    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(58,42,26,.65) 0%, rgba(201,168,76,.35) 100%)'
   },
   Curiosidades: {
     nombre: 'Curiosidades',
@@ -537,12 +317,45 @@ const BLOG_TEMPLATES = {
     badgeBg: '#e85d04',
     badgeText: '#fff8f0',
     headingFont: '"Poppins", "Montserrat", system-ui, sans-serif',
-    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif'
+    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(232,93,4,.55) 0%, rgba(0,180,216,.35) 100%)'
   },
-  Origenes: {
-    nombre: 'Origenes',
-    descripcion: 'Exploración geográfica',
-    // Paleta: terracota + mostaza (tierras lejanas)
+  Ciencia: {
+    nombre: 'Ciencia',
+    descripcion: 'Laboratorio botánico',
+    // Paleta: verde botánico + azul eléctrico
+    bg: '#f0f4f0',
+    bgAccent: '#e0eae0',
+    textPrimary: '#1a2d1f',
+    textSecondary: '#4a5d52',
+    accent: '#2d5a3d',       // verde botánico
+    accentSoft: '#7ab594',
+    badgeBg: '#0077b6',      // azul eléctrico (diferenciador)
+    badgeText: '#f0f4f0',
+    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
+    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(45,90,61,.6) 0%, rgba(0,119,182,.35) 100%)'
+  },
+  Beneficios: {
+    nombre: 'Beneficios',
+    descripcion: 'Bienestar natural',
+    // Paleta: verde menta suave + rosa terracota
+    bg: '#f5f0e8',
+    bgAccent: '#e8f0e4',
+    textPrimary: '#2a3d2e',
+    textSecondary: '#6b7d6e',
+    accent: '#52b788',       // verde menta
+    accentSoft: '#95d5b2',
+    badgeBg: '#e07a5f',      // rosa terracota (diferenciador)
+    badgeText: '#f5f0e8',
+    headingFont: '"Mulish", "Source Sans Pro", system-ui, sans-serif',
+    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(82,183,136,.45) 0%, rgba(224,122,95,.35) 100%)'
+  },
+  Cocina: {
+    nombre: 'Cocina',
+    descripcion: 'Cocina rústica',
+    // Paleta: rojo terracota + mostaza
     bg: '#fdf6e3',
     bgAccent: '#f5e6c8',
     textPrimary: '#3a1f1a',
@@ -552,13 +365,14 @@ const BLOG_TEMPLATES = {
     badgeBg: '#d4a017',      // mostaza (diferenciador)
     badgeText: '#3a1f1a',
     headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-    bodyFont: 'Merriweather, "Lora", Georgia, serif'
+    bodyFont: 'Merriweather, "Lora", Georgia, serif',
+    heroOverlay: 'linear-gradient(135deg, rgba(193,67,46,.55) 0%, rgba(212,160,23,.35) 100%)'
   }
 };
 
-// Devuelve el template de una categoría. Si no existe, usa Historias como fallback.
+// Devuelve el template de una categoría. Si no existe, usa Historia como fallback.
 function getBlogTemplate(categoria) {
-  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historias;
+  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historia;
 }
 
 // Genera el CSS completo de un artículo según su categoría.
@@ -626,96 +440,6 @@ function generateBlogIndexCategoryColors() {
 // Slug de categoría para usar como clase CSS
 function catToClass(categoria) {
   return String(categoria || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-// ============ BRIEF DE IMAGEN EDITORIAL POR CATEGORÍA ============
-//
-// Brief maestro para generar las portadas del blog Arcano.
-// Sistema de identidad visual consistente: cada portada debe pertenecer a la
-// MISMA colección editorial.
-//
-// IMPORTANTE: la imagen generada es 100% FOTOGRÁFICA SIN TEXTO.
-// El texto (ARCANO + título + cursiva dorada + subtítulo) se compone
-// DESPUÉS por HTML/CSS encima de la imagen, garantizando:
-//   - Cero letras deformadas
-//   - Tipografía consistente (Playfair Display + Montserrat)
-//   - SEO (H1 como texto real)
-//   - Responsive + accesibilidad
-//
-// El prompt debe producir una imagen con la zona izquierda 100% limpia
-// (solo fondo charcoal) para que el texto se renderice encima con
-// máxima legibilidad.
-const BLOG_IMAGE_BRIEF = {
-  base: `Cinematic gastronomic photograph. Composition split in two zones, separated by smooth natural light falloff (NOT a hard line):
-
-LEFT 35% OF THE IMAGE (the first 470 pixels from the left edge):
-- COMPLETELY EMPTY dark charcoal #11100E background.
-- NO objects of any kind. NO spices, NO props, NO ingredients, NO decorations.
-- NO text, NO letters, NO words, NO numbers, NO labels.
-- Just smooth dark charcoal with subtle stone texture, barely visible.
-- This zone must be 100% clean — it will receive text overlay later.
-- Think of it as a 'negative space' for typography.
-
-RIGHT 65% OF THE IMAGE (the remaining 874 pixels):
-- Hyperrealistic photograph of the article's main subject (spice/ingredient).
-- Professional advertising quality, depth of field, sharp focus on the main subject.
-- Warm cinematic directional lighting from the upper right.
-- Deep controlled shadows extending leftward (but stopping before the clean left zone).
-- Gold reflections and accents (#D99B27) for elegance, NOT bright metallic.
-
-TRANSITION ZONE (between 35% and 45% of the image width):
-- Smooth gradient from the dark empty left to the rich photographic right.
-- Natural light falloff, looks like the photo fades into darkness.
-- DO NOT put any objects in this transition zone either — let it be smooth gradient.
-
-OFFICIAL COLOR PALETTE (use EXCLUSIVELY):
-- Charcoal black #11100E (must DOMINATE composition, especially in the left zone)
-- Deep coffee #392619 (subtle accents)
-- Primary gold #D99B27 (reflections, accents, NOT bright metallic)
-- Secondary gold #C99736
-- Natural spice colors can complement but NEVER break the chromatic identity.
-
-PHOTOGRAPHIC DIRECTION:
-- Hyperrealistic photography
-- Professional advertising quality
-- Warm cinematic directional lighting
-- Deep controlled shadows
-- Natural detailed textures
-- Professional depth of field
-- Elegant contrasts between charcoal, gold and natural spice tones
-- AVOID generic stock images, childish illustrations, artificial renders, overloaded compositions
-
-ABSOLUTE RESTRICTIONS:
-- NO text, NO letters, NO words, NO numbers, NO typography of any kind anywhere in the image
-- NO logos, NO watermarks, NO labels, NO frames, NO borders
-- NO handwritten or 3D fonts
-- NO multicolor gradients, NO neon colors, NO predominantly white backgrounds
-- The image must be EXCLUSIVELY photographic
-- The LEFT 35% must be visually clean and 100% empty of objects
-- DO NOT place any objects, props, ingredients or decorations in the left 35%
-
-FINAL RESULT: A luxury gastronomic magazine cover photograph with a clean dark left zone ready for elegant typography overlay. Hyperrealistic, cinematic, sophisticated.`,
-
-  Historias: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): HISTORIAS — Historical and narrative aesthetic.
-The RIGHT ZONE subject should incorporate antique books, old maps, compasses, navigation instruments, cultural objects and the spices that the article is about. Convey storytelling, tradition and discovery. The visual mood should evoke a vintage apothecary or a 19th century botanical expedition.`,
-
-  Beneficios: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): BENEFICIOS — Botanical and sensorial aesthetic.
-The RIGHT ZONE subject should use roots, leaves, flowers, fresh spices and botanical ingredients. Convey nature, wellness and knowledge. AVOID medical visual claims (no pills, no pharmacy look, no clinical white). The mood should be calm, organic, spa-like.`,
-
-  Investigaciones: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): INVESTIGACIONES — Scientific and editorial aesthetic.
-The RIGHT ZONE subject should incorporate glassware, microscopy, lab elements, botanical samples and the spices. Convey rigor, research and knowledge. AVOID generic pharmaceutical lab appearance (no sterile white lab, no pills). The mood should be editorial scientific journal, dark and moody with golden highlights.`,
-
-  Curiosidades: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): CURIOSIDADES — Dynamic and surprising aesthetic.
-The RIGHT ZONE subject should use macro photography, suspended spice particles, spices in motion, textures and unusual perspectives. Awaken curiosity and interest immediately. Dynamic composition with frozen motion, particles floating, dramatic angles.`,
-
-  Origenes: `CATEGORY DIRECTION (adapts only the photography subject, NOT the layout): ORIGENES — Geographic and cultural exploration aesthetic.
-The RIGHT ZONE subject should incorporate old maps, trade routes, compasses, cultural elements and representative spices of each region. Convey provenance, exploration and gastronomic heritage. The mood should evoke a 16th century spice trade expedition.`
-};
-
-// Devuelve el brief completo (base + categoría) para una categoría dada.
-function getBlogImageBrief(categoria) {
-  const cat = BLOG_IMAGE_BRIEF[categoria] || BLOG_IMAGE_BRIEF.Historias;
-  return BLOG_IMAGE_BRIEF.base + '\n\n' + cat;
 }
 
 function nextBlogTema(state) {
@@ -960,37 +684,22 @@ async function generateRecipe(env, opts) {
 
 async function generateBlog(env, opts) {
   const dryRun = opts?.dryRun;
-  const ctx = opts?.ctx;  // Cloudflare context para ctx.waitUntil (fire-and-forget)
   const log = [];
 
-  // 1. Estado + catálogo + blog existente EN PARALELO (3 lecturas simultáneas)
-  log.push('Cargando estado, catálogo y blog existente en paralelo...');
-  const [state, products, existing] = await Promise.all([
-    getAutomationState(env),
-    loadCatalog(env),
-    loadExistingBlog(env)
-  ]);
+  // 1. Estado + tema (categoría + especia rotadas)
+  const state = await getAutomationState(env);
   const tema = nextBlogTema(state);
   log.push(`Categoría rotación: ${tema.categoria} (anterior: ${state.blog.ultimaCategoria || 'ninguna'})`);
   log.push(`Especia rotación: ${tema.especia} [índice ${tema.espIdx}/${BLOG_ESPECIAS.length}]`);
 
+  // 2. Catálogo (para enlazar blends en el contenido)
+  const products = await loadCatalog(env);
   const productContext = products.slice(0, 30).map(p => `- [ID:${p.id}] ${p.nombre} - ${p.uso || ''}`).join('\n');
+
+  // 3. Blog existente (para no repetir títulos)
+  const existing = await loadExistingBlog(env);
   const existingTitles = existing.slice(-15).map(p => p.titulo).join(', ');
   log.push(`Blog existente: ${existing.length} posts`);
-
-  // Buscar el producto del catálogo que corresponde a la especia del artículo.
-  // Usamos BLOG_ESPECIA_ALIASES para mapear el nombre de rotación al nombre
-  // EXACTO del catálogo. Esto garantiza que el enlace siempre vaya al producto
-  // correcto, incluso cuando el nombre no coincide literalmente.
-  // Ej: 'pimentón' → 'Paprika' (en inglés en el catálogo)
-  //     'ají' → 'Ají Andino' (es un blend)
-  //     'pimienta negra' → 'Pimienta Negra en Bayas' (preferimos la en bayas)
-  const productoEspecia = findProductoForEspecia(tema.especia, products);
-  if (productoEspecia) {
-    log.push(`Producto de la especia principal: "${productoEspecia.nombre}" (ID ${productoEspecia.id}) — enlace garantizado`);
-  } else {
-    log.push(`AVISO: la especia "${tema.especia}" no tiene producto en catálogo. Se usará fallback.`);
-  }
 
   // 4. Prompt dinámico por categoría
   //    El CSS se inyecta después (generateBlogCSS) según la categoría.
@@ -999,21 +708,45 @@ async function generateBlog(env, opts) {
   const prompt = 'Eres un redactor creativo experto en especias y blends de la marca Arcano Especias (tienda colombiana online).\n' +
     'Escribes en ESPAÑOL NEUTRO INTERNACIONAL (no voseo, no "vos"). Usas "tú" y "tienes".\n' +
     'Tono: narrativo, cercano, didáctico, experto pero accesible.\n\n' +
-    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres EXACTOS cuando menciones un producto):\n' + productContext + '\n\n' +
+    'BLENDS DISPONIBLES EN TIENDA (usa SOLO estos nombres exactos cuando menciones):\n' + productContext + '\n\n' +
     '=== INSTRUCCION DE KEYWORDS ===\n' +
-    '1. Identifica 5-8 keywords del mercado de especias online en Colombia.\n' +
+    '1. Identifica al menos 3 keywords del mercado de especias online en Colombia.\n' +
     '2. Integra las keywords de forma SUTIL y NATURAL en el contenido.\n' +
     '3. NUNCA repitas una keyword más de 2 veces.\n\n' +
     '=== ESTRUCTURA HTML OBLIGATORIA ===\n' +
     'El campo "contenido" debe ser HTML semántico PURO. SOLO se permiten estos tags:\n' +
     '  <p>  <h2>  <h3>  <blockquote>  <ul>  <ol>  <li>  <strong>  <em>\n' +
-    'ESTRUCTURA:\n' +
-    '  - <p> introductorio (2-3 oraciones) al inicio\n' +
-    '  - 2-3 <h2> subtítulos con el contenido desarrollado debajo\n' +
+    'ESTRUCTURA (MÍNIMO OBLIGATORIO para SEO):\n' +
+    '  - <p> introductorio (3-4 oraciones) al inicio\n' +
+    '  - AL MENOS 2 <h2> subtítulos con el contenido desarrollado debajo (cada h2 con 2-3 párrafos)\n' +
     '  - 1 <blockquote> con una frase destacada o cita interesante\n' +
-    '  - Opcional: 1 <ul> o <ol> con lista útil\n' +
-    '  - Cierre OBLIGATORIO con <h2>Para llevar a tu cocina</h2>\n' +
-    'TOTAL: entre 600 y 800 palabras.\n\n' +
+    '  - 1-2 <ul> o <ol> con listas útiles\n' +
+    '  - Cierre con <h2>Para llevar a tu cocina</h2> mencionando el producto del catálogo\n' +
+    'TOTAL: AL MENOS 700 palabras. Apunta a 700-900 palabras.\n\n' +
+    '=== REGLAS CRÍTICAS DE HTML ===\n' +
+    '1. NO incluyas <style>, <script>, <div>, <span>, <section>, <article>, <header>, <footer>.\n' +
+    '2. NO agregues clases CSS ni atributos style="". El diseño visual lo maneja el sistema automáticamente según la categoría.\n' +
+    '3. NO envuelvas menciones de blends en <a>. El sistema lo hace automáticamente después con openDetail(ID).\n' +
+    '4. NO uses IDs en los tags. Solo HTML semántico puro.\n' +
+    '5. Cierra todos los tags correctamente. Ej: <p>texto</p>, no <p>texto.\n\n' +
+    '=== REGLAS DE ESTILO (SEO CRÍTICO) ===\n' +
+    '1. ESPAÑOL NEUTRO. Sin voseo, sin argentismos. Sin "conocé", "aprendé", "probá" → usa "conoce", "aprende", "prueba".\n' +
+    `2. TÍTULO: ENTRE 50 Y 60 CARACTERES (obligatorio). Debe incluir la especia "${tema.especia}". Llamativo y descriptivo.\n` +
+    '   Ejemplo bueno: "El Oro Negro: Cómo la Pimienta Conquistó el Mundo" (53 chars)\n' +
+    '   Ejemplo malo: "El Origen del Clavo" (20 chars — demasiado corto)\n' +
+    '3. SUBTÍTULO: ENTRE 100 Y 160 CARACTERES (obligatorio). Descriptivo, complementa al título.\n' +
+    '4. DESCRIPCIÓN META: ENTRE 150 Y 155 CARACTERES EXACTOS (obligatorio para SEO).\n' +
+    '   Debe resumir el artículo incluyendo la especia principal y al menos 1 keyword.\n' +
+    '   Ejemplo: "Descubre la fascinante historia de la pimienta negra, desde las rutas comerciales de la antigua India hasta tu mesa. Conoce sus beneficios y usos." (155 chars)\n' +
+    '5. Sin emojis. Sin markdown. Sin backticks.\n' +
+    '6. Contenido original, NO repetir los existentes.\n' +
+    '7. NO uses placeholders tipo [...]. Toda la información debe estar completa.\n\n' +
+    'ARTICULOS YA EXISTENTES (NO repetir títulos ni enfoques): ' + existingTitles + '\n\n' +
+    `CATEGORIA: ${tema.categoria}\n` +
+    `${tema.consigna}\n\n` +
+    `ESPECIA PRINCIPAL: ${tema.especia}\n` +
+    `El artículo debe girar en torno a ${tema.especia}. Es el protagonista. ` +
+    `Aparece en el título, en la introducción, en al menos 2 subtítulos y en el cierre.\n\n` +
     '=== REGLA CRÍTICA: MENCIÓN DE BLENDS DEL CATÁLOGO ===\n' +
     'En el cierre "Para llevar a tu cocina" DEBES mencionar al menos 1 producto del catálogo de arriba,\n' +
     'USANDO SU NOMBRE EXACTO tal como aparece en la lista.\n' +
@@ -1025,51 +758,17 @@ async function generateBlog(env, opts) {
         `NO uses sinónimos: si el catálogo dice "${productoEspecia.nombre}", escribe "${productoEspecia.nombre}" EXACTO en el texto.\n\n`
       : 'NO inventes nombres de productos que no estén en el catálogo de arriba.\n' +
         'NO uses sinónimos (si el catálogo dice "Paprika", no escribas "Pimentón" en el texto — usa "Paprika" exacto).\n\n') +
-    '=== REGLAS CRÍTICAS DE HTML ===\n' +
-    '1. NO incluyas <style>, <script>, <div>, <span>, <section>, <article>, <header>, <footer>.\n' +
-    '2. NO agregues clases CSS ni atributos style="". El diseño visual lo maneja el sistema automáticamente según la categoría.\n' +
-    '3. NO envuelvas menciones de blends en <a>. El sistema lo hace automáticamente después con openDetail(ID).\n' +
-    '4. NO uses IDs en los tags. Solo HTML semántico puro.\n' +
-    '5. Cierra todos los tags correctamente. Ej: <p>texto</p>, no <p>texto.\n\n' +
-    '=== REGLAS DE ESTILO ===\n' +
-    '1. ESPAÑOL NEUTRO. Sin voseo, sin argentismos. Sin "conocé", "aprendé", "probá" → usa "conoce", "aprende", "prueba".\n' +
-    '2. Título ≤ 60 caracteres, llamativo, con la especia o temática.\n' +
-    '3. Descripción meta ≤ 155 caracteres (para SEO).\n' +
-    '4. Sin emojis. Sin markdown. Sin backticks.\n' +
-    '5. Contenido original, NO repetir los existentes.\n' +
-    '6. NO uses placeholders tipo [...]. Toda la información debe estar completa.\n\n' +
-    'ARTICULOS YA EXISTENTES (NO repetir títulos ni enfoques): ' + existingTitles + '\n\n' +
-    `CATEGORIA: ${tema.categoria}\n` +
-    `${tema.consigna}\n\n` +
-    `ESPECIA PRINCIPAL: ${tema.especia}\n` +
-    `El artículo debe girar en torno a ${tema.especia}. Es el protagonista. ` +
-    `Aparece en el título, en la introducción, en al menos 2 subtítulos y en el cierre.\n\n` +
     '=== FAQs OBLIGATORIAS ===\n' +
     'Generá 3 a 5 preguntas frecuentes relacionadas al artículo, con respuestas concretas de 1-3 oraciones cada una.\n' +
-    'Las preguntas deben ser las que un usuario real buscaría en Google (orientadas a SEO + intención de búsqueda).\n' +
-    'Ejemplos buenos: "¿Cuánto dura la pimienta negra molida?", "¿Cómo conservar la pimienta negra fresca?", "¿La pimienta negra tiene cafeína?"\n' +
-    'Ejemplos malos: "¿Qué es la pimienta?" (muy genérico), "¿Te gusta la pimienta?" (opinión)\n\n' +
-    '=== IMAGEN_PROMPT (CRÍTICO — leer el artículo) ===\n' +
-    'Después de escribir el artículo, LEÉ su contenido completo (título, subtítulo, especia protagonista, keywords, ideas centrales) y generá un "imagen_prompt" ESPECÍFICO para este artículo.\n' +
-    'NO uses un prompt genérico. La imagen debe ilustrar visualmente el tema específico del artículo, con ingredientes/elementos que se mencionen en el contenido.\n' +
-    'El imagen_prompt va a alimentar un modelo de generación de imágenes (flux-1-schnell), por lo que debe ser en INGLÉS, descriptivo y específico.\n' +
-    'Aplica este BRIEF EDITORIAL (debes respetarlo en el imagen_prompt que generes):\n\n' +
-    getBlogImageBrief(tema.categoria) + '\n\n' +
-    'IMPORTANTE: el imagen_prompt que generes debe ser UNA FRASE LARGA (3-6 oraciones) que:\n' +
-    '1. Mencione ingredientes/elementos ESPECÍFICOS del artículo (no genéricos).\n' +
-    '2. Aplique el brief editorial Arcano (fondo oscuro, dorado, cinematográfico, 35% izquierda limpio).\n' +
-    '3. Sea específico de la categoría ' + tema.categoria + '.\n' +
-    '4. Termine SIEMPRE con "no text, no letters, no watermark, no logos".\n\n' +
+    'Las preguntas deben ser las que un usuario real buscaría en Google (orientadas a SEO + intención de búsqueda).\n\n' +
     'Responde SOLO con JSON valido (sin markdown, sin backticks):\n' +
-    '{"titulo": "...", "subtitulo": "... (100-160 chars)", "categoria": "' + tema.categoria + '", ' +
-    '"descripcion_meta": "... (150-155 chars SEO)", "keywords": ["k1","k2"], ' +
+    '{"titulo": "ENTRE 50 Y 60 CARACTERES", "subtitulo": "ENTRE 100 Y 160 CARACTERES", "categoria": "' + tema.categoria + '", ' +
+    '"descripcion_meta": "ENTRE 150 Y 155 CARACTERES EXACTOS", "keywords": ["k1","k2","k3"], ' +
     '"tiempoLectura": "X min", "contenido": "<p>...</p><h2>...</h2><p>...</p>...", ' +
-    '"faqs": [{"q": "pregunta 1", "a": "respuesta 1"}, {"q": "pregunta 2", "a": "respuesta 2"}, ...], ' +
-    '"imagen_prompt": "specific english description for THIS article applying the brief above, ends with no text, no letters, no watermark"}';
+    '"faqs": [{"q": "...", "a": "..."}], ' +
+    '"imagen_prompt": "english description for AI image generation"}';
 
   // 5. Llamar Z.ai (fallback Gemini)
-  //    Z.ai primario: 0.5-2s, 99.9% disponible. Gemini fallback: 5 modelos flash.
-  //    Genera el texto completo del artículo en formato JSON.
   const t0 = Date.now();
   log.push(`[${t0}] Llamando a Z.ai (GLM-4-Plus, fallback Gemini)...`);
   const textResult = await generateBlogText(env, prompt, { maxTokens: 8192 });
@@ -1078,30 +777,101 @@ async function generateBlog(env, opts) {
   const articulo = extractJSON(textResult.text);
   log.push(`Artículo generado: "${articulo.titulo}"`);
 
-  // 6. Validar
+  // 5b. VALIDACIÓN SEO POST-GENERACIÓN
+  const seoIssues = [];
+
+  // Título: 50-60 caracteres
+  if (articulo.titulo) {
+    const tlen = articulo.titulo.length;
+    if (tlen < 50) {
+      const suffix = ': Todo Lo Que Debes Saber';
+      if ((articulo.titulo + suffix).length <= 60) {
+        articulo.titulo = articulo.titulo + suffix;
+      } else if ((articulo.titulo + ': Guía Completa').length <= 60) {
+        articulo.titulo = articulo.titulo + ': Guía Completa';
+      }
+      seoIssues.push(`Título expandido: ${tlen}→${articulo.titulo.length} chars`);
+    } else if (tlen > 60) {
+      articulo.titulo = articulo.titulo.substring(0, 57).trim() + '...';
+      seoIssues.push(`Título truncado: ${tlen}→${articulo.titulo.length} chars`);
+    }
+  }
+
+  // Subtítulo: 100-160 caracteres
+  if (articulo.subtitulo) {
+    const slen = articulo.subtitulo.length;
+    if (slen < 100) {
+      const expansion = '. Descubre su importancia en la cocina colombiana y cómo usarlo en tus recetas diarias';
+      let expanded = articulo.subtitulo + expansion;
+      if (expanded.length > 160) expanded = expanded.substring(0, 157).trim() + '...';
+      articulo.subtitulo = expanded;
+      seoIssues.push(`Subtítulo expandido: ${slen}→${articulo.subtitulo.length} chars`);
+    } else if (slen > 160) {
+      articulo.subtitulo = articulo.subtitulo.substring(0, 157).trim() + '...';
+      seoIssues.push(`Subtítulo truncado: ${slen}→${articulo.subtitulo.length} chars`);
+    }
+  }
+
+  // Descripción meta: 150-155 caracteres
+  if (articulo.descripcion_meta) {
+    const dlen = articulo.descripcion_meta.length;
+    if (dlen < 150) {
+      const expansion = `. Aprende sobre ${tema.especia} y compra especias online en Colombia con envío a todo el país.`;
+      let expanded = articulo.descripcion_meta + expansion;
+      if (expanded.length > 155) expanded = expanded.substring(0, 155).trim();
+      articulo.descripcion_meta = expanded;
+      seoIssues.push(`Meta description expandida: ${dlen}→${articulo.descripcion_meta.length} chars`);
+    } else if (dlen > 155) {
+      articulo.descripcion_meta = articulo.descripcion_meta.substring(0, 155).trim();
+      seoIssues.push(`Meta description truncada: ${dlen}→${articulo.descripcion_meta.length} chars`);
+    }
+  }
+
+  // Keywords: al menos 3
+  if (!Array.isArray(articulo.keywords) || articulo.keywords.length < 3) {
+    const defaults = [tema.especia, 'especias online Colombia', 'comprar especias'];
+    articulo.keywords = Array.isArray(articulo.keywords) ? [...articulo.keywords, ...defaults].slice(0, 5) : defaults;
+    seoIssues.push(`Keywords completadas: ahora ${articulo.keywords.length}`);
+  }
+
+  // Contenido: verificar mínimo de palabras
+  const wordCount = (articulo.contenido || '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(w => w.length).length;
+  if (wordCount < 700) {
+    seoIssues.push(`AVISO: contenido ${wordCount} palabras (mín: 700)`);
+  } else {
+    log.push(`Contenido: ${wordCount} palabras ✓`);
+  }
+
+  if (seoIssues.length > 0) {
+    log.push(`SEO corregido: ${seoIssues.join('; ')}`);
+  } else {
+    log.push(`SEO validado: todos los campos cumplen ✓`);
+  }
+
+  // 6. Validar campos obligatorios
   if (!articulo.titulo || !articulo.contenido) {
     throw new Error('Artículo inválido: ' + JSON.stringify(articulo).slice(0, 200));
   }
   articulo.slug_publicado = slugify(articulo.titulo);
   articulo.fecha = new Date().toISOString().substring(0, 10);
-  articulo.publicado = false;       // BORRADOR — el admin aprueba desde el panel
+  articulo.publicado = false;
   articulo.programado = false;
-  articulo.categoria = tema.categoria;  // Forzar la categoría rotada
-  articulo.especia_principal = tema.especia;  // Guardar para usar al publicar
+  articulo.categoria = tema.categoria;
+  articulo.especia_principal = tema.especia;
 
-  // 6b. Normalizar FAQs: asegurar array válido con {q, a}
+  // 6b. Normalizar FAQs
   if (!Array.isArray(articulo.faqs) || articulo.faqs.length === 0) {
     articulo.faqs = [];
-    log.push('AVISO: Gemini no devolvió faqs, se generan vacías');
+    log.push('AVISO: no devolvió faqs');
   } else {
     articulo.faqs = articulo.faqs
       .filter(f => f && f.q && f.a)
-      .slice(0, 6)  // máximo 6 FAQs
+      .slice(0, 6)
       .map(f => ({ q: String(f.q).trim(), a: String(f.a).trim() }));
     log.push(`FAQs generadas: ${articulo.faqs.length}`);
   }
 
-  // Calcular tiempoLectura si no vino
+  // Calcular tiempoLectura
   if (!articulo.tiempoLectura) {
     const palabras = articulo.contenido.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(w => w.length).length;
     articulo.tiempoLectura = Math.max(1, Math.round(palabras / 200)) + ' min';
@@ -1115,112 +885,56 @@ async function generateBlog(env, opts) {
   articulo.contenido = linkResult.html;
   log.push(`Enlaces a blends insertados: ${linkResult.linksInserted} (${linkResult.productosEnlazados.join(', ') || 'ninguno'})`);
 
-  // 7b. VALIDACIÓN DE ENLACES: si el artículo tiene enlaces a productos del
-  //     catálogo pero NO incluyen el producto de la especia principal,
-  //     reemplazamos el cierre "Para llevar a tu cocina" por uno que SÍ
-  //     enlaza al producto correcto.
-  //
-  //     Ej: si el artículo es sobre "cacao" pero el modelo enlazó a
-  //     "Chimichurri Argentino" (no tiene nada que ver), reemplazamos el
-  //     cierre por uno que enlaza al producto de cacao correcto.
-  //
-  //     Si la especia no tiene producto en catálogo (productoEspecia=null),
-  //     dejamos los enlaces que el modelo haya puesto.
-  if (productoEspecia) {
-    const productoCorrectoEnlazado = linkResult.productosEnlazados.includes(productoEspecia.nombre);
-
-    if (!productoCorrectoEnlazado) {
-      // El producto de la especia principal NO está enlazado.
-      // Reemplazamos el cierre "Para llevar a tu cocina" por uno que SÍ lo enlaza.
-      const enlaceCorrecto = `<h2>Para llevar a tu cocina</h2><p>Si te interesa explorar el sabor de ${tema.especia} en tus preparaciones, te recomendamos probar nuestro <a href="#" onclick="openDetail(${productoEspecia.id});return false">${productoEspecia.nombre}</a>, disponible en nuestra tienda online con envíos a toda Colombia.</p>`;
-
-      // Quitar cualquier enlace a productos que NO sea el de la especia principal
-      // en el cierre "Para llevar a tu cocina". El regex busca el cierre completo
-      // y lo reemplaza por el nuestro.
-      const regexCierre = /<h2>Para llevar a tu cocina<\/h2>[\s\S]*?(?=<h2|$)/i;
-      if (regexCierre.test(articulo.contenido)) {
-        articulo.contenido = articulo.contenido.replace(regexCierre, enlaceCorrecto);
-        log.push(`Cierre reemplazado: enlace a ${linkResult.productosEnlazados.join(', ')} → "${productoEspecia.nombre}" (producto de la especia principal)`);
-      } else {
-        // No había cierre, lo agregamos al final
-        articulo.contenido += enlaceCorrecto;
-        log.push(`Cierre agregado al final con enlace a "${productoEspecia.nombre}" (producto de la especia principal)`);
-      }
-    } else {
-      log.push(`Producto de la especia principal ya enlazado correctamente: "${productoEspecia.nombre}"`);
-    }
-  }
-
   // 8. Dry-run: parar aquí
   if (dryRun) {
     return { articulo, log, dryRun: true };
   }
 
-  // 9. NO generar imagen — el admin la sube manualmente desde el panel
-  //    después de aprobar el borrador. El flujo queda:
-  //      1. Sistema genera el texto (Llama 3.1 8B)
-  //      2. Sistema guarda en Firebase como borrador (sin imagen_url)
-  //      3. Email al admin: "Hay un borrador pendiente, subir imagen y publicar"
-  //      4. Admin entra al panel, edita si quiere, sube imagen, pulsa Publicar
-  //    Ventajas:
-  //      - Control total del admin sobre la imagen
-  //      - Sin timeout (no hay llamada a Workers AI que tarde 30-70s)
-  //      - Sin dependencia de APIs externas para imágenes
-  //    El campo articulo.imagen_prompt queda guardado en Firebase para que
-  //    el admin lo vea en el panel y lo use si quiere generarlo por otro lado.
-  articulo.imagen_url = '';  // vacío — el admin la sube después
-  log.push('Sin imagen automática — el admin la sube manualmente');
-  log.push(`imagen_prompt guardado en Firebase: "${(articulo.imagen_prompt || '').substring(0, 80)}..."`);
+  // 9. Generar imagen con Workers AI
+  log.push('Generando imagen con Workers AI...');
+  const imgResp = await fetch('https://arcanoespecias.com/api/generar-imagen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: articulo.imagen_prompt || `professional photography of ${tema.especia} on rustic wooden surface, overhead angle, natural light, no text, no letters, vibrant colors`,
+      width: 1024, height: 768
+    })
+  });
+  const imgData = await imgResp.json();
+  if (!imgData.ok) throw new Error('Error generando imagen: ' + (imgData.error || 'desconocido'));
+  log.push('Imagen generada OK');
 
-  // 10-11. Guardar en Firebase + actualizar estado EN PARALELO
-  //       (no hay imagen que subir a GitHub, así que solo son 2 operaciones)
-  const t4 = Date.now();
-  log.push(`[${t4}] Guardando en Firebase + actualizando estado (en paralelo)...`);
+  // 10. Subir imagen a GitHub
+  log.push('Subiendo imagen a GitHub...');
+  const { url: imageUrl } = await uploadImage(env, articulo.slug_publicado, imgData.image, 'blog');
+  articulo.imagen_url = imageUrl;
+  log.push(`Imagen subida: ${imageUrl}`);
 
-  const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
-  const newState = {
-    ...state,
-    blog: {
-      ultimaCategoria: tema.categoria,
-      ultimaFecha: articulo.fecha,
-      ultimaEspeciaIdx: tema.espIdx,
-      ultimosTitulos: [...ultimosTitulos, articulo.titulo].slice(-20)
-    }
-  };
-
-  const [fbResult] = await Promise.all([
-    // 11. Guardar en Firebase como BORRADOR (publicado=false, sin imagen)
-    fbAdminPost(env, '/arcano/db/blog', articulo),
-    // 13. Actualizar estado (categoría + especia + títulos)
-    updateAutomationState(env, newState)
-  ]);
-
-  articulo._key = fbResult?.name || null;
-  const t5 = Date.now();
-  log.push(`[${t5}] Artículo guardado en Firebase (key=${articulo._key || 'n/a'}, publicado=false, sin imagen)`);
-  log.push(`[${t5}] Estado de rotación actualizado. Paralelo tomó ${t5 - t4}ms`);
+  // 11. Guardar en Firebase como BORRADOR (publicado=false)
+  log.push('Guardando artículo en Firebase (publicado=false, borrador pendiente de aprobación)...');
+  const fbResult = await fbAdminPost(env, '/arcano/db/blog', articulo);
+  articulo._key = fbResult?.name || null;  // Firebase devuelve { name: "-Lx9..." }
+  log.push(`Artículo guardado (key=${articulo._key || 'n/a'})`);
 
   // 12. NO subir HTML individual, NO regenerar índice, NO append al sitemap.
   //     Todo eso lo hace el endpoint /api/automation/publish-blog cuando el
-  //     admin aprueba el artículo (después de subir la imagen).
+  //     admin aprueba el artículo. Mientras tanto, el borrador solo existe en
+  //     Firebase y se ve en el admin (con botón "Aprobar y publicar").
 
-  // 14. Email al admin: fire-and-forget con ctx.waitUntil (no bloquea respuesta)
-  //     Si ctx no está disponible (ej: dry-run manual o llamada directa),
-  //     esperamos sync. Si ctx está, lo mandamos en background.
-  if (ctx?.waitUntil) {
-    ctx.waitUntil(sendBlogDraftEmail(env, articulo).catch(e => {
-      console.warn('[automation] Email falló (background):', e.message);
-    }));
-    log.push('Email encolado en background (no bloquea respuesta)');
-  } else {
-    log.push('Enviando email al admin (sync)...');
-    try {
-      await sendBlogDraftEmail(env, articulo);
-      log.push('Email enviado');
-    } catch (e) {
-      log.push(`AVISO: email falló: ${e.message}`);
-    }
-  }
+  // 13. Actualizar estado (categoría + especia + títulos)
+  const ultimosTitulos = Array.isArray(state.blog.ultimosTitulos) ? state.blog.ultimosTitulos : [];
+  state.blog = {
+    ultimaCategoria: tema.categoria,
+    ultimaFecha: articulo.fecha,
+    ultimaEspeciaIdx: tema.espIdx,
+    ultimosTitulos: [...ultimosTitulos, articulo.titulo].slice(-20)
+  };
+  await updateAutomationState(env, state);
+
+  // 14. Email al admin: avisar que hay un borrador pendiente de aprobación
+  log.push('Enviando email al admin (borrador pendiente)...');
+  await sendBlogDraftEmail(env, articulo);
+  log.push('Email enviado');
 
   return {
     articulo,
@@ -1631,18 +1345,6 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
     ]
   };
 
-  // FAQ Schema JSON-LD — solo si hay FAQs (Google los usa para rich snippets)
-  const faqs = Array.isArray(articulo.faqs) ? articulo.faqs.filter(f => f && f.q && f.a) : [];
-  const faqSchema = faqs.length > 0 ? {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map(f => ({
-      '@type': 'Question',
-      name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a }
-    }))
-  } : null;
-
   // El contenido viene como HTML desde Gemini + los enlaces a blends que
   // insertamos con linkBlendMentions(). Sanitizamos agresivamente:
   //  - Quitar <script>, <style>, <iframe>, etc. (no deberían venir).
@@ -1671,20 +1373,6 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
   const keywordsStr = (articulo.keywords || []).join(', ');
   const catClass = catToClass(categoria);
 
-  // Construir el título con palabras destacadas en cursiva dorada.
-  // Tomamos las 2 palabras más largas del título (más significativas) y las
-  // envolvemos en <em> que el CSS pinta de dorado #D99B27 con cursiva.
-  const titleWords = (articulo.titulo || '').split(/\s+/).filter(w => w.length >= 5);
-  const italicWords = titleWords
-    .sort((a, b) => b.length - a.length)
-    .slice(0, 2)
-    .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  let titleHTML = titulo;
-  for (const word of italicWords) {
-    const re = new RegExp('\\b(' + word + ')\\b');
-    titleHTML = titleHTML.replace(re, '<em>$1</em>');
-  }
-
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1695,7 +1383,7 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <link rel="canonical" href="${url}">
 <meta name="keywords" content="${escHtml(keywordsStr)}">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="theme-color" content="#11100E">
+<meta name="theme-color" content="${t.accent}">
 <meta property="og:type" content="article">
 <meta property="og:title" content="${titulo}">
 <meta property="og:description" content="${descripcion}">
@@ -1712,82 +1400,29 @@ function generateBlogHTML(articulo, imageUrl, especiaPrincipal) {
 <meta name="twitter:image" content="${img}">
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
 <script type="application/ld+json">${JSON.stringify(bc)}</script>
-${faqSchema ? `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>` : ''}
 <!-- Fuentes Google -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:wght@200;300;400;500;600;700&family=Merriweather:wght@400;700&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:wght@400;600&family=Mulish:wght@600;700&family=Lora:wght@400;700&family=Source+Serif+Pro:wght@400;700&family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Merriweather:wght@400;700&family=Poppins:wght@600;700&family=Inter:wght@400;500&family=IBM+Plex+Sans:wght@500;600&family=IBM+Plex+Serif:wght@400;600&family=Mulish:wght@600;700&family=Lora:wght@400;700&family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
 <style>
 ${generateBlogCSS(t)}
-.faq-section{margin-top:48px;padding-top:32px;border-top:2px solid ${t.bgAccent}}
-.faq-section h2{font-family:${t.headingFont};color:${t.textPrimary};font-size:1.6rem;margin-bottom:20px;font-weight:700}
-.faq-item{margin-bottom:18px;padding:16px 20px;background:${t.bgAccent};border-radius:8px;border-left:3px solid ${t.accent}}
-.faq-item h3{font-family:${t.headingFont};color:${t.textPrimary};font-size:1.05rem;margin:0 0 8px;font-weight:600}
-.faq-item p{margin:0;color:${t.textPrimary};font-size:.95rem;line-height:1.6}
-
-/* === HERO COMPUESTO: imagen de fondo + texto encima === */
-.hero-cover{position:relative;width:100%;max-width:1200px;margin:0 -18px 32px;aspect-ratio:16/9;overflow:hidden;background:#11100E}
-.hero-cover-img{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-position:center right;background-repeat:no-repeat;z-index:1}
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(17,16,14,0.92) 0%,rgba(17,16,14,0.85) 18%,rgba(17,16,14,0.55) 35%,rgba(17,16,14,0.20) 50%,rgba(17,16,14,0) 65%);z-index:2;pointer-events:none}
-.hero-text{position:absolute;top:0;left:0;width:50%;height:100%;padding:36px 24px 32px 36px;display:flex;flex-direction:column;z-index:3;color:#F4EFE6}
-.hero-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-.hero-brand-name{font-family:'Montserrat',sans-serif;font-weight:300;font-size:14px;letter-spacing:0.5em;color:#F4EFE6;text-transform:uppercase;margin-right:-0.5em}
-.hero-brand-line{width:32px;height:1.5px;background:#D99B27;flex-shrink:0}
-.hero-cat{font-family:'Montserrat',sans-serif;font-weight:500;font-size:10px;letter-spacing:0.35em;color:#D99B27;text-transform:uppercase;margin-bottom:18px;opacity:0.85}
-.hero-title{font-family:'Playfair Display',serif;font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.02em;color:#F4EFE6;margin:0 0 16px;text-shadow:0 2px 12px rgba(0,0,0,0.6)}
-.hero-title em{font-style:italic;color:#D99B27;font-weight:600}
-.hero-sub{font-family:'Montserrat',sans-serif;font-weight:400;font-size:13px;line-height:1.5;color:#E9E3D9;margin:0 0 16px;max-width:340px;opacity:0.92}
-.hero-bottom{display:flex;align-items:center;gap:10px;margin-top:auto}
-.hero-bottom-line{width:24px;height:1px;background:#D99B27;opacity:0.7}
-.hero-bottom-text{font-family:'Montserrat',sans-serif;font-weight:300;font-size:9px;letter-spacing:0.4em;color:#C99736;text-transform:uppercase;opacity:0.8}
-@media(max-width:680px){
-  .hero-cover{margin:0 -14px 24px}
-  .hero-text{width:75%;padding:24px 18px 22px 22px}
-  .hero-title{font-size:28px}
-  .hero-sub{font-size:12px;max-width:240px}
-  .hero-brand-name{font-size:12px;letter-spacing:0.4em}
-  .hero-cat{font-size:9px;margin-bottom:14px}
-  .hero-overlay{background:linear-gradient(180deg,rgba(17,16,14,0.92) 0%,rgba(17,16,14,0.75) 50%,rgba(17,16,14,0.4) 100%)}
-}
 </style>
 </head>
 <body class="blog-cat-${catClass}">
 <div class="container">
 <a href="${BASE_URL}/blog/" class="back">&larr; Volver al Blog</a>
-
-${img ? `<div class="hero-cover" role="img" aria-label="${titulo}">
-  <div class="hero-cover-img" style="background-image:url('${escHtml(img)}')"></div>
-  <div class="hero-overlay"></div>
-  <div class="hero-text">
-    <div class="hero-brand">
-      <div class="hero-brand-name">ARCANO</div>
-      <div class="hero-brand-line"></div>
-    </div>
-    <div class="hero-cat">${escHtml(categoria)}</div>
-    <h1 class="hero-title">${titleHTML}</h1>
-    ${articulo.subtitulo ? `<p class="hero-sub">${escHtml(articulo.subtitulo)}</p>` : ''}
-    <div class="hero-bottom">
-      <div class="hero-bottom-line"></div>
-      <div class="hero-bottom-text">ESPECIAS &amp; BLENDS</div>
-    </div>
-  </div>
-</div>` : `<h1>${titleHTML}</h1>`}
-
+<div class="header-meta">${escHtml(categoria)}${especiaPrincipal ? ' · ' + escHtml(especiaPrincipal) : ''}</div>
+<h1>${titulo}</h1>
+${articulo.subtitulo ? `<div class="subtitulo">${escHtml(articulo.subtitulo)}</div>` : ''}
 <div class="meta">
 ${articulo.fecha ? `<span>${escHtml(articulo.fecha)}</span>` : ''}
 ${articulo.tiempoLectura ? `<span>${escHtml(articulo.tiempoLectura)}</span>` : ''}
 <span class="badge">${escHtml(categoria)}</span>
 </div>
+${img ? `<img class="hero" src="${escHtml(img)}" alt="${titulo}" loading="lazy">` : ''}
 <div class="content">
 ${contenidoFinal}
 </div>
-${faqs.length > 0 ? `<section class="faq-section">
-<h2>Preguntas frecuentes</h2>
-${faqs.map(f => `<div class="faq-item">
-<h3>${escHtml(f.q)}</h3>
-<p>${escHtml(f.a)}</p>
-</div>`).join('')}
-</section>` : ''}
 ${keywordsStr ? `<div class="keywords-row"><strong>Keywords:</strong> ${escHtml(keywordsStr)}</div>` : ''}
 <div class="footer">
 <p><a href="${BASE_URL}/blog/">← Volver al Blog</a> · <a href="${BASE_URL}/">Ir a la tienda</a></p>
@@ -2083,7 +1718,6 @@ export {
   generateBlogCSSCompact,
   generateBlogIndexCategoryColors,
   getBlogTemplate,
-  getBlogImageBrief,
   catToClass,
   linkBlendMentions,
   appendToSitemap,
@@ -2092,6 +1726,5 @@ export {
   RECETA_CATEGORIAS,
   BLOG_CATEGORIAS,
   BLOG_ESPECIAS,
-  BLOG_TEMPLATES,
-  BLOG_IMAGE_BRIEF
+  BLOG_TEMPLATES
 };
