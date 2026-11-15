@@ -130,40 +130,93 @@ function extractJSON(text) {
   }
   let s = typeof text === 'string' ? text : JSON.stringify(text);
 
-  // Llama 3.1 8B a veces devuelve texto con formato Markdown en vez de JSON.
-  // Intentamos "rescatar" el JSON de varias formas:
-  //
-  // 1. Buscar ```json ... ``` (markdown code block)
-  // 2. Buscar la primera { y la última }
-  // 3. Si no hay llaves, intentar construir JSON manualmente desde el texto
-
-  // 1. Quitar markdown code blocks ```json ... ```
+  // Limpiar markdown
   const jsonBlock = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (jsonBlock) {
-    s = jsonBlock[1].trim();
-  }
-
-  // 2. Quitar markdown bold **texto** que Llama pone en títulos
+  if (jsonBlock) s = jsonBlock[1].trim();
   s = s.replace(/\*\*/g, '');
 
-  // 3. Buscar { ... }
+  // Intentar parse directo primero
   const js = s.indexOf('{');
   const je = s.lastIndexOf('}');
   if (js !== -1 && je > js) {
-    s = s.substring(js, je + 1);
-    try { return JSON.parse(s); }
+    let jsonStr = s.substring(js, je + 1);
+    try { return JSON.parse(jsonStr); }
     catch (e) {
-      try { return JSON.parse(s.replace(/'/g, '"')); }
+      try { return JSON.parse(jsonStr.replace(/'/g, '"')); }
       catch (e2) {
-        const tail = s.length > 200 ? '...' + s.substring(s.length - 200) : s;
-        throw new Error('JSON inválido (longitud=' + s.length + '). Inicio: "' + s.slice(0, 80) + '". Final: "' + tail + '"');
+        // Si JSON.parse falla (comillas sin escapar en HTML, newlines, etc),
+        // usamos extracción por regex campo por campo.
+        const fields = extractFieldsFromText(s);
+        if (fields && fields.titulo) return fields;
+        const tail = jsonStr.length > 200 ? '...' + jsonStr.substring(jsonStr.length - 200) : jsonStr;
+        throw new Error('JSON inválido (longitud=' + jsonStr.length + '). Inicio: "' + jsonStr.slice(0, 80) + '". Final: "' + tail + '"');
       }
     }
   }
 
-  // 4. Si no hay llaves, el modelo devolvió texto plano en vez de JSON.
-  // Esto pasa con Llama 3.1 8B cuando no respeta la instrucción de JSON.
-  throw new Error('JSON inválido: la respuesta no contiene llaves { }. El modelo devolvió texto plano en vez de JSON. Respuesta (primeros 200 chars): "' + s.substring(0, 200) + '"');
+  // Si no hay llaves, intentar extracción por regex
+  const fields = extractFieldsFromText(s);
+  if (fields && fields.titulo) return fields;
+
+  throw new Error('JSON inválido: la respuesta no contiene JSON parseable. Primeros 200 chars: "' + s.substring(0, 200) + '"');
+}
+
+// Extrae campos del blog individualmente con regex.
+// Más robusto que JSON.parse cuando el modelo no escapa comillas correctamente.
+function extractFieldsFromText(text) {
+  const extractString = (key) => {
+    // Buscar "key": "valor" — el valor termina en la siguiente comilla seguida de
+    // coma, cierre de llave, o cierre de corchete.
+    const re = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\}|\\]|$)', 'i');
+    const m = text.match(re);
+    return m ? m[1].trim() : '';
+  };
+
+  const extractArray = (key) => {
+    const re = new RegExp('"' + key + '"\\s*:\\s*\\[([\\s\\S]*?)\\]', 'i');
+    const m = text.match(re);
+    if (!m) return [];
+    // Intentar parsear el array
+    try {
+      return JSON.parse('[' + m[1] + ']');
+    } catch (e) {
+      // Si no se puede parsear, extraer strings individuales
+      const items = m[1].match(/"([^"]*)"/g);
+      return items ? items.map(i => i.replace(/"/g, '')) : [];
+    }
+  };
+
+  const extractFaqs = (text) => {
+    const faqMatch = text.match(/"faqs"\s*:\s*\[([\s\S]*?)\]/i);
+    if (!faqMatch) return [];
+    const faqs = [];
+    const faqItems = faqMatch[1].match(/\{[^}]*"q"\s*:\s*"([^"]*)"[^}]*"a"\s*:\s*"([^"]*)"[^}]*\}/gi);
+    if (faqItems) {
+      for (const item of faqItems) {
+        const qMatch = item.match(/"q"\s*:\s*"([^"]*)"/i);
+        const aMatch = item.match(/"a"\s*:\s*"([^"]*)"/i);
+        if (qMatch && aMatch) {
+          faqs.push({ q: qMatch[1], a: aMatch[1] });
+        }
+      }
+    }
+    return faqs;
+  };
+
+  const titulo = extractString('titulo');
+  if (!titulo) return null;
+
+  return {
+    titulo,
+    subtitulo: extractString('subtitulo'),
+    categoria: extractString('categoria'),
+    descripcion_meta: extractString('descripcion_meta') || extractString('descripcion'),
+    keywords: extractArray('keywords'),
+    tiempoLectura: extractString('tiempoLectura'),
+    contenido: extractString('contenido'),
+    faqs: extractFaqs(text),
+    imagen_prompt: extractString('imagen_prompt')
+  };
 }
 
 // ============ SLUG ============
