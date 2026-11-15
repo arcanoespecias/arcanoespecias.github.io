@@ -254,23 +254,67 @@ function nextRecipeCategory(state) {
 // IMPORTANTE: deben coincidir con las categorías que maneja el admin del blog
 // (admin/js/pages.js: blog categorias) y la tienda.
 const BLOG_CATEGORIAS = [
-  { categoria: 'Historia',     consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias.' },
-  { categoria: 'Curiosidades', consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas.' },
-  { categoria: 'Ciencia',     consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares.' },
-  { categoria: 'Beneficios',  consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural.' },
-  { categoria: 'Cocina',     consigna: 'Enfócate en uso culinario: cómo combinar la especia, con qué ingredientes casa, técnicas de uso, errores comunes, maridajes, cocina internacional y regional.' }
+  { categoria: 'Historias',       consigna: 'Enfócate en historia, origen, ruta comercial histórica, anécdotas del pasado, cómo llegó al mundo occidental, monasterios, imperios, rutas de la seda y especias. Transmitir descubrimiento, tradición y relatos fascinantes.' },
+  { categoria: 'Beneficios',     consigna: 'Enfócate en beneficios para la salud, propiedades medicinales tradicionales y validadas, vitaminas, minerales, bienestar, nutrición, terapéutica natural. Transmitir bienestar, naturaleza y conocimiento. Evitar representaciones médicas.' },
+  { categoria: 'Investigaciones', consigna: 'Enfócate en la ciencia y alquimia molecular: compuestos activos, reacciones químicas, moléculas aromáticas, ciencia del sabor, bioquímica, interacciones moleculares. Transmitir rigor, investigación y conocimiento. Evitar apariencia de laboratorio farmacéutico genérico.' },
+  { categoria: 'Curiosidades',   consigna: 'Enfócate en datos curiosos, poco conocidos, mitos desmentidos, anécdotas sorprendentes, usos inesperados, cultura pop, records y tradiciones curiosas. Despertar curiosidad inmediatamente.' },
+  { categoria: 'Origenes',       consigna: 'Enfócate en origen y procedencia geográfica: rutas comerciales, regiones productoras, elementos culturales del lugar de origen, patrimonio gastronómico. Transmitir autenticidad, procedencia y patrimonio gastronómico.' }
 ];
 
 // Lista de especias base que el sistema va rotando dentro de cada categoría,
 // para que cada artículo sea sobre una especia diferente y no se repita.
 // Se van rotando: si la última vez fue "pimienta negra", ahora es "canela",
 // luego "cúrcuma", etc.
+// Lista de especias base que el sistema va rotando dentro de cada categoría.
+// IMPORTANTE: cada especia tiene que tener un match en el catálogo de la tienda,
+// así el artículo siempre tiene un enlace al producto correcto.
+// Si una especia no está en el catálogo, NO la incluimos acá.
 const BLOG_ESPECIAS = [
-  'pimienta negra', 'canela', 'cúrcuma', 'jengibre', 'ají/capsaicina',
-  'pimentón', 'cacao', 'comino', 'cardamomo', 'clavo', 'nuez moscada',
-  'azafrán', 'comino negro', 'fenogreco', 'sumac', 'zaatar', 'baharat',
-  'ras el hanout', 'garam masala', 'curry'
+  'pimienta negra',
+  'canela',
+  'cúrcuma',
+  'jengibre',
+  'ají',
+  'pimentón',
+  'cardamomo',
+  'clavo',
+  'fenogreco',
+  'mostaza',
+  'ajo',
+  'hinojo',
+  'coreandro'
 ];
+
+// Mapa de especia (rotación del blog) → nombre EXACTO del producto en el
+// catálogo de Firebase. Esto es necesario porque:
+//   - El blog rota "pimentón" pero el catálogo tiene "Paprika"
+//   - El blog rota "ají" pero el catálogo tiene "Ají Andino" (es un blend)
+//   - El blog rota "pimienta negra" pero el catálogo tiene 2 productos
+const BLOG_ESPECIA_ALIASES = {
+  'pimienta negra': 'Pimienta Negra en Bayas',
+  'canela':          'Canela',
+  'cúrcuma':         'Cúrcuma',
+  'jengibre':        'Jengibre',
+  'ají':             'Ají Andino',
+  'pimentón':        'Paprika',
+  'cardamomo':       'Cardamomo',
+  'clavo':           'Clavo',
+  'fenogreco':       'Fenogreco',
+  'mostaza':         'Mostaza',
+  'ajo':             'Ajo',
+  'hinojo':          'Hinojo',
+  'coreandro':       'Coreandro'
+};
+
+// Devuelve el producto del catálogo que corresponde a la especia de rotación.
+function findProductoForEspecia(especiaRotacion, products) {
+  const alias = BLOG_ESPECIA_ALIASES[especiaRotacion];
+  if (!alias) return null;
+  const normalize = s => String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const aliasNorm = normalize(alias);
+  return products.find(p => normalize(p.nombre) === aliasNorm) || null;
+}
 
 // ============ PLANTILLAS DE DISEÑO POR CATEGORÍA ============
 //
@@ -288,91 +332,81 @@ const BLOG_ESPECIAS = [
 // Las 5 categorías tienen paletas MUY distintas entre sí, todas con
 // fondos claros (legibles,的现代SEO) y acentos que las diferencian.
 const BLOG_TEMPLATES = {
-  Historia: {
-    nombre: 'Historia',
+  Historias: {
+    nombre: 'Historias',
     descripcion: 'Pergamino antiguo',
-    // Paleta: tonos tierra, marrón cuero, dorado
-    bg: '#f4ecd8',           // crema envejecido (pergamino)
-    bgAccent: '#e8dcc0',     // crema más oscuro para destacar
-    textPrimary: '#3a2a1a',  // marrón oscuro tipo tinta
+    bg: '#f4ecd8',
+    bgAccent: '#e8dcc0',
+    textPrimary: '#3a2a1a',
     textSecondary: '#7a6a52',
-    accent: '#c9a84c',       // dorado Arcano
+    accent: '#c9a84c',
     accentSoft: '#e8d5a3',
     badgeBg: '#3a2a1a',
     badgeText: '#f4ecd8',
     headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(58,42,26,.65) 0%, rgba(201,168,76,.35) 100%)'
-  },
-  Curiosidades: {
-    nombre: 'Curiosidades',
-    descripcion: 'Magazine divertido',
-    // Paleta: naranja vibrante + cyan
-    bg: '#fff8f0',
-    bgAccent: '#ffe8d6',
-    textPrimary: '#2d1b0e',
-    textSecondary: '#7a5a3a',
-    accent: '#e85d04',       // naranja vibrante
-    accentSoft: '#fbb47a',
-    badgeBg: '#e85d04',
-    badgeText: '#fff8f0',
-    headingFont: '"Poppins", "Montserrat", system-ui, sans-serif',
-    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(232,93,4,.55) 0%, rgba(0,180,216,.35) 100%)'
-  },
-  Ciencia: {
-    nombre: 'Ciencia',
-    descripcion: 'Laboratorio botánico',
-    // Paleta: verde botánico + azul eléctrico
-    bg: '#f0f4f0',
-    bgAccent: '#e0eae0',
-    textPrimary: '#1a2d1f',
-    textSecondary: '#4a5d52',
-    accent: '#2d5a3d',       // verde botánico
-    accentSoft: '#7ab594',
-    badgeBg: '#0077b6',      // azul eléctrico (diferenciador)
-    badgeText: '#f0f4f0',
-    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
-    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(45,90,61,.6) 0%, rgba(0,119,182,.35) 100%)'
+    bodyFont: 'Merriweather, "Source Serif Pro", Georgia, serif'
   },
   Beneficios: {
     nombre: 'Beneficios',
     descripcion: 'Bienestar natural',
-    // Paleta: verde menta suave + rosa terracota
     bg: '#f5f0e8',
     bgAccent: '#e8f0e4',
     textPrimary: '#2a3d2e',
     textSecondary: '#6b7d6e',
-    accent: '#52b788',       // verde menta
+    accent: '#52b788',
     accentSoft: '#95d5b2',
-    badgeBg: '#e07a5f',      // rosa terracota (diferenciador)
+    badgeBg: '#e07a5f',
     badgeText: '#f5f0e8',
     headingFont: '"Mulish", "Source Sans Pro", system-ui, sans-serif',
-    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(82,183,136,.45) 0%, rgba(224,122,95,.35) 100%)'
+    bodyFont: '"Source Serif Pro", "Lora", Georgia, serif'
   },
-  Cocina: {
-    nombre: 'Cocina',
-    descripcion: 'Cocina rústica',
-    // Paleta: rojo terracota + mostaza
+  Investigaciones: {
+    nombre: 'Investigaciones',
+    descripcion: 'Laboratorio botánico',
+    bg: '#f0f4f0',
+    bgAccent: '#e0eae0',
+    textPrimary: '#1a2d1f',
+    textSecondary: '#4a5d52',
+    accent: '#2d5a3d',
+    accentSoft: '#7ab594',
+    badgeBg: '#0077b6',
+    badgeText: '#f0f4f0',
+    headingFont: '"IBM Plex Sans", "Source Sans Pro", system-ui, sans-serif',
+    bodyFont: '"IBM Plex Serif", "Source Serif Pro", Georgia, serif'
+  },
+  Curiosidades: {
+    nombre: 'Curiosidades',
+    descripcion: 'Magazine divertido',
+    bg: '#fff8f0',
+    bgAccent: '#ffe8d6',
+    textPrimary: '#2d1b0e',
+    textSecondary: '#7a5a3a',
+    accent: '#e85d04',
+    accentSoft: '#fbb47a',
+    badgeBg: '#e85d04',
+    badgeText: '#fff8f0',
+    headingFont: '"Poppins", "Montserrat", system-ui, sans-serif',
+    bodyFont: 'Inter, "Source Sans Pro", system-ui, sans-serif'
+  },
+  Origenes: {
+    nombre: 'Origenes',
+    descripcion: 'Exploración geográfica',
     bg: '#fdf6e3',
     bgAccent: '#f5e6c8',
     textPrimary: '#3a1f1a',
     textSecondary: '#7a524a',
-    accent: '#c1432e',       // rojo terracota
+    accent: '#c1432e',
     accentSoft: '#e07560',
-    badgeBg: '#d4a017',      // mostaza (diferenciador)
+    badgeBg: '#d4a017',
     badgeText: '#3a1f1a',
     headingFont: '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-    bodyFont: 'Merriweather, "Lora", Georgia, serif',
-    heroOverlay: 'linear-gradient(135deg, rgba(193,67,46,.55) 0%, rgba(212,160,23,.35) 100%)'
+    bodyFont: 'Merriweather, "Lora", Georgia, serif'
   }
 };
 
-// Devuelve el template de una categoría. Si no existe, usa Historia como fallback.
+// Devuelve el template de una categoría. Si no existe, usa Historias como fallback.
 function getBlogTemplate(categoria) {
-  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historia;
+  return BLOG_TEMPLATES[categoria] || BLOG_TEMPLATES.Historias;
 }
 
 // Genera el CSS completo de un artículo según su categoría.
@@ -700,6 +734,20 @@ async function generateBlog(env, opts) {
   const existing = await loadExistingBlog(env);
   const existingTitles = existing.slice(-15).map(p => p.titulo).join(', ');
   log.push(`Blog existente: ${existing.length} posts`);
+
+  // 3b. Buscar el producto del catálogo que corresponde a la especia del artículo.
+  //     Usamos BLOG_ESPECIA_ALIASES para mapear el nombre de rotación al nombre
+  //     EXACTO del catálogo. Esto garantiza que el enlace siempre vaya al producto
+  //     correcto, incluso cuando el nombre no coincide literalmente.
+  //     Ej: 'pimentón' → 'Paprika' (en inglés en el catálogo)
+  //         'ají' → 'Ají Andino' (es un blend)
+  //         'pimienta negra' → 'Pimienta Negra en Bayas' (preferimos la en bayas)
+  const productoEspecia = findProductoForEspecia(tema.especia, products);
+  if (productoEspecia) {
+    log.push(`Producto de la especia principal: "${productoEspecia.nombre}" (ID ${productoEspecia.id}) — enlace garantizado`);
+  } else {
+    log.push(`AVISO: la especia "${tema.especia}" no tiene producto en catálogo. Se usará fallback.`);
+  }
 
   // 4. Prompt dinámico por categoría
   //    El CSS se inyecta después (generateBlogCSS) según la categoría.
