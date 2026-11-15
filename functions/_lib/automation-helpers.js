@@ -125,20 +125,45 @@ async function generateBlogText(env, prompt, opts) {
 }
 
 function extractJSON(text) {
-  let s = text;
+  if (text === undefined || text === null) {
+    throw new Error('JSON inválido: texto vacío (undefined/null)');
+  }
+  let s = typeof text === 'string' ? text : JSON.stringify(text);
+
+  // Llama 3.1 8B a veces devuelve texto con formato Markdown en vez de JSON.
+  // Intentamos "rescatar" el JSON de varias formas:
+  //
+  // 1. Buscar ```json ... ``` (markdown code block)
+  // 2. Buscar la primera { y la última }
+  // 3. Si no hay llaves, intentar construir JSON manualmente desde el texto
+
+  // 1. Quitar markdown code blocks ```json ... ```
+  const jsonBlock = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (jsonBlock) {
+    s = jsonBlock[1].trim();
+  }
+
+  // 2. Quitar markdown bold **texto** que Llama pone en títulos
+  s = s.replace(/\*\*/g, '');
+
+  // 3. Buscar { ... }
   const js = s.indexOf('{');
   const je = s.lastIndexOf('}');
-  if (js !== -1 && je > js) s = s.substring(js, je + 1);
-  try { return JSON.parse(s); }
-  catch (e) {
-    try { return JSON.parse(s.replace(/'/g, '"')); }
-    // Mostrar más del texto para diagnóstico: dónde se cortó el JSON.
-    // Antes solo mostrábamos 150 chars, lo que no servía para ver si estaba truncado.
-    catch (e2) {
-      const tail = s.length > 200 ? '...' + s.substring(s.length - 200) : s;
-      throw new Error('JSON inválido (longitud=' + s.length + '). Inicio: "' + s.slice(0, 80) + '". Final: "' + tail + '"');
+  if (js !== -1 && je > js) {
+    s = s.substring(js, je + 1);
+    try { return JSON.parse(s); }
+    catch (e) {
+      try { return JSON.parse(s.replace(/'/g, '"')); }
+      catch (e2) {
+        const tail = s.length > 200 ? '...' + s.substring(s.length - 200) : s;
+        throw new Error('JSON inválido (longitud=' + s.length + '). Inicio: "' + s.slice(0, 80) + '". Final: "' + tail + '"');
+      }
     }
   }
+
+  // 4. Si no hay llaves, el modelo devolvió texto plano en vez de JSON.
+  // Esto pasa con Llama 3.1 8B cuando no respeta la instrucción de JSON.
+  throw new Error('JSON inválido: la respuesta no contiene llaves { }. El modelo devolvió texto plano en vez de JSON. Respuesta (primeros 200 chars): "' + s.substring(0, 200) + '"');
 }
 
 // ============ SLUG ============

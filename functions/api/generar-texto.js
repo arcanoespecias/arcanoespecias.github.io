@@ -21,7 +21,7 @@ const CORS_HEADERS = {
 // Alternativas más capaces (más lentas):
 //   - @cf/meta/llama-3.3-70b-instruct-fp8-fast (más capaz, ~10-15s)
 //   - @cf/qwen/qwen1.5-14b-chat-awq (excelente para español)
-const MODEL = '@cf/meta/llama-3.1-8b-instruct';
+const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 export async function onRequestGet({ env }) {
   return new Response(JSON.stringify({
