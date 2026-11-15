@@ -75,6 +75,55 @@ async function callGemini(env, prompt, maxTokens, opts) {
   return text;
 }
 
+// ============ Z.AI CHAT API (vía Cloudflare Workers AI) ============
+//
+// Genera texto para el blog usando Cloudflare Workers AI (Llama 3.1 8B).
+// El API interna de Z.ai NO es accesible desde Cloudflare Pages, así que
+// usamos el endpoint /api/generar-texto que usa CF_ACCOUNT_ID + CF_API_TOKEN.
+//
+// Fallback: si Workers AI falla, cae a Gemini (callGemini).
+//
+// Devuelve: { text, source: 'cf-workers-ai' | 'gemini' }
+async function callZaiChat(env, prompt, opts) {
+  const resp = await fetch('https://arcanoespecias.com/api/generar-texto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: prompt,
+      max_tokens: opts?.maxTokens || 8192,
+      temperature: 0.8
+    })
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    const error = new Error(`Cloudflare Workers AI ${resp.status}: ${errText.substring(0, 200)}`);
+    error.status = resp.status;
+    throw error;
+  }
+
+  const data = await resp.json();
+  if (!data.ok) throw new Error('Workers AI no devolvió texto: ' + (data.error || 'desconocido'));
+
+  return { text: data.text, source: 'cf-workers-ai' };
+}
+
+// Genera texto para el blog (Z.ai/Workers AI primario, Gemini fallback).
+// Devuelve { text, source: 'cf-workers-ai' | 'gemini' }.
+async function generateBlogText(env, prompt, opts) {
+  // 1. Intentar con Workers AI primero (vía /api/generar-texto)
+  try {
+    const result = await callZaiChat(env, prompt, opts);
+    return result;
+  } catch (e) {
+    console.warn('[chat] Workers AI falló:', e.message, '— cayendo a Gemini');
+  }
+
+  // 2. Fallback: Gemini
+  const text = await callGemini(env, prompt, opts?.maxTokens || 8192, { json: true });
+  return { text, source: 'gemini' };
+}
+
 function extractJSON(text) {
   let s = text;
   const js = s.indexOf('{');
