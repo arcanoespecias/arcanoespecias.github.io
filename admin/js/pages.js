@@ -1276,10 +1276,10 @@ const Pages = {
     var packH = '<div class="card"><div class="card-body" style="padding:0"><div class="table-wrap"><table class="table"><thead><tr>' +
       '<th>Insumo</th><th class="text-center">Cant.</th><th class="text-center">Costo unit.</th><th class="text-center">Costo total</th><th class="text-center">Stock</th>' +
       '</tr></thead><tbody>';
-    // Caja de madera
+    // Cajas Pack x 3
     var cajaOk = cajasDisp >= cant;
     if (cant > 0 && !cajaOk) allOk = false;
-    packH += '<tr><td class="fw7">Caja de madera</td>' +
+    packH += '<tr><td class="fw7">Cajas Pack x 3</td>' +
       '<td class="text-center">' + cant + '</td>' +
       '<td class="text-center">$' + costoCaja.toLocaleString() + '</td>' +
       '<td class="text-center fw7" style="color:var(--gold)">$' + (costoCaja * cant).toLocaleString() + '</td>' +
@@ -2034,7 +2034,7 @@ const Pages = {
           '<div class="form-group"><label>Bolsa Chica</label><input type="number" class="input" id="f-cos-bol-c" value="' + (costos.bolsaChica||0) + '" min="0"></div>' +
           '<div class="form-group"><label>Bolsa Grande</label><input type="number" class="input" id="f-cos-bol-g" value="' + (costos.bolsaGrande||0) + '" min="0"></div>' +
           '<div class="form-group"><label>Cinta</label><input type="number" class="input" id="f-cos-cinta" value="' + (costos.cinta||0) + '" min="0"></div>' +
-          '<div class="form-group"><label>Caja de madera</label><input type="number" class="input" id="f-cos-caja" value="' + (costos.caja||0) + '" min="0"></div>' +
+          '<div class="form-group"><label>Cajas Pack x 3</label><input type="number" class="input" id="f-cos-caja" value="' + (costos.caja||0) + '" min="0"></div>' +
           '<div class="form-group"><label>Sticker Chico</label><input type="number" class="input" id="f-cos-stk-c" value="' + (costos.stickerChico||0) + '" min="0"></div>' +
         '</div>' +
         '<div class="form-group" style="margin-bottom:4px"><label>Sticker Grande</label><input type="number" class="input" id="f-cos-stk-g" value="' + (costos.stickerGrande||0) + '" min="0"></div>' +
@@ -4062,7 +4062,7 @@ const Pages = {
           '<option value="envase">Frascos</option>' +
           '<option value="bolsa">Bolsas</option>' +
           '<option value="cinta">Cintas</option>' +
-          '<option value="caja">Cajas de madera</option>' +
+          '<option value="caja">Cajas Pack x 3</option>' +
           '<option value="sticker">Stickers</option>' +
         '</select></div>' +
         '<div class="form-group" id="f-aj-prod-wrap"><label>Producto</label><select class="input" id="f-aj-prod"></select></div>' +
@@ -4168,7 +4168,7 @@ const Pages = {
         nombre = 'Cintas';
         actual = db.stockCintas || 0;
       } else if (cat === 'caja') {
-        nombre = 'Cajas de madera';
+        nombre = 'Cajas Pack x 3';
         actual = db.stockCajas || 0;
       } else if (cat === 'sticker' && prodSel.value) {
         nombre = prodSel.value;
@@ -12695,7 +12695,7 @@ const Pages = {
     h += '<tr><td class="fw7">Bolsas Chicas</td><td>' + (bolsas.chico||0) + '</td><td>' + adjInput('bolsa', 'chico', null, 'Bolsas chica', bolsas.chico||0) + '</td></tr>';
     h += '<tr><td class="fw7">Bolsas Grandes</td><td>' + (bolsas.grande||0) + '</td><td>' + adjInput('bolsa', 'grande', null, 'Bolsas grande', bolsas.grande||0) + '</td></tr>';
     h += '<tr><td class="fw7">Cintas</td><td>' + (db.stockCintas||0) + '</td><td>' + adjInput('cinta', 'cinta', null, 'Cintas', db.stockCintas||0) + '</td></tr>';
-    h += '<tr><td class="fw7">Cajas de madera</td><td>' + (db.stockCajas||0) + '</td><td>' + adjInput('caja', 'caja', null, 'Cajas de madera', db.stockCajas||0) + '</td></tr>';
+    h += '<tr><td class="fw7">Cajas Pack x 3</td><td>' + (db.stockCajas||0) + '</td><td>' + adjInput('caja', 'caja', null, 'Cajas Pack x 3', db.stockCajas||0) + '</td></tr>';
     h += '</tbody></table></div></div></div>';
 
     // === SECTION 4: STICKERS ===
@@ -12947,7 +12947,7 @@ const Pages = {
           '<option value="envase">Frascos</option>' +
           '<option value="bolsa">Bolsas</option>' +
           '<option value="cinta">Cintas</option>' +
-          '<option value="caja">Cajas de madera</option>' +
+          '<option value="caja">Cajas Pack x 3</option>' +
           '<option value="sticker">Stickers</option>' +
         '</select></div>' +
         '<div class="form-group" id="f-aj-prod-wrap"><label>Producto</label><select class="input" id="f-aj-prod"></select></div>' +
@@ -13093,7 +13093,7 @@ const Pages = {
       var prodNombre = prodSel.options[prodSel.selectedIndex] ? prodSel.options[prodSel.selectedIndex].textContent : '';
       var actual = getStockActualFor(cat, sub, prodId, prodNombre);
       var unidad = sub === 'pala' ? 'g' : 'u';
-      var nombre = prodNombre || (cat === 'envase' ? 'Frascos ' + sub : cat === 'bolsa' ? 'Bolsas ' + sub : cat === 'cinta' ? 'Cintas' : cat === 'caja' ? 'Cajas de madera' : '');
+      var nombre = prodNombre || (cat === 'envase' ? 'Frascos ' + sub : cat === 'bolsa' ? 'Bolsas ' + sub : cat === 'cinta' ? 'Cintas' : cat === 'caja' ? 'Cajas Pack x 3' : '');
       if (!nombre) { previewDiv.style.display = 'none'; return; }
 
       var resultante, delta, valorLabel;

@@ -122,7 +122,7 @@ function _ensureStructure() {
   if (!_db.stockEnvases) _db.stockEnvases = { chico: 0, grande: 0 };
   if (!_db.stockBolsas) _db.stockBolsas = { chico: 0, grande: 0 };
   if (!_db.stockCintas) _db.stockCintas = 0;
-  if (!_db.stockCajas) _db.stockCajas = 0;  // Cajas de madera para packs (1 caja por pack)
+  if (!_db.stockCajas) _db.stockCajas = 0;  // Cajas Pack x 3 para packs (1 caja por pack)
   // === Normalizar stockCostales de cada PDV ===
   // Firebase RTDB convierte un objeto { "5": 200, "8": 923 } a un array sparse
   // si las claves son numéricas. Esto causa el bug de "costales duplicados"
@@ -249,7 +249,7 @@ function _emptyDB() {
     stockEnvases: { chico: 0, grande: 0 },
     stockBolsas: { chico: 0, grande: 0 },
     stockCintas: 0,
-    stockCajas: 0,  // Cajas de madera para packs (1 caja por pack vendido)
+    stockCajas: 0,  // Cajas Pack x 3 para packs (1 caja por pack vendido)
     productTags: {
       'Comidas': ['Aves', 'Pescados y Mariscos', 'Cerdo', 'Salsas y Aderezos', 'Verduras y Vegetales', 'Granos y Legumbres'],
       'Infusiones': ['Relajante', 'Digestiva', 'Energ\u00E9tica', 'Citrica', 'Refrescante', 'Detox', 'Aromatica'],
@@ -1737,7 +1737,7 @@ function saveAjuste(data) {
     var nvCaja = (_db.stockCajas || 0) + cantidad;
     if (nvCaja < 0) throw new Error('Stock resultante negativo (' + nvCaja + ') para cajas de madera');
     _db.stockCajas = nvCaja;
-    data.productoNombre = 'Cajas de madera';
+    data.productoNombre = 'Cajas Pack x 3';
   }
 
   data.cantidad = cantidad;
@@ -1800,7 +1800,7 @@ function saveAjusteReal(data) {
     productoNombre = 'Cintas';
   } else if (cat === 'caja') {
     stockActual = Number(_db.stockCajas) || 0;
-    productoNombre = 'Cajas de madera';
+    productoNombre = 'Cajas Pack x 3';
   } else if (cat === 'sticker') {
     var stk = _getOrCreateSticker(productoNombre);
     stockActual = Number(stk[sub === 'grande' ? 'stockGrande' : 'stockChico']) || 0;
@@ -3839,10 +3839,10 @@ function producirPack(packId, cantidad) {
   // La talla del pack la define configTalla (default 'chico')
   var packTalla = (pack.configTalla === 'grande') ? 'grande' : 'chico';
 
-  // Caja de madera
+  // Cajas Pack x 3
   if (!_db.stockCajas) _db.stockCajas = 0;
   if ((_db.stockCajas || 0) < cantidad) {
-    throw new Error('Cajas de madera insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockCajas || 0));
+    throw new Error('Cajas Pack x 3 insuficientes. Necesitas ' + cantidad + ', tienes ' + (_db.stockCajas || 0));
   }
 
   // Bolsa (packaging exterior — el pack va en una bolsa junto con la caja)
