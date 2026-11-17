@@ -1568,7 +1568,7 @@ const Pages = {
       div.style.background = 'var(--bg)';
       div.innerHTML = '<div class="card-body" style="padding:12px">' +
         '<div class="g4 mb-8">' +
-          '<div class="form-group" style="margin:0"><label>Tipo</label><select class="input ent-tipo"><option value="especia_grs">Especia (grs)</option><option value="envase">Frascos</option><option value="bolsa">Bolsas</option><option value="cinta">Cintas</option><option value="sticker">Stickers</option></select></div>' +
+          '<div class="form-group" style="margin:0"><label>Tipo</label><select class="input ent-tipo"><option value="especia_grs">Especia (grs)</option><option value="envase">Frascos</option><option value="bolsa">Bolsas</option><option value="cinta">Cintas</option><option value="sticker">Stickers</option><option value="caja">Cajas Pack x 3</option></select></div>' +
           '<div class="form-group ent-detail" style="margin:0"></div>' +
           '<div class="form-group ent-cant-wrap" style="margin:0;min-width:100px"><label>Cantidad</label><input type="number" class="input ent-cant" placeholder="0" min="0"></div>' +
           '<div class="form-group ent-cost-wrap" style="margin:0;min-width:100px"><label>Costo Unit.</label><input type="number" class="input ent-cost-gen" placeholder="0" min="0"></div>' +
@@ -1668,6 +1668,8 @@ const Pages = {
           detailDiv.innerHTML = '<label>Talla</label><select class="input ent-talla"><option value="chico">Chica</option><option value="grande">Grande</option></select>';
         } else if (t === 'cinta') {
           detailDiv.innerHTML = '';
+        } else if (t === 'caja') {
+          detailDiv.innerHTML = '<label>&nbsp;</label><span class="text-xs text-muted">Cajas Pack x 3 (unidades)</span>';
         } else if (t === 'sticker') {
           // Si la fila tiene preload de un sticker individual (edici\u00F3n), usar modo simple:
           // inputs para producto (select de todos los productos) + talla + cantidad + costo.
