@@ -188,100 +188,251 @@ const Pages = {
     for (var pk = 0; pk < pkeys.length; pk++) prodArr.push({nombre: pkeys[pk], ingreso: prodVentaMap[pkeys[pk]]});
     prodArr.sort(function(a, b) { return b.ingreso - a.ingreso; });
 
+    // === KPIs NUEVOS: producibles, valor inventario, packaging ===
+    var costos = ArcanoDB.getCostosInsumos();
+    var envasesStock = db.stockEnvases || { chico: 0, grande: 0 };
+    var bolsasStock = db.stockBolsas || { chico: 0, grande: 0 };
+    var cintasStock = db.stockCintas || 0;
+    var cajasStock = db.stockCajas || 0;
+
+    // Helper local: max frascos armeable de un producto/talla con stock actual
+    function _maxProducible(tipo, productoId, talla) {
+      var producto = null;
+      if (tipo === 'especia') producto = db.especias ? db.especias[productoId] : null;
+      else if (tipo === 'blend') producto = db.blends ? db.blends[productoId] : null;
+      if (!producto) return 0;
+      var maxEnv = talla === 'grande' ? (envasesStock.grande || 0) : (envasesStock.chico || 0);
+      var maxBol = talla === 'grande' ? (bolsasStock.grande || 0) : (bolsasStock.chico || 0);
+      var maxCint = cintasStock;
+      var maxStk = 0;
+      if (db.stickers) {
+        var stkKeys = Object.keys(db.stickers);
+        for (var j = 0; j < stkKeys.length; j++) {
+          var st = db.stickers[stkKeys[j]];
+          if (st && st.nombre === producto.nombre) {
+            maxStk = talla === 'grande' ? (st.stockGrande || 0) : (st.stockChico || 0);
+            break;
+          }
+        }
+      }
+      var maxEsp = Infinity;
+      if (tipo === 'especia') {
+        var g = talla === 'grande' ? (producto.gramosGrande || 0) : (producto.gramosChico || 0);
+        maxEsp = g > 0 ? Math.floor((producto.stockBolsa || 0) / g) : 0;
+      } else if (tipo === 'blend') {
+        var ings = producto.ingredientes || [];
+        var anyIng = false;
+        for (var i = 0; i < ings.length; i++) {
+          var ing = ings[i];
+          var gIng = talla === 'grande' ? (ing.gramosGrande || 0) : (ing.gramosChico || 0);
+          if (gIng <= 0) continue;
+          anyIng = true;
+          var esp = db.especias ? db.especias[ing.especiaId] : null;
+          var sb = esp ? (esp.stockBolsa || 0) : 0;
+          var maxForThisIng = Math.floor(sb / gIng);
+          if (maxForThisIng < maxEsp) maxEsp = maxForThisIng;
+        }
+        if (!anyIng) maxEsp = 0;
+      } else {
+        maxEsp = 0;
+      }
+      return Math.max(0, Math.min(maxEsp, maxEnv, maxBol, maxCint, maxStk));
+    }
+
+    var produciblesChico = 0, produciblesGrande = 0;
+    var produciblesList = [];  // top 5 productos con más frascos armeables
+    for (var ei4 = 0; ei4 < especias.length; ei4++) {
+      var e = especias[ei4];
+      var pc = _maxProducible('especia', e.id, 'chico');
+      var pg = _maxProducible('especia', e.id, 'grande');
+      produciblesChico += pc;
+      produciblesGrande += pg;
+      if (pc + pg > 0) produciblesList.push({ nombre: e.nombre, chico: pc, grande: pg, tipo: 'especia' });
+    }
+    for (var bi2 = 0; bi2 < blends.length; bi2++) {
+      var b = blends[bi2];
+      var pbc = _maxProducible('blend', b.id, 'chico');
+      var pbg = _maxProducible('blend', b.id, 'grande');
+      produciblesChico += pbc;
+      produciblesGrande += pbg;
+      if (pbc + pbg > 0) produciblesList.push({ nombre: b.nombre, chico: pbc, grande: pbg, tipo: 'blend' });
+    }
+    var totalProducibles = produciblesChico + produciblesGrande;
+    produciblesList.sort(function(a, b) { return (b.chico + b.grande) - (a.chico + a.grande); });
+
+    // Valor del inventario al COSTO (no precio de venta)
+    var valorEspeciasBolsaCosto = 0, gramosBolsaTotal = 0;
+    for (var ei5 = 0; ei5 < especias.length; ei5++) {
+      var e5 = especias[ei5];
+      var gramosBolsa = e5.stockBolsa || 0;
+      gramosBolsaTotal += gramosBolsa;
+      var costoPorGramo = (costos.especias && costos.especias[e5.id]) || 0;
+      valorEspeciasBolsaCosto += gramosBolsa * costoPorGramo;
+    }
+    var valorFrascosLlenosCosto = 0;
+    for (var vi5 = 0; vi5 < blends.length; vi5++) {
+      var bL = blends[vi5];
+      valorFrascosLlenosCosto += (bL.stockChico || 0) * ArcanoDB.getCostoProducto('blend', bL.id, 'chico');
+      valorFrascosLlenosCosto += (bL.stockGrande || 0) * ArcanoDB.getCostoProducto('blend', bL.id, 'grande');
+    }
+    for (var ei6 = 0; ei6 < especias.length; ei6++) {
+      var e6 = especias[ei6];
+      valorFrascosLlenosCosto += (e6.stockChico || 0) * ArcanoDB.getCostoProducto('especia', e6.id, 'chico');
+      valorFrascosLlenosCosto += (e6.stockGrande || 0) * ArcanoDB.getCostoProducto('especia', e6.id, 'grande');
+    }
+    // Costo del packaging en stock
+    var costoEnvases = (envasesStock.chico || 0) * (costos.envaseChico || 0) + (envasesStock.grande || 0) * (costos.envaseGrande || 0);
+    var costoBolsas = (bolsasStock.chico || 0) * (costos.bolsaChica || 0) + (bolsasStock.grande || 0) * (costos.bolsaGrande || 0);
+    var costoCintas = cintasStock * (costos.cinta || 0);
+    var costoCajas = cajasStock * (costos.caja || 0);
+    var costoStickers = 0;
+    for (var si2 = 0; si2 < stickers.length; si2++) {
+      var stk = stickers[si2];
+      costoStickers += (stk.stockChico || 0) * (costos.stickerChico || 0);
+      costoStickers += (stk.stockGrande || 0) * (costos.stickerGrande || 0);
+    }
+    var valorPackagingCosto = costoEnvases + costoBolsas + costoCintas + costoCajas + costoStickers;
+    var valorInventarioTotal = valorEspeciasBolsaCosto + valorFrascosLlenosCosto + valorPackagingCosto;
+
+    // Stickers totales (chico + grande)
+    var stickersChicoTotal = 0, stickersGrandeTotal = 0;
+    for (var si3 = 0; si3 < stickers.length; si3++) {
+      stickersChicoTotal += (stickers[si3].stockChico || 0);
+      stickersGrandeTotal += (stickers[si3].stockGrande || 0);
+    }
+
+    // Cantidad de compras del mes (entradas)
+    var comprasMesCount = 0;
+    for (var ei7 = 0; ei7 < entradas.length; ei7++) {
+      var entF = entradas[ei7].fecha || '';
+      if (entF && entF.startsWith(mes)) comprasMesCount++;
+    }
+
     // === BUILD HTML ===
     var h = '';
 
-    // KPIs principales \u2014 todos clickeables, llevan a su seccion
-    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--gold)"></span>Resumen del Negocio</div>';
-    h += '<div class="dash-kpi-row">';
-    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver historial de ventas"><div class="dash-kpi-icon">$</div><div class="dash-kpi-body"><div class="dash-kpi-val">$' + ingresosHoy.toLocaleString() + '</div><div class="dash-kpi-lbl">Ventas Hoy</div></div></div>';
-    h += '<div class="dash-kpi-card dash-kpi-blue dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver historial de ventas"><div class="dash-kpi-icon">M</div><div class="dash-kpi-body"><div class="dash-kpi-val">$' + ingresosMes.toLocaleString() + '</div><div class="dash-kpi-lbl">Ingresos del Mes</div><div class="dash-kpi-sub">' + opsMes + ' operaciones</div></div></div>';
-    h += '<div class="dash-kpi-card dash-kpi-red dash-clickable" onclick="App.navigate(\'insumos\')" title="Ver historial de compras"><div class="dash-kpi-icon" style="color:var(--red)">C</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:var(--red)">$' + comprasMes.toLocaleString() + '</div><div class="dash-kpi-lbl">Compras del Mes</div><div class="dash-kpi-sub">Insumos adquiridos este mes</div></div></div>';
-    var mClr = margenPct >= 0 ? 'var(--green)' : 'var(--red)';
-    h += '<div class="dash-kpi-card dash-clickable" onclick="App.navigate(\'estadisticas\')" title="Ver estadisticas detalladas"><div class="dash-kpi-icon" style="color:var(--green)">%a</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:' + mClr + '">' + margenPct.toFixed(1) + '%</div><div class="dash-kpi-lbl">Margen Bruto</div><div class="dash-kpi-sub">Ingreso $' + totalIngresos.toLocaleString() + ' - Costos $' + totalCostos.toLocaleString() + '</div></div></div>';
-    h += '<div class="dash-kpi-card ' + (totalAlertas > 0 ? 'dash-kpi-red' : 'dash-kpi-green') + ' dash-clickable" onclick="App.navigate(\'stock\')" title="Ver estado de stock"><div class="dash-kpi-icon">!</div><div class="dash-kpi-body"><div class="dash-kpi-val">' + totalAlertas + '</div><div class="dash-kpi-lbl">Alertas de Stock</div><div class="dash-kpi-sub">' + palaBaja.length + ' pala, ' + frascosBajos.length + ' frascos, ' + stickerBajos.length + ' stk</div></div></div>';
+    // Header del dashboard
+    var _hoy = new Date();
+    var _fechaStr = _hoy.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+    var _nombreAdmin = (typeof currentUser !== 'undefined' && currentUser && currentUser.nombre) ? currentUser.nombre : 'Admin';
+    h += '<div class="dash-header">';
+    h += '<div>';
+    h += '<h2>Hola, <span>' + esc(_nombreAdmin) + '</span></h2>';
+    h += '<div class="dash-header-sub">' + _fechaStr + ' · Resumen operativo del negocio</div>';
+    h += '</div>';
+    h += '<div class="dash-header-pill"><span class="dot"></span> ' + opsMes + ' operaciones este mes</div>';
     h += '</div>';
 
-    // Segunda fila \u2014 todos clickeables
-    h += '<div class="dash-kpi-row dash-kpi-sm">';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver ventas"><div class="dash-mini-val">' + totalUnidades + '</div><div class="dash-mini-lbl">Unidades Vendidas</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver ventas"><div class="dash-mini-val">$' + (totalOps > 0 ? Math.round(totalIngresos / totalOps) : 0).toLocaleString() + '</div><div class="dash-mini-lbl">Ticket Promedio</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'produccion\')" title="Ver produccion"><div class="dash-mini-val">' + prodMesCount + '</div><div class="dash-mini-lbl">Producciones Mes</div><div class="dash-mini-sub">' + prodMesUds + ' frascos</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val">' + stats.totalFrascos + '</div><div class="dash-mini-lbl">Frascos en Stock</div><div class="dash-mini-sub">' + stats.frascosChico + ' pq / ' + stats.frascosGrande + ' gr</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'productos\')" title="Ver productos"><div class="dash-mini-val">' + stats.totalProductos + '</div><div class="dash-mini-lbl">Productos Activos</div><div class="dash-mini-sub">' + stats.totalEspecias + ' esp + ' + stats.totalBlends + ' bl</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'pedidos\')" title="Ver pedidos"><div class="dash-mini-val">' + pedidosNuevos.length + '</div><div class="dash-mini-lbl">Pedidos Nuevos</div></div>';
+    // === HERO: VALOR DEL INVENTARIO ===
+    h += '<div class="dash-kpi-grid cols-3" style="margin-bottom:14px">';
+    h += '<div class="dash-hero dash-clickable" onclick="App.navigate(\'stock\')" style="grid-column:1/-1">';
+    h += '<div class="dash-hero-label">Valor del Inventario (al costo)</div>';
+    h += '<div class="dash-hero-value">$' + Math.round(valorInventarioTotal).toLocaleString() + '</div>';
+    h += '<div class="dash-hero-sub">Especias en bolsa $' + Math.round(valorEspeciasBolsaCosto).toLocaleString() + ' · Frascos llenos $' + Math.round(valorFrascosLlenosCosto).toLocaleString() + ' · Packaging $' + Math.round(valorPackagingCosto).toLocaleString() + '</div>';
+    h += '</div>';
+    h += '</div>';
+
+    // === KPIs PRINCIPALES: Ventas + Compras del mes ===
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--gold)"></span>Ventas y Compras del Mes</div>';
+    h += '<div class="dash-kpi-row">';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver historial de ventas"><div class="dash-kpi-icon">$</div><div class="dash-kpi-body"><div class="dash-kpi-val">$' + Math.round(ingresosMes).toLocaleString() + '</div><div class="dash-kpi-lbl">Ventas del mes</div><div class="dash-kpi-sub">' + opsMes + ' operaciones</div></div></div>';
+    h += '<div class="dash-kpi-card dash-kpi-blue dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver ventas"><div class="dash-kpi-icon" style="color:var(--blue)">V</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:var(--blue)">' + totalUnidades + '</div><div class="dash-kpi-lbl">Unidades vendidas</div><div class="dash-kpi-sub">Histórico total</div></div></div>';
+    h += '<div class="dash-kpi-card dash-kpi-red dash-clickable" onclick="App.navigate(\'insumos\')" title="Ver historial de compras"><div class="dash-kpi-icon" style="color:var(--red)">C</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:var(--red)">$' + Math.round(comprasMes).toLocaleString() + '</div><div class="dash-kpi-lbl">Compras del mes</div><div class="dash-kpi-sub">' + comprasMesCount + ' entradas de insumos</div></div></div>';
+    var mClr = margenPct >= 0 ? 'var(--green)' : 'var(--red)';
+    h += '<div class="dash-kpi-card dash-clickable" onclick="App.navigate(\'estadisticas\')" title="Ver estadísticas"><div class="dash-kpi-icon" style="color:' + mClr + '">%</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:' + mClr + '">' + margenPct.toFixed(1) + '%</div><div class="dash-kpi-lbl">Margen bruto</div><div class="dash-kpi-sub">Histórico acumulado</div></div></div>';
+    h += '</div>';
+
+    // === FRASCOS VACÍOS DISPONIBLES + STICKERS ===
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--gold)"></span>Frascos Vacíos y Stickers</div>';
+    h += '<div class="dash-kpi-row">';
+    var envChClr = (envasesStock.chico || 0) <= 10 ? 'var(--red)' : 'var(--gold)';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'insumos\')" title="Ver insumos"><div class="dash-kpi-icon">🍪</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:' + envChClr + '">' + (envasesStock.chico || 0) + '</div><div class="dash-kpi-lbl">Frascos vacíos chico</div><div class="dash-kpi-sub">Listos para llenar</div></div></div>';
+    var envGClr = (envasesStock.grande || 0) <= 10 ? 'var(--red)' : 'var(--gold)';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'insumos\')" title="Ver insumos"><div class="dash-kpi-icon">🍯</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:' + envGClr + '">' + (envasesStock.grande || 0) + '</div><div class="dash-kpi-lbl">Frascos vacíos grande</div><div class="dash-kpi-sub">Listos para llenar</div></div></div>';
+    var stkChClr = stickersChicoTotal <= 10 ? 'var(--red)' : 'var(--gold)';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'palas\')" title="Ver stickers"><div class="dash-kpi-icon">🏷</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:' + stkChClr + '">' + stickersChicoTotal + '</div><div class="dash-kpi-lbl">Stickers chico</div><div class="dash-kpi-sub">' + stickers.length + ' productos</div></div></div>';
+    var stkGClr = stickersGrandeTotal <= 10 ? 'var(--red)' : 'var(--gold)';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'palas\')" title="Ver stickers"><div class="dash-kpi-icon" style="color:var(--gold2)">🏷</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:' + stkGClr + '">' + stickersGrandeTotal + '</div><div class="dash-kpi-lbl">Stickers grande</div><div class="dash-kpi-sub">Etiquetas disponibles</div></div></div>';
+    h += '</div>';
+
+    // === FRASCOS LISTOS PARA VENDER + PRODUCIBLES ===
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--green)"></span>Frascos Listos y Producibles</div>';
+    h += '<div class="dash-kpi-row">';
+    h += '<div class="dash-kpi-card dash-kpi-green dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-kpi-icon" style="color:var(--green)">✓</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:var(--green)">' + stats.frascosChico + '</div><div class="dash-kpi-lbl">Frascos listos chico</div><div class="dash-kpi-sub">Blends + especias terminados</div></div></div>';
+    h += '<div class="dash-kpi-card dash-kpi-green dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-kpi-icon" style="color:var(--green)">✓</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:var(--green)">' + stats.frascosGrande + '</div><div class="dash-kpi-lbl">Frascos listos grande</div><div class="dash-kpi-sub">Blends + especias terminados</div></div></div>';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'produccion\')" title="Ver producción"><div class="dash-kpi-icon">⚡</div><div class="dash-kpi-body"><div class="dash-kpi-val">' + produciblesChico + '</div><div class="dash-kpi-lbl">Producibles chico</div><div class="dash-kpi-sub">Armeable con stock actual</div></div></div>';
+    h += '<div class="dash-kpi-card dash-kpi-gold dash-clickable" onclick="App.navigate(\'produccion\')" title="Ver producción"><div class="dash-kpi-icon" style="color:var(--gold2)">⚡</div><div class="dash-kpi-body"><div class="dash-kpi-val" style="color:var(--gold2)">' + produciblesGrande + '</div><div class="dash-kpi-lbl">Producibles grande</div><div class="dash-kpi-sub">Total: ' + totalProducibles + ' frascos</div></div></div>';
+    h += '</div>';
+
+    // === PACKAGING ===
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--blue)"></span>Stock de Packaging</div>';
+    h += '<div class="dash-grid-2">';
+    h += '<div class="dash-card"><h4>Packaging disponible</h4>';
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    var bolChClr = (bolsasStock.chico || 0) <= 10 ? 'var(--red)' : 'var(--green)';
+    h += '<div class="dash-pkg-tile dash-clickable" onclick="App.navigate(\'insumos\')"><div class="dash-pkg-tile-left"><div class="dash-pkg-tile-icon">袋</div><div><div class="dash-pkg-tile-name">Bolsas chico</div><div class="dash-pkg-tile-sub">Para frascos pequeños</div></div></div><div class="dash-pkg-tile-val" style="color:' + bolChClr + '">' + (bolsasStock.chico || 0) + '</div></div>';
+    var bolGClr = (bolsasStock.grande || 0) <= 10 ? 'var(--red)' : 'var(--green)';
+    h += '<div class="dash-pkg-tile dash-clickable" onclick="App.navigate(\'insumos\')"><div class="dash-pkg-tile-left"><div class="dash-pkg-tile-icon">袋</div><div><div class="dash-pkg-tile-name">Bolsas grande</div><div class="dash-pkg-tile-sub">Para frascos grandes</div></div></div><div class="dash-pkg-tile-val" style="color:' + bolGClr + '">' + (bolsasStock.grande || 0) + '</div></div>';
+    var cintClr = cintasStock <= 10 ? 'var(--red)' : 'var(--green)';
+    h += '<div class="dash-pkg-tile dash-clickable" onclick="App.navigate(\'insumos\')"><div class="dash-pkg-tile-left"><div class="dash-pkg-tile-icon">🎀</div><div><div class="dash-pkg-tile-name">Cintas</div><div class="dash-pkg-tile-sub">Para todos los frascos</div></div></div><div class="dash-pkg-tile-val" style="color:' + cintClr + '">' + cintasStock + '</div></div>';
+    var cajClr = cajasStock <= 3 ? 'var(--red)' : 'var(--green)';
+    h += '<div class="dash-pkg-tile dash-clickable" onclick="App.navigate(\'productos\')"><div class="dash-pkg-tile-left"><div class="dash-pkg-tile-icon">📦</div><div><div class="dash-pkg-tile-name">Cajas Pack x 3</div><div class="dash-pkg-tile-sub">Para packs de 3 frascos</div></div></div><div class="dash-pkg-tile-val" style="color:' + cajClr + '">' + cajasStock + '</div></div>';
+    h += '</div></div>';
+
+    // Valor del inventario (al costo) — desglose
+    h += '<div class="dash-card"><h4>Valor del inventario (al costo)</h4>';
+    h += '<div class="dash-prod-bar-track"><div class="dash-prod-bar-fill" style="width:100%"></div></div>';
+    h += '<div style="margin-top:14px">';
+    h += '<div class="dash-prod-row"><span class="dash-prod-row-name">Especias en bolsa (' + gramosBolsaTotal.toLocaleString() + 'g)</span><span class="dash-prod-row-val">$' + Math.round(valorEspeciasBolsaCosto).toLocaleString() + '</span></div>';
+    h += '<div class="dash-prod-row"><span class="dash-prod-row-name">Frascos llenos (producidos)</span><span class="dash-prod-row-val">$' + Math.round(valorFrascosLlenosCosto).toLocaleString() + '</span></div>';
+    h += '<div class="dash-prod-row"><span class="dash-prod-row-name">Envases (frascos vacíos)</span><span class="dash-prod-row-val">$' + Math.round(costoEnvases).toLocaleString() + '</span></div>';
+    h += '<div class="dash-prod-row"><span class="dash-prod-row-name">Bolsas</span><span class="dash-prod-row-val">$' + Math.round(costoBolsas).toLocaleString() + '</span></div>';
+    h += '<div class="dash-prod-row"><span class="dash-prod-row-name">Cintas + Cajas + Stickers</span><span class="dash-prod-row-val">$' + Math.round(costoCintas + costoCajas + costoStickers).toLocaleString() + '</span></div>';
+    h += '<div class="dash-prod-row" style="border-top:1px solid var(--bg4);padding-top:12px;margin-top:6px"><span class="dash-prod-row-name" style="font-weight:800;color:var(--gold)">Total inventario</span><span class="dash-prod-row-val" style="font-size:1.1rem">$' + Math.round(valorInventarioTotal).toLocaleString() + '</span></div>';
+    h += '</div></div></div>';
+
+    // === PRODUCIBLES detalle ===
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--gold)"></span>Top Producibles (frascos armeables)</div>';
+    h += '<div class="dash-grid-2">';
+    h += '<div class="dash-card"><h4>Top 6 productos armeables</h4>';
+    if (produciblesList.length > 0) {
+      var maxProd = produciblesList[0].chico + produciblesList[0].grande || 1;
+      h += '<div class="dash-top-list">';
+      for (var tp = 0; tp < Math.min(6, produciblesList.length); tp++) {
+        var pp = produciblesList[tp];
+        var barW = Math.max(4, Math.round(((pp.chico + pp.grande) / maxProd) * 100));
+        h += '<div class="dash-top-item"><div class="dash-top-info"><span class="dash-top-rank">' + (tp + 1) + '</span><span class="dash-top-name">' + esc(pp.nombre) + '</span></div><div class="dash-top-bar-track"><div class="dash-top-bar-fill" style="width:' + barW + '%"></div></div><div class="dash-top-val">' + (pp.chico + pp.grande) + '</div></div>';
+      }
+      h += '</div>';
+    } else { h += '<div class="est-empty">No hay productos armeables con el stock actual</div>'; }
+    h += '</div>';
+
+    // Stock bajo / alertas
+    h += '<div class="dash-card ' + (totalAlertas > 0 ? 'dash-card-alert' : '') + '"><h4>' + (totalAlertas > 0 ? '<span style="color:var(--red)">⚠ Alertas de stock bajo</span>' : '✓ Stock saludable') + '</h4>';
+    if (totalAlertas > 0) {
+      h += '<div class="dash-alert-list">';
+      for (var ai = 0; ai < Math.min(palaBaja.length, 4); ai++) h += '<div class="dash-alert-item dash-alert-yellow">PALA: ' + esc(palaBaja[ai].nombre) + ' <b>' + (palaBaja[ai].stockBolsa || 0) + 'g</b></div>';
+      for (var ai2 = 0; ai2 < Math.min(frascosBajos.length, 4); ai2++) h += '<div class="dash-alert-item dash-alert-red">FRASCO: ' + esc(frascosBajos[ai2].nombre) + ' <b>ch:' + frascosBajos[ai2].chico + ' gr:' + frascosBajos[ai2].grande + '</b></div>';
+      for (var ai3 = 0; ai3 < Math.min(stickerBajos.length, 3); ai3++) h += '<div class="dash-alert-item dash-alert-blue">STICKER: ' + esc(stickerBajos[ai3].nombre || '?') + ' <b>' + ((stickerBajos[ai3].stockChico || 0) + (stickerBajos[ai3].stockGrande || 0)) + '</b></div>';
+      h += '<div class="dash-alert-more"><a href="javascript:void(0)" onclick="App.navigate(\'stock\')">Ver todo el stock →</a></div>';
+      h += '</div>';
+    } else { h += '<div class="est-empty">Todo el inventario está OK ✓</div>'; }
+    h += '</div></div>';
+
+    // === MÉTRICAS ADICIONALES ===
     var gastosMes = 0;
     for (var gm = 0; gm < gastos.length; gm++) { if (gastos[gm].fecha && gastos[gm].fecha.startsWith(mes)) gastosMes += (gastos[gm].monto || 0); }
-    // Ganancia neta del mes = ingresos del mes - compras del mes - gastos del mes
-    // (NO usa totalCostos que es hist\u00F3rico y romperia el calculo mensual)
     var gananciaNeta = ingresosMes - comprasMes - gastosMes;
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'gastos\')" title="Ver historial de gastos"><div class="dash-mini-val" style="color:var(--red)">$' + gastosMes.toLocaleString() + '</div><div class="dash-mini-lbl">Gastos del Mes</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'estadisticas\')" title="Ver estadisticas"><div class="dash-mini-val" style="color:' + (gananciaNeta >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + gananciaNeta.toLocaleString() + '</div><div class="dash-mini-lbl">Ganancia Neta</div><div class="dash-mini-sub">ingresos - compras - gastos</div></div>';
-    h += '</div>';
-
-    // === VALOR DE INVENTARIO ===
-    // Modelo: Especias en bolsa (insumos) \u2192 Blends/Costales/Palas (productos)
-    var costos = ArcanoDB.getCostosInsumos();
-    var valorBlendsStock = 0;      // Blends producidos (frascos) al precio de venta
-    var valorEspeciasBolsaCosto = 0; // Especias en bolsa (gramos) al costo de compra
-    var valorEspeciasBolsaVenta = 0; // Especias en bolsa (gramos) convertidas a palas al precio de venta
-    var valorCostales = 0;        // Costales abiertos/vac\u00EDos
-    var valorPacks = 0;
-    var gramosBolsaTotal = 0;
-
-    // 1. Blends en stock (frascos producidos) \u2192 valor de venta
-    for (var vi2 = 0; vi2 < blends.length; vi2++) {
-      var b = blends[vi2];
-      valorBlendsStock += (b.stockChico || 0) * (b.precioChico || 0);
-      valorBlendsStock += (b.stockGrande || 0) * (b.precioGrande || 0);
-    }
-
-    // 2. Especias en bolsa (insumos en gramos)
-    for (var ei2 = 0; ei2 < especias.length; ei2++) {
-      var e = especias[ei2];
-      var gramosBolsa = e.stockBolsa || 0;
-      gramosBolsaTotal += gramosBolsa;
-      // Valor al costo (cu\u00E1nto cost\u00F3 comprar estos gramos)
-      var costoPorGramo = (costos.especias && costos.especias[e.id]) || 0;
-      valorEspeciasBolsaCosto += gramosBolsa * costoPorGramo;
-      // Valor de venta potencial (convertir a palas y vender)
-      var pesoPala = e.pesoPala || 20;
-      var precioPala = e.precioPala || 0;
-      if (pesoPala > 0 && precioPala > 0) {
-        var palasPosibles = Math.floor(gramosBolsa / pesoPala);
-        valorEspeciasBolsaVenta += palasPosibles * precioPala;
-      }
-    }
-
-    // 3. Costales (gramos en costales abiertos)
-    var costales = db.costales ? Object.values(db.costales) : [];
-    for (var ci2 = 0; ci2 < costales.length; ci2++) {
-      var c = costales[ci2];
-      if (!c) continue;
-      var grsRest = c.gramosRestantes || 0;
-      var precioPalaCostal = c.precioPala || 0;
-      var pesoPalaCostal = c.gramosPorPala || c.pesoPala || 20;
-      if (pesoPalaCostal > 0 && precioPalaCostal > 0) {
-        valorCostales += Math.floor(grsRest / pesoPalaCostal) * precioPalaCostal;
-      }
-    }
-
-    // 4. Packs
-    var packs = (db.packs) ? Object.values(db.packs) : [];
-    for (var pi2 = 0; pi2 < packs.length; pi2++) {
-      var pk = packs[pi2];
-      if (!pk) continue;
-      valorPacks += (pk.stock || 0) * (pk.precio || 0);
-    }
-
-    var valorVentaTotal = valorBlendsStock + valorEspeciasBolsaVenta + valorCostales + valorPacks;
-
-    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--green)"></span>Valor de Inventario</div>';
+    var ticketPromedio = totalOps > 0 ? Math.round(totalIngresos / totalOps) : 0;
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--text2)"></span>Métricas Adicionales</div>';
     h += '<div class="dash-kpi-row dash-kpi-sm">';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorBlendsStock.toLocaleString() + '</div><div class="dash-mini-lbl">Blends en Stock</div><div class="dash-mini-sub">frascos producidos</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">' + gramosBolsaTotal.toLocaleString() + 'g</div><div class="dash-mini-lbl">Especias en Bolsa</div><div class="dash-mini-sub">insumos \u2014 costo $' + valorEspeciasBolsaCosto.toLocaleString() + '</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--gold)">$' + valorCostales.toLocaleString() + '</div><div class="dash-mini-lbl">Costales (PDV)</div><div class="dash-mini-sub">palas potenciales</div></div>';
-    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'stock\')" title="Ver stock"><div class="dash-mini-val" style="color:var(--green)">$' + valorVentaTotal.toLocaleString() + '</div><div class="dash-mini-lbl">Valor Venta Total</div><div class="dash-mini-sub">si se vende todo</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'gastos\')" title="Ver gastos"><div class="dash-mini-val" style="color:var(--red)">$' + Math.round(gastosMes).toLocaleString() + '</div><div class="dash-mini-lbl">Gastos del mes</div></div>';
+    var gClr = gananciaNeta >= 0 ? 'var(--green)' : 'var(--red)';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'estadisticas\')" title="Ver estadísticas"><div class="dash-mini-val" style="color:' + gClr + '">$' + Math.round(gananciaNeta).toLocaleString() + '</div><div class="dash-mini-lbl">Ganancia neta mes</div><div class="dash-mini-sub">ingresos - compras - gastos</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'ventas\')" title="Ver ventas"><div class="dash-mini-val">$' + ticketPromedio.toLocaleString() + '</div><div class="dash-mini-lbl">Ticket promedio</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'produccion\')" title="Ver producción"><div class="dash-mini-val">' + prodMesCount + '</div><div class="dash-mini-lbl">Producciones mes</div><div class="dash-mini-sub">' + prodMesUds + ' frascos</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'productos\')" title="Ver productos"><div class="dash-mini-val">' + stats.totalProductos + '</div><div class="dash-mini-lbl">Productos activos</div><div class="dash-mini-sub">' + stats.totalEspecias + ' esp + ' + stats.totalBlends + ' bl</div></div>';
+    h += '<div class="dash-mini dash-clickable" onclick="App.navigate(\'pedidos\')" title="Ver pedidos"><div class="dash-mini-val" style="color:' + (pedidosNuevos.length > 0 ? 'var(--red)' : 'var(--text)') + '">' + pedidosNuevos.length + '</div><div class="dash-mini-lbl">Pedidos nuevos</div></div>';
     h += '</div>';
 
     // Canal de venta + Composicion
@@ -325,7 +476,7 @@ const Pages = {
       for (var tp = 0; tp < Math.min(5, prodArr.length); tp++) {
         var pp = prodArr[tp];
         var barW = Math.max(4, Math.round((pp.ingreso / maxIngreso) * 100));
-        h += '<div class="dash-top-item"><div class="dash-top-info"><span class="dash-top-rank">' + (tp + 1) + '</span><span class="dash-top-name">' + pp.nombre + '</span></div><div class="dash-top-bar-track"><div class="dash-top-bar-fill" style="width:' + barW + '%"></div></div><div class="dash-top-val">$' + pp.ingreso.toLocaleString() + '</div></div>';
+        h += '<div class="dash-top-item"><div class="dash-top-info"><span class="dash-top-rank">' + (tp + 1) + '</span><span class="dash-top-name">' + esc(pp.nombre) + '</span></div><div class="dash-top-bar-track"><div class="dash-top-bar-fill" style="width:' + barW + '%"></div></div><div class="dash-top-val">$' + pp.ingreso.toLocaleString() + '</div></div>';
       }
       h += '</div>';
     } else { h += '<div class="est-empty">Sin datos de ventas</div>'; }
@@ -342,30 +493,22 @@ const Pages = {
         // Calcular faltantes
         var pedFalt = Pages._calcularFaltantesPedido(ped);
         var faltBadge = pedFalt.length > 0 ? ' <span style="color:var(--red);font-size:0.65rem;background:rgba(180,40,40,0.15);padding:2px 6px;border-radius:4px">⚠ ' + pedFalt.length + ' faltante' + (pedFalt.length > 1 ? 's' : '') + '</span>' : '';
-        h += '<div class="dash-pedido-item"><div class="dash-pedido-left"><div class="dash-pedido-time">' + hora + '</div><div class="dash-pedido-cliente">' + (cl.nombre || '?') + faltBadge + '</div><div class="dash-pedido-ciudad">' + (cl.ciudad || '') + '</div></div><div class="dash-pedido-right"><div class="dash-pedido-total">$' + (ped.total || 0).toLocaleString() + '</div><div class="dash-pedido-items">' + ((ped.items || []).length) + ' items</div></div></div>';
+        h += '<div class="dash-pedido-item"><div class="dash-pedido-left"><div class="dash-pedido-time">' + hora + '</div><div class="dash-pedido-cliente">' + esc(cl.nombre || '?') + faltBadge + '</div><div class="dash-pedido-ciudad">' + esc(cl.ciudad || '') + '</div></div><div class="dash-pedido-right"><div class="dash-pedido-total">$' + (ped.total || 0).toLocaleString() + '</div><div class="dash-pedido-items">' + ((ped.items || []).length) + ' items</div></div></div>';
       }
       h += '</div>';
     } else { h += '<div class="est-empty">Sin pedidos pendientes</div>'; }
     h += '</div></div>';
 
-    // Inventario
-    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--red)"></span>Estado del Inventario</div>';
-    h += '<div class="dash-grid-3">';
-    h += '<div class="dash-card"><h4>Envases</h4>';
-    h += '<div class="dash-stock-row"><span>Pequenos</span><span class="dash-stock-val" style="color:' + (stats.envasesChico <= 10 ? 'var(--red)' : 'var(--green)') + '">' + stats.envasesChico.toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, stats.envasesChico / 500 * 100) + '%;background:' + (stats.envasesChico <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div>';
-    h += '<div class="dash-stock-row" style="margin-top:8px"><span>Grandes</span><span class="dash-stock-val" style="color:' + (stats.envasesGrande <= 10 ? 'var(--red)' : 'var(--green)') + '">' + stats.envasesGrande.toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, stats.envasesGrande / 500 * 100) + '%;background:' + (stats.envasesGrande <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div></div>';
+    // Inventario (Envases + Bolsas) — stock bars detallado
+    h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--red)"></span>Estado de Envases y Bolsas</div>';
+    h += '<div class="dash-grid-2">';
+    h += '<div class="dash-card"><h4>Envases (frascos vacíos)</h4>';
+    h += '<div class="dash-stock-row"><span>Pequeños</span><span class="dash-stock-val" style="color:' + ((envasesStock.chico || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '">' + (envasesStock.chico || 0).toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, (envasesStock.chico || 0) / 500 * 100) + '%;background:' + ((envasesStock.chico || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div>';
+    h += '<div class="dash-stock-row" style="margin-top:10px"><span>Grandes</span><span class="dash-stock-val" style="color:' + ((envasesStock.grande || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '">' + (envasesStock.grande || 0).toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, (envasesStock.grande || 0) / 500 * 100) + '%;background:' + ((envasesStock.grande || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div></div>';
     h += '<div class="dash-card"><h4>Bolsas</h4>';
-    h += '<div class="dash-stock-row"><span>Pequenas</span><span class="dash-stock-val" style="color:' + (stats.bolsasChico <= 10 ? 'var(--red)' : 'var(--green)') + '">' + stats.bolsasChico.toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, stats.bolsasChico / 500 * 100) + '%;background:' + (stats.bolsasChico <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div>';
-    h += '<div class="dash-stock-row" style="margin-top:8px"><span>Grandes</span><span class="dash-stock-val" style="color:' + (stats.bolsasGrande <= 10 ? 'var(--red)' : 'var(--green)') + '">' + stats.bolsasGrande.toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, stats.bolsasGrande / 500 * 100) + '%;background:' + (stats.bolsasGrande <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div></div>';
-    h += '<div class="dash-card ' + (totalAlertas > 0 ? 'dash-card-alert' : '') + '"><h4>' + (totalAlertas > 0 ? '<span style="color:var(--red)">Alertas de Stock</span>' : 'Stock Saludable') + '</h4>';
-    if (totalAlertas > 0) {
-      h += '<div class="dash-alert-list">';
-      for (var ai = 0; ai < Math.min(palaBaja.length, 4); ai++) h += '<div class="dash-alert-item dash-alert-yellow">PALA: ' + palaBaja[ai].nombre + ' <b>' + (palaBaja[ai].stockBolsa || 0) + 'g</b></div>';
-      for (var ai2 = 0; ai2 < Math.min(frascosBajos.length, 3); ai2++) h += '<div class="dash-alert-item dash-alert-red">FRASCO: ' + frascosBajos[ai2].nombre + ' <b>pq:' + frascosBajos[ai2].chico + ' gr:' + frascosBajos[ai2].grande + '</b></div>';
-      for (var ai3 = 0; ai3 < Math.min(stickerBajos.length, 3); ai3++) h += '<div class="dash-alert-item dash-alert-blue">STICKER: ' + (stickerBajos[ai3].nombre || '?') + ' <b>' + ((stickerBajos[ai3].stockChico||0) + (stickerBajos[ai3].stockGrande||0)) + '</b></div>';
-      h += '</div>';
-    } else { h += '<div class="est-empty">Todo el inventario esta OK</div>'; }
-    h += '</div></div>';
+    h += '<div class="dash-stock-row"><span>Pequeñas</span><span class="dash-stock-val" style="color:' + ((bolsasStock.chico || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '">' + (bolsasStock.chico || 0).toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, (bolsasStock.chico || 0) / 500 * 100) + '%;background:' + ((bolsasStock.chico || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div>';
+    h += '<div class="dash-stock-row" style="margin-top:10px"><span>Grandes</span><span class="dash-stock-val" style="color:' + ((bolsasStock.grande || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '">' + (bolsasStock.grande || 0).toLocaleString() + '</span></div><div class="dash-stock-bar-track"><div class="dash-stock-bar-fill" style="width:' + Math.min(100, (bolsasStock.grande || 0) / 500 * 100) + '%;background:' + ((bolsasStock.grande || 0) <= 10 ? 'var(--red)' : 'var(--green)') + '"></div></div></div>';
+    h += '</div>';
 
     // Ultimas operaciones
     h += '<div class="dash-section-title"><span class="dash-dot" style="background:var(--text3)"></span>Ultimas Operaciones</div>';
@@ -378,7 +521,7 @@ const Pages = {
       for (var uv = 0; uv < ultVentas.length; uv++) {
         var uv2 = ultVentas[uv];
         var uvItems = '';
-        if (uv2.items) { for (var uv3 = 0; uv3 < Math.min(2, uv2.items.length); uv3++) { uvItems += (uv2.items[uv3].productoNombre || '?') + ' x' + (uv2.items[uv3].cantidad || 0); if (uv3 < Math.min(2, uv2.items.length) - 1) uvItems += ', '; } if ((uv2.items||[]).length > 2) uvItems += '...'; }
+        if (uv2.items) { for (var uv3 = 0; uv3 < Math.min(2, uv2.items.length); uv3++) { uvItems += esc(uv2.items[uv3].productoNombre || '?') + ' x' + (uv2.items[uv3].cantidad || 0); if (uv3 < Math.min(2, uv2.items.length) - 1) uvItems += ', '; } if ((uv2.items||[]).length > 2) uvItems += '...'; }
         h += '<div class="dash-op-item"><div class="dash-op-left"><span class="dash-op-date">' + (uv2.fecha || '') + '</span><span class="dash-op-detail">' + uvItems + '</span></div><div class="dash-op-val">$' + (uv2.total || 0).toLocaleString() + '</div></div>';
       }
       h += '</div>';
@@ -392,7 +535,7 @@ const Pages = {
       for (var up = 0; up < ultProd.length; up++) {
         var upr = ultProd[up];
         var tClr = (upr.talla || 'chico') === 'grande' ? 'var(--gold)' : 'var(--blue)';
-        h += '<div class="dash-op-item"><div class="dash-op-left"><span class="dash-op-date">' + (upr.fecha || '') + '</span><span class="dash-op-detail">' + (upr.productoNombre || '') + ' <span style="color:' + tClr + ';font-weight:700">' + (upr.talla || 'chico') + '</span></span></div><div class="dash-op-val" style="color:var(--green)">+' + (upr.cantidad || 0) + ' frascos</div></div>';
+        h += '<div class="dash-op-item"><div class="dash-op-left"><span class="dash-op-date">' + (upr.fecha || '') + '</span><span class="dash-op-detail">' + esc(upr.productoNombre || '') + ' <span style="color:' + tClr + ';font-weight:700">' + (upr.talla || 'chico') + '</span></span></div><div class="dash-op-val" style="color:var(--green)">+' + (upr.cantidad || 0) + ' frascos</div></div>';
       }
       h += '</div>';
     }
@@ -401,22 +544,22 @@ const Pages = {
     container.innerHTML = h;
 
     // === CHARTS ===
-    Chart.defaults.color = '#9a8a78';
-    Chart.defaults.borderColor = '#3a2218';
+    Chart.defaults.color = '#8a7e6e';
+    Chart.defaults.borderColor = '#2a2622';
     Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
     var diasSorted = Object.keys(diaMap).sort().slice(-15);
     var ctxD = document.getElementById('dash-chart-daily');
     if (ctxD && diasSorted.length > 0) {
       var dLabels = [], dData = [];
       for (var dd = 0; dd < diasSorted.length; dd++) { dLabels.push(diasSorted[dd].slice(5)); dData.push(diaMap[diasSorted[dd]].ingresos); }
-      Pages._dashCharts.push(new Chart(ctxD, { type: 'bar', data: { labels: dLabels, datasets: [{ label: 'Ingresos', data: dData, backgroundColor: 'rgba(232,184,75,0.6)', borderColor: '#e8b84b', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: function(v) { return '$' + v.toLocaleString(); } }, grid: { color: 'rgba(58,34,24,0.4)' } }, x: { grid: { display: false } } } } }));
+      Pages._dashCharts.push(new Chart(ctxD, { type: 'bar', data: { labels: dLabels, datasets: [{ label: 'Ingresos', data: dData, backgroundColor: 'rgba(217,155,39,0.6)', borderColor: '#D99B27', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: function(v) { return '$' + v.toLocaleString(); } }, grid: { color: 'rgba(42,38,34,0.4)' } }, x: { grid: { display: false } } } } }));
     }
     var mesesSorted = Object.keys(monthMap).sort().slice(-12);
     var ctxM = document.getElementById('dash-chart-monthly');
     if (ctxM && mesesSorted.length > 0) {
       var mLabels = [], mData = [];
       for (var mm = 0; mm < mesesSorted.length; mm++) { mLabels.push(mesesSorted[mm]); mData.push(monthMap[mesesSorted[mm]].ingresos); }
-      Pages._dashCharts.push(new Chart(ctxM, { type: 'bar', data: { labels: mLabels, datasets: [{ label: 'Ingresos', data: mData, backgroundColor: 'rgba(93,173,226,0.6)', borderColor: '#5dade2', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: function(v) { return '$' + v.toLocaleString(); } }, grid: { color: 'rgba(58,34,24,0.4)' } }, x: { grid: { display: false } } } } }));
+      Pages._dashCharts.push(new Chart(ctxM, { type: 'bar', data: { labels: mLabels, datasets: [{ label: 'Ingresos', data: mData, backgroundColor: 'rgba(96,165,250,0.6)', borderColor: '#60a5fa', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: function(v) { return '$' + v.toLocaleString(); } }, grid: { color: 'rgba(42,38,34,0.4)' } }, x: { grid: { display: false } } } } }));
     }
     var chartWraps = container.querySelectorAll('.dash-chart-wrap');
     for (var cw = 0; cw < chartWraps.length; cw++) chartWraps[cw].style.height = '220px';
